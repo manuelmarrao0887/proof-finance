@@ -3,671 +3,240 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PROOF. Financas</title>
+<title>PROOF. FINANCE</title>
+<meta name="theme-color" content="#111318">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:#111318;color:#E8EAF0;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
-button{font-family:inherit;border-radius:0}
-select,input{font-family:inherit;outline:none;border-radius:0}
-input::placeholder{color:#8A8E99}
-select:focus,input:focus{border-color:#FF3B30!important}
-::-webkit-scrollbar{display:none}
+html{color-scheme:dark;background:#111318}
+body{background:#111318;color:#E8EAF0;font-family:'Archivo',sans-serif;font-weight:400;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button{font-family:inherit}select,input{font-family:inherit;outline:none}
+select option{background:#1A1D24;color:#E8EAF0}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.7)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#111318}::-webkit-scrollbar-thumb{background:#2A2D36}
 </style>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel" data-presets="react">
-const { useState, useRef, Fragment } = React;
+<script type="text/babel">
+const{useState,useRef,useEffect}=React;
 
-/* TOKENS */
-const T = {
-  ink: "#111318", ink2: "#1A1D24", ink3: "#222530",
-  paper: "#E8EAF0", paper2: "#D8DAE0",
-  grey: "#2A2D36", grey2: "#8A8E99", grey3: "#5A5D66",
-  signal: "#FF3B30", success: "#4AE29B",
-  font: "'Archivo', sans-serif",
-  mono: "'IBM Plex Mono', monospace"
-};
+/* ── SUPABASE CONFIG ── */
+const SUPABASE_URL="https://qdhtmvxtmthfpuqhccgc.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkaHRtdnh0bXRoZnB1cWhjY2djIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMDU2NTYsImV4cCI6MjA5MzY4MTY1Nn0.XH0Emaw2SylA0X9_33MNq1BqFdM5FGcIufEqwTuLpT4";
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-/* ICONS as simple SVG components */
-function SvgIcon({ paths, size, color }) {
-  size = size || 16;
-  color = color || "currentColor";
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-      dangerouslySetInnerHTML={{ __html: paths }} />
-  );
-}
+/* ── SVG ICONS ── */
+const Ic=({d,size=16,color="currentColor",sw=1.5,style={}})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={style}><path d={d}/></svg>;
+const ic={plus:"M12 5v14M5 12h14",x:"M18 6L6 18M6 6l12 12",chevDown:"M6 9l6 6 6-6",trendUp:"M23 6l-9.5 9.5-5-5L1 18",trendDown:"M23 18l-9.5-9.5-5 5L1 6",alert:"M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01",scissors:"M6 9a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100 6 3 3 0 000 6zM20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12",barChart:"M12 20V10M18 20V4M6 20v-4",trophy:"M6 9H4.5a2.5 2.5 0 010-5H6M18 9h1.5a2.5 2.5 0 000-5H18M4 22h16M10 14.5V22M14 14.5V22M8 14h8M12 2L6 9h12z",camera:"M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2zM12 13a4 4 0 100 0",image:"M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM21 15l-5-5L5 21",doc:"M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8",settings:"M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z",logOut:"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"};
+const catIc={restauracao:"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2M7 2v20M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3v7",super:"M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6",casa:"M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10",empregada:"M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z",seguros:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",animais:"M12 10a2 2 0 100-4 2 2 0 000 4zM12 22c-2 0-4-2-4-4a4 4 0 018 0c0 2-2 4-4 4z",saude:"M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z",telecom:"M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72",carro:"M5 17H3v-6l2-5h10l4 5h2v6h-2",subs:"M2 3h20v14H2zM8 21h8M12 17v4",gym:"M6.5 6.5h11v11h-11z",combustivel:"M3 22V5a2 2 0 012-2h6a2 2 0 012 2v17M13 10h2a2 2 0 012 2v5M3 22h10",negocio:"M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16",lazer:"M20 12v10H4V12M2 7h20v5H2zM12 22V7",transferencias:"M8 3l4 4-4 4M16 21l-4-4 4-4M4 7h12M8 17h12",outros:"M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16zM3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"};
 
-const iconPaths = {
-  restauracao: '<path d="M16 2v20"/><path d="M20 2v6c0 2-2 4-4 4"/><path d="M8 8V2"/><path d="M4 2v6c0 2 2 4 4 4v10"/>',
-  super: '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2 2h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
-  casa: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
-  empregada: '<path d="M12 3L2 12h3v8h14v-8h3L12 3z"/>',
-  seguros: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
-  animais: '<circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="4" cy="8" r="2"/><path d="M12 12c-4 0-6 2-6 6s6 6 6 6 6-2 6-6-2-6-6-6z"/>',
-  saude: '<path d="M19.5 12.572l-7.5 7.428-7.5-7.428A5 5 0 1 1 12 6.006a5 5 0 1 1 7.5 6.572z"/>',
-  telecom: '<rect x="5" y="2" width="14" height="20" rx="2"/>',
-  carro: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-3-5H9L6 10l-2.5 1.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
-  subs: '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
-  gym: '<line x1="6.5" y1="6.5" x2="17.5" y2="6.5"/><line x1="17.5" y1="4" x2="17.5" y2="9"/><line x1="6.5" y1="4" x2="6.5" y2="9"/><line x1="3" y1="8" x2="3" y2="10"/><line x1="21" y1="8" x2="21" y2="10"/><line x1="12" y1="4" x2="12" y2="20"/>',
-  combustivel: '<path d="M3 22V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v17"/><path d="M15 10h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2h0a1 1 0 0 0 1-1V9l-3-3"/><path d="M3 22h12"/>',
-  negocio: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3"/>',
-  lazer: '<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/>',
-  transferencias: '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
-  outros: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
-  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
-  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
-  trendUp: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
-  alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>'
-};
+/* ── TOKENS ── */
+const T={ink:"#111318",ink2:"#1A1D24",ink3:"#222530",paper:"#E8EAF0",paper2:"#D8DAE0",grey:"#2A2D36",grey2:"#8A8E99",grey3:"#5A5D66",signal:"#FF3B30",signal2:"#E62E24",success:"#4AE29B",font:"'Archivo',sans-serif",mono:"'IBM Plex Mono',monospace"};
 
-function CatIcon({ id, size, color }) {
-  return <SvgIcon paths={iconPaths[id] || iconPaths.outros} size={size} color={color} />;
-}
+/* ── DATA ── */
+const history=[{label:"11/04",liquidez:1313.08,poupanca:4136.06,investimentos:16141.02,divida:77865.69,xtbPlans:9637.56,xtbTrans:476.55,trCorr:2073.73,trPM:2060.80,trRF:750.58,ab:240.13,moey:646.11},{label:"16/04",liquidez:1283.48,poupanca:4136.06,investimentos:16620.46,divida:77865.69,xtbPlans:10293.54,xtbTrans:495.87,trCorr:2175.17,trPM:2060.80,trRF:751.08,ab:104.45,moey:752.62},{label:"29/04",liquidez:621.57,poupanca:7055.85,investimentos:16553.68,divida:77555.06,xtbPlans:10429.01,xtbTrans:490.53,trCorr:2228.09,trPM:2060.80,trRF:752.24,ab:325.46,moey:3.79}];
+const D={accounts:[{bank:"Bankinter",type:"Conta a Ordem",value:292.32,note:"584,64 / 2",category:"Liquidez",color:"#E85D04"},{bank:"Activobank",type:"Conta a Ordem",value:325.46,category:"Liquidez",color:"#3B82F6"},{bank:"Moey",type:"Conta a Ordem",value:3.79,note:"3 contas",category:"Liquidez",color:"#7AC943"},{bank:"Trade Republic",type:"Poupanca",value:7055.85,note:"Juros: 82 EUR",category:"Poupanca",color:T.grey3},{bank:"Trade Republic",type:"Corretagem",value:2228.09,note:"44%",category:"Investimentos",color:T.grey3},{bank:"Trade Republic",type:"Private Markets",value:2060.80,note:"41%",category:"Investimentos",color:T.grey3},{bank:"Trade Republic",type:"Rendimento Fixo",value:752.24,note:"15%",category:"Investimentos",color:T.grey3},{bank:"XTB",type:"Transacoes",value:490.53,note:"P&L: -8,42",category:"Investimentos",color:"#00C853"},{bank:"XTB",type:"Planos Investimento",value:10429.01,note:"P&L: +1.228,38",category:"Investimentos",color:"#00C853"},{bank:"Goparity",type:"P2P Lending",value:555.88,note:"Juros: 82,24",category:"Investimentos",color:"#F4A900"},{bank:"Raize",type:"P2P Lending",value:37.13,category:"Investimentos",color:"#E6C84C"}],
+loan:{originalCapital:90000,outstanding:77555.06,rate:2.7,payment:485.83,nextPayment:"28.05.2026",startDate:"28.10.2022",endDate:"28.10.2042"},income:{monthly:2550},
+budget:[{id:"restauracao",name:"Restauracao",limit:250},{id:"super",name:"Supermercado",limit:250},{id:"casa",name:"Prestacao Casa",limit:350},{id:"empregada",name:"Empregada",limit:360},{id:"seguros",name:"Seguros",limit:100},{id:"animais",name:"Animais (Pablo)",limit:105},{id:"saude",name:"Saude",limit:40},{id:"telecom",name:"Telecom",limit:60},{id:"carro",name:"Carro",limit:55},{id:"subs",name:"Subscricoes",limit:50},{id:"gym",name:"Ginasio",limit:36},{id:"combustivel",name:"Combustivel",limit:90},{id:"negocio",name:"Negocio",limit:50},{id:"lazer",name:"Lazer",limit:100},{id:"transferencias",name:"Transferencias",limit:100},{id:"outros",name:"Outros",limit:30}],
+byCategory:{restauracao:[509.52,328.65,383,135.66],super:[157.57,348.81,333.48,50.50],casa:[350,350,350,0],empregada:[0,360,360,0],seguros:[285.82,121.58,95.26,115.94],animais:[20,224.98,0,0],saude:[0,0,75.92,17],telecom:[57.88,59.71,118.38,0],carro:[56.19,13.53,95.53,13.53],subs:[34.46,34.46,76.95,26.03],gym:[0,0,0,35.90],combustivel:[58.62,0,208.57,0],negocio:[61.66,83.28,2.25,12],lazer:[22.30,77.70,134.67,79.99],transferencias:[183.87,76.70,178.68,110],outros:[77.89,35.40,9.46,0.36]},
+transactions:{restauracao:[[["McDonalds",42.35],["Adega Lampeira",54.50],["Rest Browers",69.50],["Outros",343.17]],[["McDonalds",43.65],["Pare e Prove",60.50],["O Tradicional",17],["Outros",207.50]],[["O Tradicional",51.20],["Kanto Fusion",55],["Quiosque V.Lima",49.50],["Outros",227.30]],[["O Tradicional",36.70],["Uber Eats",16.81],["H3",12.95],["Pare e Prove",13.50],["McDonalds",11.80],["Outros",43.90]]],super:[[["Pingo Doce",118.27],["Continente",31.06],["Lidl",8.24]],[["Continente",179.83],["Pingo Doce",155.69],["Lidl",13.06]],[["Pingo Doce",250.33],["Continente",83.15]],[["Pingo Doce",29.15],["Continente",21.35]]],casa:[[["TRF Bankinter",350]],[["TRF Bankinter",350]],[["TRF Bankinter",350]],[]],empregada:[[],[["Atilio Gregorio",360]],[["Ana Gregorio",360]],[]],seguros:[[["Fidelidade",190.56],["MGEN",67.64],["Medis",10.90],["Barkibu",16.72]],[["Seg.Social",26.32],["MGEN",67.64],["Medis",10.90],["Barkibu",16.72]],[["MGEN",67.64],["Medis",10.90],["Barkibu",16.72]],[["Seg.Social",31.58],["MGEN",67.64],["Barkibu",16.72]]],animais:[[["Carla Susana",20]],[["Carla Susana",130],["Masquepet",94.98]],[],[]],saude:[[],[],[["Hosp.Luz",44],["Farmacias",31.92]],[["Hosp.Luz",17]]],telecom:[[["Vodafone",57.88]],[["Vodafone",59.71]],[["Vodafone(2x)",118.38]],[]],carro:[[["Cartrack",13.53],["Autodoc",42.66]],[["Cartrack",13.53]],[["Cartrack",13.53],["BMW",82]],[["Cartrack",13.53]]],subs:[[["Netflix",22.98],["Apple",0.99],["Google One",2.99],["Nabu Casa",7.50]],[["Netflix",22.98],["Apple",0.99],["Google One",2.99],["Nabu Casa",7.50]],[["Netflix",22.98],["Apple",0.99],["Google One",2.99],["Nabu Casa",7.50],["Genspark",42.49]],[["Apple",4.98],["Google Workspace",12],["Printpal",9.05]]],gym:[[],[],[],[["VivaGym",35.90]]],combustivel:[[["BP",41.37],["Repsol",8.90],["Outros",8.35]],[],[["BP",115.36],["Repsol",87.53],["Outros",5.68]],[]],negocio:[[["monday.com",51.66],["Google Ads",10]],[["Google Ads",83.28]],[["Google Ads",2.25]],[["Google Workspace",12]]],lazer:[[["JumpYard",12.40],["Casa Inglesa",9.90]],[["Oceanario",26.10],["Rituals",26.80],["FC Sanches",21.30]],[["Jockey",62],["Prozis",50.37],["FC Sanches",22.30]],[["PlayStation",79.99]]],transferencias:[[["Nuno Catarino",75],["David",10],["Vania",8.75],["Atilio",10.12],["Andre",8],["Ines",71.99]],[["Joana",40],["Andre",36.70]],[["Nuno Catarino(2x)",150],["Maria Carmo",23.68],["Filipa",427],["Joao",75]],[["Joao Gabriel",70],["ATM",40]]],outros:[[["Inst.Registos",55.30],["Staples",11.99],["Eupago",10],["Taxas",0.60]],[["ATM",20],["JJF Parchal",6.25],["Outros",9.15]],[["Fund.AJU",5.40],["Paypay",2.35],["Taxas",1.71]],[["Taxas",0.36]]]},
+salaries:[1923.54,1849.33,1898.89,null]};
 
-/* DATA */
-var history = [
-  { label: "11/04", liquidez: 1313.08, poupanca: 4136.06, investimentos: 16141.02, divida: 77865.69, xtbPlans: 9637.56, xtbTrans: 476.55, trCorr: 2073.73 },
-  { label: "16/04", liquidez: 1283.48, poupanca: 4136.06, investimentos: 16620.46, divida: 77865.69, xtbPlans: 10293.54, xtbTrans: 495.87, trCorr: 2175.17 }
-];
+/* ── UTILS ── */
+const fmt=v=>v.toLocaleString("pt-PT",{minimumFractionDigits:2,maximumFractionDigits:2})+" EUR";
+const fmtK=v=>v>=10000?(v/1000).toFixed(1)+"k":fmt(v);
+const acctCat={Liquidez:{color:"#3B82F6"},Poupanca:{color:"#8B5CF6"},Investimentos:{color:T.success}};
+function pjY(sv,mc,r,mo){const res={};for(const k in sv){let v=sv[k];const mr=Math.pow(1+(r[k]||0),1/12)-1;for(let m=0;m<mo;m++)v=v*(1+mr)+(mc[k]||0);res[k]=v;}return res;}
+const Label=({children,style})=><div style={{fontFamily:T.mono,fontSize:11,fontWeight:500,letterSpacing:"0.12em",textTransform:"uppercase",color:T.grey2,...style}}>{children}</div>;
+function MiniChart({data,color,label,height=56}){if(!data||data.length<2)return null;const min=Math.min(...data)*0.95,max=Math.max(...data)*1.05,range=max-min||1,w=100;const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${height-((v-min)/range)*height}`).join(" ");const area=pts+` ${w},${height} 0,${height}`;const diff=data[data.length-1]-data[0],pct=data[0]>0?((diff/data[0])*100).toFixed(1):"0";
+return<div style={{marginBottom:16}}>{label&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8}}><span style={{fontSize:13,fontWeight:500}}>{label}</span><div><span style={{fontFamily:T.mono,fontSize:13,fontWeight:500}}>{fmt(data[data.length-1])}</span><span style={{fontFamily:T.mono,fontSize:11,color:diff>=0?T.success:T.signal,marginLeft:8}}>{diff>=0?"+":""}{pct}%</span></div></div>}<svg viewBox={`0 0 ${w} ${height}`} style={{width:"100%",height}}><defs><linearGradient id={`g-${label}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.15"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs><polygon points={area} fill={`url(#g-${label})`}/><polyline points={pts} fill="none" stroke={color} strokeWidth="1.5"/>{data.map((v,i)=><circle key={i} cx={(i/(data.length-1))*w} cy={height-((v-min)/range)*height} r="2.5" fill={color} stroke={T.ink} strokeWidth="1"/>)}</svg><div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>{history.map((h,i)=><span key={i} style={{fontFamily:T.mono,fontSize:9,color:T.grey3}}>{h.label}</span>)}</div></div>;}
 
-var D = {
-  accounts: [
-    { bank: "Bankinter", type: "Conta a Ordem", value: 426.84, note: "853,68/2", category: "Liquidez" },
-    { bank: "Activobank", type: "Conta a Ordem", value: 104.45, category: "Liquidez" },
-    { bank: "Moey", type: "Conta a Ordem", value: 752.62, note: "3 contas", category: "Liquidez" },
-    { bank: "Trade Republic", type: "Poupanca", value: 4136.06, category: "Poupanca" },
-    { bank: "Trade Republic", type: "Corretagem", value: 2175.17, category: "Investimentos" },
-    { bank: "Trade Republic", type: "Private Markets", value: 2060.80, category: "Investimentos" },
-    { bank: "Trade Republic", type: "Rendimento Fixo", value: 751.08, category: "Investimentos" },
-    { bank: "XTB", type: "Transacoes", value: 495.87, note: "-3,08", category: "Investimentos" },
-    { bank: "XTB", type: "Planos", value: 10293.54, note: "+1.092,91", category: "Investimentos" },
-    { bank: "Goparity", type: "P2P", value: 555.88, category: "Investimentos" },
-    { bank: "Raize", type: "P2P", value: 37.13, category: "Investimentos" }
-  ],
-  loan: { originalCapital: 90000, outstanding: 77865.69 },
-  budget: [
-    { id: "restauracao", name: "Restauracao", limit: 250 },
-    { id: "super", name: "Supermercado", limit: 250 },
-    { id: "casa", name: "Prestacao Casa", limit: 350 },
-    { id: "empregada", name: "Empregada", limit: 360 },
-    { id: "seguros", name: "Seguros", limit: 100 },
-    { id: "animais", name: "Animais (Pablo)", limit: 105 },
-    { id: "saude", name: "Saude", limit: 40 },
-    { id: "telecom", name: "Telecom", limit: 60 },
-    { id: "carro", name: "Carro", limit: 55 },
-    { id: "subs", name: "Subscricoes", limit: 50 },
-    { id: "gym", name: "Ginasio", limit: 36 },
-    { id: "combustivel", name: "Combustivel", limit: 90 },
-    { id: "negocio", name: "Negocio", limit: 50 },
-    { id: "lazer", name: "Lazer", limit: 100 },
-    { id: "transferencias", name: "Transferencias", limit: 100 },
-    { id: "outros", name: "Outros", limit: 30 }
-  ],
-  byCategory: {
-    restauracao: [509.52, 328.65, 383, 135.66],
-    super: [157.57, 348.81, 333.48, 50.50],
-    casa: [350, 350, 350, 0],
-    empregada: [0, 360, 360, 0],
-    seguros: [285.82, 121.58, 95.26, 115.94],
-    animais: [20, 224.98, 0, 0],
-    saude: [0, 0, 75.92, 17],
-    telecom: [57.88, 59.71, 118.38, 0],
-    carro: [56.19, 13.53, 95.53, 13.53],
-    subs: [34.46, 34.46, 76.95, 26.03],
-    gym: [0, 0, 0, 35.90],
-    combustivel: [58.62, 0, 208.57, 0],
-    negocio: [61.66, 83.28, 2.25, 12],
-    lazer: [22.30, 77.70, 134.67, 79.99],
-    transferencias: [183.87, 76.70, 178.68, 110],
-    outros: [77.89, 35.40, 9.46, 0.36]
-  },
-  transactions: {
-    restauracao: [
-      [["McDonalds", 42.35], ["Adega Lampeira", 54.50], ["Outros", 412.67]],
-      [["McDonalds", 43.65], ["Pare e Prove", 60.50], ["Outros", 224.50]],
-      [["O Tradicional", 51.20], ["Kanto Fusion", 55], ["Outros", 276.80]],
-      [["O Tradicional", 36.70], ["Uber Eats", 16.81], ["Pare e Prove", 13.50], ["Outros", 68.65]]
-    ],
-    super: [
-      [["Pingo Doce", 118.27], ["Continente", 31.06], ["Lidl", 8.24]],
-      [["Continente", 179.83], ["Pingo Doce", 155.69]],
-      [["Pingo Doce", 250.33], ["Continente", 83.15]],
-      [["Pingo Doce", 29.15], ["Continente", 21.35]]
-    ],
-    seguros: [
-      [["Fidelidade", 190.56], ["MGEN", 67.64], ["Medis", 10.90], ["Barkibu", 16.72]],
-      [["Seg.Social", 26.32], ["MGEN", 67.64], ["Medis", 10.90], ["Barkibu", 16.72]],
-      [["MGEN", 67.64], ["Medis", 10.90], ["Barkibu", 16.72]],
-      [["Seg.Social", 31.58], ["MGEN", 67.64], ["Barkibu", 16.72]]
-    ],
-    carro: [
-      [["Cartrack", 13.53], ["Autodoc", 42.66]],
-      [["Cartrack", 13.53]],
-      [["Cartrack", 13.53], ["BMW", 82]],
-      [["Cartrack", 13.53]]
-    ],
-    subs: [
-      [["Netflix", 22.98], ["Apple", 0.99], ["Google One", 2.99], ["Nabu Casa", 7.50]],
-      [["Netflix", 22.98], ["Apple", 0.99], ["Google One", 2.99], ["Nabu Casa", 7.50]],
-      [["Netflix", 22.98], ["Apple", 0.99], ["Google One", 2.99], ["Nabu Casa", 7.50], ["Genspark", 42.49]],
-      [["Apple", 4.98], ["Google Workspace", 12], ["Printpal", 9.05]]
-    ],
-    lazer: [
-      [["JumpYard", 12.40], ["Casa Inglesa", 9.90]],
-      [["Oceanario", 26.10], ["Rituals", 26.80]],
-      [["Jockey", 62], ["Prozis", 50.37]],
-      [["PlayStation", 79.99]]
-    ]
-  },
-  salaries: [1923.54, 1849.33, 1898.89, null]
-};
+/* ── LOGIN SCREEN ── */
+function LoginScreen({onLogin}){
+  const[email,setEmail]=useState("");
+  const[pass,setPass]=useState("");
+  const[loading,setLoading]=useState(false);
+  const[error,setError]=useState(null);
 
-var acctCat = {
-  Liquidez: { color: "#3B82F6" },
-  Poupanca: { color: "#8B5CF6" },
-  Investimentos: { color: T.success }
-};
-
-function fmt(v) {
-  return v.toLocaleString("pt-PT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " EUR";
-}
-function fmtK(v) {
-  return v >= 10000 ? (v / 1000).toFixed(1) + "k" : fmt(v);
-}
-
-function Label(props) {
-  return (
-    <div style={Object.assign({
-      fontFamily: T.mono, fontSize: 11, fontWeight: 500,
-      letterSpacing: "0.12em", textTransform: "uppercase", color: T.grey2
-    }, props.style || {})}>
-      {props.children}
-    </div>
-  );
-}
-
-function Card(props) {
-  var s = Object.assign({
-    background: T.ink2, border: "1px solid " + T.grey, borderRadius: 0, padding: "24px 20px"
-  }, props.style || {});
-  if (props.signal) { s.borderLeft = "3px solid " + T.signal; }
-  return <div style={s}>{props.children}</div>;
-}
-
-function MiniChart(props) {
-  var data = props.data;
-  var color = props.color;
-  var label = props.label;
-  var height = props.height || 56;
-  if (!data || data.length < 2) return null;
-  var min = Math.min.apply(null, data) * 0.95;
-  var max = Math.max.apply(null, data) * 1.05;
-  var range = max - min || 1;
-  var w = 100;
-  var pts = data.map(function(v, i) {
-    return (i / (data.length - 1)) * w + "," + (height - ((v - min) / range) * height);
-  }).join(" ");
-  var area = pts + " " + w + "," + height + " 0," + height;
-  var diff = data[data.length - 1] - data[0];
-  var pct = data[0] > 0 ? ((diff / data[0]) * 100).toFixed(1) : "0";
-
-  return (
-    <div style={{ marginBottom: 16 }}>
-      {label && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 500 }}>{label}</span>
-          <div>
-            <span style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 500 }}>{fmt(data[data.length - 1])}</span>
-            <span style={{ fontFamily: T.mono, fontSize: 11, color: diff >= 0 ? T.success : T.signal, marginLeft: 8 }}>{diff >= 0 ? "+" : ""}{pct}%</span>
-          </div>
-        </div>
-      )}
-      <svg viewBox={"0 0 " + w + " " + height} style={{ width: "100%", height: height }}>
-        <polygon points={area} fill={color} fillOpacity="0.1" />
-        <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" />
-      </svg>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-        {history.map(function(h, i) {
-          return <span key={i} style={{ fontFamily: T.mono, fontSize: 9, color: T.grey3 }}>{h.label}</span>;
-        })}
-      </div>
-    </div>
-  );
-}
-
-function App() {
-  var tabState = useState("overview");
-  var tab = tabState[0], setTab = tabState[1];
-  var xCatState = useState(null);
-  var xCat = xCatState[0], setXCat = xCatState[1];
-  var eMState = useState(3);
-  var eM = eMState[0], setEM = eMState[1];
-  var xExpState = useState(null);
-  var xExp = xExpState[0], setXExp = xExpState[1];
-  var showFState = useState(false);
-  var showF = showFState[0], setShowF = showFState[1];
-  var fdState = useState({ desc: "", amount: "", category: "restauracao" });
-  var fd = fdState[0], setFd = fdState[1];
-  var addEState = useState([]);
-  var addE = addEState[0], setAddE = addEState[1];
-
-  var byCat = JSON.parse(JSON.stringify(D.byCategory));
-  addE.forEach(function(e) { if (byCat[e.category]) byCat[e.category][3] += e.amount; });
-
-  /* Accounts grouped */
-  var grouped = {};
-  D.accounts.forEach(function(a) {
-    if (!grouped[a.category]) grouped[a.category] = [];
-    grouped[a.category].push(a);
-  });
-  var catTotals = {};
-  Object.keys(grouped).forEach(function(c) {
-    catTotals[c] = grouped[c].reduce(function(s, i) { return s + i.value; }, 0);
-  });
-  var totalAssets = Object.values(catTotals).reduce(function(s, v) { return s + v; }, 0);
-  var netWorth = totalAssets - D.loan.outstanding;
-  var pp = ((D.loan.originalCapital - D.loan.outstanding) / D.loan.originalCapital) * 100;
-
-  var isQ1 = eM === 4;
-  var months = ["JAN", "FEV", "MAR", "ABR"];
-
-  var expRows = D.budget.map(function(b) {
-    var vals = byCat[b.id] || [0, 0, 0, 0];
-    var value = isQ1 ? vals.slice(0, 3).reduce(function(s, v) { return s + v; }, 0) : (vals[eM] || 0);
-    var limit = isQ1 ? b.limit * 3 : b.limit;
-    var pct = limit > 0 ? (value / limit) * 100 : 0;
-    return { id: b.id, name: b.name, limit: limit, value: value, pct: pct, vals: vals };
-  }).filter(function(r) { return r.value > 0; }).sort(function(a, b) { return b.value - a.value; });
-
-  var totalExpMonth = expRows.reduce(function(s, r) { return s + r.value; }, 0);
-
-  /* Forecast */
-  var fc = { xtbPlans: 10293.54, xtbTransactions: 495.87, trCorretagem: 2175.17, trPrivateMarkets: 2060.80, trRendFixo: 751.08, trPoupanca: 4136.06, goparity: 555.88, raize: 37.13 };
-  var totalInv = Object.values(fc).reduce(function(s, v) { return s + v; }, 0);
-  var xtbNow = fc.xtbPlans + fc.xtbTransactions;
-
-  var prevS = history[0];
-  var currS = history[1];
-  var aDelta = (currS.liquidez + currS.poupanca + currS.investimentos) - (prevS.liquidez + prevS.poupanca + prevS.investimentos);
-
-  /* Insights */
-  var avgMExp = Object.values(D.byCategory).reduce(function(s, v) { return s + v.slice(0, 3).reduce(function(a, b) { return a + b; }, 0); }, 0) / 3;
-  var q1Avg = {};
-  Object.keys(byCat).forEach(function(id) { q1Avg[id] = byCat[id].slice(0, 3).reduce(function(s, v) { return s + v; }, 0) / 3; });
-  var overB = D.budget.map(function(b) { var avg = q1Avg[b.id] || 0; return { id: b.id, name: b.name, avg: avg, diff: avg - b.limit }; }).filter(function(c) { return c.diff > 10; }).sort(function(a, b) { return b.diff - a.diff; });
-  var potSav = overB.reduce(function(s, c) { return s + c.diff; }, 0);
-
-  var addExp = function() {
-    var a = parseFloat(fd.amount.replace(",", "."));
-    if (!fd.desc || isNaN(a) || a <= 0) return;
-    setAddE(function(p) { return p.concat([{ desc: fd.desc, amount: a, category: fd.category }]); });
-    setFd({ desc: "", amount: "", category: "restauracao" });
-    setShowF(false);
+  const handleLogin=async()=>{
+    setLoading(true);setError(null);
+    const{data,error:err}=await supabase.auth.signInWithPassword({email,password:pass});
+    if(err){setError(err.message);setLoading(false);return;}
+    onLogin(data.session);
   };
 
-  var tabs = [
-    ["overview", "RESUMO"], ["charts", "GRAFICOS"], ["expenses", "DESPESAS"],
-    ["insights", "INSIGHTS"], ["loan", "CREDITO"]
-  ];
-
-  return (
-    <div style={{ minHeight: "100vh", background: T.ink, color: T.paper, fontFamily: T.font, fontWeight: 400, lineHeight: 1.55 }}>
-
-      {/* HEADER */}
-      <div style={{ padding: "20px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "baseline" }}>
-          <span style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-0.03em" }}>PROOF</span>
-          <span style={{ fontWeight: 900, fontSize: 22, color: T.signal }}>.</span>
+  return(
+    <div style={{minHeight:"100vh",background:T.ink,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{width:"100%",maxWidth:360}}>
+        <div style={{textAlign:"center",marginBottom:48}}>
+          <div style={{display:"inline-flex",alignItems:"baseline"}}><span style={{fontWeight:900,fontSize:48,letterSpacing:"-0.04em"}}>PROOF</span><span style={{fontWeight:900,fontSize:48,color:T.signal}}>.</span></div>
+          <div style={{fontFamily:T.mono,fontSize:11,color:T.grey2,letterSpacing:"0.12em",marginTop:8}}>PERSONAL FINANCE</div>
         </div>
-        <Label>16.04.2026</Label>
-      </div>
 
-      {/* NET WORTH */}
-      <div style={{ padding: "28px 20px 8px" }}>
-        <Label style={{ marginBottom: 8 }}>PATRIMONIO LIQUIDO</Label>
-        <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: "-0.04em" }}>{fmt(netWorth)}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
-          <SvgIcon paths={iconPaths.trendUp} size={14} color={T.success} />
-          <span style={{ fontFamily: T.mono, fontSize: 12, color: T.success }}>+{fmt(Math.abs(aDelta))}</span>
-          <span style={{ fontFamily: T.mono, fontSize: 11, color: T.grey3 }}>desde 11.04</span>
+        <div style={{background:T.ink2,border:`1px solid ${T.grey}`,padding:"32px 24px"}}>
+          <Label style={{marginBottom:6}}>EMAIL</Label>
+          <input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="mail@exemplo.pt" onKeyDown={e=>e.key==="Enter"&&handleLogin()} style={{width:"100%",padding:"12px 16px",border:`1px solid ${T.grey}`,background:T.ink,color:T.paper,fontFamily:T.font,fontSize:15,borderRadius:0,boxSizing:"border-box",marginBottom:16}}/>
+
+          <Label style={{marginBottom:6}}>PASSWORD</Label>
+          <input value={pass} onChange={e=>setPass(e.target.value)} type="password" placeholder="password" onKeyDown={e=>e.key==="Enter"&&handleLogin()} style={{width:"100%",padding:"12px 16px",border:`1px solid ${T.grey}`,background:T.ink,color:T.paper,fontFamily:T.font,fontSize:15,borderRadius:0,boxSizing:"border-box",marginBottom:24}}/>
+
+          {error&&<div style={{border:`1px solid ${T.signal}30`,borderLeft:`3px solid ${T.signal}`,padding:10,marginBottom:16}}><Label style={{color:T.signal,fontSize:10}}>{error}</Label></div>}
+
+          <button onClick={handleLogin} disabled={loading||!email||!pass} style={{width:"100%",padding:"14px 0",border:`1px solid ${email&&pass?T.paper:T.grey}`,background:email&&pass?T.ink:"transparent",color:email&&pass?T.paper:T.grey3,fontFamily:T.font,fontSize:13,fontWeight:700,letterSpacing:"0.05em",textTransform:"uppercase",cursor:"pointer",borderRadius:0}}>{loading?"A AUTENTICAR.":"ENTRAR"}</button>
         </div>
-      </div>
 
-      {/* ASSET BAR */}
-      <div style={{ padding: "12px 20px 16px" }}>
-        <div style={{ display: "flex", height: 4, background: T.grey }}>
-          {Object.keys(catTotals).map(function(c) {
-            var col = acctCat[c] ? acctCat[c].color : T.grey2;
-            return <div key={c} style={{ width: (catTotals[c] / totalAssets * 100) + "%", background: col }} />;
-          })}
-        </div>
-      </div>
-
-      {/* TABS */}
-      <div style={{ display: "flex", padding: "0 20px", borderBottom: "1px solid " + T.grey, marginBottom: 20, overflowX: "auto" }}>
-        {tabs.map(function(t) {
-          return (
-            <button key={t[0]} onClick={function() { setTab(t[0]); }}
-              style={{
-                padding: "10px 10px 8px", border: "none",
-                borderBottom: tab === t[0] ? "2px solid " + T.paper : "2px solid transparent",
-                background: "transparent", fontFamily: T.mono, fontSize: 10, fontWeight: 500,
-                letterSpacing: "0.1em", color: tab === t[0] ? T.paper : T.grey3,
-                cursor: "pointer", whiteSpace: "nowrap"
-              }}>
-              {t[1]}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* OVERVIEW */}
-      {tab === "overview" && (
-        <div style={{ padding: "0 20px 40px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-            <Card>
-              <Label style={{ marginBottom: 6 }}>ATIVOS</Label>
-              <div style={{ fontSize: 18, fontWeight: 700, color: T.success }}>{fmt(totalAssets)}</div>
-            </Card>
-            <Card signal={true}>
-              <Label style={{ marginBottom: 6 }}>DIVIDA</Label>
-              <div style={{ fontSize: 18, fontWeight: 700, color: T.signal }}>{fmt(D.loan.outstanding)}</div>
-            </Card>
-          </div>
-          {Object.keys(grouped).map(function(cat) {
-            var items = grouped[cat];
-            return (
-              <div key={cat} style={{ marginBottom: 8 }}>
-                <button onClick={function() { setXCat(xCat === cat ? null : cat); }}
-                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: T.ink2, border: "1px solid " + T.grey, borderRadius: 0, padding: "16px 20px", cursor: "pointer", color: T.paper }}>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, textTransform: "uppercase" }}>{cat}</div>
-                    <Label style={{ marginTop: 2 }}>{items.length} CONTAS</Label>
-                  </div>
-                  <div style={{ fontFamily: T.mono, fontSize: 16, fontWeight: 700 }}>{fmt(catTotals[cat])}</div>
-                </button>
-                {xCat === cat && (
-                  <div style={{ background: T.ink2, border: "1px solid " + T.grey, borderTop: "none" }}>
-                    {items.map(function(it, i) {
-                      return (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "12px 20px", borderTop: "1px solid " + T.grey }}>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 600 }}>{it.bank}</div>
-                            <div style={{ fontSize: 12, color: T.grey2 }}>{it.type}</div>
-                          </div>
-                          <div style={{ fontFamily: T.mono, fontSize: 14 }}>{fmt(it.value)}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* CHARTS */}
-      {tab === "charts" && (
-        <div style={{ padding: "0 20px 40px" }}>
-          <Card style={{ marginBottom: 12 }}>
-            <Label style={{ marginBottom: 16 }}>EVOLUCAO PATRIMONIAL</Label>
-            <MiniChart data={history.map(function(h) { return h.liquidez + h.poupanca + h.investimentos; })} color={T.success} label="Ativos Totais" />
-            <MiniChart data={history.map(function(h) { return (h.liquidez + h.poupanca + h.investimentos) - h.divida; })} color={T.paper} label="Patrimonio Liquido" />
-          </Card>
-          <Card style={{ marginBottom: 12 }}>
-            <Label style={{ marginBottom: 16 }}>INVESTIMENTOS</Label>
-            <MiniChart data={history.map(function(h) { return h.xtbPlans; })} color={T.success} label="XTB Planos" />
-            <MiniChart data={history.map(function(h) { return h.xtbTrans; })} color="#F59E0B" label="XTB Transacoes" />
-            <MiniChart data={history.map(function(h) { return h.trCorr; })} color="#3B82F6" label="TR Corretagem" />
-          </Card>
-          <Card>
-            <Label style={{ marginBottom: 16 }}>DESPESAS MENSAIS</Label>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 120 }}>
-              {months.map(function(m, i) {
-                var total = Object.values(D.byCategory).reduce(function(s, v) { return s + (v[i] || 0); }, 0);
-                var h = Math.max((total / 2200) * 100, 4);
-                return (
-                  <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                    <div style={{ fontFamily: T.mono, fontSize: 10, marginBottom: 4, color: i === 3 ? T.signal : T.paper }}>{fmtK(total)}</div>
-                    <div style={{ height: h + "%", background: i === 3 ? T.signal : T.paper, opacity: i === 3 ? 1 : 0.15 }} />
-                    <div style={{ fontFamily: T.mono, fontSize: 9, color: T.grey2, marginTop: 6, letterSpacing: "0.1em" }}>{m}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* EXPENSES */}
-      {tab === "expenses" && (
-        <div style={{ padding: "0 20px 100px" }}>
-          <div style={{ display: "flex", marginBottom: 16, border: "1px solid " + T.grey }}>
-            {months.map(function(m, i) {
-              return (
-                <button key={i} onClick={function() { setEM(i); setXExp(null); }}
-                  style={{ flex: 1, padding: "10px 0", border: "none", borderRight: i < 3 ? "1px solid " + T.grey : "none", fontFamily: T.mono, fontSize: 10, fontWeight: 500, letterSpacing: "0.1em", cursor: "pointer", background: eM === i ? T.paper : "transparent", color: eM === i ? T.ink : T.grey2 }}>
-                  {m}
-                </button>
-              );
-            })}
-            <button onClick={function() { setEM(4); setXExp(null); }}
-              style={{ flex: 1, padding: "10px 0", border: "none", borderLeft: "1px solid " + T.grey, fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", cursor: "pointer", background: eM === 4 ? T.paper : "transparent", color: eM === 4 ? T.ink : T.grey2 }}>
-              Q1
-            </button>
-          </div>
-
-          <Card style={{ marginBottom: 16 }}>
-            <Label>{isQ1 ? "DESPESAS Q1" : "DESPESAS " + months[eM]}</Label>
-            <div style={{ fontSize: 24, fontWeight: 900, marginTop: 4, fontFamily: T.mono }}>{fmt(totalExpMonth)}</div>
-            {eM === 3 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
-                <SvgIcon paths={iconPaths.alert} size={12} color={T.signal} />
-                <span style={{ fontFamily: T.mono, fontSize: 10, color: T.signal }}>ABRIL PARCIAL</span>
-              </div>
-            )}
-          </Card>
-
-          {expRows.map(function(r) {
-            var isExp = xExp === r.id;
-            var over = r.pct > 100;
-            var barColor = over ? T.signal : r.pct > 75 ? "#F59E0B" : T.paper;
-            return (
-              <div key={r.id} style={{ marginBottom: 4 }}>
-                <button onClick={function() { setXExp(isExp ? null : r.id); }}
-                  style={{ width: "100%", display: "flex", alignItems: "center", background: T.ink2, border: "1px solid " + T.grey, borderRadius: 0, padding: "12px 16px", cursor: "pointer", color: T.paper }}>
-                  <span style={{ marginRight: 12 }}><CatIcon id={r.id} size={16} color={T.grey2} /></span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</span>
-                      <div>
-                        <span style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 600 }}>{fmt(r.value)}</span>
-                        <span style={{ fontFamily: T.mono, fontSize: 11, color: T.grey3, marginLeft: 4 }}>/ {fmt(r.limit)}</span>
-                      </div>
-                    </div>
-                    <div style={{ marginTop: 6, height: 3, background: T.grey }}>
-                      <div style={{ height: "100%", width: Math.min(r.pct, 100) + "%", background: barColor, opacity: over ? 1 : 0.6 }} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                      <span style={{ fontFamily: T.mono, fontSize: 10, color: over ? T.signal : T.grey2 }}>{r.pct.toFixed(0)}%</span>
-                      {over
-                        ? <span style={{ fontFamily: T.mono, fontSize: 10, color: T.signal }}>+{fmt(r.value - r.limit)}</span>
-                        : <span style={{ fontFamily: T.mono, fontSize: 10, color: T.success }}>Resta {fmt(r.limit - r.value)}</span>
-                      }
-                    </div>
-                  </div>
-                </button>
-                {isExp && (function() {
-                  var txnData = D.transactions[r.id];
-                  var mt = (!isQ1 && txnData && txnData[eM]) ? txnData[eM] : [];
-                  return (
-                    <div style={{ background: T.ink2, border: "1px solid " + T.grey, borderTop: "none", padding: "12px 16px" }}>
-                      {mt.length > 0 && (
-                        <div style={{ marginBottom: 12 }}>
-                          {mt.map(function(item, ti) {
-                            return (
-                              <div key={ti} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: ti > 0 ? "1px solid " + T.grey : "none" }}>
-                                <span style={{ fontSize: 12, color: T.paper2 }}>{item[0]}</span>
-                                <span style={{ fontFamily: T.mono, fontSize: 12 }}>{fmt(item[1])}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      <div style={{ display: "flex", gap: 8, paddingTop: 10, borderTop: "1px solid " + T.grey }}>
-                        {months.map(function(m, mi) {
-                          var v = r.vals[mi] || 0;
-                          return (
-                            <div key={mi} style={{ flex: 1, textAlign: "center" }}>
-                              <Label style={{ fontSize: 9 }}>{m}</Label>
-                              <div style={{ fontFamily: T.mono, fontSize: 11, marginTop: 2, color: mi === eM ? T.paper : T.grey3 }}>{fmt(v)}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            );
-          })}
-
-          <button onClick={function() { setShowF(true); }}
-            style={{ position: "fixed", bottom: 24, right: 24, width: 48, height: 48, border: "1px solid " + T.paper, background: T.ink, color: T.paper, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, borderRadius: 0 }}>
-            <SvgIcon paths={iconPaths.plus} size={20} />
-          </button>
-        </div>
-      )}
-
-      {/* ADD FORM */}
-      {showF && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 100, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div style={{ background: T.ink2, borderTop: "1px solid " + T.grey, padding: "24px 20px 32px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, textTransform: "uppercase" }}>ADICIONAR DESPESA</div>
-              <button onClick={function() { setShowF(false); }} style={{ background: "none", border: "none", color: T.grey2, cursor: "pointer" }}>
-                <SvgIcon paths={iconPaths.x} size={20} />
-              </button>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <Label style={{ marginBottom: 6 }}>CATEGORIA</Label>
-              <select value={fd.category} onChange={function(e) { setFd(Object.assign({}, fd, { category: e.target.value })); }}
-                style={{ width: "100%", padding: "12px 16px", border: "1px solid " + T.grey, background: T.ink2, color: T.paper, fontSize: 14, borderRadius: 0 }}>
-                {D.budget.map(function(b) { return <option key={b.id} value={b.id}>{b.name}</option>; })}
-              </select>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <Label style={{ marginBottom: 6 }}>DESCRICAO</Label>
-              <input value={fd.desc} onChange={function(e) { setFd(Object.assign({}, fd, { desc: e.target.value })); }}
-                placeholder="Ex: Pingo Doce" style={{ width: "100%", padding: "12px 16px", border: "1px solid " + T.grey, background: T.ink2, color: T.paper, fontSize: 15, borderRadius: 0, boxSizing: "border-box" }} />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <Label style={{ marginBottom: 6 }}>VALOR (EUR)</Label>
-              <input value={fd.amount} onChange={function(e) { setFd(Object.assign({}, fd, { amount: e.target.value })); }}
-                placeholder="0,00" inputMode="decimal" style={{ width: "100%", padding: "12px 16px", border: "1px solid " + T.grey, background: T.ink2, color: T.paper, fontFamily: T.mono, fontSize: 18, fontWeight: 600, borderRadius: 0, boxSizing: "border-box" }} />
-            </div>
-            <button onClick={addExp} disabled={!fd.desc || !fd.amount}
-              style={{ width: "100%", padding: "14px 0", border: fd.desc && fd.amount ? "1px solid " + T.paper : "1px solid " + T.grey, background: fd.desc && fd.amount ? T.ink : "transparent", color: fd.desc && fd.amount ? T.paper : T.grey3, fontSize: 13, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer", borderRadius: 0 }}>
-              ADICIONAR DESPESA
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* INSIGHTS */}
-      {tab === "insights" && (
-        <div style={{ padding: "0 20px 40px" }}>
-          <Card style={{ marginBottom: 12 }}>
-            <Label style={{ marginBottom: 16 }}>CORTES SUGERIDOS</Label>
-            <div style={{ fontFamily: T.mono, fontSize: 12, color: T.success, marginBottom: 16 }}>Poupanca potencial: -{fmt(potSav)}/mes</div>
-            {overB.map(function(c, i) {
-              return (
-                <div key={c.id} style={{ padding: "12px 0", borderTop: "1px solid " + T.grey }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</span>
-                    <span style={{ fontFamily: T.mono, fontSize: 12, color: T.signal }}>+{fmt(c.diff)}/mes</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: T.grey2 }}>
-                    {c.id === "restauracao" ? "Trocar 2 refeicoes fora/semana por cozinhar." : c.id === "super" ? "Lista semanal. Marcas brancas. Promocoes." : "Rever limite ou reduzir."}
-                  </div>
-                </div>
-              );
-            })}
-          </Card>
-          <Card>
-            <Label style={{ marginBottom: 16 }}>CENARIOS 5 ANOS</Label>
-            {[{ l: "SEM MUDANCAS", m: 550, r: 0.07 }, { l: "COM OTIMIZACAO", m: 750, r: 0.08 }, { l: "AGRESSIVO", m: 1000, r: 0.09 }].map(function(s, i) {
-              var v = totalInv;
-              for (var m = 0; m < 60; m++) v = v * (1 + s.r / 12) + s.m;
-              return (
-                <div key={i} style={{ padding: "12px 0", borderTop: "1px solid " + T.grey, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <Label>{s.l}</Label>
-                    <div style={{ fontFamily: T.mono, fontSize: 11, color: T.grey3, marginTop: 2 }}>{fmt(s.m)}/mes</div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 20, fontWeight: 900 }}>{fmtK(v)}</div>
-                    <div style={{ fontFamily: T.mono, fontSize: 10, color: T.success }}>+{fmtK(v - totalInv)}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </Card>
-        </div>
-      )}
-
-      {/* LOAN */}
-      {tab === "loan" && (
-        <div style={{ padding: "0 20px 40px" }}>
-          <Card signal={true} style={{ marginBottom: 12 }}>
-            <Label style={{ marginBottom: 6 }}>CREDITO HABITACAO</Label>
-            <div style={{ fontSize: 13, color: T.grey2, marginBottom: 16 }}>Bankinter / Taxa Fixa 2,7%</div>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.mono, fontSize: 11, color: T.grey2, marginBottom: 6 }}>
-                <span>Pago: {fmt(90000 - 77865.69)}</span>
-                <span>{pp.toFixed(1)}%</span>
-              </div>
-              <div style={{ height: 4, background: T.grey }}>
-                <div style={{ height: "100%", width: pp + "%", background: T.success }} />
-              </div>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: T.signal }}>{fmt(77865.69)}</div>
-            <Label style={{ marginTop: 4 }}>CAPITAL EM DIVIDA</Label>
-          </Card>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {[["PRESTACAO", "485,83 EUR"], ["TAXA", "2,7%"], ["CAPITAL", "90 000 EUR"], ["PRAZO", "20 ANOS"]].map(function(pair, i) {
-              return (
-                <Card key={i} style={{ padding: "16px 20px" }}>
-                  <Label style={{ marginBottom: 4 }}>{pair[0]}</Label>
-                  <div style={{ fontSize: 15, fontWeight: 600 }}>{pair[1]}</div>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* FOOTER */}
-      <div style={{ padding: "32px 20px 48px", borderTop: "1px solid " + T.grey }}>
-        <div style={{ display: "flex", alignItems: "baseline", marginBottom: 4 }}>
-          <span style={{ fontWeight: 900, fontSize: 14 }}>PROOF</span>
-          <span style={{ fontWeight: 900, fontSize: 14, color: T.signal }}>.</span>
-        </div>
-        <div style={{ fontFamily: T.mono, fontSize: 9, color: T.grey3, letterSpacing: "0.1em" }}>CASE 001 / v0.4 / 2026.04.18</div>
+        <div style={{fontFamily:T.mono,fontSize:9,color:T.grey3,letterSpacing:"0.1em",textAlign:"center",marginTop:24}}>CASE 001 / v0.6 / 2026.04.29</div>
       </div>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+/* ── MAIN APP ── */
+function FinanceApp({session,onLogout}){
+  const[tab,setTab]=useState("overview");const[xCat,sxCat]=useState(null);const[em,sem]=useState(3);const[xExp,sxExp]=useState(null);const[sf,ssf]=useState(false);const[fd,sfd]=useState({desc:"",amount:"",category:"restauracao",date:new Date().toISOString().slice(0,10)});const[sc,ssc]=useState(false);const[sr,ssr]=useState(null);const[ae,sae]=useState([]);
+  const[apiKey,setApiKey]=useState(()=>{try{return localStorage.getItem("proof_api_key")||"";}catch{return"";}});
+  const[showSet,setShowSet]=useState(false);const[keyIn,setKeyIn]=useState(apiKey);const[showKey,setShowKey]=useState(false);
+  const saveKey=()=>{try{localStorage.setItem("proof_api_key",keyIn);}catch{}setApiKey(keyIn);setShowSet(false);};
+  const[showStmt,setShowStmt]=useState(false);const[stSc,setStSc]=useState(false);const[stR,setStR]=useState(null);const[stSel,setStSel]=useState({});
+  const stFR=useRef(null);const stCR=useRef(null);const fR=useRef(null);const cR=useRef(null);
+
+  const byC=JSON.parse(JSON.stringify(D.byCategory));const txn=JSON.parse(JSON.stringify(D.transactions));ae.forEach(e=>{if(byC[e.category])byC[e.category][3]+=e.amount;if(txn[e.category]&&txn[e.category][3])txn[e.category][3].push([e.desc,e.amount]);});
+  const gr={};D.accounts.forEach(a=>{if(!gr[a.category])gr[a.category]=[];gr[a.category].push(a);});const ct={};Object.entries(gr).forEach(([c,it])=>{ct[c]=it.reduce((s,i)=>s+i.value,0);});const ta=Object.values(ct).reduce((s,v)=>s+v,0);const nw=ta-D.loan.outstanding;const pp=((D.loan.originalCapital-D.loan.outstanding)/D.loan.originalCapital)*100;const annI=D.income.monthly*14;
+  const isQ=em===4;const mos=["JAN","FEV","MAR","ABR"];const eR=D.budget.map(b=>{const vs=byC[b.id]||[0,0,0,0];const val=isQ?vs.slice(0,3).reduce((s,v)=>s+v,0):vs[em];const lim=isQ?b.limit*3:b.limit;return{...b,value:val,limit:lim,pct:lim>0?(val/lim)*100:0,vals:vs};}).filter(r=>r.value>0).sort((a,b)=>b.value-a.value);const tEM=eR.reduce((s,r)=>s+r.value,0);
+  const fc={xtbP:10429.01,xtbT:490.53,trC:2228.09,trPM:2060.80,trRF:752.24,trS:7055.85,gop:555.88,rai:37.13};const fr={xtbP:.10,xtbT:.05,trC:.08,trPM:.07,trRF:.03,trS:.02,gop:.065,rai:.05};const mc2={xtbP:0,xtbT:0,trC:200,trPM:100,trRF:100,trS:100,gop:0,rai:0};
+  const proj=[];let cv={...fc};const e26=pjY(cv,mc2,fr,8);proj.push({year:2026,total:Object.values(e26).reduce((s,v)=>s+v,0),values:e26});cv=e26;for(let y=2027;y<=2031;y++){const ey=pjY(cv,mc2,fr,12);proj.push({year:y,total:Object.values(ey).reduce((s,v)=>s+v,0),values:ey});cv=ey;}
+  const xN=fc.xtbP+fc.xtbT;const xPr=proj.map(p=>({year:p.year,total:p.values.xtbP+p.values.xtbT}));const aMe=Object.values(D.byCategory).reduce((s,v)=>s+v.slice(0,3).reduce((a,b)=>a+b,0),0)/3;
+  const yF=[];let iY=annI,eY=aMe*12;for(let i=0;i<5;i++){if(i>0){iY*=1.02;eY*=1.03;}yF.push({year:2026+i,income:iY,expenses:eY,savings:iY-eY});}
+  const aD=(history[2].liquidez+history[2].poupanca+history[2].investimentos)-(history[0].liquidez+history[0].poupanca+history[0].investimentos);
+  const q1A={};Object.entries(byC).forEach(([id,v])=>{q1A[id]=v.slice(0,3).reduce((s,x)=>s+x,0)/3;});const oB=D.budget.map(b=>{const avg=q1A[b.id]||0;return{...b,avg,diff:avg-b.limit};}).filter(c=>c.diff>10).sort((a,b)=>b.diff-a.diff);const pS=oB.reduce((s,c)=>s+c.diff,0);const tI=Object.values(fc).reduce((s,v)=>s+v,0);
+  const eqP=(fc.xtbP+fc.xtbT+fc.trC)/tI*100;const fxP=(fc.trRF+fc.trS+fc.gop+fc.rai)/tI*100;const alP=fc.trPM/tI*100;
+  const sR=((D.salaries.slice(0,3).reduce((s,v)=>s+(v||0),0)-Object.values(D.byCategory).reduce((s,v)=>s+v.slice(0,3).reduce((a,b)=>a+b,0),0))/D.salaries.slice(0,3).reduce((s,v)=>s+(v||0),0)*100);
+  const eMo=(ct["Liquidez"]+(ct["Poupanca"]||0))/aMe;
+
+  const resizeImg=(f,mW=1024)=>new Promise(r=>{const img=new window.Image();const c=document.createElement("canvas");const rd=new FileReader();rd.onload=e=>{img.onload=()=>{let w=img.width,h=img.height;if(w>mW){h=h*mW/w;w=mW;}c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);r(c.toDataURL("image/jpeg",0.8).split(",")[1]);};img.src=e.target.result;};rd.readAsDataURL(f);});
+  const callAI=async(b64,prompt)=>{if(!apiKey)throw new Error("API key nao configurada.");const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:"Responde APENAS JSON puro.",messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:prompt}]}]})});if(!resp.ok)throw new Error(resp.status===401?"API key invalida.":"API "+resp.status);const d=await resp.json();const txt=(d.content||[]).filter(i=>i.type==="text").map(i=>i.text).join("");const m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error("Sem JSON.");return JSON.parse(m[0]);};
+  const handleImg=async f=>{if(!f)return;ssc(true);ssr(null);try{const b64=await resizeImg(f);const p=await callAI(b64,'Analisa recibo. JSON: {"items":[{"desc":"nome","amount":0.00}],"total":0.00,"suggested_category":"restauracao"}\nCats: restauracao,super,casa,empregada,seguros,animais,saude,telecom,carro,subs,gym,combustivel,negocio,lazer,transferencias,outros');if(p.error)ssr({error:p.error});else{ssr(p);if(p.total)sfd(f=>({...f,amount:String(p.total).replace(".",",")}));if(p.suggested_category)sfd(f=>({...f,category:p.suggested_category}));if(p.items?.length)sfd(f=>({...f,desc:p.items.map(i=>i.desc).join(", ")}));}}catch(e){ssr({error:e.message});}ssc(false);};
+  const handleStmt=async f=>{if(!f)return;setStSc(true);setStR(null);setStSel({});try{const b64=await resizeImg(f,1600);const p=await callAI(b64,'Analisa extracto bancario. Extrai TODAS as transacoes. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao","amount":-0.00,"category":"restauracao"}]}\nCats: restauracao,super,casa,empregada,seguros,animais,saude,telecom,carro,subs,gym,combustivel,negocio,lazer,transferencias,outros');if(p.error)setStR({error:p.error});else{setStR(p);const sel={};(p.transactions||[]).forEach((t,i)=>{if(t.amount<0)sel[i]=true;});setStSel(sel);}}catch(e){setStR({error:e.message});}setStSc(false);};
+  const importStmt=()=>{if(!stR?.transactions)return;const toAdd=stR.transactions.filter((_,i)=>stSel[i]).map(t=>({desc:t.desc,amount:Math.abs(t.amount),category:t.category||"outros",date:t.date?`2026-${t.date.split(".").reverse().join("-")}`:new Date().toISOString().slice(0,10)}));sae(p=>[...p,...toAdd]);setStR(null);setStSel({});setShowStmt(false);};
+  const addE=()=>{const a=parseFloat(fd.amount.replace(",","."));if(!fd.desc||isNaN(a)||a<=0)return;sae(p=>[...p,{desc:fd.desc,amount:a,category:fd.category,date:fd.date}]);sfd({desc:"",amount:"",category:"restauracao",date:new Date().toISOString().slice(0,10)});ssr(null);ssf(false);};
+
+  const tabs=[["overview","RESUMO"],["charts","GRAFICOS"],["expenses","DESPESAS"],["insights","INSIGHTS"],["forecast","PREVISAO"],["loan","CREDITO"]];
+  const Card=({children,style,signal})=><div style={{background:T.ink2,border:`1px solid ${T.grey}`,borderRadius:0,padding:"24px 20px",...(signal?{borderLeft:`3px solid ${T.signal}`}:{}),...style}}>{children}</div>;
+
+  return(<div style={{minHeight:"100vh",background:T.ink,color:T.paper,fontFamily:T.font}}>
+    {/* HEADER */}
+    <div style={{padding:"20px 20px 0",display:"flex",alignItems:"center",justifyContent:"space-between"}}><div style={{display:"flex",alignItems:"baseline"}}><span style={{fontWeight:900,fontSize:22,letterSpacing:"-0.03em"}}>PROOF</span><span style={{fontWeight:900,fontSize:22,color:T.signal}}>.</span></div>
+    <div style={{display:"flex",alignItems:"center",gap:12}}>
+      <button onClick={()=>{setKeyIn(apiKey);setShowSet(true);}} style={{background:"none",border:"none",cursor:"pointer",padding:4}}><Ic d={ic.settings} size={18} color={apiKey?T.grey2:T.signal}/></button>
+      <button onClick={onLogout} style={{background:"none",border:"none",cursor:"pointer",padding:4}}><Ic d={ic.logOut} size={18} color={T.grey3}/></button>
+      <Label>29.04.2026</Label>
+    </div></div>
+
+    {/* NET WORTH */}
+    <div style={{padding:"28px 20px 8px"}}><Label style={{marginBottom:8}}>PATRIMONIO LIQUIDO</Label><div style={{fontSize:36,fontWeight:900,letterSpacing:"-0.04em"}}>{fmt(nw)}</div><div style={{display:"flex",alignItems:"center",gap:6,marginTop:8}}><Ic d={aD>=0?ic.trendUp:ic.trendDown} size={14} color={aD>=0?T.success:T.signal}/><span style={{fontFamily:T.mono,fontSize:12,color:aD>=0?T.success:T.signal}}>{aD>=0?"+":""}{fmt(Math.abs(aD))}</span><span style={{fontFamily:T.mono,fontSize:11,color:T.grey3}}>desde 11.04</span></div></div>
+
+    {/* BAR */}
+    <div style={{padding:"12px 20px 16px"}}><div style={{display:"flex",height:4,background:T.grey}}>{Object.entries(ct).map(([c,v])=><div key={c} style={{width:`${(v/ta)*100}%`,background:acctCat[c]?.color||T.grey2}}/>)}</div></div>
+
+    {/* TABS */}
+    <div style={{display:"flex",padding:"0 20px",borderBottom:`1px solid ${T.grey}`,marginBottom:20,overflowX:"auto"}}>{tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} style={{padding:"10px 10px 8px",border:"none",borderBottom:tab===k?`2px solid ${T.paper}`:"2px solid transparent",background:"transparent",fontFamily:T.mono,fontSize:10,fontWeight:500,letterSpacing:"0.1em",color:tab===k?T.paper:T.grey3,cursor:"pointer",whiteSpace:"nowrap"}}>{l}</button>)}</div>
+
+    {/* OVERVIEW */}
+    {tab==="overview"&&<div style={{padding:"0 20px 40px"}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}><Card><Label style={{marginBottom:6}}>ATIVOS</Label><div style={{fontSize:18,fontWeight:700,color:T.success}}>{fmt(ta)}</div></Card><Card signal><Label style={{marginBottom:6}}>DIVIDA</Label><div style={{fontSize:18,fontWeight:700,color:T.signal}}>{fmt(D.loan.outstanding)}</div></Card></div>
+    {Object.entries(gr).map(([cat,items])=><div key={cat} style={{marginBottom:8}}><button onClick={()=>sxCat(xCat===cat?null:cat)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:T.ink2,border:`1px solid ${T.grey}`,borderRadius:0,padding:"16px 20px",cursor:"pointer",color:T.paper}}><div style={{textAlign:"left"}}><div style={{fontSize:14,fontWeight:700,textTransform:"uppercase"}}>{cat}</div><Label style={{marginTop:2}}>{items.length} CONTAS</Label></div><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{fontFamily:T.mono,fontSize:16,fontWeight:700}}>{fmt(ct[cat])}</div><Ic d={ic.chevDown} size={16} color={T.grey2} style={{transform:xCat===cat?"rotate(180deg)":"",transition:"transform 200ms"}}/></div></button>
+    {xCat===cat&&<div style={{background:T.ink2,border:`1px solid ${T.grey}`,borderTop:"none"}}>{items.map((item,i)=><div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",borderTop:`1px solid ${T.grey}`}}><div><div style={{fontSize:13,fontWeight:600}}>{item.bank}</div><div style={{fontSize:12,color:T.grey2}}>{item.type}</div>{item.note&&<div style={{fontFamily:T.mono,fontSize:10,color:T.grey3,marginTop:2}}>{item.note}</div>}</div><div style={{fontFamily:T.mono,fontSize:14,fontWeight:500}}>{fmt(item.value)}</div></div>)}</div>}</div>)}</div>}
+
+    {/* CHARTS */}
+    {tab==="charts"&&<div style={{padding:"0 20px 40px"}}><Card style={{marginBottom:12}}><Label style={{marginBottom:16}}>EVOLUCAO PATRIMONIAL</Label><MiniChart data={history.map(h=>h.liquidez+h.poupanca+h.investimentos)} color={T.success} label="Ativos Totais"/><MiniChart data={history.map(h=>(h.liquidez+h.poupanca+h.investimentos)-h.divida)} color={T.paper} label="Patrimonio Liquido"/></Card><Card style={{marginBottom:12}}><Label style={{marginBottom:16}}>INVESTIMENTOS</Label><MiniChart data={history.map(h=>h.xtbPlans)} color={T.success} label="XTB Planos"/><MiniChart data={history.map(h=>h.xtbTrans)} color="#F59E0B" label="XTB Transacoes"/><MiniChart data={history.map(h=>h.trCorr)} color="#3B82F6" label="TR Corretagem"/></Card>
+    <Card><Label style={{marginBottom:16}}>DESPESAS MENSAIS</Label><div style={{display:"flex",alignItems:"flex-end",gap:8,height:120}}>{mos.map((m,i)=>{const total=Object.values(D.byCategory).reduce((s,v)=>s+(v[i]||0),0);const h=Math.max((total/2200)*100,4);return<div key={i} style={{flex:1,textAlign:"center"}}><div style={{fontFamily:T.mono,fontSize:10,marginBottom:4,color:i===3?T.signal:T.paper}}>{fmtK(total)}</div><div style={{height:`${h}%`,background:i===3?T.signal:T.paper,opacity:i===3?1:0.15}}/><div style={{fontFamily:T.mono,fontSize:9,color:T.grey2,marginTop:6,letterSpacing:"0.1em"}}>{m}</div></div>;})}</div></Card></div>}
+
+    {/* EXPENSES */}
+    {tab==="expenses"&&<div style={{padding:"0 20px 100px"}}><div style={{display:"flex",marginBottom:16,border:`1px solid ${T.grey}`}}>{mos.map((m,i)=><button key={i} onClick={()=>{sem(i);sxExp(null);}} style={{flex:1,padding:"10px 0",border:"none",borderRight:i<3?`1px solid ${T.grey}`:"none",fontFamily:T.mono,fontSize:10,fontWeight:500,letterSpacing:"0.1em",cursor:"pointer",background:em===i?T.paper:"transparent",color:em===i?T.ink:T.grey2}}>{m}</button>)}<button onClick={()=>{sem(4);sxExp(null);}} style={{flex:1,padding:"10px 0",border:"none",borderLeft:`1px solid ${T.grey}`,fontFamily:T.mono,fontSize:10,fontWeight:500,letterSpacing:"0.1em",cursor:"pointer",background:em===4?T.paper:"transparent",color:em===4?T.ink:T.grey2}}>Q1</button></div>
+    <Card style={{marginBottom:16}}><div style={{display:"flex",justifyContent:"space-between"}}><div><Label>{isQ?"DESPESAS Q1":`DESPESAS ${mos[em]}`}</Label><div style={{fontSize:24,fontWeight:900,marginTop:4,fontFamily:T.mono}}>{fmt(tEM)}</div></div>{!isQ&&em<3&&D.salaries[em]&&<div style={{textAlign:"right"}}><Label>SALARIO</Label><div style={{fontSize:18,fontWeight:700,color:T.success,marginTop:4,fontFamily:T.mono}}>{fmt(D.salaries[em])}</div></div>}</div>{em===3&&<div style={{display:"flex",alignItems:"center",gap:6,marginTop:10}}><Ic d={ic.alert} size={12} color={T.signal}/><span style={{fontFamily:T.mono,fontSize:10,color:T.signal}}>ABRIL PARCIAL</span></div>}</Card>
+    {eR.map(r=>{const isE=xExp===r.id;const ov=r.pct>100;const cI=catIc[r.id]||catIc.outros;return<div key={r.id} style={{marginBottom:4}}><button onClick={()=>sxExp(isE?null:r.id)} style={{width:"100%",display:"flex",alignItems:"center",background:T.ink2,border:`1px solid ${T.grey}`,borderRadius:0,padding:"12px 16px",cursor:"pointer",color:T.paper}}><Ic d={cI} size={16} color={T.grey2} style={{marginRight:12,flexShrink:0}}/><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:13,fontWeight:600}}>{r.name}</span><div><span style={{fontFamily:T.mono,fontSize:13,fontWeight:600}}>{fmt(r.value)}</span><span style={{fontFamily:T.mono,fontSize:11,color:T.grey3,marginLeft:4}}>/ {fmt(r.limit)}</span></div></div><div style={{marginTop:6,height:3,background:T.grey}}><div style={{height:"100%",width:`${Math.min(r.pct,100)}%`,background:ov?T.signal:r.pct>75?"#F59E0B":T.paper,opacity:ov?1:0.6}}/></div><div style={{display:"flex",justifyContent:"space-between",marginTop:4}}><span style={{fontFamily:T.mono,fontSize:10,color:ov?T.signal:T.grey2}}>{r.pct.toFixed(0)}%</span>{ov?<span style={{fontFamily:T.mono,fontSize:10,color:T.signal}}>+{fmt(r.value-r.limit)}</span>:<span style={{fontFamily:T.mono,fontSize:10,color:T.success}}>Resta {fmt(r.limit-r.value)}</span>}</div></div></button>
+    {isE&&(()=>{const mt=isQ?[]:(txn[r.id]&&txn[r.id][em]?txn[r.id][em]:[]);return<div style={{background:T.ink2,border:`1px solid ${T.grey}`,borderTop:"none",padding:"12px 16px"}}>{mt.length>0&&<div style={{marginBottom:12}}>{mt.map(([d,v],ti)=><div key={ti} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderTop:ti>0?`1px solid ${T.grey}`:"none"}}><span style={{fontSize:12,color:T.paper2}}>{d}</span><span style={{fontFamily:T.mono,fontSize:12,fontWeight:500}}>{fmt(v)}</span></div>)}</div>}<div style={{display:"flex",gap:8,paddingTop:10,borderTop:`1px solid ${T.grey}`}}>{mos.map((m,mi)=>{const v=r.vals[mi]||0;const l=D.budget.find(b=>b.id===r.id);const lm=l?l.limit:0;return<div key={mi} style={{flex:1,textAlign:"center"}}><Label style={{fontSize:9}}>{m}</Label><div style={{fontFamily:T.mono,fontSize:11,fontWeight:500,marginTop:2,color:mi===em?T.paper:v>lm?T.signal:T.grey3}}>{fmt(v)}</div></div>;})}</div></div>;})()}</div>;})}
+    <div style={{position:"fixed",bottom:24,right:20,display:"flex",gap:8,zIndex:50}}>
+      <button onClick={()=>setShowStmt(true)} style={{width:48,height:48,border:`1px solid ${T.grey}`,background:T.ink2,color:T.grey2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:0}}><Ic d={ic.doc} size={20}/></button>
+      <button onClick={()=>ssf(true)} style={{width:48,height:48,border:`1px solid ${T.paper}`,background:T.ink,color:T.paper,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:0}}><Ic d={ic.plus} size={20}/></button>
+    </div></div>}
+
+    {/* ADD FORM */}
+    {sf&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:100,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}><div style={{background:T.ink2,borderTop:`1px solid ${T.grey}`,padding:"24px 20px 32px",maxHeight:"90vh",overflow:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}><div style={{fontSize:16,fontWeight:700,textTransform:"uppercase"}}>ADICIONAR DESPESA</div><button onClick={()=>{ssf(false);ssr(null);}} style={{background:"none",border:"none",color:T.grey2,cursor:"pointer"}}><Ic d={ic.x} size={20}/></button></div>
+    {apiKey?<div style={{display:"flex",gap:8,marginBottom:20}}><input ref={cR} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files?.[0])handleImg(e.target.files[0]);}}/><input ref={fR} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files?.[0])handleImg(e.target.files[0]);}}/><button onClick={()=>cR.current?.click()} disabled={sc} style={{flex:1,padding:12,border:`1px solid ${T.grey}`,background:"transparent",color:T.paper,fontFamily:T.mono,fontSize:11,fontWeight:500,letterSpacing:"0.05em",textTransform:"uppercase",cursor:"pointer",borderRadius:0}}><Ic d={ic.camera} size={16}/> CAMARA</button><button onClick={()=>fR.current?.click()} disabled={sc} style={{flex:1,padding:12,border:`1px solid ${T.grey}`,background:"transparent",color:T.paper,fontFamily:T.mono,fontSize:11,fontWeight:500,letterSpacing:"0.05em",textTransform:"uppercase",cursor:"pointer",borderRadius:0}}><Ic d={ic.image} size={16}/> GALERIA</button></div>:<div style={{border:`1px solid ${T.grey}`,padding:12,marginBottom:16}}><Label style={{color:T.grey2}}>SCANNER INDISPONIVEL — CONFIGURA API KEY</Label></div>}
+    {sc&&<div style={{border:`1px solid ${T.grey}`,padding:16,marginBottom:16,textAlign:"center"}}><Label>A PROCESSAR.</Label></div>}
+    {sr&&!sr.error&&<div style={{border:`1px solid ${T.success}30`,borderLeft:`3px solid ${T.success}`,padding:12,marginBottom:16}}><Label style={{color:T.success,marginBottom:8}}>RECIBO ANALISADO</Label>{sr.items?.map((item,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:T.paper2,padding:"3px 0"}}><span>{item.desc}</span><span style={{fontFamily:T.mono}}>{fmt(item.amount)}</span></div>)}</div>}
+    {sr?.error&&<div style={{border:`1px solid ${T.signal}30`,borderLeft:`3px solid ${T.signal}`,padding:12,marginBottom:16}}><Label style={{color:T.signal}}>{sr.error}</Label></div>}
+    <div style={{marginBottom:16}}><Label style={{marginBottom:6}}>CATEGORIA</Label><select value={fd.category} onChange={e=>sfd({...fd,category:e.target.value})} style={{width:"100%",padding:"12px 16px",border:`1px solid ${T.grey}`,background:T.ink2,color:T.paper,fontSize:14,fontWeight:500,borderRadius:0,appearance:"none"}}>{D.budget.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
+    <div style={{marginBottom:16}}><Label style={{marginBottom:6}}>DESCRICAO</Label><input value={fd.desc} onChange={e=>sfd({...fd,desc:e.target.value})} placeholder="Ex: Pingo Doce" style={{width:"100%",padding:"12px 16px",border:`1px solid ${T.grey}`,background:T.ink2,color:T.paper,fontSize:15,fontWeight:500,borderRadius:0,boxSizing:"border-box"}}/></div>
+    <div style={{display:"flex",gap:12,marginBottom:16}}><div style={{flex:1}}><Label style={{marginBottom:6}}>VALOR (EUR)</Label><input value={fd.amount} onChange={e=>sfd({...fd,amount:e.target.value})} placeholder="0,00" inputMode="decimal" style={{width:"100%",padding:"12px 16px",border:`1px solid ${T.grey}`,background:T.ink2,color:T.paper,fontFamily:T.mono,fontSize:18,fontWeight:600,borderRadius:0,boxSizing:"border-box"}}/></div><div style={{flex:1}}><Label style={{marginBottom:6}}>DATA</Label><input value={fd.date} onChange={e=>sfd({...fd,date:e.target.value})} type="date" style={{width:"100%",padding:"12px 16px",border:`1px solid ${T.grey}`,background:T.ink2,color:T.paper,fontFamily:T.mono,fontSize:14,borderRadius:0,boxSizing:"border-box"}}/></div></div>
+    {(()=>{const b=D.budget.find(x=>x.id===fd.category);if(!b)return null;const cur=byC[b.id]?byC[b.id][3]:0;const nv=parseFloat((fd.amount||"0").replace(",","."))||0;const af=cur+nv;const p=(af/b.limit)*100;const ov=af>b.limit;return<div style={{border:`1px solid ${T.grey}`,padding:12,marginBottom:16}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><Label>{b.name} EM ABRIL</Label><span style={{fontFamily:T.mono,fontSize:12,color:ov?T.signal:T.success}}>{fmt(af)} / {fmt(b.limit)}</span></div><div style={{height:3,background:T.grey}}><div style={{height:"100%",width:`${Math.min(p,100)}%`,background:ov?T.signal:T.paper}}/></div></div>;})()}
+    <button onClick={addE} disabled={!fd.desc||!fd.amount} style={{width:"100%",padding:"14px 0",border:fd.desc&&fd.amount?`1px solid ${T.paper}`:`1px solid ${T.grey}`,background:fd.desc&&fd.amount?T.ink:"transparent",color:fd.desc&&fd.amount?T.paper:T.grey3,fontSize:13,fontWeight:700,letterSpacing:"0.05em",textTransform:"uppercase",cursor:"pointer",borderRadius:0}}>ADICIONAR DESPESA</button></div></div>}
+
+    {/* SETTINGS */}
+    {showSet&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}><div style={{background:T.ink2,borderTop:`1px solid ${T.grey}`,padding:"24px 20px 32px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}><div style={{fontSize:16,fontWeight:700,textTransform:"uppercase"}}>DEFINICOES</div><button onClick={()=>setShowSet(false)} style={{background:"none",border:"none",color:T.grey2,cursor:"pointer"}}><Ic d={ic.x} size={20}/></button></div>
+    <Label style={{marginBottom:6}}>ANTHROPIC API KEY</Label><div style={{fontSize:12,color:T.grey3,marginBottom:12}}>Obtem em console.anthropic.com. Guardada no browser.</div>
+    <div style={{display:"flex",gap:8,marginBottom:16}}><input value={keyIn} onChange={e=>setKeyIn(e.target.value)} type={showKey?"text":"password"} placeholder="sk-ant-..." style={{flex:1,padding:"12px 16px",border:`1px solid ${T.grey}`,background:T.ink,color:T.paper,fontFamily:T.mono,fontSize:13,borderRadius:0,boxSizing:"border-box"}}/><button onClick={()=>setShowKey(!showKey)} style={{padding:"0 12px",border:`1px solid ${T.grey}`,background:"transparent",color:T.grey2,fontFamily:T.mono,fontSize:10,letterSpacing:"0.1em",cursor:"pointer",borderRadius:0}}>{showKey?"OCULTAR":"MOSTRAR"}</button></div>
+    {apiKey&&<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,padding:"10px 12px",borderLeft:`3px solid ${T.success}`}}><div style={{width:8,height:8,background:T.success}}/><Label style={{color:T.success}}>KEY CONFIGURADA</Label></div>}
+    <button onClick={saveKey} disabled={!keyIn} style={{width:"100%",padding:"14px 0",border:keyIn?`1px solid ${T.paper}`:`1px solid ${T.grey}`,background:keyIn?T.ink:"transparent",color:keyIn?T.paper:T.grey3,fontSize:13,fontWeight:700,letterSpacing:"0.05em",textTransform:"uppercase",cursor:"pointer",borderRadius:0,marginBottom:12}}>GUARDAR KEY</button>
+    {apiKey&&<button onClick={()=>{setKeyIn("");try{localStorage.removeItem("proof_api_key");}catch{}setApiKey("");}} style={{width:"100%",padding:"12px 0",border:`1px solid ${T.signal}30`,background:"transparent",color:T.signal,fontFamily:T.mono,fontSize:11,cursor:"pointer",borderRadius:0}}>REMOVER KEY</button>}
+    </div></div>}
+
+    {/* STATEMENT IMPORT */}
+    {showStmt&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}><div style={{background:T.ink2,borderTop:`1px solid ${T.grey}`,padding:"24px 20px 32px",maxHeight:"90vh",overflow:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}><div style={{fontSize:16,fontWeight:700,textTransform:"uppercase"}}>IMPORTAR EXTRACTO</div><button onClick={()=>{setShowStmt(false);setStR(null);}} style={{background:"none",border:"none",color:T.grey2,cursor:"pointer"}}><Ic d={ic.x} size={20}/></button></div>
+    {!apiKey&&<div style={{borderLeft:`3px solid ${T.signal}`,padding:12,marginBottom:16}}><Label style={{color:T.signal}}>API KEY NECESSARIA</Label></div>}
+    {apiKey&&!stR&&!stSc&&<><div style={{fontSize:12,color:T.grey2,marginBottom:16}}>Fotografa ou carrega imagem do extracto.</div><div style={{display:"flex",gap:8,marginBottom:16}}><input ref={stCR} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files?.[0])handleStmt(e.target.files[0]);}}/><input ref={stFR} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files?.[0])handleStmt(e.target.files[0]);}}/><button onClick={()=>stCR.current?.click()} style={{flex:1,padding:16,border:`1px solid ${T.grey}`,background:"transparent",color:T.paper,fontFamily:T.mono,fontSize:11,letterSpacing:"0.05em",textTransform:"uppercase",cursor:"pointer",borderRadius:0,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}><Ic d={ic.camera} size={24}/>CAMARA</button><button onClick={()=>stFR.current?.click()} style={{flex:1,padding:16,border:`1px solid ${T.grey}`,background:"transparent",color:T.paper,fontFamily:T.mono,fontSize:11,letterSpacing:"0.05em",textTransform:"uppercase",cursor:"pointer",borderRadius:0,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}><Ic d={ic.image} size={24}/>GALERIA</button></div></>}
+    {stSc&&<div style={{border:`1px solid ${T.grey}`,padding:24,textAlign:"center"}}><Label>A PROCESSAR EXTRACTO.</Label></div>}
+    {stR?.error&&<div style={{borderLeft:`3px solid ${T.signal}`,padding:12,marginBottom:16}}><Label style={{color:T.signal}}>{stR.error}</Label></div>}
+    {stR?.transactions&&<><div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}><Label>{stR.bank||"EXTRACTO"} — {stR.transactions.length} TRANSACOES</Label></div><div style={{maxHeight:"40vh",overflow:"auto",marginBottom:16}}>{stR.transactions.map((t,i)=>{const sel=!!stSel[i];const isD=t.amount<0;const bI=D.budget.find(b=>b.id===t.category);return<button key={i} onClick={()=>setStSel(p=>{const n={...p};if(n[i])delete n[i];else n[i]=true;return n;})} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"10px 12px",border:`1px solid ${sel?T.paper:T.grey}`,borderTop:i>0?"none":undefined,background:sel?T.ink3:"transparent",color:T.paper,cursor:"pointer",borderRadius:0,textAlign:"left"}}><div style={{width:16,height:16,border:`1.5px solid ${sel?T.paper:T.grey}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:8,height:8,background:T.paper}}/>}</div><div style={{flex:1,minWidth:0}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:12,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"60%"}}>{t.desc}</span><span style={{fontFamily:T.mono,fontSize:12,fontWeight:600,color:isD?T.paper:T.success}}>{isD?"-":"+"}{fmt(Math.abs(t.amount))}</span></div><div style={{display:"flex",gap:8,marginTop:3}}><span style={{fontFamily:T.mono,fontSize:10,color:T.grey3}}>{t.date}</span>{bI&&<span style={{fontFamily:T.mono,fontSize:10,color:T.grey2}}>{bI.name}</span>}</div></div></button>;})}</div><div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}><Label>{Object.keys(stSel).length} SELECCIONADAS</Label><Label style={{color:T.paper}}>{fmt(stR.transactions.filter((_,i)=>stSel[i]).reduce((s,t)=>s+Math.abs(t.amount),0))}</Label></div><button onClick={importStmt} disabled={Object.keys(stSel).length===0} style={{width:"100%",padding:"14px 0",border:Object.keys(stSel).length>0?`1px solid ${T.paper}`:`1px solid ${T.grey}`,background:Object.keys(stSel).length>0?T.ink:"transparent",color:Object.keys(stSel).length>0?T.paper:T.grey3,fontSize:13,fontWeight:700,letterSpacing:"0.05em",textTransform:"uppercase",cursor:"pointer",borderRadius:0}}>IMPORTAR SELECCIONADAS</button></>}
+    </div></div>}
+
+    {/* INSIGHTS */}
+    {tab==="insights"&&<div style={{padding:"0 20px 40px"}}><Card style={{marginBottom:12,textAlign:"center"}}><Label style={{marginBottom:12}}>SAUDE FINANCEIRA</Label><div style={{fontSize:56,fontWeight:900,color:sR>15?T.success:"#F59E0B"}}>{sR>15?"B+":sR>5?"C+":"D"}</div><div style={{fontFamily:T.mono,fontSize:12,color:T.grey2,marginTop:8}}>Poupanca {sR.toFixed(1)}% / Emergencia {eMo.toFixed(1)} meses</div></Card>
+    <Card style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}><div style={{display:"flex",alignItems:"center",gap:8}}><Ic d={ic.scissors} size={16}/><span style={{fontSize:14,fontWeight:700,textTransform:"uppercase"}}>CORTES</span></div><span style={{fontFamily:T.mono,fontSize:12,color:T.success}}>-{fmt(pS)}/mes</span></div>{oB.map((c,i)=><div key={c.id} style={{padding:"12px 0",borderTop:`1px solid ${T.grey}`}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,fontWeight:600}}>{c.name}</span><span style={{fontFamily:T.mono,fontSize:12,color:T.signal}}>+{fmt(c.diff)}/mes</span></div><div style={{fontSize:12,color:T.grey2}}>{c.id==="restauracao"?"Cozinhar mais. -100 EUR/mes.":c.id==="super"?"Lista semanal. Marcas brancas.":"Rever limite."}</div></div>)}</Card>
+    <Card style={{marginBottom:12}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}><Ic d={ic.barChart} size={16}/><span style={{fontSize:14,fontWeight:700,textTransform:"uppercase"}}>PORTFOLIO</span></div><div style={{display:"flex",height:6,background:T.grey,marginBottom:8}}><div style={{width:`${eqP}%`,background:T.success}}/><div style={{width:`${fxP}%`,background:"#3B82F6"}}/><div style={{width:`${alP}%`,background:"#8B5CF6"}}/></div>
+    {[{t:"AXON: Cortar perdas",c:T.signal,d:"Redistribuir para XTB Planos."},{t:"XTB Planos: Reforcar",c:T.success,d:"Meta: 200 EUR/mes."},{t:"TR Poupanca: Otimizar",c:"#3B82F6",d:"3.500 EUR emergencia, resto Rend.Fixo."},{t:"Credito: Nao amortizar",c:T.paper2,d:"Investimentos rendem +8%."}].map((r,i)=><div key={i} style={{padding:"12px 0",borderTop:`1px solid ${T.grey}`}}><div style={{fontFamily:T.mono,fontSize:11,color:r.c,marginBottom:4}}>{r.t}</div><div style={{fontSize:12,color:T.grey2}}>{r.d}</div></div>)}</Card>
+    <Card><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}><Ic d={ic.trophy} size={16}/><span style={{fontSize:14,fontWeight:700,textTransform:"uppercase"}}>CENARIOS 5 ANOS</span></div>{[{l:"SEM MUDANCAS",m:550,r:0.07},{l:"COM OTIMIZACAO",m:750,r:0.08},{l:"AGRESSIVO",m:1000,r:0.09}].map((s,i)=>{let v=tI;for(let m=0;m<60;m++)v=v*(1+s.r/12)+s.m;return<div key={i} style={{padding:"12px 0",borderTop:`1px solid ${T.grey}`,display:"flex",justifyContent:"space-between"}}><div><Label>{s.l}</Label><div style={{fontFamily:T.mono,fontSize:11,color:T.grey3,marginTop:2}}>{fmt(s.m)}/mes</div></div><div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:900}}>{fmtK(v)}</div><div style={{fontFamily:T.mono,fontSize:10,color:T.success}}>+{fmtK(v-tI)}</div></div></div>;})}</Card></div>}
+
+    {/* FORECAST */}
+    {tab==="forecast"&&<div style={{padding:"0 20px 40px"}}><Card style={{marginBottom:12}}><Label style={{marginBottom:16}}>RECEITAS VS DESPESAS</Label>{yF.map((y,i)=><div key={y.year} style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontFamily:T.mono,fontSize:12,fontWeight:600,color:i===0?T.paper:T.grey2}}>{y.year}</span><span style={{fontFamily:T.mono,fontSize:11,color:T.success}}>+{fmtK(y.savings)}</span></div><div style={{display:"flex",gap:4}}><div style={{flex:1}}><div style={{height:4,background:T.success,opacity:0.3+0.7*y.income/yF[4].income}}/></div><div style={{flex:1}}><div style={{height:4,background:T.signal,opacity:0.3+0.7*y.expenses/yF[4].expenses}}/></div></div></div>)}</Card>
+    <Card style={{marginBottom:12}}><Label style={{marginBottom:16}}>XTB PROJECAO</Label>{xPr.map((p,i)=><div key={p.year} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderTop:i>0?`1px solid ${T.grey}`:"none"}}><span style={{fontFamily:T.mono,fontSize:12}}>{p.year}</span><div><span style={{fontFamily:T.mono,fontSize:14,fontWeight:600}}>{fmtK(p.total)}</span><span style={{fontFamily:T.mono,fontSize:10,color:T.success,marginLeft:8}}>+{fmtK(p.total-xN)}</span></div></div>)}</Card>
+    <Card><Label style={{marginBottom:16}}>INVESTIMENTOS TOTAIS</Label>{proj.map((p,i)=><div key={p.year} style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontFamily:T.mono,fontSize:12}}>{p.year}</span><span style={{fontFamily:T.mono,fontSize:12,fontWeight:600}}>{fmtK(p.total)}</span></div><div style={{height:4,background:T.grey}}><div style={{height:"100%",width:`${(p.total/proj[5].total)*100}%`,background:T.success}}/></div></div>)}</Card></div>}
+
+    {/* LOAN */}
+    {tab==="loan"&&<div style={{padding:"0 20px 40px"}}><Card signal style={{marginBottom:12}}><Label style={{marginBottom:6}}>CREDITO HABITACAO</Label><div style={{fontSize:13,color:T.grey2,marginBottom:16}}>Bankinter / Taxa Fixa</div><div style={{marginBottom:16}}><div style={{display:"flex",justifyContent:"space-between",fontFamily:T.mono,fontSize:11,color:T.grey2,marginBottom:6}}><span>Pago: {fmt(90000-77555.06)}</span><span>{pp.toFixed(1)}%</span></div><div style={{height:4,background:T.grey}}><div style={{height:"100%",width:`${pp}%`,background:T.success}}/></div></div><div style={{fontSize:28,fontWeight:900,color:T.signal}}>{fmt(77555.06)}</div><Label style={{marginTop:4}}>CAPITAL EM DIVIDA</Label></Card>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{[["PRESTACAO","485,83 EUR"],["PROXIMA","28.05.2026"],["TAXA","2,7%"],["TIPO","TAXA FIXA"],["CAPITAL","90 000 EUR"],["PRAZO","20 ANOS"]].map(([l,v],i)=><Card key={i} style={{padding:"16px 20px"}}><Label style={{marginBottom:4}}>{l}</Label><div style={{fontSize:15,fontWeight:600}}>{v}</div></Card>)}</div></div>}
+
+    {/* FOOTER */}
+    <div style={{padding:"32px 20px 48px",borderTop:`1px solid ${T.grey}`}}><div style={{display:"flex",alignItems:"baseline"}}><span style={{fontWeight:900,fontSize:14}}>PROOF</span><span style={{fontWeight:900,fontSize:14,color:T.signal}}>.</span></div><div style={{fontFamily:T.mono,fontSize:9,color:T.grey3,letterSpacing:"0.1em",marginTop:4}}>CASE 001 / v0.6 / 2026.04.29</div></div>
+  </div>);
+}
+
+/* ── ROOT ── */
+function Root(){
+  const[session,setSession]=useState(null);
+  const[loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    supabase.auth.getSession().then(({data:{session}})=>{setSession(session);setLoading(false);});
+    const{data:{subscription}}=supabase.auth.onAuthStateChange((_,session)=>{setSession(session);});
+    return()=>subscription.unsubscribe();
+  },[]);
+
+  const handleLogout=async()=>{await supabase.auth.signOut();setSession(null);};
+
+  if(loading)return<div style={{minHeight:"100vh",background:T.ink,display:"flex",alignItems:"center",justifyContent:"center"}}><Label>A CARREGAR.</Label></div>;
+  if(!session)return<LoginScreen onLogin={setSession}/>;
+  return<FinanceApp session={session} onLogout={handleLogout}/>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
 </script>
 </body>
 </html>
