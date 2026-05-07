@@ -93,6 +93,12 @@ function e(s){return s==null?"":String(s).replace(/&/g,"&amp;").replace(/</g,"&l
 
 /* ══ STATE ══ */
 var tab="overview",xCat=null,em=3,xExp=null;
+var apiKey="";try{apiKey=localStorage.getItem("proof_api_key")||"";}catch(x){}
+var showSet=false,showStmt=false,showAdd=false;
+var stScanning=false,stResult=null,stSel={};
+var scScanning=false,scResult=null;
+var addData={desc:"",amount:"",cat:"rest",date:new Date().toISOString().slice(0,10)};
+var addedExp=[];
 
 /* ══ SVG CHART ══ */
 function chrt(data,color,label){
@@ -156,9 +162,12 @@ function rCharts(){
 
 function rExpenses(){
   var ms=["JAN","FEV","MAR","ABR"],isQ=em===4;
+  // Clone byC and add manual expenses
+  var eByC={};Object.keys(byC).forEach(function(k){eByC[k]=byC[k].slice();});
+  addedExp.forEach(function(x){if(eByC[x.cat])eByC[x.cat][3]+=x.amount;});
   var rows=[];
   bdg.forEach(function(b){
-    var vs=byC[b.id]||[0,0,0,0];
+    var vs=eByC[b.id]||[0,0,0,0];
     var val=isQ?vs[0]+vs[1]+vs[2]:vs[em];
     var lm=isQ?b.lm*3:b.lm;
     if(val>0)rows.push({id:b.id,nm:b.nm,val:val,lm:lm,pct:lm>0?(val/lm)*100:0,vs:vs});
@@ -166,7 +175,7 @@ function rExpenses(){
   rows.sort(function(a,b){return b.val-a.val});
   var tE=0;rows.forEach(function(r){tE+=r.val});
 
-  var o='<div style="padding:0 20px 40px"><div class="ms-bar">';
+  var o='<div style="padding:0 20px 100px"><div class="ms-bar">';
   ms.forEach(function(m,i){
     o+='<button class="ms'+(em===i?" on":"")+'" onclick="T(\'em\','+i+')" style="'+(i<3?"border-right:1px solid var(--grey)":"")+'">' +m+'</button>';
   });
@@ -200,6 +209,11 @@ function rExpenses(){
     }
     o+='</div>';
   });
+  // FAB buttons
+  o+='<div style="position:fixed;bottom:24px;right:20px;display:flex;gap:8px;z-index:50">';
+  o+='<button onclick="showStmt=true;render()" style="width:48px;height:48px;border:1px solid var(--grey);background:var(--ink2);color:var(--grey2);display:flex;align-items:center;justify-content:center" title="Importar extracto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>';
+  o+='<button onclick="showAdd=true;render()" style="width:48px;height:48px;border:1px solid var(--paper);background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg></button>';
+  o+='</div>';
   return o+'</div>';
 }
 
@@ -217,6 +231,161 @@ function rLoan(){
   return o+'</div></div>';
 }
 
+/* ══ AI SCANNER ══ */
+function resizeImg(file,maxW){
+  maxW=maxW||1024;
+  return new Promise(function(resolve){
+    var img=new Image(),cnv=document.createElement("canvas"),rd=new FileReader();
+    rd.onload=function(ev){img.onload=function(){var w=img.width,h=img.height;if(w>maxW){h=h*maxW/w;w=maxW;}cnv.width=w;cnv.height=h;cnv.getContext("2d").drawImage(img,0,0,w,h);resolve(cnv.toDataURL("image/jpeg",0.8).split(",")[1]);};img.src=ev.target.result;};
+    rd.readAsDataURL(file);
+  });
+}
+function callAI(b64,prompt,cb){
+  if(!apiKey){cb({error:"API key nao configurada. Abre Definicoes."});return;}
+  fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:"Responde APENAS JSON puro. Sem markdown, sem backticks.",messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:prompt}]}]})
+  }).then(function(r){if(!r.ok)throw new Error(r.status===401?"API key invalida.":"Erro API "+r.status);return r.json();})
+  .then(function(d){var txt=(d.content||[]).filter(function(i){return i.type==="text"}).map(function(i){return i.text}).join("");var m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error("Sem JSON.");cb(JSON.parse(m[0]));})
+  .catch(function(err){cb({error:err.message});});
+}
+
+/* ══ SETTINGS MODAL ══ */
+function rSettings(){
+  var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:flex;flex-direction:column;justify-content:flex-end">';
+  o+='<div style="background:var(--ink2);border-top:1px solid var(--grey);padding:24px 20px 32px">';
+  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">DEFINICOES</div><button onclick="showSet=false;render()" style="background:none;border:none;color:var(--grey2);font-size:20px">✕</button></div>';
+  o+='<div class="lb" style="margin-bottom:6px">ANTHROPIC API KEY</div>';
+  o+='<div style="font-size:12px;color:var(--grey3);margin-bottom:12px">Obtem em console.anthropic.com. Guardada apenas no teu browser.</div>';
+  o+='<div style="display:flex;gap:8px;margin-bottom:16px"><input id="ki" type="password" value="'+e(apiKey)+'" placeholder="sk-ant-..." style="flex:1;padding:12px 16px;border:1px solid var(--grey);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:13px;box-sizing:border-box"/>';
+  o+='<button onclick="var el=document.getElementById(\'ki\');el.type=el.type===\'password\'?\'text\':\'password\'" style="padding:0 12px;border:1px solid var(--grey);background:transparent;color:var(--grey2);font-family:var(--mono);font-size:10px;letter-spacing:0.1em">VER</button></div>';
+  if(apiKey)o+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-left:3px solid var(--success)"><div style="width:8px;height:8px;background:var(--success)"></div><div class="lb" style="color:var(--success)">KEY CONFIGURADA</div></div>';
+  else o+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-left:3px solid var(--signal)"><div style="width:8px;height:8px;background:var(--signal)"></div><div class="lb" style="color:var(--signal)">SEM KEY — SCANNER INACTIVO</div></div>';
+  o+='<button onclick="apiKey=document.getElementById(\'ki\').value;try{localStorage.setItem(\'proof_api_key\',apiKey)}catch(x){};showSet=false;render()" style="width:100%;padding:14px 0;border:1px solid var(--paper);background:var(--ink);color:var(--paper);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:12px">GUARDAR KEY</button>';
+  if(apiKey)o+='<button onclick="apiKey=\'\';try{localStorage.removeItem(\'proof_api_key\')}catch(x){};showSet=false;render()" style="width:100%;padding:12px 0;border:1px solid rgba(255,59,48,0.3);background:transparent;color:var(--signal);font-family:var(--mono);font-size:11px">REMOVER KEY</button>';
+  o+='</div></div>';
+  return o;
+}
+
+/* ══ ADD EXPENSE MODAL ══ */
+function rAddExp(){
+  var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:flex;flex-direction:column;justify-content:flex-end">';
+  o+='<div style="background:var(--ink2);border-top:1px solid var(--grey);padding:24px 20px 32px;max-height:90vh;overflow:auto">';
+  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">ADICIONAR DESPESA</div><button onclick="showAdd=false;scResult=null;render()" style="background:none;border:none;color:var(--grey2);font-size:20px">✕</button></div>';
+  // Scanner buttons
+  if(apiKey){
+    o+='<div style="display:flex;gap:8px;margin-bottom:20px">';
+    o+='<input id="scCam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanReceipt(this)"/>';
+    o+='<input id="scFile" type="file" accept="image/*" style="display:none" onchange="scanReceipt(this)"/>';
+    o+='<button onclick="document.getElementById(\'scCam\').click()" style="flex:1;padding:12px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">CAMARA</button>';
+    o+='<button onclick="document.getElementById(\'scFile\').click()" style="flex:1;padding:12px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">GALERIA</button></div>';
+  }else{
+    o+='<div style="border:1px solid var(--grey);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--grey2)">SCANNER INDISPONIVEL — CONFIGURA API KEY</div></div>';
+  }
+  if(scScanning)o+='<div style="border:1px solid var(--grey);padding:16px;margin-bottom:16px;text-align:center"><div class="lb">A PROCESSAR.</div></div>';
+  if(scResult&&!scResult.error){
+    o+='<div style="border-left:3px solid var(--success);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--success);margin-bottom:8px">RECIBO ANALISADO</div>';
+    if(scResult.items)scResult.items.forEach(function(it){o+='<div class="rw" style="font-size:12px;color:var(--paper2);padding:3px 0"><span>'+e(it.desc)+'</span><span class="m">'+fm(it.amount)+'</span></div>';});
+    o+='</div>';
+  }
+  if(scResult&&scResult.error)o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">'+e(scResult.error)+'</div></div>';
+  // Form
+  o+='<div style="margin-bottom:16px"><div class="lb" style="margin-bottom:6px">CATEGORIA</div><select id="adCat" style="width:100%;padding:12px 16px;border:1px solid var(--grey);background:var(--ink2);color:var(--paper);font-size:14px;appearance:none">';
+  bdg.forEach(function(b){o+='<option value="'+b.id+'"'+(addData.cat===b.id?' selected':'')+'>'+e(b.nm)+'</option>';});
+  o+='</select></div>';
+  o+='<div style="margin-bottom:16px"><div class="lb" style="margin-bottom:6px">DESCRICAO</div><input id="adDesc" value="'+e(addData.desc)+'" placeholder="Ex: Pingo Doce" style="width:100%;padding:12px 16px;border:1px solid var(--grey);background:var(--ink2);color:var(--paper);font-size:15px;box-sizing:border-box"/></div>';
+  o+='<div style="display:flex;gap:12px;margin-bottom:16px"><div style="flex:1"><div class="lb" style="margin-bottom:6px">VALOR (EUR)</div><input id="adAmt" value="'+e(addData.amount)+'" placeholder="0,00" inputmode="decimal" style="width:100%;padding:12px 16px;border:1px solid var(--grey);background:var(--ink2);color:var(--paper);font-family:var(--mono);font-size:18px;font-weight:600;box-sizing:border-box"/></div>';
+  o+='<div style="flex:1"><div class="lb" style="margin-bottom:6px">DATA</div><input id="adDate" type="date" value="'+addData.date+'" style="width:100%;padding:12px 16px;border:1px solid var(--grey);background:var(--ink2);color:var(--paper);font-family:var(--mono);font-size:14px;box-sizing:border-box"/></div></div>';
+  o+='<button onclick="doAddExp()" style="width:100%;padding:14px 0;border:1px solid var(--paper);background:var(--ink);color:var(--paper);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">ADICIONAR DESPESA</button>';
+  o+='</div></div>';
+  return o;
+}
+
+/* ══ STATEMENT IMPORT MODAL ══ */
+function rStatement(){
+  var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:flex;flex-direction:column;justify-content:flex-end">';
+  o+='<div style="background:var(--ink2);border-top:1px solid var(--grey);padding:24px 20px 32px;max-height:90vh;overflow:auto">';
+  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">IMPORTAR EXTRACTO</div><button onclick="showStmt=false;stResult=null;render()" style="background:none;border:none;color:var(--grey2);font-size:20px">✕</button></div>';
+  if(!apiKey){o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">API KEY NECESSARIA — ABRE DEFINICOES</div></div>';o+='</div></div>';return o;}
+  if(!stResult&&!stScanning){
+    o+='<div style="font-size:12px;color:var(--grey2);margin-bottom:16px">Fotografa ou carrega imagem do extracto bancario.</div>';
+    o+='<div style="display:flex;gap:8px;margin-bottom:16px">';
+    o+='<input id="stCam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanStmt(this)"/>';
+    o+='<input id="stFile" type="file" accept="image/*" style="display:none" onchange="scanStmt(this)"/>';
+    o+='<button onclick="document.getElementById(\'stCam\').click()" style="flex:1;padding:16px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">CAMARA</button>';
+    o+='<button onclick="document.getElementById(\'stFile\').click()" style="flex:1;padding:16px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">GALERIA</button></div>';
+  }
+  if(stScanning)o+='<div style="border:1px solid var(--grey);padding:24px;text-align:center"><div class="lb">A PROCESSAR EXTRACTO.</div></div>';
+  if(stResult&&stResult.error)o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">'+e(stResult.error)+'</div></div>';
+  if(stResult&&stResult.transactions){
+    o+='<div class="rw" style="margin-bottom:12px"><div class="lb">'+(stResult.bank||"EXTRACTO")+' — '+stResult.transactions.length+' TRANSACOES</div></div>';
+    o+='<div style="max-height:40vh;overflow:auto;margin-bottom:16px">';
+    stResult.transactions.forEach(function(t,i){
+      var sel=!!stSel[i],isD=t.amount<0;
+      var bI=null;bdg.forEach(function(b){if(b.id===t.category)bI=b;});
+      o+='<button onclick="toggleStSel('+i+')" style="width:100%;display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid '+(sel?'var(--paper)':'var(--grey)')+';'+(i>0?'border-top:none;':'')+'background:'+(sel?'var(--ink3)':'transparent')+';color:var(--paper);text-align:left">';
+      o+='<div style="width:16px;height:16px;border:1.5px solid '+(sel?'var(--paper)':'var(--grey)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(sel?'<div style="width:8px;height:8px;background:var(--paper)"></div>':'')+'</div>';
+      o+='<div style="flex:1;min-width:0"><div class="rw"><span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+e(t.desc)+'</span><span class="m" style="font-size:12px;font-weight:600;color:'+(isD?'var(--paper)':'var(--success)')+'">'+(isD?'-':'+')+fm(Math.abs(t.amount))+'</span></div>';
+      o+='<div style="display:flex;gap:8px;margin-top:3px"><span class="m" style="font-size:10px;color:var(--grey3)">'+e(t.date||"")+'</span>'+(bI?'<span class="m" style="font-size:10px;color:var(--grey2)">'+e(bI.nm)+'</span>':'')+'</div></div></button>';
+    });
+    o+='</div>';
+    var selCount=Object.keys(stSel).length;
+    var selTotal=0;stResult.transactions.forEach(function(t,i){if(stSel[i])selTotal+=Math.abs(t.amount);});
+    o+='<div class="rw" style="margin-bottom:16px"><div class="lb">'+selCount+' SELECCIONADAS</div><div class="lb" style="color:var(--paper)">'+fm(selTotal)+'</div></div>';
+    o+='<button onclick="doImportStmt()" style="width:100%;padding:14px 0;border:1px solid '+(selCount>0?'var(--paper)':'var(--grey)')+';background:'+(selCount>0?'var(--ink)':'transparent')+';color:'+(selCount>0?'var(--paper)':'var(--grey3)')+';font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">IMPORTAR SELECCIONADAS</button>';
+  }
+  o+='</div></div>';
+  return o;
+}
+
+/* ══ SCANNER HANDLERS ══ */
+window.scanReceipt=function(el){
+  var f=el.files&&el.files[0];if(!f)return;
+  scScanning=true;scResult=null;render();
+  resizeImg(f).then(function(b64){
+    callAI(b64,'Analisa este recibo/fatura. Extrai itens e valores. JSON: {"items":[{"desc":"nome","amount":0.00}],"total":0.00,"suggested_category":"rest"}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out\nSe nao for recibo: {"error":"Nao e um recibo."}',function(res){
+      scScanning=false;scResult=res;
+      if(!res.error){
+        if(res.total)addData.amount=String(res.total).replace(".",",");
+        if(res.suggested_category)addData.cat=res.suggested_category;
+        if(res.items&&res.items.length)addData.desc=res.items.map(function(i){return i.desc}).join(", ");
+      }
+      render();
+    });
+  });
+};
+window.scanStmt=function(el){
+  var f=el.files&&el.files[0];if(!f)return;
+  stScanning=true;stResult=null;stSel={};render();
+  resizeImg(f,1600).then(function(b64){
+    callAI(b64,'Analisa extracto bancario. Extrai TODAS as transacoes. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao","amount":-0.00,"category":"rest"}]}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out',function(res){
+      stScanning=false;stResult=res;
+      if(res.transactions)res.transactions.forEach(function(t,i){if(t.amount<0)stSel[i]=true;});
+      render();
+    });
+  });
+};
+window.toggleStSel=function(i){if(stSel[i])delete stSel[i];else stSel[i]=true;render();};
+window.doImportStmt=function(){
+  if(!stResult||!stResult.transactions)return;
+  stResult.transactions.forEach(function(t,i){
+    if(!stSel[i])return;
+    addedExp.push({desc:t.desc,amount:Math.abs(t.amount),cat:t.category||"out",date:t.date||""});
+  });
+  stResult=null;stSel={};showStmt=false;render();
+};
+window.doAddExp=function(){
+  var desc=document.getElementById("adDesc").value;
+  var amt=parseFloat((document.getElementById("adAmt").value||"0").replace(",","."));
+  var cat=document.getElementById("adCat").value;
+  var date=document.getElementById("adDate").value;
+  if(!desc||isNaN(amt)||amt<=0)return;
+  addedExp.push({desc:desc,amount:amt,cat:cat,date:date});
+  addData={desc:"",amount:"",cat:"rest",date:new Date().toISOString().slice(0,10)};
+  scResult=null;showAdd=false;render();
+};
+
 /* ══ LOGIN SCREEN ══ */
 function rLogin(){
   var o='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px"><div style="width:100%;max-width:360px">';
@@ -230,7 +399,7 @@ function rLogin(){
   o+='<div id="lerr"></div>';
   o+='<button onclick="doLogin()" style="width:100%;padding:14px 0;border:1px solid var(--paper);background:var(--ink);color:var(--paper);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">ENTRAR</button>';
   o+='</div>';
-  o+='<div class="lb" style="text-align:center;margin-top:24px;color:var(--grey3)">CASE 001 / v0.7 / 2026.04.29</div>';
+  o+='<div class="lb" style="text-align:center;margin-top:24px;color:var(--grey3)">CASE 001 / v0.8 / 2026.04.29</div>';
   o+='</div></div>';
   return o;
 }
@@ -259,7 +428,7 @@ function render(){
 
   var o='';
   // Header
-  o+='<div class="rw" style="padding:20px 20px 0"><div><span style="font-weight:900;font-size:22px;letter-spacing:-0.03em">PROOF</span><span style="font-weight:900;font-size:22px;color:var(--signal)">.</span></div><div style="display:flex;align-items:center;gap:12px"><button onclick="doLogout()" style="background:none;border:none;color:var(--grey3);font-family:var(--mono);font-size:10px;letter-spacing:0.1em">SAIR</button><div class="lb">29.04.2026</div></div></div>';
+  o+='<div class="rw" style="padding:20px 20px 0"><div><span style="font-weight:900;font-size:22px;letter-spacing:-0.03em">PROOF</span><span style="font-weight:900;font-size:22px;color:var(--signal)">.</span></div><div style="display:flex;align-items:center;gap:12px"><button onclick="showSet=true;render()" style="background:none;border:none;padding:4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="'+(apiKey?'var(--grey2)':'var(--signal)')+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button><button onclick="doLogout()" style="background:none;border:none;color:var(--grey3);font-family:var(--mono);font-size:10px;letter-spacing:0.1em">SAIR</button><div class="lb">29.04.2026</div></div></div>';
   // Net Worth
   o+='<div style="padding:28px 20px 8px"><div class="lb" style="margin-bottom:8px">PATRIMONIO LIQUIDO</div>';
   o+='<div style="font-size:36px;font-weight:900;letter-spacing:-0.04em">'+fm(nW)+'</div>';
@@ -279,7 +448,12 @@ function render(){
   else if(tab==="expenses")o+=rExpenses();
   else if(tab==="loan")o+=rLoan();
   // Footer
-  o+='<div style="padding:32px 20px 48px;border-top:1px solid var(--grey)"><div><span style="font-weight:900;font-size:14px">PROOF</span><span style="font-weight:900;font-size:14px;color:var(--signal)">.</span></div><div class="m" style="font-size:9px;color:var(--grey3);letter-spacing:0.1em;margin-top:4px">CASE 001 / v0.7 / 2026.04.29</div></div>';
+  o+='<div style="padding:32px 20px 48px;border-top:1px solid var(--grey)"><div><span style="font-weight:900;font-size:14px">PROOF</span><span style="font-weight:900;font-size:14px;color:var(--signal)">.</span></div><div class="m" style="font-size:9px;color:var(--grey3);letter-spacing:0.1em;margin-top:4px">CASE 001 / v0.8 / 2026.04.29</div></div>';
+
+  // Modals
+  if(showSet)o+=rSettings();
+  if(showAdd)o+=rAddExp();
+  if(showStmt)o+=rStatement();
 
   el.innerHTML=o;
 }
