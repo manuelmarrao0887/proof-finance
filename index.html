@@ -4,34 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>PROOF. FINANCE</title>
-<meta name="theme-color" content="#111318">
+<meta name="theme-color" content="#F5F6FA">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#111318;--ink2:#1A1D24;--ink3:#222530;--paper:#E8EAF0;--paper2:#D8DAE0;--grey:#2A2D36;--grey2:#8A8E99;--grey3:#5A5D66;--signal:#FF3B30;--success:#4AE29B;--font:'Archivo',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace}
+:root{--bg:#F5F6FA;--bg2:#FFFFFF;--bg3:#EDEEF2;--text:#111318;--text2:#5A5D66;--text3:#8A8E99;--border:#DFE1E8;--border2:#C8CAD3;--signal:#E53935;--success:#16A34A;--blue:#2563EB;--purple:#7C3AED;--font:'Archivo',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--ink);color:var(--paper);font-family:var(--font);font-weight:400;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-weight:400;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
 button{font-family:var(--font);cursor:pointer;border-radius:0}
 input,select{font-family:var(--font);outline:none;border-radius:0}
-select option{background:var(--ink2);color:var(--paper)}
-input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.7)}
+select option{background:var(--bg2);color:var(--text)}
 ::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-thumb{background:var(--grey)}
+::-webkit-scrollbar-thumb{background:var(--border2)}
 .m{font-family:var(--mono)}
-.lb{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--grey2)}
-.cd{background:var(--ink2);border:1px solid var(--grey);padding:24px 20px}
-.cs{background:var(--ink2);border:1px solid var(--grey);border-left:3px solid var(--signal);padding:24px 20px}
+.lb{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3)}
+.cd{background:var(--bg2);border:1px solid var(--border);padding:24px 20px}
+.cs{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--signal);padding:24px 20px}
 .rw{display:flex;justify-content:space-between;align-items:center}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.tab-bar{display:flex;padding:0 20px;border-bottom:1px solid var(--grey);margin-bottom:20px;overflow-x:auto}
-.tb{padding:10px 12px 8px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.1em;color:var(--grey3);white-space:nowrap}
-.tb.on{color:var(--paper);border-bottom-color:var(--paper)}
-.exp-btn{width:100%;display:flex;background:var(--ink2);border:1px solid var(--grey);padding:12px 16px;color:var(--paper);text-align:left}
-.exp-detail{background:var(--ink2);border:1px solid var(--grey);border-top:none;padding:12px 16px}
-.bar{height:3px;background:var(--grey);overflow:hidden;margin-top:6px}
+.tab-bar{display:flex;padding:0 20px;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto}
+.tb{padding:10px 12px 8px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.1em;color:var(--text3);white-space:nowrap}
+.tb.on{color:var(--text);border-bottom-color:var(--text)}
+.exp-btn{width:100%;display:flex;background:var(--bg2);border:1px solid var(--border);padding:12px 16px;color:var(--text);text-align:left}
+.exp-detail{background:var(--bg3);border:1px solid var(--border);border-top:none;padding:12px 16px}
+.bar{height:3px;background:var(--bg3);overflow:hidden;margin-top:6px}
 .bar-fill{height:100%}
-.ms-bar{display:flex;border:1px solid var(--grey);margin-bottom:16px}
-.ms{flex:1;padding:10px 0;border:none;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.1em;background:transparent;color:var(--grey2)}
-.ms.on{background:var(--paper);color:var(--ink)}
+.ms-bar{display:flex;border:1px solid var(--border);margin-bottom:16px}
+.ms{flex:1;padding:10px 0;border:none;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.1em;background:transparent;color:var(--text3)}
+.ms.on{background:var(--text);color:var(--bg)}
 </style>
 </head>
 <body>
@@ -82,7 +81,7 @@ var cT={};Object.keys(grp).forEach(function(c){cT[c]=grp[c].reduce(function(s,i)
 var tA=0;Object.keys(cT).forEach(function(k){tA+=cT[k];});
 var nW=tA-ln.out;
 var pp=((ln.cap-ln.out)/ln.cap)*100;
-var cCol={Liquidez:"#3B82F6",Poupanca:"#8B5CF6",Investimentos:"#4AE29B"};
+var cCol={Liquidez:"#2563EB",Poupanca:"#7C3AED",Investimentos:"#16A34A"};
 var h0=hist[0],h2=hist[2];
 var aD=(h2.liq+h2.poup+h2.inv)-(h0.liq+h0.poup+h0.inv);
 
@@ -117,10 +116,10 @@ function chrt(data,color,label){
   o+='<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+color+'" stop-opacity="0.15"/><stop offset="100%" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>';
   o+='<polygon points="'+ar+'" fill="url(#'+id+')"/>';
   o+='<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.5"/>';
-  data.forEach(function(v,i){o+='<circle cx="'+((i/(data.length-1))*w).toFixed(1)+'" cy="'+((ht-((v-mn)/rg)*ht)).toFixed(1)+'" r="2.5" fill="'+color+'" stroke="var(--ink)" stroke-width="1"/>';});
+  data.forEach(function(v,i){o+='<circle cx="'+((i/(data.length-1))*w).toFixed(1)+'" cy="'+((ht-((v-mn)/rg)*ht)).toFixed(1)+'" r="2.5" fill="'+color+'" stroke="var(--bg2)" stroke-width="1"/>';});
   o+='</svg>';
   o+='<div style="display:flex;justify-content:space-between;margin-top:4px">';
-  hist.forEach(function(x){o+='<span class="m" style="font-size:9px;color:var(--grey3)">'+x.l+'</span>';});
+  hist.forEach(function(x){o+='<span class="m" style="font-size:9px;color:var(--text3)">'+x.l+'</span>';});
   o+='</div></div>';
   return o;
 }
@@ -131,14 +130,14 @@ function rOverview(){
   o+='<div class="g2" style="gap:12px;margin-bottom:20px"><div class="cd"><div class="lb" style="margin-bottom:6px">ATIVOS</div><div style="font-size:18px;font-weight:700;color:var(--success)">'+fm(tA)+'</div></div><div class="cs"><div class="lb" style="margin-bottom:6px">DIVIDA</div><div style="font-size:18px;font-weight:700;color:var(--signal)">'+fm(ln.out)+'</div></div></div>';
   Object.keys(grp).forEach(function(cat){
     var items=grp[cat],isX=xCat===cat;
-    o+='<div style="margin-bottom:8px"><button onclick="T(\'xCat\',\''+(isX?"null":cat)+'\')" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--ink2);border:1px solid var(--grey);padding:16px 20px;color:var(--paper)">';
+    o+='<div style="margin-bottom:8px"><button onclick="T(\'xCat\',\''+(isX?"null":cat)+'\')" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);padding:16px 20px;color:var(--text)">';
     o+='<div style="text-align:left"><div style="font-size:14px;font-weight:700;text-transform:uppercase">'+e(cat)+'</div><div class="lb" style="margin-top:2px">'+items.length+' CONTAS</div></div>';
     o+='<div class="m" style="font-size:16px;font-weight:700">'+fm(cT[cat])+'</div></button>';
     if(isX){
-      o+='<div style="background:var(--ink2);border:1px solid var(--grey);border-top:none">';
+      o+='<div style="background:var(--bg3);border:1px solid var(--border);border-top:none">';
       items.forEach(function(a){
-        o+='<div class="rw" style="padding:12px 20px;border-top:1px solid var(--grey)"><div><div style="font-size:13px;font-weight:600">'+e(a.b)+'</div><div style="font-size:12px;color:var(--grey2)">'+e(a.t)+'</div>';
-        if(a.n)o+='<div class="m" style="font-size:10px;color:var(--grey3);margin-top:2px">'+e(a.n)+'</div>';
+        o+='<div class="rw" style="padding:12px 20px;border-top:1px solid var(--border)"><div><div style="font-size:13px;font-weight:600">'+e(a.b)+'</div><div style="font-size:12px;color:var(--text3)">'+e(a.t)+'</div>';
+        if(a.n)o+='<div class="m" style="font-size:10px;color:var(--text3);margin-top:2px">'+e(a.n)+'</div>';
         o+='</div><div class="m" style="font-size:14px;font-weight:500">'+fm(a.v)+'</div></div>';
       });
       o+='</div>';
@@ -151,12 +150,12 @@ function rOverview(){
 function rCharts(){
   var o='<div style="padding:0 20px 40px">';
   o+='<div class="cd" style="margin-bottom:12px"><div class="lb" style="margin-bottom:16px">EVOLUCAO PATRIMONIAL</div>';
-  o+=chrt(hist.map(function(x){return x.liq+x.poup+x.inv}),"#4AE29B","Ativos Totais");
+  o+=chrt(hist.map(function(x){return x.liq+x.poup+x.inv}),"#16A34A","Ativos Totais");
   o+=chrt(hist.map(function(x){return x.liq+x.poup+x.inv-x.div}),"#E8EAF0","Patrimonio Liquido");
   o+='</div><div class="cd"><div class="lb" style="margin-bottom:16px">INVESTIMENTOS</div>';
-  o+=chrt(hist.map(function(x){return x.xP}),"#4AE29B","XTB Planos");
+  o+=chrt(hist.map(function(x){return x.xP}),"#16A34A","XTB Planos");
   o+=chrt(hist.map(function(x){return x.xT}),"#F59E0B","XTB Transacoes");
-  o+=chrt(hist.map(function(x){return x.tC}),"#3B82F6","TR Corretagem");
+  o+=chrt(hist.map(function(x){return x.tC}),"#2563EB","TR Corretagem");
   return o+'</div></div>';
 }
 
@@ -177,9 +176,9 @@ function rExpenses(){
 
   var o='<div style="padding:0 20px 100px"><div class="ms-bar">';
   ms.forEach(function(m,i){
-    o+='<button class="ms'+(em===i?" on":"")+'" onclick="T(\'em\','+i+')" style="'+(i<3?"border-right:1px solid var(--grey)":"")+'">' +m+'</button>';
+    o+='<button class="ms'+(em===i?" on":"")+'" onclick="T(\'em\','+i+')" style="'+(i<3?"border-right:1px solid var(--border)":"")+'">' +m+'</button>';
   });
-  o+='<button class="ms'+(em===4?" on":"")+'" onclick="T(\'em\',4)" style="border-left:1px solid var(--grey)">Q1</button></div>';
+  o+='<button class="ms'+(em===4?" on":"")+'" onclick="T(\'em\',4)" style="border-left:1px solid var(--border)">Q1</button></div>';
 
   o+='<div class="cd" style="margin-bottom:16px"><div class="rw"><div><div class="lb">'+(isQ?"DESPESAS Q1":"DESPESAS "+ms[em])+'</div><div class="m" style="font-size:24px;font-weight:900;margin-top:4px">'+fm(tE)+'</div></div>';
   if(!isQ&&em<3&&sal[em])o+='<div style="text-align:right"><div class="lb">SALARIO</div><div class="m" style="font-size:18px;font-weight:700;color:var(--success);margin-top:4px">'+fm(sal[em])+'</div></div>';
@@ -189,13 +188,13 @@ function rExpenses(){
 
   rows.forEach(function(r){
     var isE=xExp===r.id,ov=r.pct>100;
-    var bc=ov?"var(--signal)":r.pct>75?"#F59E0B":"var(--paper)";
+    var bc=ov?"var(--signal)":r.pct>75?"#F59E0B":"var(--text)";
     var op=ov?"1":"0.6";
     o+='<div style="margin-bottom:4px"><button class="exp-btn" onclick="T(\'xExp\',\''+(isE?"null":r.id)+'\')">';
     o+='<div style="flex:1"><div class="rw"><span style="font-size:13px;font-weight:600">'+e(r.nm)+'</span>';
-    o+='<div><span class="m" style="font-size:13px;font-weight:600">'+fm(r.val)+'</span><span class="m" style="font-size:11px;color:var(--grey3);margin-left:4px">/ '+fm(r.lm)+'</span></div></div>';
+    o+='<div><span class="m" style="font-size:13px;font-weight:600">'+fm(r.val)+'</span><span class="m" style="font-size:11px;color:var(--text3);margin-left:4px">/ '+fm(r.lm)+'</span></div></div>';
     o+='<div class="bar"><div class="bar-fill" style="width:'+Math.min(r.pct,100)+'%;background:'+bc+';opacity:'+op+'"></div></div>';
-    o+='<div class="rw" style="margin-top:4px"><span class="m" style="font-size:10px;color:'+(ov?"var(--signal)":"var(--grey2)")+'">'+r.pct.toFixed(0)+'%</span>';
+    o+='<div class="rw" style="margin-top:4px"><span class="m" style="font-size:10px;color:'+(ov?"var(--signal)":"var(--text3)")+'">'+r.pct.toFixed(0)+'%</span>';
     if(ov)o+='<span class="m" style="font-size:10px;color:var(--signal)">+'+fm(r.val-r.lm)+'</span>';
     else o+='<span class="m" style="font-size:10px;color:var(--success)">Resta '+fm(r.lm-r.val)+'</span>';
     o+='</div></div></button>';
@@ -203,7 +202,7 @@ function rExpenses(){
     if(isE&&txn[r.id]&&!isQ&&txn[r.id][em]&&txn[r.id][em].length>0){
       o+='<div class="exp-detail">';
       txn[r.id][em].forEach(function(t,i){
-        o+='<div class="rw" style="padding:6px 0;'+(i>0?"border-top:1px solid var(--grey)":"")+'"><span style="font-size:12px;color:var(--paper2)">'+e(t[0])+'</span><span class="m" style="font-size:12px;font-weight:500">'+fm(t[1])+'</span></div>';
+        o+='<div class="rw" style="padding:6px 0;'+(i>0?"border-top:1px solid var(--border)":"")+'"><span style="font-size:12px;color:var(--text2)">'+e(t[0])+'</span><span class="m" style="font-size:12px;font-weight:500">'+fm(t[1])+'</span></div>';
       });
       o+='</div>';
     }
@@ -211,18 +210,18 @@ function rExpenses(){
   });
   // FAB buttons
   o+='<div style="position:fixed;bottom:24px;right:20px;display:flex;gap:8px;z-index:50">';
-  o+='<button onclick="showStmt=true;render()" style="width:48px;height:48px;border:1px solid var(--grey);background:var(--ink2);color:var(--grey2);display:flex;align-items:center;justify-content:center" title="Importar extracto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>';
-  o+='<button onclick="showAdd=true;render()" style="width:48px;height:48px;border:1px solid var(--paper);background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg></button>';
+  o+='<button onclick="showStmt=true;render()" style="width:48px;height:48px;border:1px solid var(--border);background:var(--bg2);color:var(--text3);display:flex;align-items:center;justify-content:center" title="Importar extracto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>';
+  o+='<button onclick="showAdd=true;render()" style="width:48px;height:48px;border:1px solid var(--text);background:var(--text);color:var(--bg2);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg></button>';
   o+='</div>';
   return o+'</div>';
 }
 
 function rLoan(){
   var o='<div style="padding:0 20px 40px">';
-  o+='<div class="cs" style="margin-bottom:12px"><div class="lb" style="margin-bottom:6px">CREDITO HABITACAO</div><div style="font-size:13px;color:var(--grey2);margin-bottom:16px">Bankinter / Taxa Fixa</div>';
-  o+='<div style="margin-bottom:16px"><div class="rw m" style="font-size:11px;color:var(--grey2);margin-bottom:6px"><span>Pago: '+fm(90000-77555.06)+'</span><span>'+pp.toFixed(1)+'%</span></div>';
-  o+='<div style="height:4px;background:var(--grey)"><div style="height:100%;width:'+pp+'%;background:var(--success)"></div></div>';
-  o+='<div class="rw m" style="font-size:10px;color:var(--grey3);margin-top:4px"><span>28.10.2022</span><span>28.10.2042</span></div></div>';
+  o+='<div class="cs" style="margin-bottom:12px"><div class="lb" style="margin-bottom:6px">CREDITO HABITACAO</div><div style="font-size:13px;color:var(--text3);margin-bottom:16px">Bankinter / Taxa Fixa</div>';
+  o+='<div style="margin-bottom:16px"><div class="rw m" style="font-size:11px;color:var(--text3);margin-bottom:6px"><span>Pago: '+fm(90000-77555.06)+'</span><span>'+pp.toFixed(1)+'%</span></div>';
+  o+='<div style="height:4px;background:var(--border)"><div style="height:100%;width:'+pp+'%;background:var(--success)"></div></div>';
+  o+='<div class="rw m" style="font-size:10px;color:var(--text3);margin-top:4px"><span>28.10.2022</span><span>28.10.2042</span></div></div>';
   o+='<div style="font-size:28px;font-weight:900;color:var(--signal)">'+fm(77555.06)+'</div><div class="lb" style="margin-top:4px">CAPITAL EM DIVIDA</div></div>';
   o+='<div class="g2">';
   [["PRESTACAO","485,83 EUR"],["PROXIMA","28.05.2026"],["TAXA","2,7%"],["TIPO","TAXA FIXA"],["CAPITAL","90 000 EUR"],["PRAZO","20 ANOS"]].forEach(function(x){
@@ -266,7 +265,7 @@ function callAI(content,prompt,cb){
   var msgs=[{role:"user",content:content.concat([{type:"text",text:prompt}])}];
   fetch("https://api.anthropic.com/v1/messages",{
     method:"POST",
-    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2024-10-22","anthropic-beta":"pdfs-2024-09-25","anthropic-dangerous-direct-browser-access":"true"},
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-beta":"pdfs-2024-09-25","anthropic-dangerous-direct-browser-access":"true"},
     body:JSON.stringify({model:"claude-3-5-sonnet-20241022",max_tokens:4000,system:"Responde APENAS JSON puro. Sem markdown, sem backticks.",messages:msgs})
   }).then(function(r){
     if(!r.ok) return r.text().then(function(body){throw new Error("API "+r.status+": "+body.substring(0,200));});
@@ -285,18 +284,18 @@ window.testAPI=function(){
   el.innerHTML='<div class="lb">A TESTAR...</div>';
   fetch("https://api.anthropic.com/v1/messages",{
     method:"POST",
-    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2024-10-22","anthropic-dangerous-direct-browser-access":"true"},
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
     body:JSON.stringify({model:"claude-3-5-sonnet-20241022",max_tokens:50,messages:[{role:"user",content:"Responde apenas: OK"}]})
   }).then(function(r){
     return r.text().then(function(body){
-      if(r.ok)el.innerHTML='<div class="lb" style="color:var(--success)">API OK — STATUS '+r.status+'</div><div class="m" style="font-size:9px;color:var(--grey3);margin-top:4px;word-break:break-all">'+body.substring(0,150)+'</div>';
-      else el.innerHTML='<div class="lb" style="color:var(--signal)">ERRO '+r.status+'</div><div class="m" style="font-size:9px;color:var(--grey3);margin-top:4px;word-break:break-all">'+body.substring(0,300)+'</div>';
+      if(r.ok)el.innerHTML='<div class="lb" style="color:var(--success)">API OK — STATUS '+r.status+'</div><div class="m" style="font-size:9px;color:var(--text3);margin-top:4px;word-break:break-all">'+body.substring(0,150)+'</div>';
+      else el.innerHTML='<div class="lb" style="color:var(--signal)">ERRO '+r.status+'</div><div class="m" style="font-size:9px;color:var(--text3);margin-top:4px;word-break:break-all">'+body.substring(0,300)+'</div>';
     });
   }).catch(function(err){
     var msg=err.message||"Erro";
     var hint="";
     if(msg==="Failed to fetch")hint="<br><br>CAUSA PROVAVEL: CORS bloqueado. Estas a abrir o ficheiro com file://? Tem de ser via HTTPS (GitHub Pages).";
-    el.innerHTML='<div class="lb" style="color:var(--signal)">ERRO DE REDE</div><div class="m" style="font-size:10px;color:var(--grey3);margin-top:4px">'+msg+hint+'</div><div class="m" style="font-size:9px;color:var(--grey3);margin-top:8px">URL actual: '+location.protocol+"//"+location.host+'</div>';
+    el.innerHTML='<div class="lb" style="color:var(--signal)">ERRO DE REDE</div><div class="m" style="font-size:10px;color:var(--text3);margin-top:4px">'+msg+hint+'</div><div class="m" style="font-size:9px;color:var(--text3);margin-top:8px">URL actual: '+location.protocol+"//"+location.host+'</div>';
   });
 };
 var STMT_PROMPT='Analisa extracto bancario. Extrai TODAS as transacoes. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao","amount":-0.00,"category":"rest"}]}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
@@ -305,18 +304,18 @@ var RCPT_PROMPT='Analisa este recibo/fatura. Extrai itens e valores. JSON: {"ite
 /* ══ SETTINGS MODAL ══ */
 function rSettings(){
   var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:flex;flex-direction:column;justify-content:flex-end">';
-  o+='<div style="background:var(--ink2);border-top:1px solid var(--grey);padding:24px 20px 32px">';
-  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">DEFINICOES</div><button onclick="showSet=false;render()" style="background:none;border:none;color:var(--grey2);font-size:20px">✕</button></div>';
+  o+='<div style="background:var(--bg2);border-top:1px solid var(--border);padding:24px 20px 32px">';
+  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">DEFINICOES</div><button onclick="showSet=false;render()" style="background:none;border:none;color:var(--text3);font-size:20px">✕</button></div>';
   o+='<div class="lb" style="margin-bottom:6px">ANTHROPIC API KEY</div>';
-  o+='<div style="font-size:12px;color:var(--grey3);margin-bottom:12px">Obtem em console.anthropic.com. Guardada apenas no teu browser.</div>';
-  o+='<div style="display:flex;gap:8px;margin-bottom:16px"><input id="ki" type="password" value="'+e(apiKey)+'" placeholder="sk-ant-..." style="flex:1;padding:12px 16px;border:1px solid var(--grey);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:13px;box-sizing:border-box"/>';
-  o+='<button onclick="var el=document.getElementById(\'ki\');el.type=el.type===\'password\'?\'text\':\'password\'" style="padding:0 12px;border:1px solid var(--grey);background:transparent;color:var(--grey2);font-family:var(--mono);font-size:10px;letter-spacing:0.1em">VER</button></div>';
+  o+='<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Obtem em console.anthropic.com. Guardada apenas no teu browser.</div>';
+  o+='<div style="display:flex;gap:8px;margin-bottom:16px"><input id="ki" type="password" value="'+e(apiKey)+'" placeholder="sk-ant-..." style="flex:1;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;box-sizing:border-box"/>';
+  o+='<button onclick="var el=document.getElementById(\'ki\');el.type=el.type===\'password\'?\'text\':\'password\'" style="padding:0 12px;border:1px solid var(--border);background:transparent;color:var(--text3);font-family:var(--mono);font-size:10px;letter-spacing:0.1em">VER</button></div>';
   if(apiKey)o+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-left:3px solid var(--success)"><div style="width:8px;height:8px;background:var(--success)"></div><div class="lb" style="color:var(--success)">KEY CONFIGURADA</div></div>';
   else o+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-left:3px solid var(--signal)"><div style="width:8px;height:8px;background:var(--signal)"></div><div class="lb" style="color:var(--signal)">SEM KEY — SCANNER INACTIVO</div></div>';
-  o+='<button onclick="apiKey=document.getElementById(\'ki\').value;try{localStorage.setItem(\'proof_api_key\',apiKey)}catch(x){};showSet=false;render()" style="width:100%;padding:14px 0;border:1px solid var(--paper);background:var(--ink);color:var(--paper);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:12px">GUARDAR KEY</button>';
+  o+='<button onclick="apiKey=document.getElementById(\'ki\').value;try{localStorage.setItem(\'proof_api_key\',apiKey)}catch(x){};showSet=false;render()" style="width:100%;padding:14px 0;border:1px solid var(--text);background:var(--text);color:var(--bg2);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:12px">GUARDAR KEY</button>';
   if(apiKey)o+='<button onclick="apiKey=\'\';try{localStorage.removeItem(\'proof_api_key\')}catch(x){};showSet=false;render()" style="width:100%;padding:12px 0;border:1px solid rgba(255,59,48,0.3);background:transparent;color:var(--signal);font-family:var(--mono);font-size:11px">REMOVER KEY</button>';
-  o+='<div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--grey)">';
-  o+='<button onclick="testAPI()" style="width:100%;padding:12px 0;border:1px solid var(--grey);background:transparent;color:var(--grey2);font-family:var(--mono);font-size:11px;letter-spacing:0.1em">TESTAR LIGACAO API</button>';
+  o+='<div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border)">';
+  o+='<button onclick="testAPI()" style="width:100%;padding:12px 0;border:1px solid var(--border);background:transparent;color:var(--text3);font-family:var(--mono);font-size:11px;letter-spacing:0.1em">TESTAR LIGACAO API</button>';
   o+='<div id="testResult" style="margin-top:12px"></div>';
   o+='</div>';
   o+='</div></div>';
@@ -326,33 +325,33 @@ function rSettings(){
 /* ══ ADD EXPENSE MODAL ══ */
 function rAddExp(){
   var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:flex;flex-direction:column;justify-content:flex-end">';
-  o+='<div style="background:var(--ink2);border-top:1px solid var(--grey);padding:24px 20px 32px;max-height:90vh;overflow:auto">';
-  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">ADICIONAR DESPESA</div><button onclick="showAdd=false;scResult=null;render()" style="background:none;border:none;color:var(--grey2);font-size:20px">✕</button></div>';
+  o+='<div style="background:var(--bg2);border-top:1px solid var(--border);padding:24px 20px 32px;max-height:90vh;overflow:auto">';
+  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">ADICIONAR DESPESA</div><button onclick="showAdd=false;scResult=null;render()" style="background:none;border:none;color:var(--text3);font-size:20px">✕</button></div>';
   // Scanner buttons
   if(apiKey){
     o+='<div style="display:flex;gap:8px;margin-bottom:20px">';
     o+='<input id="scCam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanReceipt(this)"/>';
     o+='<input id="scFile" type="file" accept="image/*" style="display:none" onchange="scanReceipt(this)"/>';
-    o+='<button onclick="document.getElementById(\'scCam\').click()" style="flex:1;padding:12px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">CAMARA</button>';
-    o+='<button onclick="document.getElementById(\'scFile\').click()" style="flex:1;padding:12px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">GALERIA</button></div>';
+    o+='<button onclick="document.getElementById(\'scCam\').click()" style="flex:1;padding:12px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">CAMARA</button>';
+    o+='<button onclick="document.getElementById(\'scFile\').click()" style="flex:1;padding:12px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">GALERIA</button></div>';
   }else{
-    o+='<div style="border:1px solid var(--grey);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--grey2)">SCANNER INDISPONIVEL — CONFIGURA API KEY</div></div>';
+    o+='<div style="border:1px solid var(--border);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--text3)">SCANNER INDISPONIVEL — CONFIGURA API KEY</div></div>';
   }
-  if(scScanning)o+='<div style="border:1px solid var(--grey);padding:16px;margin-bottom:16px;text-align:center"><div class="lb">A PROCESSAR.</div></div>';
+  if(scScanning)o+='<div style="border:1px solid var(--border);padding:16px;margin-bottom:16px;text-align:center"><div class="lb">A PROCESSAR.</div></div>';
   if(scResult&&!scResult.error){
     o+='<div style="border-left:3px solid var(--success);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--success);margin-bottom:8px">RECIBO ANALISADO</div>';
-    if(scResult.items)scResult.items.forEach(function(it){o+='<div class="rw" style="font-size:12px;color:var(--paper2);padding:3px 0"><span>'+e(it.desc)+'</span><span class="m">'+fm(it.amount)+'</span></div>';});
+    if(scResult.items)scResult.items.forEach(function(it){o+='<div class="rw" style="font-size:12px;color:var(--text2);padding:3px 0"><span>'+e(it.desc)+'</span><span class="m">'+fm(it.amount)+'</span></div>';});
     o+='</div>';
   }
   if(scResult&&scResult.error)o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">'+e(scResult.error)+'</div></div>';
   // Form
-  o+='<div style="margin-bottom:16px"><div class="lb" style="margin-bottom:6px">CATEGORIA</div><select id="adCat" style="width:100%;padding:12px 16px;border:1px solid var(--grey);background:var(--ink2);color:var(--paper);font-size:14px;appearance:none">';
+  o+='<div style="margin-bottom:16px"><div class="lb" style="margin-bottom:6px">CATEGORIA</div><select id="adCat" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;appearance:none">';
   bdg.forEach(function(b){o+='<option value="'+b.id+'"'+(addData.cat===b.id?' selected':'')+'>'+e(b.nm)+'</option>';});
   o+='</select></div>';
-  o+='<div style="margin-bottom:16px"><div class="lb" style="margin-bottom:6px">DESCRICAO</div><input id="adDesc" value="'+e(addData.desc)+'" placeholder="Ex: Pingo Doce" style="width:100%;padding:12px 16px;border:1px solid var(--grey);background:var(--ink2);color:var(--paper);font-size:15px;box-sizing:border-box"/></div>';
-  o+='<div style="display:flex;gap:12px;margin-bottom:16px"><div style="flex:1"><div class="lb" style="margin-bottom:6px">VALOR (EUR)</div><input id="adAmt" value="'+e(addData.amount)+'" placeholder="0,00" inputmode="decimal" style="width:100%;padding:12px 16px;border:1px solid var(--grey);background:var(--ink2);color:var(--paper);font-family:var(--mono);font-size:18px;font-weight:600;box-sizing:border-box"/></div>';
-  o+='<div style="flex:1"><div class="lb" style="margin-bottom:6px">DATA</div><input id="adDate" type="date" value="'+addData.date+'" style="width:100%;padding:12px 16px;border:1px solid var(--grey);background:var(--ink2);color:var(--paper);font-family:var(--mono);font-size:14px;box-sizing:border-box"/></div></div>';
-  o+='<button onclick="doAddExp()" style="width:100%;padding:14px 0;border:1px solid var(--paper);background:var(--ink);color:var(--paper);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">ADICIONAR DESPESA</button>';
+  o+='<div style="margin-bottom:16px"><div class="lb" style="margin-bottom:6px">DESCRICAO</div><input id="adDesc" value="'+e(addData.desc)+'" placeholder="Ex: Pingo Doce" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:15px;box-sizing:border-box"/></div>';
+  o+='<div style="display:flex;gap:12px;margin-bottom:16px"><div style="flex:1"><div class="lb" style="margin-bottom:6px">VALOR (EUR)</div><input id="adAmt" value="'+e(addData.amount)+'" placeholder="0,00" inputmode="decimal" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-family:var(--mono);font-size:18px;font-weight:600;box-sizing:border-box"/></div>';
+  o+='<div style="flex:1"><div class="lb" style="margin-bottom:6px">DATA</div><input id="adDate" type="date" value="'+addData.date+'" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-family:var(--mono);font-size:14px;box-sizing:border-box"/></div></div>';
+  o+='<button onclick="doAddExp()" style="width:100%;padding:14px 0;border:1px solid var(--text);background:var(--text);color:var(--bg2);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">ADICIONAR DESPESA</button>';
   o+='</div></div>';
   return o;
 }
@@ -360,19 +359,19 @@ function rAddExp(){
 /* ══ STATEMENT IMPORT MODAL ══ */
 function rStatement(){
   var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:flex;flex-direction:column;justify-content:flex-end">';
-  o+='<div style="background:var(--ink2);border-top:1px solid var(--grey);padding:24px 20px 32px;max-height:90vh;overflow:auto">';
-  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">IMPORTAR EXTRACTO</div><button onclick="showStmt=false;stResult=null;render()" style="background:none;border:none;color:var(--grey2);font-size:20px">✕</button></div>';
+  o+='<div style="background:var(--bg2);border-top:1px solid var(--border);padding:24px 20px 32px;max-height:90vh;overflow:auto">';
+  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">IMPORTAR EXTRACTO</div><button onclick="showStmt=false;stResult=null;render()" style="background:none;border:none;color:var(--text3);font-size:20px">✕</button></div>';
   if(!apiKey){o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">API KEY NECESSARIA — ABRE DEFINICOES</div></div>';o+='</div></div>';return o;}
   if(!stResult&&!stScanning){
-    o+='<div style="font-size:12px;color:var(--grey2);margin-bottom:16px">Carrega imagem, PDF ou Excel do extracto bancario.</div>';
+    o+='<div style="font-size:12px;color:var(--text3);margin-bottom:16px">Carrega imagem, PDF ou Excel do extracto bancario.</div>';
     o+='<div style="display:flex;gap:8px;margin-bottom:16px">';
     o+='<input id="stCam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanStmt(this)"/>';
     o+='<input id="stFile" type="file" accept="image/*,.pdf,.xlsx,.xls,.csv" style="display:none" onchange="scanStmt(this)"/>';
-    o+='<button onclick="document.getElementById(\'stCam\').click()" style="flex:1;padding:16px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">CAMARA</button>';
-    o+='<button onclick="document.getElementById(\'stFile\').click()" style="flex:1;padding:16px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">FICHEIRO</button></div>';
-    o+='<div class="m" style="font-size:9px;color:var(--grey3);margin-top:-8px;margin-bottom:16px">IMAGEM / PDF / XLSX / CSV</div>';
+    o+='<button onclick="document.getElementById(\'stCam\').click()" style="flex:1;padding:16px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">CAMARA</button>';
+    o+='<button onclick="document.getElementById(\'stFile\').click()" style="flex:1;padding:16px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">FICHEIRO</button></div>';
+    o+='<div class="m" style="font-size:9px;color:var(--text3);margin-top:-8px;margin-bottom:16px">IMAGEM / PDF / XLSX / CSV</div>';
   }
-  if(stScanning)o+='<div style="border:1px solid var(--grey);padding:24px;text-align:center"><div class="lb">A PROCESSAR EXTRACTO.</div></div>';
+  if(stScanning)o+='<div style="border:1px solid var(--border);padding:24px;text-align:center"><div class="lb">A PROCESSAR EXTRACTO.</div></div>';
   if(stResult&&stResult.error)o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">'+e(stResult.error)+'</div></div>';
   if(stResult&&stResult.transactions){
     o+='<div class="rw" style="margin-bottom:12px"><div class="lb">'+(stResult.bank||"EXTRACTO")+' — '+stResult.transactions.length+' TRANSACOES</div></div>';
@@ -380,16 +379,16 @@ function rStatement(){
     stResult.transactions.forEach(function(t,i){
       var sel=!!stSel[i],isD=t.amount<0;
       var bI=null;bdg.forEach(function(b){if(b.id===t.category)bI=b;});
-      o+='<button onclick="toggleStSel('+i+')" style="width:100%;display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid '+(sel?'var(--paper)':'var(--grey)')+';'+(i>0?'border-top:none;':'')+'background:'+(sel?'var(--ink3)':'transparent')+';color:var(--paper);text-align:left">';
-      o+='<div style="width:16px;height:16px;border:1.5px solid '+(sel?'var(--paper)':'var(--grey)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(sel?'<div style="width:8px;height:8px;background:var(--paper)"></div>':'')+'</div>';
-      o+='<div style="flex:1;min-width:0"><div class="rw"><span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+e(t.desc)+'</span><span class="m" style="font-size:12px;font-weight:600;color:'+(isD?'var(--paper)':'var(--success)')+'">'+(isD?'-':'+')+fm(Math.abs(t.amount))+'</span></div>';
-      o+='<div style="display:flex;gap:8px;margin-top:3px"><span class="m" style="font-size:10px;color:var(--grey3)">'+e(t.date||"")+'</span>'+(bI?'<span class="m" style="font-size:10px;color:var(--grey2)">'+e(bI.nm)+'</span>':'')+'</div></div></button>';
+      o+='<button onclick="toggleStSel('+i+')" style="width:100%;display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid '+(sel?'var(--text)':'var(--border)')+';'+(i>0?'border-top:none;':'')+'background:'+(sel?'var(--bg3)':'transparent')+';color:var(--text);text-align:left">';
+      o+='<div style="width:16px;height:16px;border:1.5px solid '+(sel?'var(--text)':'var(--border)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(sel?'<div style="width:8px;height:8px;background:var(--text)"></div>':'')+'</div>';
+      o+='<div style="flex:1;min-width:0"><div class="rw"><span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+e(t.desc)+'</span><span class="m" style="font-size:12px;font-weight:600;color:'+(isD?'var(--text)':'var(--success)')+'">'+(isD?'-':'+')+fm(Math.abs(t.amount))+'</span></div>';
+      o+='<div style="display:flex;gap:8px;margin-top:3px"><span class="m" style="font-size:10px;color:var(--text3)">'+e(t.date||"")+'</span>'+(bI?'<span class="m" style="font-size:10px;color:var(--text3)">'+e(bI.nm)+'</span>':'')+'</div></div></button>';
     });
     o+='</div>';
     var selCount=Object.keys(stSel).length;
     var selTotal=0;stResult.transactions.forEach(function(t,i){if(stSel[i])selTotal+=Math.abs(t.amount);});
-    o+='<div class="rw" style="margin-bottom:16px"><div class="lb">'+selCount+' SELECCIONADAS</div><div class="lb" style="color:var(--paper)">'+fm(selTotal)+'</div></div>';
-    o+='<button onclick="doImportStmt()" style="width:100%;padding:14px 0;border:1px solid '+(selCount>0?'var(--paper)':'var(--grey)')+';background:'+(selCount>0?'var(--ink)':'transparent')+';color:'+(selCount>0?'var(--paper)':'var(--grey3)')+';font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">IMPORTAR SELECCIONADAS</button>';
+    o+='<div class="rw" style="margin-bottom:16px"><div class="lb">'+selCount+' SELECCIONADAS</div><div class="lb" style="color:var(--text)">'+fm(selTotal)+'</div></div>';
+    o+='<button onclick="doImportStmt()" style="width:100%;padding:14px 0;border:1px solid '+(selCount>0?'var(--text)':'var(--border)')+';background:'+(selCount>0?'var(--text)':'transparent')+';color:'+(selCount>0?'var(--bg2)':'var(--text3)')+';font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">IMPORTAR SELECCIONADAS</button>';
   }
   o+='</div></div>';
   return o;
@@ -469,15 +468,15 @@ function rLogin(){
   var o='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px"><div style="width:100%;max-width:360px">';
   o+='<div style="text-align:center;margin-bottom:48px"><span style="font-weight:900;font-size:48px;letter-spacing:-0.04em">PROOF</span><span style="font-weight:900;font-size:48px;color:var(--signal)">.</span>';
   o+='<div class="lb" style="margin-top:8px">PERSONAL FINANCE</div></div>';
-  o+='<div style="background:var(--ink2);border:1px solid var(--grey);padding:32px 24px">';
+  o+='<div style="background:var(--bg2);border:1px solid var(--border);padding:32px 24px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">';
   o+='<div class="lb">EMAIL</div>';
-  o+='<input id="le" type="email" placeholder="mail@exemplo.pt" style="width:100%;padding:12px 16px;border:1px solid var(--grey);background:var(--ink);color:var(--paper);font-size:15px;box-sizing:border-box;margin:6px 0 16px"/>';
+  o+='<input id="le" type="email" placeholder="mail@exemplo.pt" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;box-sizing:border-box;margin:6px 0 16px"/>';
   o+='<div class="lb">PASSWORD</div>';
-  o+='<input id="lp" type="password" placeholder="password" style="width:100%;padding:12px 16px;border:1px solid var(--grey);background:var(--ink);color:var(--paper);font-size:15px;box-sizing:border-box;margin:6px 0 24px"/>';
+  o+='<input id="lp" type="password" placeholder="password" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;box-sizing:border-box;margin:6px 0 24px"/>';
   o+='<div id="lerr"></div>';
-  o+='<button onclick="doLogin()" style="width:100%;padding:14px 0;border:1px solid var(--paper);background:var(--ink);color:var(--paper);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">ENTRAR</button>';
+  o+='<button onclick="doLogin()" style="width:100%;padding:14px 0;border:1px solid var(--text);background:var(--text);color:var(--bg);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">ENTRAR</button>';
   o+='</div>';
-  o+='<div class="lb" style="text-align:center;margin-top:24px;color:var(--grey3)">CASE 001 / v0.9 / 2026.04.29</div>';
+  o+='<div class="lb" style="text-align:center;margin-top:24px;color:var(--text3)">CASE 001 / v1.0 / 2026.04.29</div>';
   o+='</div></div>';
   return o;
 }
@@ -506,13 +505,13 @@ function render(){
 
   var o='';
   // Header
-  o+='<div class="rw" style="padding:20px 20px 0"><div><span style="font-weight:900;font-size:22px;letter-spacing:-0.03em">PROOF</span><span style="font-weight:900;font-size:22px;color:var(--signal)">.</span></div><div style="display:flex;align-items:center;gap:12px"><button onclick="showSet=true;render()" style="background:none;border:none;padding:4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="'+(apiKey?'var(--grey2)':'var(--signal)')+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button><button onclick="doLogout()" style="background:none;border:none;color:var(--grey3);font-family:var(--mono);font-size:10px;letter-spacing:0.1em">SAIR</button><div class="lb">29.04.2026</div></div></div>';
+  o+='<div class="rw" style="padding:20px 20px 0"><div><span style="font-weight:900;font-size:22px;letter-spacing:-0.03em">PROOF</span><span style="font-weight:900;font-size:22px;color:var(--signal)">.</span></div><div style="display:flex;align-items:center;gap:12px"><button onclick="showSet=true;render()" style="background:none;border:none;padding:4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="'+(apiKey?'var(--text3)':'var(--signal)')+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button><button onclick="doLogout()" style="background:none;border:none;color:var(--text3);font-family:var(--mono);font-size:10px;letter-spacing:0.1em">SAIR</button><div class="lb">29.04.2026</div></div></div>';
   // Net Worth
   o+='<div style="padding:28px 20px 8px"><div class="lb" style="margin-bottom:8px">PATRIMONIO LIQUIDO</div>';
   o+='<div style="font-size:36px;font-weight:900;letter-spacing:-0.04em">'+fm(nW)+'</div>';
-  o+='<div style="display:flex;align-items:center;gap:6px;margin-top:8px"><span class="m" style="font-size:12px;color:'+(aD>=0?'var(--success)':'var(--signal)')+'">'+(aD>=0?'+':'')+fm(Math.abs(aD))+'</span><span class="m" style="font-size:11px;color:var(--grey3)">desde 11.04</span></div></div>';
+  o+='<div style="display:flex;align-items:center;gap:6px;margin-top:8px"><span class="m" style="font-size:12px;color:'+(aD>=0?'var(--success)':'var(--signal)')+'">'+(aD>=0?'+':'')+fm(Math.abs(aD))+'</span><span class="m" style="font-size:11px;color:var(--text3)">desde 11.04</span></div></div>';
   // Asset Bar
-  o+='<div style="padding:12px 20px 16px"><div style="display:flex;height:4px;background:var(--grey)">';
+  o+='<div style="padding:12px 20px 16px"><div style="display:flex;height:4px;background:var(--border)">';
   Object.keys(cT).forEach(function(c){o+='<div style="width:'+(cT[c]/tA*100)+'%;background:'+(cCol[c]||'#8A8E99')+'"></div>';});
   o+='</div></div>';
   // Tabs
@@ -526,7 +525,7 @@ function render(){
   else if(tab==="expenses")o+=rExpenses();
   else if(tab==="loan")o+=rLoan();
   // Footer
-  o+='<div style="padding:32px 20px 48px;border-top:1px solid var(--grey)"><div><span style="font-weight:900;font-size:14px">PROOF</span><span style="font-weight:900;font-size:14px;color:var(--signal)">.</span></div><div class="m" style="font-size:9px;color:var(--grey3);letter-spacing:0.1em;margin-top:4px">CASE 001 / v0.9 / 2026.04.29</div></div>';
+  o+='<div style="padding:32px 20px 48px;border-top:1px solid var(--border)"><div><span style="font-weight:900;font-size:14px">PROOF</span><span style="font-weight:900;font-size:14px;color:var(--signal)">.</span></div><div class="m" style="font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-top:4px">CASE 001 / v1.0 / 2026.04.29</div></div>';
 
   // Modals
   if(showSet)o+=rSettings();
