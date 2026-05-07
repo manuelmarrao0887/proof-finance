@@ -266,7 +266,7 @@ function callAI(content,prompt,cb){
   var msgs=[{role:"user",content:content.concat([{type:"text",text:prompt}])}];
   fetch("https://api.anthropic.com/v1/messages",{
     method:"POST",
-    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2024-10-22","anthropic-dangerous-direct-browser-access":"true"},
     body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:"Responde APENAS JSON puro. Sem markdown, sem backticks.",messages:msgs})
   }).then(function(r){if(!r.ok)throw new Error(r.status===401?"API key invalida.":"Erro API "+r.status);return r.json();})
   .then(function(d){var txt=(d.content||[]).filter(function(i){return i.type==="text"}).map(function(i){return i.text}).join("");var m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error("Sem JSON.");cb(JSON.parse(m[0]));})
