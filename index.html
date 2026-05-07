@@ -199,11 +199,36 @@ function rExpenses(){
     else o+='<span class="m" style="font-size:10px;color:var(--success)">Resta '+fm(r.lm-r.val)+'</span>';
     o+='</div></div></button>';
 
-    if(isE&&txn[r.id]&&!isQ&&txn[r.id][em]&&txn[r.id][em].length>0){
+    if(isE&&!isQ){
       o+='<div class="exp-detail">';
-      txn[r.id][em].forEach(function(t,i){
-        o+='<div class="rw" style="padding:6px 0;'+(i>0?"border-top:1px solid var(--border)":"")+'"><span style="font-size:12px;color:var(--text2)">'+e(t[0])+'</span><span class="m" style="font-size:12px;font-weight:500">'+fm(t[1])+'</span></div>';
-      });
+      // Historical transactions
+      var hTxn=txn[r.id]&&txn[r.id][em]?txn[r.id][em]:[];
+      if(hTxn.length>0){
+        hTxn.forEach(function(t,i){
+          o+='<div class="rw" style="padding:6px 0;'+(i>0?"border-top:1px solid var(--border)":"")+'"><span style="font-size:12px;color:var(--text2)">'+e(t[0])+'</span><span class="m" style="font-size:12px;font-weight:500">'+fm(t[1])+'</span></div>';
+        });
+      }
+      // Added transactions (editable)
+      var aTxn=[];addedExp.forEach(function(x,idx){if(x.cat===r.id)aTxn.push({x:x,idx:idx});});
+      if(aTxn.length>0){
+        if(hTxn.length>0)o+='<div style="border-top:1px solid var(--border);margin:8px 0"></div>';
+        o+='<div class="lb" style="font-size:9px;margin-bottom:6px">IMPORTADAS</div>';
+        aTxn.forEach(function(at,i){
+          var x=at.x,idx=at.idx;
+          o+='<div style="padding:6px 0;'+(i>0?"border-top:1px solid var(--border)":"")+'">';
+          o+='<div class="rw"><span style="font-size:12px;color:var(--text)">'+e(x.desc)+'</span><span class="m" style="font-size:12px;font-weight:500">'+fm(x.amount)+'</span></div>';
+          o+='<div style="display:flex;align-items:center;gap:6px;margin-top:4px">';
+          o+='<span class="m" style="font-size:9px;color:var(--text3)">'+e(x.date)+'</span>';
+          o+='<select onchange="changeExpCat('+idx+',this.value)" style="padding:2px 6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:var(--mono);font-size:9px;letter-spacing:0.05em;appearance:none">';
+          bdg.forEach(function(b){o+='<option value="'+b.id+'"'+(x.cat===b.id?' selected':'')+'>'+b.nm.toUpperCase()+'</option>';});
+          o+='</select>';
+          o+='<button onclick="addedExp.splice('+idx+',1);render()" style="background:none;border:none;color:var(--signal);font-family:var(--mono);font-size:9px;cursor:pointer">REMOVER</button>';
+          o+='</div></div>';
+        });
+      }
+      if(hTxn.length===0&&aTxn.length===0){
+        o+='<div class="lb" style="padding:8px 0;color:var(--text3)">SEM TRANSACOES DETALHADAS</div>';
+      }
       o+='</div>';
     }
     o+='</div>';
@@ -388,14 +413,31 @@ function rStatement(){
   if(stResult&&stResult.error)o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">'+e(stResult.error)+'</div></div>';
   if(stResult&&stResult.transactions){
     o+='<div class="rw" style="margin-bottom:12px"><div class="lb">'+(stResult.bank||"EXTRACTO")+' — '+stResult.transactions.length+' TRANSACOES</div></div>';
-    o+='<div style="max-height:40vh;overflow:auto;margin-bottom:16px">';
+    o+='<div style="max-height:50vh;overflow:auto;margin-bottom:16px">';
     stResult.transactions.forEach(function(t,i){
       var sel=!!stSel[i],isD=t.amount<0;
       var bI=null;bdg.forEach(function(b){if(b.id===t.category)bI=b;});
-      o+='<button onclick="toggleStSel('+i+')" style="width:100%;display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid '+(sel?'var(--text)':'var(--border)')+';'+(i>0?'border-top:none;':'')+'background:'+(sel?'var(--bg3)':'transparent')+';color:var(--text);text-align:left">';
-      o+='<div style="width:16px;height:16px;border:1.5px solid '+(sel?'var(--text)':'var(--border)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(sel?'<div style="width:8px;height:8px;background:var(--text)"></div>':'')+'</div>';
-      o+='<div style="flex:1;min-width:0"><div class="rw"><span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+e(t.desc)+'</span><span class="m" style="font-size:12px;font-weight:600;color:'+(isD?'var(--text)':'var(--success)')+'">'+(isD?'-':'+')+fm(Math.abs(t.amount))+'</span></div>';
-      o+='<div style="display:flex;gap:8px;margin-top:3px"><span class="m" style="font-size:10px;color:var(--text3)">'+e(t.date||"")+'</span>'+(bI?'<span class="m" style="font-size:10px;color:var(--text3)">'+e(bI.nm)+'</span>':'')+'</div></div></button>';
+      // Validate category
+      var desc=(t.desc||"").toLowerCase();
+      var warn=false;
+      if(!bI)warn=true;
+      // Common mismatches
+      if(t.category==="rest"&&(desc.indexOf("pingo")>-1||desc.indexOf("continente")>-1||desc.indexOf("lidl")>-1))warn=true;
+      if(t.category==="sup"&&(desc.indexOf("mcdonald")>-1||desc.indexOf("h3 ")>-1||desc.indexOf("tradicional")>-1))warn=true;
+
+      o+='<div style="border:1px solid '+(sel?'var(--text)':'var(--border)')+';'+(i>0?'border-top:none;':'')+'background:'+(sel?'var(--bg3)':'var(--bg2)')+';padding:10px 12px">';
+      // Row 1: checkbox + desc + amount
+      o+='<div style="display:flex;align-items:center;gap:10px">';
+      o+='<div onclick="toggleStSel('+i+')" style="width:18px;height:18px;border:1.5px solid '+(sel?'var(--text)':'var(--border)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer">'+(sel?'<div style="width:9px;height:9px;background:var(--text)"></div>':'')+'</div>';
+      o+='<div style="flex:1;min-width:0"><div class="rw"><span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%">'+e(t.desc)+'</span><span class="m" style="font-size:12px;font-weight:600;color:'+(isD?'var(--text)':'var(--success)')+'">'+(isD?'-':'+')+fm(Math.abs(t.amount))+'</span></div></div></div>';
+      // Row 2: date + category selector
+      o+='<div style="display:flex;align-items:center;gap:8px;margin-top:6px;padding-left:28px">';
+      o+='<span class="m" style="font-size:10px;color:var(--text3)">'+e(t.date||"")+'</span>';
+      o+='<select onchange="changeStCat('+i+',this.value)" style="flex:1;padding:4px 8px;border:1px solid '+(warn?'var(--signal)':'var(--border)')+';background:'+(warn?'rgba(229,57,53,0.05)':'var(--bg)')+';color:var(--text);font-family:var(--mono);font-size:9px;letter-spacing:0.05em;appearance:none">';
+      bdg.forEach(function(b){o+='<option value="'+b.id+'"'+(t.category===b.id?' selected':'')+'>'+b.nm.toUpperCase()+'</option>';});
+      o+='</select>';
+      if(warn)o+='<span class="m" style="font-size:9px;color:var(--signal)">VERIFICAR</span>';
+      o+='</div></div>';
     });
     o+='</div>';
     var selCount=Object.keys(stSel).length;
@@ -457,6 +499,8 @@ window.scanStmt=function(el){
   }
 };
 window.toggleStSel=function(i){if(stSel[i])delete stSel[i];else stSel[i]=true;render();};
+window.changeStCat=function(i,cat){if(stResult&&stResult.transactions&&stResult.transactions[i])stResult.transactions[i].category=cat;render();};
+window.changeExpCat=function(i,cat){if(addedExp[i]){addedExp[i].cat=cat;}render();};
 window.doImportStmt=function(){
   if(!stResult||!stResult.transactions)return;
   stResult.transactions.forEach(function(t,i){
@@ -489,7 +533,7 @@ function rLogin(){
   o+='<div id="lerr"></div>';
   o+='<button onclick="doLogin()" style="width:100%;padding:14px 0;border:1px solid var(--text);background:var(--text);color:var(--bg);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">ENTRAR</button>';
   o+='</div>';
-  o+='<div class="lb" style="text-align:center;margin-top:24px;color:var(--text3)">CASE 001 / v1.0 / 2026.04.29</div>';
+  o+='<div class="lb" style="text-align:center;margin-top:24px;color:var(--text3)">CASE 001 / v1.1 / 2026.04.29</div>';
   o+='</div></div>';
   return o;
 }
@@ -538,7 +582,7 @@ function render(){
   else if(tab==="expenses")o+=rExpenses();
   else if(tab==="loan")o+=rLoan();
   // Footer
-  o+='<div style="padding:32px 20px 48px;border-top:1px solid var(--border)"><div><span style="font-weight:900;font-size:14px">PROOF</span><span style="font-weight:900;font-size:14px;color:var(--signal)">.</span></div><div class="m" style="font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-top:4px">CASE 001 / v1.0 / 2026.04.29</div></div>';
+  o+='<div style="padding:32px 20px 48px;border-top:1px solid var(--border)"><div><span style="font-weight:900;font-size:14px">PROOF</span><span style="font-weight:900;font-size:14px;color:var(--signal)">.</span></div><div class="m" style="font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-top:4px">CASE 001 / v1.1 / 2026.04.29</div></div>';
 
   // Modals
   if(showSet)o+=rSettings();
