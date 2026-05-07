@@ -37,6 +37,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.7)}
 <body>
 <div id="app"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 "use strict";
 
@@ -239,16 +240,40 @@ function resizeImg(file,maxW){
     rd.readAsDataURL(file);
   });
 }
-function callAI(b64,prompt,cb){
+function readFileB64(file){
+  return new Promise(function(resolve){
+    var rd=new FileReader();
+    rd.onload=function(ev){resolve(ev.target.result.split(",")[1]);};
+    rd.readAsDataURL(file);
+  });
+}
+function parseExcel(file){
+  return new Promise(function(resolve){
+    var rd=new FileReader();
+    rd.onload=function(ev){
+      try{
+        var wb=XLSX.read(ev.target.result,{type:"array"});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        var csv=XLSX.utils.sheet_to_csv(ws);
+        resolve(csv);
+      }catch(e){resolve(null);}
+    };
+    rd.readAsArrayBuffer(file);
+  });
+}
+function callAI(content,prompt,cb){
   if(!apiKey){cb({error:"API key nao configurada. Abre Definicoes."});return;}
+  var msgs=[{role:"user",content:content.concat([{type:"text",text:prompt}])}];
   fetch("https://api.anthropic.com/v1/messages",{
     method:"POST",
     headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:"Responde APENAS JSON puro. Sem markdown, sem backticks.",messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:prompt}]}]})
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:"Responde APENAS JSON puro. Sem markdown, sem backticks.",messages:msgs})
   }).then(function(r){if(!r.ok)throw new Error(r.status===401?"API key invalida.":"Erro API "+r.status);return r.json();})
   .then(function(d){var txt=(d.content||[]).filter(function(i){return i.type==="text"}).map(function(i){return i.text}).join("");var m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error("Sem JSON.");cb(JSON.parse(m[0]));})
   .catch(function(err){cb({error:err.message});});
 }
+var STMT_PROMPT='Analisa extracto bancario. Extrai TODAS as transacoes. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao","amount":-0.00,"category":"rest"}]}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
+var RCPT_PROMPT='Analisa este recibo/fatura. Extrai itens e valores. JSON: {"items":[{"desc":"nome","amount":0.00}],"total":0.00,"suggested_category":"rest"}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out\nSe nao for recibo: {"error":"Nao e um recibo."}';
 
 /* ══ SETTINGS MODAL ══ */
 function rSettings(){
@@ -308,12 +333,13 @@ function rStatement(){
   o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">IMPORTAR EXTRACTO</div><button onclick="showStmt=false;stResult=null;render()" style="background:none;border:none;color:var(--grey2);font-size:20px">✕</button></div>';
   if(!apiKey){o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">API KEY NECESSARIA — ABRE DEFINICOES</div></div>';o+='</div></div>';return o;}
   if(!stResult&&!stScanning){
-    o+='<div style="font-size:12px;color:var(--grey2);margin-bottom:16px">Fotografa ou carrega imagem do extracto bancario.</div>';
+    o+='<div style="font-size:12px;color:var(--grey2);margin-bottom:16px">Carrega imagem, PDF ou Excel do extracto bancario.</div>';
     o+='<div style="display:flex;gap:8px;margin-bottom:16px">';
     o+='<input id="stCam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanStmt(this)"/>';
-    o+='<input id="stFile" type="file" accept="image/*" style="display:none" onchange="scanStmt(this)"/>';
+    o+='<input id="stFile" type="file" accept="image/*,.pdf,.xlsx,.xls,.csv" style="display:none" onchange="scanStmt(this)"/>';
     o+='<button onclick="document.getElementById(\'stCam\').click()" style="flex:1;padding:16px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">CAMARA</button>';
-    o+='<button onclick="document.getElementById(\'stFile\').click()" style="flex:1;padding:16px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">GALERIA</button></div>';
+    o+='<button onclick="document.getElementById(\'stFile\').click()" style="flex:1;padding:16px;border:1px solid var(--grey);background:transparent;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">FICHEIRO</button></div>';
+    o+='<div class="m" style="font-size:9px;color:var(--grey3);margin-top:-8px;margin-bottom:16px">IMAGEM / PDF / XLSX / CSV</div>';
   }
   if(stScanning)o+='<div style="border:1px solid var(--grey);padding:24px;text-align:center"><div class="lb">A PROCESSAR EXTRACTO.</div></div>';
   if(stResult&&stResult.error)o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">'+e(stResult.error)+'</div></div>';
@@ -343,7 +369,7 @@ window.scanReceipt=function(el){
   var f=el.files&&el.files[0];if(!f)return;
   scScanning=true;scResult=null;render();
   resizeImg(f).then(function(b64){
-    callAI(b64,'Analisa este recibo/fatura. Extrai itens e valores. JSON: {"items":[{"desc":"nome","amount":0.00}],"total":0.00,"suggested_category":"rest"}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out\nSe nao for recibo: {"error":"Nao e um recibo."}',function(res){
+    callAI([{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}}],RCPT_PROMPT,function(res){
       scScanning=false;scResult=res;
       if(!res.error){
         if(res.total)addData.amount=String(res.total).replace(".",",");
@@ -356,14 +382,36 @@ window.scanReceipt=function(el){
 };
 window.scanStmt=function(el){
   var f=el.files&&el.files[0];if(!f)return;
+  var name=f.name.toLowerCase();
+  var isPDF=f.type==="application/pdf"||name.endsWith(".pdf");
+  var isXLS=name.endsWith(".xlsx")||name.endsWith(".xls")||name.endsWith(".csv")||f.type.indexOf("spreadsheet")>-1||f.type.indexOf("excel")>-1;
   stScanning=true;stResult=null;stSel={};render();
-  resizeImg(f,1600).then(function(b64){
-    callAI(b64,'Analisa extracto bancario. Extrai TODAS as transacoes. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao","amount":-0.00,"category":"rest"}]}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out',function(res){
-      stScanning=false;stResult=res;
-      if(res.transactions)res.transactions.forEach(function(t,i){if(t.amount<0)stSel[i]=true;});
-      render();
+  if(isPDF){
+    readFileB64(f).then(function(b64){
+      callAI([{type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}}],STMT_PROMPT,function(res){
+        stScanning=false;stResult=res;
+        if(res.transactions)res.transactions.forEach(function(t,i){if(t.amount<0)stSel[i]=true;});
+        render();
+      });
     });
-  });
+  }else if(isXLS){
+    parseExcel(f).then(function(csv){
+      if(!csv){stScanning=false;stResult={error:"Erro ao ler ficheiro."};render();return;}
+      callAI([{type:"text",text:"Dados do extracto bancario:\n\n"+csv}],STMT_PROMPT,function(res){
+        stScanning=false;stResult=res;
+        if(res.transactions)res.transactions.forEach(function(t,i){if(t.amount<0)stSel[i]=true;});
+        render();
+      });
+    });
+  }else{
+    resizeImg(f,1600).then(function(b64){
+      callAI([{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}}],STMT_PROMPT,function(res){
+        stScanning=false;stResult=res;
+        if(res.transactions)res.transactions.forEach(function(t,i){if(t.amount<0)stSel[i]=true;});
+        render();
+      });
+    });
+  }
 };
 window.toggleStSel=function(i){if(stSel[i])delete stSel[i];else stSel[i]=true;render();};
 window.doImportStmt=function(){
@@ -398,7 +446,7 @@ function rLogin(){
   o+='<div id="lerr"></div>';
   o+='<button onclick="doLogin()" style="width:100%;padding:14px 0;border:1px solid var(--paper);background:var(--ink);color:var(--paper);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">ENTRAR</button>';
   o+='</div>';
-  o+='<div class="lb" style="text-align:center;margin-top:24px;color:var(--grey3)">CASE 001 / v0.8 / 2026.04.29</div>';
+  o+='<div class="lb" style="text-align:center;margin-top:24px;color:var(--grey3)">CASE 001 / v0.9 / 2026.04.29</div>';
   o+='</div></div>';
   return o;
 }
@@ -447,7 +495,7 @@ function render(){
   else if(tab==="expenses")o+=rExpenses();
   else if(tab==="loan")o+=rLoan();
   // Footer
-  o+='<div style="padding:32px 20px 48px;border-top:1px solid var(--grey)"><div><span style="font-weight:900;font-size:14px">PROOF</span><span style="font-weight:900;font-size:14px;color:var(--signal)">.</span></div><div class="m" style="font-size:9px;color:var(--grey3);letter-spacing:0.1em;margin-top:4px">CASE 001 / v0.8 / 2026.04.29</div></div>';
+  o+='<div style="padding:32px 20px 48px;border-top:1px solid var(--grey)"><div><span style="font-weight:900;font-size:14px">PROOF</span><span style="font-weight:900;font-size:14px;color:var(--signal)">.</span></div><div class="m" style="font-size:9px;color:var(--grey3);letter-spacing:0.1em;margin-top:4px">CASE 001 / v0.9 / 2026.04.29</div></div>';
 
   // Modals
   if(showSet)o+=rSettings();
