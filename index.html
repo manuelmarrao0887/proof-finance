@@ -268,10 +268,37 @@ function callAI(content,prompt,cb){
     method:"POST",
     headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2024-10-22","anthropic-beta":"pdfs-2024-09-25","anthropic-dangerous-direct-browser-access":"true"},
     body:JSON.stringify({model:"claude-3-5-sonnet-20241022",max_tokens:4000,system:"Responde APENAS JSON puro. Sem markdown, sem backticks.",messages:msgs})
-  }).then(function(r){if(!r.ok)throw new Error(r.status===401?"API key invalida.":"Erro API "+r.status);return r.json();})
+  }).then(function(r){
+    if(!r.ok) return r.text().then(function(body){throw new Error("API "+r.status+": "+body.substring(0,200));});
+    return r.json();
+  })
   .then(function(d){var txt=(d.content||[]).filter(function(i){return i.type==="text"}).map(function(i){return i.text}).join("");var m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error("Sem JSON.");cb(JSON.parse(m[0]));})
-  .catch(function(err){cb({error:err.message});});
+  .catch(function(err){
+    var msg=err.message||"Erro desconhecido";
+    if(msg==="Failed to fetch"||msg.indexOf("NetworkError")>-1||msg.indexOf("CORS")>-1)msg="Erro de rede/CORS. Testa a partir de HTTPS (GitHub Pages), nao de file://.";
+    cb({error:msg});
+  });
 }
+window.testAPI=function(){
+  var el=document.getElementById("testResult");
+  if(!apiKey){el.innerHTML='<div class="lb" style="color:var(--signal)">COLA A KEY PRIMEIRO</div>';return;}
+  el.innerHTML='<div class="lb">A TESTAR...</div>';
+  fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2024-10-22","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-3-5-sonnet-20241022",max_tokens:50,messages:[{role:"user",content:"Responde apenas: OK"}]})
+  }).then(function(r){
+    return r.text().then(function(body){
+      if(r.ok)el.innerHTML='<div class="lb" style="color:var(--success)">API OK — STATUS '+r.status+'</div><div class="m" style="font-size:9px;color:var(--grey3);margin-top:4px;word-break:break-all">'+body.substring(0,150)+'</div>';
+      else el.innerHTML='<div class="lb" style="color:var(--signal)">ERRO '+r.status+'</div><div class="m" style="font-size:9px;color:var(--grey3);margin-top:4px;word-break:break-all">'+body.substring(0,300)+'</div>';
+    });
+  }).catch(function(err){
+    var msg=err.message||"Erro";
+    var hint="";
+    if(msg==="Failed to fetch")hint="<br><br>CAUSA PROVAVEL: CORS bloqueado. Estas a abrir o ficheiro com file://? Tem de ser via HTTPS (GitHub Pages).";
+    el.innerHTML='<div class="lb" style="color:var(--signal)">ERRO DE REDE</div><div class="m" style="font-size:10px;color:var(--grey3);margin-top:4px">'+msg+hint+'</div><div class="m" style="font-size:9px;color:var(--grey3);margin-top:8px">URL actual: '+location.protocol+"//"+location.host+'</div>';
+  });
+};
 var STMT_PROMPT='Analisa extracto bancario. Extrai TODAS as transacoes. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao","amount":-0.00,"category":"rest"}]}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
 var RCPT_PROMPT='Analisa este recibo/fatura. Extrai itens e valores. JSON: {"items":[{"desc":"nome","amount":0.00}],"total":0.00,"suggested_category":"rest"}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out\nSe nao for recibo: {"error":"Nao e um recibo."}';
 
@@ -288,6 +315,10 @@ function rSettings(){
   else o+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-left:3px solid var(--signal)"><div style="width:8px;height:8px;background:var(--signal)"></div><div class="lb" style="color:var(--signal)">SEM KEY — SCANNER INACTIVO</div></div>';
   o+='<button onclick="apiKey=document.getElementById(\'ki\').value;try{localStorage.setItem(\'proof_api_key\',apiKey)}catch(x){};showSet=false;render()" style="width:100%;padding:14px 0;border:1px solid var(--paper);background:var(--ink);color:var(--paper);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:12px">GUARDAR KEY</button>';
   if(apiKey)o+='<button onclick="apiKey=\'\';try{localStorage.removeItem(\'proof_api_key\')}catch(x){};showSet=false;render()" style="width:100%;padding:12px 0;border:1px solid rgba(255,59,48,0.3);background:transparent;color:var(--signal);font-family:var(--mono);font-size:11px">REMOVER KEY</button>';
+  o+='<div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--grey)">';
+  o+='<button onclick="testAPI()" style="width:100%;padding:12px 0;border:1px solid var(--grey);background:transparent;color:var(--grey2);font-family:var(--mono);font-size:11px;letter-spacing:0.1em">TESTAR LIGACAO API</button>';
+  o+='<div id="testResult" style="margin-top:12px"></div>';
+  o+='</div>';
   o+='</div></div>';
   return o;
 }
