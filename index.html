@@ -38,7 +38,6 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.7)}
 <div id="app"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-(function(){
 "use strict";
 
 /* ══ AUTH ══ */
@@ -459,6 +458,7 @@ function render(){
 }
 
 /* ══ GLOBAL STATE HANDLER ══ */
+window.render=render;
 window.T=function(key,val){
   if(val==="null")val=null;
   if(key==="em")val=parseInt(val);
@@ -466,6 +466,9 @@ window.T=function(key,val){
   else if(key==="xCat"){xCat=val;xExp=null;}
   else if(key==="xExp"){xExp=val;}
   else if(key==="em"){em=val;xExp=null;}
+  else if(key==="showSet"){showSet=!!val;}
+  else if(key==="showStmt"){showStmt=!!val;if(!val){stResult=null;stSel={};}}
+  else if(key==="showAdd"){showAdd=!!val;if(!val)scResult=null;}
   render();
 };
 
@@ -480,7 +483,6 @@ if(sb){
 }else{
   view="app";render();
 }
-})();
 </script>
 </body>
 </html>
