@@ -266,12 +266,25 @@ function callAI(content,prompt,cb){
   fetch("https://api.anthropic.com/v1/messages",{
     method:"POST",
     headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-beta":"pdfs-2024-09-25","anthropic-dangerous-direct-browser-access":"true"},
-    body:JSON.stringify({model:"claude-haiku-4-5",max_tokens:4000,system:"Responde APENAS JSON puro. Sem markdown, sem backticks.",messages:msgs})
+    body:JSON.stringify({model:"claude-haiku-4-5",max_tokens:16000,system:"Responde APENAS JSON puro. Sem markdown, sem backticks.",messages:msgs})
   }).then(function(r){
     if(!r.ok) return r.text().then(function(body){throw new Error("API "+r.status+": "+body.substring(0,200));});
     return r.json();
   })
-  .then(function(d){var txt=(d.content||[]).filter(function(i){return i.type==="text"}).map(function(i){return i.text}).join("");var m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error("Sem JSON.");cb(JSON.parse(m[0]));})
+  .then(function(d){var txt=(d.content||[]).filter(function(i){return i.type==="text"}).map(function(i){return i.text}).join("");var m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error("Sem JSON.");
+    try{cb(JSON.parse(m[0]));}catch(pe){
+      // Try to fix truncated JSON
+      var fix=m[0];
+      // Remove last incomplete element after last comma
+      var li=fix.lastIndexOf("},");
+      if(li>-1)fix=fix.substring(0,li+1);
+      // Close any open arrays and objects
+      var ob=0,oa=0;for(var ci=0;ci<fix.length;ci++){if(fix[ci]==="{")ob++;if(fix[ci]==="}")ob--;if(fix[ci]==="[")oa++;if(fix[ci]==="]")oa--;}
+      while(oa>0){fix+="]";oa--;}
+      while(ob>0){fix+="}";ob--;}
+      try{cb(JSON.parse(fix));}catch(pe2){throw pe;}
+    }
+  })
   .catch(function(err){
     var msg=err.message||"Erro desconhecido";
     if(msg==="Failed to fetch"||msg.indexOf("NetworkError")>-1||msg.indexOf("CORS")>-1)msg="Erro de rede/CORS. Testa a partir de HTTPS (GitHub Pages), nao de file://.";
@@ -298,7 +311,7 @@ window.testAPI=function(){
     el.innerHTML='<div class="lb" style="color:var(--signal)">ERRO DE REDE</div><div class="m" style="font-size:10px;color:var(--text3);margin-top:4px">'+msg+hint+'</div><div class="m" style="font-size:9px;color:var(--text3);margin-top:8px">URL actual: '+location.protocol+"//"+location.host+'</div>';
   });
 };
-var STMT_PROMPT='Analisa extracto bancario. Extrai TODAS as transacoes. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao","amount":-0.00,"category":"rest"}]}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
+var STMT_PROMPT='Analisa extracto bancario. Extrai TODAS as transacoes. Descricoes CURTAS (max 20 chars). Valores negativos para debitos, positivos para creditos. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao curta","amount":-0.00,"category":"rest"}]}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
 var RCPT_PROMPT='Analisa este recibo/fatura. Extrai itens e valores. JSON: {"items":[{"desc":"nome","amount":0.00}],"total":0.00,"suggested_category":"rest"}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out\nSe nao for recibo: {"error":"Nao e um recibo."}';
 
 /* ══ SETTINGS MODAL ══ */
