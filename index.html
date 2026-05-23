@@ -115,7 +115,8 @@ try{
 }catch(_e){}
 
 /* ══ AUTH (Firebase) ══ */
-var view="loading",fbAuth=null,fbDb=null,currentUser=null;
+var view="loading",fbAuth=null,fbDb=null,currentUser=null,initError=null;
+var IS_FILE=location.protocol==="file:";
 var firebaseConfig={
   apiKey:"AIzaSyDemHPODFA07zSIA31O8qQ2mjB_4mLzvJg",
   authDomain:"personal-finance-9c979.firebaseapp.com",
@@ -124,11 +125,18 @@ var firebaseConfig={
   messagingSenderId:"439427628821",
   appId:"1:439427628821:web:08f756917777856ca2731c"
 };
-try{
-  firebase.initializeApp(firebaseConfig);
-  fbAuth=firebase.auth();
-  fbDb=firebase.firestore();
-}catch(e){console.error("Firebase init falhou",e);view="app";}
+if(IS_FILE){
+  initError="A app esta a ser aberta em modo ficheiro local (file://). Firebase Auth e Firestore exigem HTTPS.";
+}else{
+  try{
+    firebase.initializeApp(firebaseConfig);
+    fbAuth=firebase.auth();
+    fbDb=firebase.firestore();
+  }catch(e){
+    console.error("Firebase init falhou",e);
+    initError="Falha a inicializar Firebase: "+(e&&e.message?e.message:String(e));
+  }
+}
 
 /* ══ DATA ══ */
 var hist=[
@@ -1269,11 +1277,35 @@ window.T=function(key,val){
 };
 
 /* ══ INIT ══ */
-function showFatal(msg){
+function showFatal(title,msg,extra){
   var el=document.getElementById("app");
-  if(el)el.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px"><div style="max-width:420px"><div class="lb" style="color:var(--signal);margin-bottom:12px">Erro de inicializacao</div><div style="font-size:13px;color:var(--text2);line-height:1.5">'+e(msg)+'</div></div></div>';
+  if(!el)return;
+  var dark=document.documentElement.getAttribute("data-theme")==="dark";
+  el.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px"><div style="max-width:440px;width:100%">'
+    +'<div style="width:56px;height:56px;background:var(--signal-soft);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:18px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>'
+    +'<div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:8px">'+e(title)+'</div>'
+    +'<div style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:16px">'+e(msg)+'</div>'
+    +(extra||'')
+    +'</div></div>';
 }
-if(fbAuth){
+if(initError){
+  if(IS_FILE){
+    showFatal(
+      "Servir via HTTPS",
+      "Estas a abrir o ficheiro localmente (file://). Firebase Auth e Firestore nao funcionam neste modo.",
+      '<div class="cd" style="padding:16px;margin-top:12px">'
+      +'<div class="lb" style="margin-bottom:10px;color:var(--success)">Solucoes</div>'
+      +'<div style="font-size:13px;color:var(--text);line-height:1.7">'
+      +'<b>1.</b> Ativa GitHub Pages no repo:<br><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">Settings &rarr; Pages &rarr; Branch: main</span><br>e acede em <span style="font-family:var(--mono);font-size:11px">manuelmarrao0887.github.io/proof-finance</span>'
+      +'<br><br><b>2.</b> Ou serve localmente:<br><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">python3 -m http.server 8000</span><br>e abre <span style="font-family:var(--mono);font-size:11px">localhost:8000</span>'
+      +'</div></div>'
+    );
+  }else{
+    showFatal("Erro de inicializacao",initError);
+  }
+}else if(fbAuth){
+  // Use SESSION persistence (works in more environments than the LOCAL default)
+  try{fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){fbAuth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});});}catch(_e){}
   render();
   var authFired=false;
   fbAuth.onAuthStateChanged(function(user){
@@ -1283,22 +1315,22 @@ if(fbAuth){
       loadUser().then(function(){view="app";render();});
     }else{
       currentUser=null;
-      apiKey="";aiHistory=[];dynAccts=null;dynSnaps=[];addedExp=[];
+      apiKey="";aiHistory=[];dynAccts=null;dynSnaps=[];addedExp=[];theme="system";goals=[];recurring=[];
       view="login";render();
     }
   },function(err){
     authFired=true;
-    showFatal("Firebase Auth: "+(err&&err.message?err.message:"erro desconhecido"));
+    showFatal("Erro de autenticacao",(err&&err.message)?err.message:"Firebase Auth indisponivel.");
   });
-  // Fallback: se ao fim de 4s nao houver resposta, assumir nao autenticado
+  // Fallback timer: if auth doesn't respond in 2.5s, show login
   setTimeout(function(){
     if(!authFired){
-      console.warn("Firebase Auth nao respondeu em 4s — fallback para login");
+      console.warn("Firebase Auth sem resposta em 2.5s — fallback para login");
       view="login";render();
     }
-  },4000);
+  },2500);
 }else{
-  showFatal("Firebase nao inicializou. Verifica a consola (F12).");
+  showFatal("Firebase nao inicializou","Verifica a consola do browser (F12) para detalhes.");
 }
 </script>
 </body>
