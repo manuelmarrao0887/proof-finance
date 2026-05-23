@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PROOF. Financas</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#111318;color:#E8EAF0;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+button{font-family:inherit;border-radius:0}
+select,input{font-family:inherit;outline:none;border-radius:0}
+input::placeholder{color:#8A8E99}
+select:focus,input:focus{border-color:#FF3B30!important}
+::-webkit-scrollbar{display:none}
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useRef, Fragment } = React;
+
+/* TOKENS */
+const T = {
+  ink: "#111318", ink2: "#1A1D24", ink3: "#222530",
+  paper: "#E8EAF0", paper2: "#D8DAE0",
+  grey: "#2A2D36", grey2: "#8A8E99", grey3: "#5A5D66",
+  signal: "#FF3B30", success: "#4AE29B",
+  font: "'Archivo', sans-serif",
+  mono: "'IBM Plex Mono', monospace"
+};
+
+/* ICONS as simple SVG components */
+function SvgIcon({ paths, size, color }) {
+  size = size || 16;
+  color = color || "currentColor";
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+      dangerouslySetInnerHTML={{ __html: paths }} />
+  );
+}
+
+const iconPaths = {
+  restauracao: '<path d="M16 2v20"/><path d="M20 2v6c0 2-2 4-4 4"/><path d="M8 8V2"/><path d="M4 2v6c0 2 2 4 4 4v10"/>',
+  super: '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2 2h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
+  casa: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  empregada: '<path d="M12 3L2 12h3v8h14v-8h3L12 3z"/>',
+  seguros: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  animais: '<circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="4" cy="8" r="2"/><path d="M12 12c-4 0-6 2-6 6s6 6 6 6 6-2 6-6-2-6-6-6z"/>',
+  saude: '<path d="M19.5 12.572l-7.5 7.428-7.5-7.428A5 5 0 1 1 12 6.006a5 5 0 1 1 7.5 6.572z"/>',
+  telecom: '<rect x="5" y="2" width="14" height="20" rx="2"/>',
+  carro: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-3-5H9L6 10l-2.5 1.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
+  subs: '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
+  gym: '<line x1="6.5" y1="6.5" x2="17.5" y2="6.5"/><line x1="17.5" y1="4" x2="17.5" y2="9"/><line x1="6.5" y1="4" x2="6.5" y2="9"/><line x1="3" y1="8" x2="3" y2="10"/><line x1="21" y1="8" x2="21" y2="10"/><line x1="12" y1="4" x2="12" y2="20"/>',
+  combustivel: '<path d="M3 22V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v17"/><path d="M15 10h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2h0a1 1 0 0 0 1-1V9l-3-3"/><path d="M3 22h12"/>',
+  negocio: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3"/>',
+  lazer: '<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/>',
+  transferencias: '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+  outros: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  trendUp: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>'
+};
+
+function CatIcon({ id, size, color }) {
+  return <SvgIcon paths={iconPaths[id] || iconPaths.outros} size={size} color={color} />;
+}
+
+/* DATA */
+var history = [
+  { label: "11/04", liquidez: 1313.08, poupanca: 4136.06, investimentos: 16141.02, divida: 77865.69, xtbPlans: 9637.56, xtbTrans: 476.55, trCorr: 2073.73 },
+  { label: "16/04", liquidez: 1283.48, poupanca: 4136.06, investimentos: 16620.46, divida: 77865.69, xtbPlans: 10293.54, xtbTrans: 495.87, trCorr: 2175.17 }
+];
+
+var D = {
+  accounts: [
+    { bank: "Bankinter", type: "Conta a Ordem", value: 426.84, note: "853,68/2", category: "Liquidez" },
+    { bank: "Activobank", type: "Conta a Ordem", value: 104.45, category: "Liquidez" },
+    { bank: "Moey", type: "Conta a Ordem", value: 752.62, note: "3 contas", category: "Liquidez" },
+    { bank: "Trade Republic", type: "Poupanca", value: 4136.06, category: "Poupanca" },
+    { bank: "Trade Republic", type: "Corretagem", value: 2175.17, category: "Investimentos" },
+    { bank: "Trade Republic", type: "Private Markets", value: 2060.80, category: "Investimentos" },
+    { bank: "Trade Republic", type: "Rendimento Fixo", value: 751.08, category: "Investimentos" },
+    { bank: "XTB", type: "Transacoes", value: 495.87, note: "-3,08", category: "Investimentos" },
+    { bank: "XTB", type: "Planos", value: 10293.54, note: "+1.092,91", category: "Investimentos" },
+    { bank: "Goparity", type: "P2P", value: 555.88, category: "Investimentos" },
+    { bank: "Raize", type: "P2P", value: 37.13, category: "Investimentos" }
+  ],
+  loan: { originalCapital: 90000, outstanding: 77865.69 },
+  budget: [
+    { id: "restauracao", name: "Restauracao", limit: 250 },
+    { id: "super", name: "Supermercado", limit: 250 },
+    { id: "casa", name: "Prestacao Casa", limit: 350 },
+    { id: "empregada", name: "Empregada", limit: 360 },
+    { id: "seguros", name: "Seguros", limit: 100 },
+    { id: "animais", name: "Animais (Pablo)", limit: 105 },
+    { id: "saude", name: "Saude", limit: 40 },
+    { id: "telecom", name: "Telecom", limit: 60 },
+    { id: "carro", name: "Carro", limit: 55 },
+    { id: "subs", name: "Subscricoes", limit: 50 },
+    { id: "gym", name: "Ginasio", limit: 36 },
+    { id: "combustivel", name: "Combustivel", limit: 90 },
+    { id: "negocio", name: "Negocio", limit: 50 },
+    { id: "lazer", name: "Lazer", limit: 100 },
+    { id: "transferencias", name: "Transferencias", limit: 100 },
+    { id: "outros", name: "Outros", limit: 30 }
+  ],
+  byCategory: {
+    restauracao: [509.52, 328.65, 383, 135.66],
+    super: [157.57, 348.81, 333.48, 50.50],
+    casa: [350, 350, 350, 0],
+    empregada: [0, 360, 360, 0],
+    seguros: [285.82, 121.58, 95.26, 115.94],
+    animais: [20, 224.98, 0, 0],
+    saude: [0, 0, 75.92, 17],
+    telecom: [57.88, 59.71, 118.38, 0],
+    carro: [56.19, 13.53, 95.53, 13.53],
+    subs: [34.46, 34.46, 76.95, 26.03],
+    gym: [0, 0, 0, 35.90],
+    combustivel: [58.62, 0, 208.57, 0],
+    negocio: [61.66, 83.28, 2.25, 12],
+    lazer: [22.30, 77.70, 134.67, 79.99],
+    transferencias: [183.87, 76.70, 178.68, 110],
+    outros: [77.89, 35.40, 9.46, 0.36]
+  },
+  transactions: {
+    restauracao: [
+      [["McDonalds", 42.35], ["Adega Lampeira", 54.50], ["Outros", 412.67]],
+      [["McDonalds", 43.65], ["Pare e Prove", 60.50], ["Outros", 224.50]],
+      [["O Tradicional", 51.20], ["Kanto Fusion", 55], ["Outros", 276.80]],
+      [["O Tradicional", 36.70], ["Uber Eats", 16.81], ["Pare e Prove", 13.50], ["Outros", 68.65]]
+    ],
+    super: [
+      [["Pingo Doce", 118.27], ["Continente", 31.06], ["Lidl", 8.24]],
+      [["Continente", 179.83], ["Pingo Doce", 155.69]],
+      [["Pingo Doce", 250.33], ["Continente", 83.15]],
+      [["Pingo Doce", 29.15], ["Continente", 21.35]]
+    ],
+    seguros: [
+      [["Fidelidade", 190.56], ["MGEN", 67.64], ["Medis", 10.90], ["Barkibu", 16.72]],
+      [["Seg.Social", 26.32], ["MGEN", 67.64], ["Medis", 10.90], ["Barkibu", 16.72]],
+      [["MGEN", 67.64], ["Medis", 10.90], ["Barkibu", 16.72]],
+      [["Seg.Social", 31.58], ["MGEN", 67.64], ["Barkibu", 16.72]]
+    ],
+    carro: [
+      [["Cartrack", 13.53], ["Autodoc", 42.66]],
+      [["Cartrack", 13.53]],
+      [["Cartrack", 13.53], ["BMW", 82]],
+      [["Cartrack", 13.53]]
+    ],
+    subs: [
+      [["Netflix", 22.98], ["Apple", 0.99], ["Google One", 2.99], ["Nabu Casa", 7.50]],
+      [["Netflix", 22.98], ["Apple", 0.99], ["Google One", 2.99], ["Nabu Casa", 7.50]],
+      [["Netflix", 22.98], ["Apple", 0.99], ["Google One", 2.99], ["Nabu Casa", 7.50], ["Genspark", 42.49]],
+      [["Apple", 4.98], ["Google Workspace", 12], ["Printpal", 9.05]]
+    ],
+    lazer: [
+      [["JumpYard", 12.40], ["Casa Inglesa", 9.90]],
+      [["Oceanario", 26.10], ["Rituals", 26.80]],
+      [["Jockey", 62], ["Prozis", 50.37]],
+      [["PlayStation", 79.99]]
+    ]
+  },
+  salaries: [1923.54, 1849.33, 1898.89, null]
+};
+
+var acctCat = {
+  Liquidez: { color: "#3B82F6" },
+  Poupanca: { color: "#8B5CF6" },
+  Investimentos: { color: T.success }
+};
+
+function fmt(v) {
+  return v.toLocaleString("pt-PT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " EUR";
+}
+function fmtK(v) {
+  return v >= 10000 ? (v / 1000).toFixed(1) + "k" : fmt(v);
+}
+
+function Label(props) {
+  return (
+    <div style={Object.assign({
+      fontFamily: T.mono, fontSize: 11, fontWeight: 500,
+      letterSpacing: "0.12em", textTransform: "uppercase", color: T.grey2
+    }, props.style || {})}>
+      {props.children}
+    </div>
+  );
+}
+
+function Card(props) {
+  var s = Object.assign({
+    background: T.ink2, border: "1px solid " + T.grey, borderRadius: 0, padding: "24px 20px"
+  }, props.style || {});
+  if (props.signal) { s.borderLeft = "3px solid " + T.signal; }
+  return <div style={s}>{props.children}</div>;
+}
+
+function MiniChart(props) {
+  var data = props.data;
+  var color = props.color;
+  var label = props.label;
+  var height = props.height || 56;
+  if (!data || data.length < 2) return null;
+  var min = Math.min.apply(null, data) * 0.95;
+  var max = Math.max.apply(null, data) * 1.05;
+  var range = max - min || 1;
+  var w = 100;
+  var pts = data.map(function(v, i) {
+    return (i / (data.length - 1)) * w + "," + (height - ((v - min) / range) * height);
+  }).join(" ");
+  var area = pts + " " + w + "," + height + " 0," + height;
+  var diff = data[data.length - 1] - data[0];
+  var pct = data[0] > 0 ? ((diff / data[0]) * 100).toFixed(1) : "0";
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      {label && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 500 }}>{label}</span>
+          <div>
+            <span style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 500 }}>{fmt(data[data.length - 1])}</span>
+            <span style={{ fontFamily: T.mono, fontSize: 11, color: diff >= 0 ? T.success : T.signal, marginLeft: 8 }}>{diff >= 0 ? "+" : ""}{pct}%</span>
+          </div>
+        </div>
+      )}
+      <svg viewBox={"0 0 " + w + " " + height} style={{ width: "100%", height: height }}>
+        <polygon points={area} fill={color} fillOpacity="0.1" />
+        <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" />
+      </svg>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+        {history.map(function(h, i) {
+          return <span key={i} style={{ fontFamily: T.mono, fontSize: 9, color: T.grey3 }}>{h.label}</span>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  var tabState = useState("overview");
+  var tab = tabState[0], setTab = tabState[1];
+  var xCatState = useState(null);
+  var xCat = xCatState[0], setXCat = xCatState[1];
+  var eMState = useState(3);
+  var eM = eMState[0], setEM = eMState[1];
+  var xExpState = useState(null);
+  var xExp = xExpState[0], setXExp = xExpState[1];
+  var showFState = useState(false);
+  var showF = showFState[0], setShowF = showFState[1];
+  var fdState = useState({ desc: "", amount: "", category: "restauracao" });
+  var fd = fdState[0], setFd = fdState[1];
+  var addEState = useState([]);
+  var addE = addEState[0], setAddE = addEState[1];
+
+  var byCat = JSON.parse(JSON.stringify(D.byCategory));
+  addE.forEach(function(e) { if (byCat[e.category]) byCat[e.category][3] += e.amount; });
+
+  /* Accounts grouped */
+  var grouped = {};
+  D.accounts.forEach(function(a) {
+    if (!grouped[a.category]) grouped[a.category] = [];
+    grouped[a.category].push(a);
+  });
+  var catTotals = {};
+  Object.keys(grouped).forEach(function(c) {
+    catTotals[c] = grouped[c].reduce(function(s, i) { return s + i.value; }, 0);
+  });
+  var totalAssets = Object.values(catTotals).reduce(function(s, v) { return s + v; }, 0);
+  var netWorth = totalAssets - D.loan.outstanding;
+  var pp = ((D.loan.originalCapital - D.loan.outstanding) / D.loan.originalCapital) * 100;
+
+  var isQ1 = eM === 4;
+  var months = ["JAN", "FEV", "MAR", "ABR"];
+
+  var expRows = D.budget.map(function(b) {
+    var vals = byCat[b.id] || [0, 0, 0, 0];
+    var value = isQ1 ? vals.slice(0, 3).reduce(function(s, v) { return s + v; }, 0) : (vals[eM] || 0);
+    var limit = isQ1 ? b.limit * 3 : b.limit;
+    var pct = limit > 0 ? (value / limit) * 100 : 0;
+    return { id: b.id, name: b.name, limit: limit, value: value, pct: pct, vals: vals };
+  }).filter(function(r) { return r.value > 0; }).sort(function(a, b) { return b.value - a.value; });
+
+  var totalExpMonth = expRows.reduce(function(s, r) { return s + r.value; }, 0);
+
+  /* Forecast */
+  var fc = { xtbPlans: 10293.54, xtbTransactions: 495.87, trCorretagem: 2175.17, trPrivateMarkets: 2060.80, trRendFixo: 751.08, trPoupanca: 4136.06, goparity: 555.88, raize: 37.13 };
+  var totalInv = Object.values(fc).reduce(function(s, v) { return s + v; }, 0);
+  var xtbNow = fc.xtbPlans + fc.xtbTransactions;
+
+  var prevS = history[0];
+  var currS = history[1];
+  var aDelta = (currS.liquidez + currS.poupanca + currS.investimentos) - (prevS.liquidez + prevS.poupanca + prevS.investimentos);
+
+  /* Insights */
+  var avgMExp = Object.values(D.byCategory).reduce(function(s, v) { return s + v.slice(0, 3).reduce(function(a, b) { return a + b; }, 0); }, 0) / 3;
+  var q1Avg = {};
+  Object.keys(byCat).forEach(function(id) { q1Avg[id] = byCat[id].slice(0, 3).reduce(function(s, v) { return s + v; }, 0) / 3; });
+  var overB = D.budget.map(function(b) { var avg = q1Avg[b.id] || 0; return { id: b.id, name: b.name, avg: avg, diff: avg - b.limit }; }).filter(function(c) { return c.diff > 10; }).sort(function(a, b) { return b.diff - a.diff; });
+  var potSav = overB.reduce(function(s, c) { return s + c.diff; }, 0);
+
+  var addExp = function() {
+    var a = parseFloat(fd.amount.replace(",", "."));
+    if (!fd.desc || isNaN(a) || a <= 0) return;
+    setAddE(function(p) { return p.concat([{ desc: fd.desc, amount: a, category: fd.category }]); });
+    setFd({ desc: "", amount: "", category: "restauracao" });
+    setShowF(false);
+  };
+
+  var tabs = [
+    ["overview", "RESUMO"], ["charts", "GRAFICOS"], ["expenses", "DESPESAS"],
+    ["insights", "INSIGHTS"], ["loan", "CREDITO"]
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh", background: T.ink, color: T.paper, fontFamily: T.font, fontWeight: 400, lineHeight: 1.55 }}>
+
+      {/* HEADER */}
+      <div style={{ padding: "20px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "baseline" }}>
+          <span style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-0.03em" }}>PROOF</span>
+          <span style={{ fontWeight: 900, fontSize: 22, color: T.signal }}>.</span>
+        </div>
+        <Label>16.04.2026</Label>
+      </div>
+
+      {/* NET WORTH */}
+      <div style={{ padding: "28px 20px 8px" }}>
+        <Label style={{ marginBottom: 8 }}>PATRIMONIO LIQUIDO</Label>
+        <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: "-0.04em" }}>{fmt(netWorth)}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+          <SvgIcon paths={iconPaths.trendUp} size={14} color={T.success} />
+          <span style={{ fontFamily: T.mono, fontSize: 12, color: T.success }}>+{fmt(Math.abs(aDelta))}</span>
+          <span style={{ fontFamily: T.mono, fontSize: 11, color: T.grey3 }}>desde 11.04</span>
+        </div>
+      </div>
+
+      {/* ASSET BAR */}
+      <div style={{ padding: "12px 20px 16px" }}>
+        <div style={{ display: "flex", height: 4, background: T.grey }}>
+          {Object.keys(catTotals).map(function(c) {
+            var col = acctCat[c] ? acctCat[c].color : T.grey2;
+            return <div key={c} style={{ width: (catTotals[c] / totalAssets * 100) + "%", background: col }} />;
+          })}
+        </div>
+      </div>
+
+      {/* TABS */}
+      <div style={{ display: "flex", padding: "0 20px", borderBottom: "1px solid " + T.grey, marginBottom: 20, overflowX: "auto" }}>
+        {tabs.map(function(t) {
+          return (
+            <button key={t[0]} onClick={function() { setTab(t[0]); }}
+              style={{
+                padding: "10px 10px 8px", border: "none",
+                borderBottom: tab === t[0] ? "2px solid " + T.paper : "2px solid transparent",
+                background: "transparent", fontFamily: T.mono, fontSize: 10, fontWeight: 500,
+                letterSpacing: "0.1em", color: tab === t[0] ? T.paper : T.grey3,
+                cursor: "pointer", whiteSpace: "nowrap"
+              }}>
+              {t[1]}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* OVERVIEW */}
+      {tab === "overview" && (
+        <div style={{ padding: "0 20px 40px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+            <Card>
+              <Label style={{ marginBottom: 6 }}>ATIVOS</Label>
+              <div style={{ fontSize: 18, fontWeight: 700, color: T.success }}>{fmt(totalAssets)}</div>
+            </Card>
+            <Card signal={true}>
+              <Label style={{ marginBottom: 6 }}>DIVIDA</Label>
+              <div style={{ fontSize: 18, fontWeight: 700, color: T.signal }}>{fmt(D.loan.outstanding)}</div>
+            </Card>
+          </div>
+          {Object.keys(grouped).map(function(cat) {
+            var items = grouped[cat];
+            return (
+              <div key={cat} style={{ marginBottom: 8 }}>
+                <button onClick={function() { setXCat(xCat === cat ? null : cat); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: T.ink2, border: "1px solid " + T.grey, borderRadius: 0, padding: "16px 20px", cursor: "pointer", color: T.paper }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, textTransform: "uppercase" }}>{cat}</div>
+                    <Label style={{ marginTop: 2 }}>{items.length} CONTAS</Label>
+                  </div>
+                  <div style={{ fontFamily: T.mono, fontSize: 16, fontWeight: 700 }}>{fmt(catTotals[cat])}</div>
+                </button>
+                {xCat === cat && (
+                  <div style={{ background: T.ink2, border: "1px solid " + T.grey, borderTop: "none" }}>
+                    {items.map(function(it, i) {
+                      return (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "12px 20px", borderTop: "1px solid " + T.grey }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600 }}>{it.bank}</div>
+                            <div style={{ fontSize: 12, color: T.grey2 }}>{it.type}</div>
+                          </div>
+                          <div style={{ fontFamily: T.mono, fontSize: 14 }}>{fmt(it.value)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* CHARTS */}
+      {tab === "charts" && (
+        <div style={{ padding: "0 20px 40px" }}>
+          <Card style={{ marginBottom: 12 }}>
+            <Label style={{ marginBottom: 16 }}>EVOLUCAO PATRIMONIAL</Label>
+            <MiniChart data={history.map(function(h) { return h.liquidez + h.poupanca + h.investimentos; })} color={T.success} label="Ativos Totais" />
+            <MiniChart data={history.map(function(h) { return (h.liquidez + h.poupanca + h.investimentos) - h.divida; })} color={T.paper} label="Patrimonio Liquido" />
+          </Card>
+          <Card style={{ marginBottom: 12 }}>
+            <Label style={{ marginBottom: 16 }}>INVESTIMENTOS</Label>
+            <MiniChart data={history.map(function(h) { return h.xtbPlans; })} color={T.success} label="XTB Planos" />
+            <MiniChart data={history.map(function(h) { return h.xtbTrans; })} color="#F59E0B" label="XTB Transacoes" />
+            <MiniChart data={history.map(function(h) { return h.trCorr; })} color="#3B82F6" label="TR Corretagem" />
+          </Card>
+          <Card>
+            <Label style={{ marginBottom: 16 }}>DESPESAS MENSAIS</Label>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 120 }}>
+              {months.map(function(m, i) {
+                var total = Object.values(D.byCategory).reduce(function(s, v) { return s + (v[i] || 0); }, 0);
+                var h = Math.max((total / 2200) * 100, 4);
+                return (
+                  <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ fontFamily: T.mono, fontSize: 10, marginBottom: 4, color: i === 3 ? T.signal : T.paper }}>{fmtK(total)}</div>
+                    <div style={{ height: h + "%", background: i === 3 ? T.signal : T.paper, opacity: i === 3 ? 1 : 0.15 }} />
+                    <div style={{ fontFamily: T.mono, fontSize: 9, color: T.grey2, marginTop: 6, letterSpacing: "0.1em" }}>{m}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* EXPENSES */}
+      {tab === "expenses" && (
+        <div style={{ padding: "0 20px 100px" }}>
+          <div style={{ display: "flex", marginBottom: 16, border: "1px solid " + T.grey }}>
+            {months.map(function(m, i) {
+              return (
+                <button key={i} onClick={function() { setEM(i); setXExp(null); }}
+                  style={{ flex: 1, padding: "10px 0", border: "none", borderRight: i < 3 ? "1px solid " + T.grey : "none", fontFamily: T.mono, fontSize: 10, fontWeight: 500, letterSpacing: "0.1em", cursor: "pointer", background: eM === i ? T.paper : "transparent", color: eM === i ? T.ink : T.grey2 }}>
+                  {m}
+                </button>
+              );
+            })}
+            <button onClick={function() { setEM(4); setXExp(null); }}
+              style={{ flex: 1, padding: "10px 0", border: "none", borderLeft: "1px solid " + T.grey, fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", cursor: "pointer", background: eM === 4 ? T.paper : "transparent", color: eM === 4 ? T.ink : T.grey2 }}>
+              Q1
+            </button>
+          </div>
+
+          <Card style={{ marginBottom: 16 }}>
+            <Label>{isQ1 ? "DESPESAS Q1" : "DESPESAS " + months[eM]}</Label>
+            <div style={{ fontSize: 24, fontWeight: 900, marginTop: 4, fontFamily: T.mono }}>{fmt(totalExpMonth)}</div>
+            {eM === 3 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
+                <SvgIcon paths={iconPaths.alert} size={12} color={T.signal} />
+                <span style={{ fontFamily: T.mono, fontSize: 10, color: T.signal }}>ABRIL PARCIAL</span>
+              </div>
+            )}
+          </Card>
+
+          {expRows.map(function(r) {
+            var isExp = xExp === r.id;
+            var over = r.pct > 100;
+            var barColor = over ? T.signal : r.pct > 75 ? "#F59E0B" : T.paper;
+            return (
+              <div key={r.id} style={{ marginBottom: 4 }}>
+                <button onClick={function() { setXExp(isExp ? null : r.id); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", background: T.ink2, border: "1px solid " + T.grey, borderRadius: 0, padding: "12px 16px", cursor: "pointer", color: T.paper }}>
+                  <span style={{ marginRight: 12 }}><CatIcon id={r.id} size={16} color={T.grey2} /></span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</span>
+                      <div>
+                        <span style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 600 }}>{fmt(r.value)}</span>
+                        <span style={{ fontFamily: T.mono, fontSize: 11, color: T.grey3, marginLeft: 4 }}>/ {fmt(r.limit)}</span>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 6, height: 3, background: T.grey }}>
+                      <div style={{ height: "100%", width: Math.min(r.pct, 100) + "%", background: barColor, opacity: over ? 1 : 0.6 }} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                      <span style={{ fontFamily: T.mono, fontSize: 10, color: over ? T.signal : T.grey2 }}>{r.pct.toFixed(0)}%</span>
+                      {over
+                        ? <span style={{ fontFamily: T.mono, fontSize: 10, color: T.signal }}>+{fmt(r.value - r.limit)}</span>
+                        : <span style={{ fontFamily: T.mono, fontSize: 10, color: T.success }}>Resta {fmt(r.limit - r.value)}</span>
+                      }
+                    </div>
+                  </div>
+                </button>
+                {isExp && (function() {
+                  var txnData = D.transactions[r.id];
+                  var mt = (!isQ1 && txnData && txnData[eM]) ? txnData[eM] : [];
+                  return (
+                    <div style={{ background: T.ink2, border: "1px solid " + T.grey, borderTop: "none", padding: "12px 16px" }}>
+                      {mt.length > 0 && (
+                        <div style={{ marginBottom: 12 }}>
+                          {mt.map(function(item, ti) {
+                            return (
+                              <div key={ti} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: ti > 0 ? "1px solid " + T.grey : "none" }}>
+                                <span style={{ fontSize: 12, color: T.paper2 }}>{item[0]}</span>
+                                <span style={{ fontFamily: T.mono, fontSize: 12 }}>{fmt(item[1])}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div style={{ display: "flex", gap: 8, paddingTop: 10, borderTop: "1px solid " + T.grey }}>
+                        {months.map(function(m, mi) {
+                          var v = r.vals[mi] || 0;
+                          return (
+                            <div key={mi} style={{ flex: 1, textAlign: "center" }}>
+                              <Label style={{ fontSize: 9 }}>{m}</Label>
+                              <div style={{ fontFamily: T.mono, fontSize: 11, marginTop: 2, color: mi === eM ? T.paper : T.grey3 }}>{fmt(v)}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            );
+          })}
+
+          <button onClick={function() { setShowF(true); }}
+            style={{ position: "fixed", bottom: 24, right: 24, width: 48, height: 48, border: "1px solid " + T.paper, background: T.ink, color: T.paper, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, borderRadius: 0 }}>
+            <SvgIcon paths={iconPaths.plus} size={20} />
+          </button>
+        </div>
+      )}
+
+      {/* ADD FORM */}
+      {showF && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 100, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div style={{ background: T.ink2, borderTop: "1px solid " + T.grey, padding: "24px 20px 32px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, textTransform: "uppercase" }}>ADICIONAR DESPESA</div>
+              <button onClick={function() { setShowF(false); }} style={{ background: "none", border: "none", color: T.grey2, cursor: "pointer" }}>
+                <SvgIcon paths={iconPaths.x} size={20} />
+              </button>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <Label style={{ marginBottom: 6 }}>CATEGORIA</Label>
+              <select value={fd.category} onChange={function(e) { setFd(Object.assign({}, fd, { category: e.target.value })); }}
+                style={{ width: "100%", padding: "12px 16px", border: "1px solid " + T.grey, background: T.ink2, color: T.paper, fontSize: 14, borderRadius: 0 }}>
+                {D.budget.map(function(b) { return <option key={b.id} value={b.id}>{b.name}</option>; })}
+              </select>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <Label style={{ marginBottom: 6 }}>DESCRICAO</Label>
+              <input value={fd.desc} onChange={function(e) { setFd(Object.assign({}, fd, { desc: e.target.value })); }}
+                placeholder="Ex: Pingo Doce" style={{ width: "100%", padding: "12px 16px", border: "1px solid " + T.grey, background: T.ink2, color: T.paper, fontSize: 15, borderRadius: 0, boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <Label style={{ marginBottom: 6 }}>VALOR (EUR)</Label>
+              <input value={fd.amount} onChange={function(e) { setFd(Object.assign({}, fd, { amount: e.target.value })); }}
+                placeholder="0,00" inputMode="decimal" style={{ width: "100%", padding: "12px 16px", border: "1px solid " + T.grey, background: T.ink2, color: T.paper, fontFamily: T.mono, fontSize: 18, fontWeight: 600, borderRadius: 0, boxSizing: "border-box" }} />
+            </div>
+            <button onClick={addExp} disabled={!fd.desc || !fd.amount}
+              style={{ width: "100%", padding: "14px 0", border: fd.desc && fd.amount ? "1px solid " + T.paper : "1px solid " + T.grey, background: fd.desc && fd.amount ? T.ink : "transparent", color: fd.desc && fd.amount ? T.paper : T.grey3, fontSize: 13, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer", borderRadius: 0 }}>
+              ADICIONAR DESPESA
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* INSIGHTS */}
+      {tab === "insights" && (
+        <div style={{ padding: "0 20px 40px" }}>
+          <Card style={{ marginBottom: 12 }}>
+            <Label style={{ marginBottom: 16 }}>CORTES SUGERIDOS</Label>
+            <div style={{ fontFamily: T.mono, fontSize: 12, color: T.success, marginBottom: 16 }}>Poupanca potencial: -{fmt(potSav)}/mes</div>
+            {overB.map(function(c, i) {
+              return (
+                <div key={c.id} style={{ padding: "12px 0", borderTop: "1px solid " + T.grey }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</span>
+                    <span style={{ fontFamily: T.mono, fontSize: 12, color: T.signal }}>+{fmt(c.diff)}/mes</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: T.grey2 }}>
+                    {c.id === "restauracao" ? "Trocar 2 refeicoes fora/semana por cozinhar." : c.id === "super" ? "Lista semanal. Marcas brancas. Promocoes." : "Rever limite ou reduzir."}
+                  </div>
+                </div>
+              );
+            })}
+          </Card>
+          <Card>
+            <Label style={{ marginBottom: 16 }}>CENARIOS 5 ANOS</Label>
+            {[{ l: "SEM MUDANCAS", m: 550, r: 0.07 }, { l: "COM OTIMIZACAO", m: 750, r: 0.08 }, { l: "AGRESSIVO", m: 1000, r: 0.09 }].map(function(s, i) {
+              var v = totalInv;
+              for (var m = 0; m < 60; m++) v = v * (1 + s.r / 12) + s.m;
+              return (
+                <div key={i} style={{ padding: "12px 0", borderTop: "1px solid " + T.grey, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <Label>{s.l}</Label>
+                    <div style={{ fontFamily: T.mono, fontSize: 11, color: T.grey3, marginTop: 2 }}>{fmt(s.m)}/mes</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 20, fontWeight: 900 }}>{fmtK(v)}</div>
+                    <div style={{ fontFamily: T.mono, fontSize: 10, color: T.success }}>+{fmtK(v - totalInv)}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </Card>
+        </div>
+      )}
+
+      {/* LOAN */}
+      {tab === "loan" && (
+        <div style={{ padding: "0 20px 40px" }}>
+          <Card signal={true} style={{ marginBottom: 12 }}>
+            <Label style={{ marginBottom: 6 }}>CREDITO HABITACAO</Label>
+            <div style={{ fontSize: 13, color: T.grey2, marginBottom: 16 }}>Bankinter / Taxa Fixa 2,7%</div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.mono, fontSize: 11, color: T.grey2, marginBottom: 6 }}>
+                <span>Pago: {fmt(90000 - 77865.69)}</span>
+                <span>{pp.toFixed(1)}%</span>
+              </div>
+              <div style={{ height: 4, background: T.grey }}>
+                <div style={{ height: "100%", width: pp + "%", background: T.success }} />
+              </div>
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: T.signal }}>{fmt(77865.69)}</div>
+            <Label style={{ marginTop: 4 }}>CAPITAL EM DIVIDA</Label>
+          </Card>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {[["PRESTACAO", "485,83 EUR"], ["TAXA", "2,7%"], ["CAPITAL", "90 000 EUR"], ["PRAZO", "20 ANOS"]].map(function(pair, i) {
+              return (
+                <Card key={i} style={{ padding: "16px 20px" }}>
+                  <Label style={{ marginBottom: 4 }}>{pair[0]}</Label>
+                  <div style={{ fontSize: 15, fontWeight: 600 }}>{pair[1]}</div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <div style={{ padding: "32px 20px 48px", borderTop: "1px solid " + T.grey }}>
+        <div style={{ display: "flex", alignItems: "baseline", marginBottom: 4 }}>
+          <span style={{ fontWeight: 900, fontSize: 14 }}>PROOF</span>
+          <span style={{ fontWeight: 900, fontSize: 14, color: T.signal }}>.</span>
+        </div>
+        <div style={{ fontFamily: T.mono, fontSize: 9, color: T.grey3, letterSpacing: "0.1em" }}>CASE 001 / v0.4 / 2026.04.18</div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>
