@@ -235,6 +235,7 @@ var aiLoading=false;
 var aiHistory=[];
 var dynAccts=null;
 var dynSnaps=[];
+var aiImport=null,aiImportLoading=false,aiImportSel={};
 
 /* ══ FIRESTORE PERSISTENCE ══ */
 var saveTimer=null;
@@ -272,7 +273,17 @@ function loadUser(){
       apiKey="";aiHistory=[];dynAccts=null;dynSnaps=[];addedExp=[];theme="system";goals=[];recurring=[];
     }
     applyTheme(theme);
-  }).catch(function(err){console.error("Firestore load falhou",err);});
+  }).catch(function(err){
+    console.error("Firestore load falhou",err);
+    // Continue with empty state — app still works, just no persistence
+    apiKey="";aiHistory=[];dynAccts=null;dynSnaps=[];addedExp=[];theme="system";goals=[];recurring=[];
+    applyTheme(theme);
+    setTimeout(function(){
+      var hint=String(err&&err.message||err);
+      if(hint.indexOf("offline")>-1||hint.indexOf("UNAVAILABLE")>-1)toast("Ativa o Firestore no Firebase Console","error");
+      else toast("Firestore indisponivel: "+hint.substring(0,40),"error");
+    },800);
+  });
 }
 function saveAI(){persistUser();}
 function saveDyn(){persistUser();}
@@ -768,6 +779,36 @@ window.testAPI=function(){
 };
 var STMT_PROMPT='Analisa extracto bancario. Extrai TODAS as transacoes. Descricoes CURTAS (max 20 chars). Valores negativos para debitos, positivos para creditos. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao curta","amount":-0.00,"category":"rest"}]}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
 var RCPT_PROMPT='Analisa este recibo/fatura. Extrai itens e valores. JSON: {"items":[{"desc":"nome","amount":0.00}],"total":0.00,"suggested_category":"rest"}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out\nSe nao for recibo: {"error":"Nao e um recibo."}';
+var AI_IMPORT_PROMPT='Analisa o documento financeiro e extrai informacao para popular a app. Retorna APENAS JSON puro (sem markdown, sem backticks):\n\n'
++'{"docType":"...","summary":"...","actions":[...]}\n\n'
++'docType: extrato_bancario | recibo | recibo_vencimento | contrato_credito | extrato_investimento | factura | outro\n'
++'summary: 1-2 frases (PT) descrevendo o documento\n\n'
++'ACOES DISPONIVEIS:\n\n'
++'1) Atualizar saldo de conta:\n'
++'{"type":"update_balance","account_bank":"Bankinter","account_type":"Conta a Ordem","value":584.64,"note":""}\n'
++'   account_bank: Bankinter | Activobank | Moey | Trade Republic | XTB | Goparity | Raize\n'
++'   account_type: Conta a Ordem | Poupanca | Corretagem | Private Markets | Rend. Fixo | Transacoes | Planos Invest. | P2P Lending\n'
++'   Para Bankinter: dividir saldo total por 2 (conta partilhada) e por o total na note\n\n'
++'2) Adicionar despesa:\n'
++'{"type":"add_expense","desc":"Pingo Doce","amount":45.67,"cat":"sup","date":"YYYY-MM-DD"}\n'
++'   amount sempre POSITIVO. cat: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out\n\n'
++'3) Adicionar meta de poupanca:\n'
++'{"type":"add_goal","name":"Fundo Emergencia","target":10000,"current":0,"deadline":"YYYY-MM-DD","color":"#007AFF"}\n\n'
++'4) Adicionar subscricao recorrente:\n'
++'{"type":"add_recurring","name":"Netflix","amount":9.99,"cat":"sub","day":1}\n\n'
++'5) Snapshot patrimonial:\n'
++'{"type":"snapshot","label":"DD.MM","liq":0,"poup":0,"inv":0,"div":77555.06,"xP":0,"xT":0,"tC":0}\n\n'
++'REGRAS:\n'
++'- Extrato com transacoes -> gerar add_expense para cada DEBITO (ignorar creditos a nao ser que sejam reembolsos)\n'
++'- Ignorar transferencias para contas proprias (TRF Bankinter, etc.)\n'
++'- Extrato com saldo final claro -> gerar update_balance\n'
++'- Recibo simples (compra unica) -> 1 add_expense\n'
++'- Contrato de credito -> apenas summary (nao temos accao especifica)\n'
++'- Recibo vencimento -> apenas summary\n'
++'- Datas YYYY-MM-DD; se ano nao explicito assume '+(new Date().getFullYear())+'\n'
++'- Maximo 60 acoes por documento\n'
++'- Categoriza com base nas descricoes (ex: "PINGO DOCE"->sup, "MCDONALDS"->rest, "FIDELIDADE"->seg, "GALP"->cmb)\n'
++'- Se nao reconheceres NADA: {"docType":"outro","summary":"Documento nao reconhecido","actions":[]}';
 
 /* ══ SETTINGS MODAL ══ */
 function rSettings(){
@@ -1178,7 +1219,7 @@ function rSkeleton(){
   return o;
 }
 
-function render(){
+function renderInternal(){
   var el=document.getElementById("app");
   if(view==="loading"){el.innerHTML=rSkeleton();return;}
   if(view==="login"){el.innerHTML=rLogin();
@@ -1251,6 +1292,15 @@ function render(){
   el.innerHTML=o;
 }
 
+function render(){
+  try{renderInternal();}
+  catch(err){
+    console.error("Render falhou",err);
+    var el=document.getElementById("app");
+    if(el)el.innerHTML='<div style="padding:24px;font-family:monospace;font-size:12px;color:#FF3B30;line-height:1.6"><div style="font-weight:700;font-size:14px;margin-bottom:12px">Erro no render</div><div style="white-space:pre-wrap;word-break:break-word">'+e(String(err&&err.message||err))+'</div><div style="margin-top:12px;font-size:11px;color:#888">Stack:<br>'+e(String(err&&err.stack||"").substring(0,800))+'</div><button onclick="location.reload()" style="margin-top:16px;padding:10px 16px;background:#007AFF;color:#fff;border:none;border-radius:8px;font-family:inherit;cursor:pointer">Recarregar</button></div>';
+  }
+}
+
 window.toggleTheme=function(){
   var cur=document.documentElement.getAttribute("data-theme");
   var next=cur==="dark"?"light":"dark";
@@ -1304,34 +1354,53 @@ if(initError){
     showFatal("Erro de inicializacao",initError);
   }
 }else if(fbAuth){
-  // Use SESSION persistence (works in more environments than the LOCAL default)
-  try{fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){fbAuth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});});}catch(_e){}
-  render();
-  var authFired=false;
-  fbAuth.onAuthStateChanged(function(user){
-    authFired=true;
-    if(user){
-      currentUser=user;
-      loadUser().then(function(){view="app";render();});
-    }else{
-      currentUser=null;
-      apiKey="";aiHistory=[];dynAccts=null;dynSnaps=[];addedExp=[];theme="system";goals=[];recurring=[];
-      view="login";render();
-    }
-  },function(err){
-    authFired=true;
-    showFatal("Erro de autenticacao",(err&&err.message)?err.message:"Firebase Auth indisponivel.");
-  });
-  // Fallback timer: if auth doesn't respond in 2.5s, show login
-  setTimeout(function(){
-    if(!authFired){
-      console.warn("Firebase Auth sem resposta em 2.5s — fallback para login");
-      view="login";render();
-    }
-  },2500);
+  try{
+    try{fbAuth.setPersistence("local").catch(function(){});}catch(_e){}
+    render();
+    var authFired=false;
+    fbAuth.onAuthStateChanged(function(user){
+      authFired=true;
+      if(user){
+        currentUser=user;
+        // Always proceed to app view, regardless of loadUser success/failure
+        loadUser().then(function(){view="app";render();},function(){view="app";render();});
+        // Hard fallback: if loadUser hangs > 4s, force render anyway
+        setTimeout(function(){if(view!=="app"){view="app";render();}},4000);
+      }else{
+        currentUser=null;
+        apiKey="";aiHistory=[];dynAccts=null;dynSnaps=[];addedExp=[];theme="system";goals=[];recurring=[];
+        view="login";render();
+      }
+    },function(err){
+      authFired=true;
+      console.error("Firebase Auth error",err);
+      showFatal("Erro de autenticacao",(err&&err.message)?err.message:"Firebase Auth indisponivel.");
+    });
+    // Fallback timer: if auth doesn't respond in 2s, show login
+    setTimeout(function(){
+      if(!authFired){
+        console.warn("Firebase Auth sem resposta em 2s — fallback para login");
+        view="login";render();
+      }
+    },2000);
+  }catch(e){
+    console.error("Init falhou",e);
+    showFatal("Erro de inicializacao",(e&&e.message)?e.message:String(e));
+  }
 }else{
   showFatal("Firebase nao inicializou","Verifica a consola do browser (F12) para detalhes.");
 }
+
+// Global error handler — surface uncaught errors instead of silent failure
+window.addEventListener("error",function(ev){
+  console.error("Uncaught error",ev.error||ev.message);
+  if(view==="loading"){
+    showFatal("Erro inesperado",String(ev.error&&ev.error.message||ev.message||"Erro JS"));
+  }
+});
+window.addEventListener("unhandledrejection",function(ev){
+  console.error("Unhandled promise rejection",ev.reason);
+});
 </script>
 </body>
 </html>
