@@ -4,33 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>PROOF. FINANCE</title>
-<meta name="theme-color" content="#F5F6FA">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#F5F5F7">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=SF+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#F5F6FA;--bg2:#FFFFFF;--bg3:#EDEEF2;--text:#111318;--text2:#5A5D66;--text3:#8A8E99;--border:#DFE1E8;--border2:#C8CAD3;--signal:#E53935;--success:#16A34A;--blue:#2563EB;--purple:#7C3AED;--font:'Archivo',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace}
+:root{--bg:#F5F5F7;--bg2:#FFFFFF;--bg3:#F0F0F2;--text:#1D1D1F;--text2:#6E6E73;--text3:#AEAEB2;--border:#E5E5EA;--border2:#D1D1D6;--signal:#FF3B30;--success:#34C759;--blue:#007AFF;--purple:#AF52DE;--font:-apple-system,'Inter','Helvetica Neue',sans-serif;--mono:'SF Mono','Menlo',monospace;--r:14px;--r2:10px;--shadow:0 1px 3px rgba(0,0,0,0.04),0 1px 2px rgba(0,0,0,0.06)}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-weight:400;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
-button{font-family:var(--font);cursor:pointer;border-radius:0}
-input,select{font-family:var(--font);outline:none;border-radius:0}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-weight:400;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+button{font-family:var(--font);cursor:pointer}
+input,select{font-family:var(--font);outline:none}
 select option{background:var(--bg2);color:var(--text)}
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-thumb{background:var(--border2)}
-.m{font-family:var(--mono)}
-.lb{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3)}
-.cd{background:var(--bg2);border:1px solid var(--border);padding:24px 20px}
-.cs{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--signal);padding:24px 20px}
+::-webkit-scrollbar{width:0;display:none}
+.m{font-family:var(--mono);font-size:13px}
+.lb{font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.02em}
+.cd{background:var(--bg2);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.cs{background:var(--bg2);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);border-left:3px solid var(--signal)}
 .rw{display:flex;justify-content:space-between;align-items:center}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.tab-bar{display:flex;padding:0 20px;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto}
-.tb{padding:10px 12px 8px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.1em;color:var(--text3);white-space:nowrap}
-.tb.on{color:var(--text);border-bottom-color:var(--text)}
-.exp-btn{width:100%;display:flex;background:var(--bg2);border:1px solid var(--border);padding:12px 16px;color:var(--text);text-align:left}
-.exp-detail{background:var(--bg3);border:1px solid var(--border);border-top:none;padding:12px 16px}
-.bar{height:3px;background:var(--bg3);overflow:hidden;margin-top:6px}
-.bar-fill{height:100%}
-.ms-bar{display:flex;border:1px solid var(--border);margin-bottom:16px}
-.ms{flex:1;padding:10px 0;border:none;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.1em;background:transparent;color:var(--text3)}
-.ms.on{background:var(--text);color:var(--bg)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tab-bar{display:flex;padding:4px;margin:0 20px 20px;background:var(--bg3);border-radius:var(--r2);gap:2px}
+.tb{flex:1;padding:8px 4px;border:none;border-radius:8px;background:transparent;font-size:12px;font-weight:500;color:var(--text2);white-space:nowrap;transition:all 0.2s}
+.tb.on{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.exp-btn{width:100%;display:flex;background:var(--bg2);border:none;border-radius:var(--r);padding:14px 16px;color:var(--text);text-align:left;box-shadow:var(--shadow)}
+.exp-detail{background:var(--bg2);border-radius:0 0 var(--r) var(--r);padding:12px 16px;margin-top:-8px;box-shadow:var(--shadow)}
+.bar{height:4px;background:var(--bg3);overflow:hidden;margin-top:8px;border-radius:2px}
+.bar-fill{height:100%;border-radius:2px}
+.ms-bar{display:flex;padding:3px;margin-bottom:16px;background:var(--bg3);border-radius:var(--r2);gap:2px}
+.ms{flex:1;padding:8px 0;border:none;border-radius:8px;font-size:12px;font-weight:500;background:transparent;color:var(--text2);transition:all 0.2s}
+.ms.on{background:var(--bg2);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,0.08)}
 </style>
 </head>
 <body>
@@ -75,15 +74,18 @@ var byC={rest:[509.52,328.65,383,135.66],sup:[157.57,348.81,333.48,50.50],cas:[3
 var txn={rest:[[["McDonalds",42.35],["Adega Lampeira",54.50],["Rest Browers",69.50],["Outros",343.17]],[["McDonalds",43.65],["Pare e Prove",60.50],["Outros",224.50]],[["O Tradicional",51.20],["Kanto Fusion",55],["Outros",276.80]],[["O Tradicional",36.70],["Uber Eats",16.81],["H3",12.95],["Outros",69.20]]],sup:[[["Pingo Doce",118.27],["Continente",31.06],["Lidl",8.24]],[["Continente",179.83],["Pingo Doce",155.69]],[["Pingo Doce",250.33],["Continente",83.15]],[["Pingo Doce",29.15],["Continente",21.35]]],seg:[[["Fidelidade",190.56],["MGEN",67.64],["Medis",10.90],["Barkibu",16.72]],[["Seg.Social",26.32],["MGEN",67.64],["Medis",10.90],["Barkibu",16.72]],[["MGEN",67.64],["Medis",10.90],["Barkibu",16.72]],[["Seg.Social",31.58],["MGEN",67.64],["Barkibu",16.72]]],cas:[[["TRF Bankinter",350]],[["TRF Bankinter",350]],[["TRF Bankinter",350]],[]],emp:[[],[["Atilio Gregorio",360]],[["Ana Gregorio",360]],[]]};
 var sal=[1923.54,1849.33,1898.89,null];
 
-/* ══ COMPUTE ══ */
-var grp={};accts.forEach(function(a){if(!grp[a.c])grp[a.c]=[];grp[a.c].push(a);});
-var cT={};Object.keys(grp).forEach(function(c){cT[c]=grp[c].reduce(function(s,i){return s+i.v},0);});
-var tA=0;Object.keys(cT).forEach(function(k){tA+=cT[k];});
-var nW=tA-ln.out;
-var pp=((ln.cap-ln.out)/ln.cap)*100;
-var cCol={Liquidez:"#2563EB",Poupanca:"#7C3AED",Investimentos:"#16A34A"};
-var h0=hist[0],h2=hist[2];
-var aD=(h2.liq+h2.poup+h2.inv)-(h0.liq+h0.poup+h0.inv);
+/* ══ COMPUTE (called on each render) ══ */
+function compute(){
+  var ca=getAccts();var ah=getAllHist();
+  var g={};ca.forEach(function(a){if(!g[a.c])g[a.c]=[];g[a.c].push(a);});
+  var ct={};Object.keys(g).forEach(function(c){ct[c]=g[c].reduce(function(s,i){return s+i.v},0);});
+  var ta=0;Object.keys(ct).forEach(function(k){ta+=ct[k];});
+  var nw=ta-ln.out;
+  var pp=((ln.cap-ln.out)/ln.cap)*100;
+  var h0=ah[0],hL=ah[ah.length-1];
+  var ad=(hL.liq+hL.poup+hL.inv)-(h0.liq+h0.poup+h0.inv);
+  return{accts:ca,hist:ah,grp:g,cT:ct,tA:ta,nW:nw,pp:pp,aD:ad};
+}
 
 /* ══ UTILS ══ */
 function fm(v){return v.toLocaleString("pt-PT",{minimumFractionDigits:2,maximumFractionDigits:2})+" EUR";}
@@ -99,8 +101,32 @@ var scScanning=false,scResult=null;
 var addData={desc:"",amount:"",cat:"rest",date:new Date().toISOString().slice(0,10)};
 var addedExp=[];
 
+/* ══ AI ASSISTANT STATE ══ */
+var aiLoading=false;
+var aiHistory=[];try{var ah=localStorage.getItem("proof_ai_history");if(ah)aiHistory=JSON.parse(ah);}catch(x){}
+// Dynamic balances (AI can update these)
+var dynAccts=null;try{var da=localStorage.getItem("proof_dyn_accts");if(da)dynAccts=JSON.parse(da);}catch(x){}
+// Dynamic snapshots
+var dynSnaps=[];try{var ds=localStorage.getItem("proof_dyn_snaps");if(ds)dynSnaps=JSON.parse(ds);}catch(x){}
+
+function saveAI(){try{localStorage.setItem("proof_ai_history",JSON.stringify(aiHistory.slice(-20)));}catch(x){}}
+function saveDyn(){try{localStorage.setItem("proof_dyn_accts",JSON.stringify(dynAccts));localStorage.setItem("proof_dyn_snaps",JSON.stringify(dynSnaps));}catch(x){}}
+
+// Get current accounts (dynamic overrides static)
+function getAccts(){
+  if(!dynAccts)return accts;
+  return accts.map(function(a){
+    var key=a.b+"_"+a.t;
+    if(dynAccts[key]!==undefined)return Object.assign({},a,{v:dynAccts[key].v,updated:dynAccts[key].d});
+    return a;
+  });
+}
+function getAllHist(){return hist.concat(dynSnaps);}
+
+var cCol={Liquidez:"#007AFF",Poupanca:"#AF52DE",Investimentos:"#34C759"};
+
 /* ══ SVG CHART ══ */
-function chrt(data,color,label){
+function chrt(data,color,label,histData){
   var ht=56;if(!data||data.length<2)return"";
   var mn=Math.min.apply(null,data)*0.95,mx=Math.max.apply(null,data)*1.05,rg=mx-mn||1,w=100;
   var pts=data.map(function(v,i){return((i/(data.length-1))*w).toFixed(1)+","+((ht-((v-mn)/rg)*ht)).toFixed(1)}).join(" ");
@@ -108,6 +134,7 @@ function chrt(data,color,label){
   var df=data[data.length-1]-data[0],pc=data[0]>0?((df/data[0])*100).toFixed(1):"0";
   var dc=df>=0?"var(--success)":"var(--signal)";
   var id="g"+label.replace(/[^a-zA-Z]/g,"");
+  var labels=histData||getAllHist();
   var o='<div style="margin-bottom:16px">';
   o+='<div class="rw" style="margin-bottom:8px"><span style="font-size:13px;font-weight:500">'+e(label)+'</span>';
   o+='<div><span class="m" style="font-size:13px;font-weight:500">'+fm(data[data.length-1])+'</span>';
@@ -119,26 +146,29 @@ function chrt(data,color,label){
   data.forEach(function(v,i){o+='<circle cx="'+((i/(data.length-1))*w).toFixed(1)+'" cy="'+((ht-((v-mn)/rg)*ht)).toFixed(1)+'" r="2.5" fill="'+color+'" stroke="var(--bg2)" stroke-width="1"/>';});
   o+='</svg>';
   o+='<div style="display:flex;justify-content:space-between;margin-top:4px">';
-  hist.forEach(function(x){o+='<span class="m" style="font-size:9px;color:var(--text3)">'+x.l+'</span>';});
+  labels.forEach(function(x){o+='<span class="m" style="font-size:9px;color:var(--text3)">'+x.l+'</span>';});
   o+='</div></div>';
   return o;
 }
 
 /* ══ SECTIONS ══ */
 function rOverview(){
+  var C=compute();
   var o='<div style="padding:0 20px 40px">';
-  o+='<div class="g2" style="gap:12px;margin-bottom:20px"><div class="cd"><div class="lb" style="margin-bottom:6px">ATIVOS</div><div style="font-size:18px;font-weight:700;color:var(--success)">'+fm(tA)+'</div></div><div class="cs"><div class="lb" style="margin-bottom:6px">DIVIDA</div><div style="font-size:18px;font-weight:700;color:var(--signal)">'+fm(ln.out)+'</div></div></div>';
-  Object.keys(grp).forEach(function(cat){
-    var items=grp[cat],isX=xCat===cat;
-    o+='<div style="margin-bottom:8px"><button onclick="T(\'xCat\',\''+(isX?"null":cat)+'\')" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);padding:16px 20px;color:var(--text)">';
-    o+='<div style="text-align:left"><div style="font-size:14px;font-weight:700;text-transform:uppercase">'+e(cat)+'</div><div class="lb" style="margin-top:2px">'+items.length+' CONTAS</div></div>';
-    o+='<div class="m" style="font-size:16px;font-weight:700">'+fm(cT[cat])+'</div></button>';
+  o+='<div class="g2" style="gap:10px;margin-bottom:16px"><div class="cd"><div style="font-size:12px;color:var(--text2);margin-bottom:4px">Ativos</div><div style="font-size:20px;font-weight:700;color:var(--success)">'+fm(C.tA)+'</div></div><div class="cd" style="border-left:3px solid var(--signal)"><div style="font-size:12px;color:var(--text2);margin-bottom:4px">Divida</div><div style="font-size:20px;font-weight:700;color:var(--signal)">'+fm(ln.out)+'</div></div></div>';
+  Object.keys(C.grp).forEach(function(cat){
+    var items=C.grp[cat],isX=xCat===cat;
+    o+='<div style="margin-bottom:10px"><button onclick="T(\'xCat\',\''+(isX?"null":cat)+'\')" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:none;border-radius:'+(isX?'var(--r) var(--r) 0 0':'var(--r)')+';padding:16px 20px;color:var(--text);box-shadow:var(--shadow)">';
+    o+='<div style="text-align:left"><div style="font-size:15px;font-weight:600">'+e(cat)+'</div><div style="font-size:12px;color:var(--text3);margin-top:2px">'+items.length+' contas</div></div>';
+    o+='<div style="display:flex;align-items:center;gap:8px"><span style="font-size:17px;font-weight:600">'+fm(C.cT[cat])+'</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" style="transform:rotate('+(isX?'180':'0')+'deg);transition:transform 0.2s"><path d="M6 9l6 6 6-6"/></svg></div></button>';
     if(isX){
-      o+='<div style="background:var(--bg3);border:1px solid var(--border);border-top:none">';
-      items.forEach(function(a){
-        o+='<div class="rw" style="padding:12px 20px;border-top:1px solid var(--border)"><div><div style="font-size:13px;font-weight:600">'+e(a.b)+'</div><div style="font-size:12px;color:var(--text3)">'+e(a.t)+'</div>';
-        if(a.n)o+='<div class="m" style="font-size:10px;color:var(--text3);margin-top:2px">'+e(a.n)+'</div>';
-        o+='</div><div class="m" style="font-size:14px;font-weight:500">'+fm(a.v)+'</div></div>';
+      o+='<div style="background:var(--bg2);border-radius:0 0 var(--r) var(--r);box-shadow:var(--shadow)">';
+      items.forEach(function(a,i){
+        o+='<div class="rw" style="padding:14px 20px;'+(i>0?'border-top:1px solid var(--bg3)':'')+'">';
+        o+='<div><div style="font-size:14px;font-weight:500">'+e(a.b)+'</div><div style="font-size:12px;color:var(--text3)">'+e(a.t)+'</div>';
+        if(a.n)o+='<div style="font-size:11px;color:var(--text3);margin-top:1px">'+e(a.n)+'</div>';
+        if(a.updated)o+='<div style="font-size:11px;color:var(--success);margin-top:1px">Atualizado '+e(a.updated)+'</div>';
+        o+='</div><div style="font-size:15px;font-weight:600">'+fm(a.v)+'</div></div>';
       });
       o+='</div>';
     }
@@ -148,19 +178,20 @@ function rOverview(){
 }
 
 function rCharts(){
+  var ah=getAllHist();
   var o='<div style="padding:0 20px 40px">';
-  o+='<div class="cd" style="margin-bottom:12px"><div class="lb" style="margin-bottom:16px">EVOLUCAO PATRIMONIAL</div>';
-  o+=chrt(hist.map(function(x){return x.liq+x.poup+x.inv}),"#16A34A","Ativos Totais");
-  o+=chrt(hist.map(function(x){return x.liq+x.poup+x.inv-x.div}),"#E8EAF0","Patrimonio Liquido");
-  o+='</div><div class="cd"><div class="lb" style="margin-bottom:16px">INVESTIMENTOS</div>';
-  o+=chrt(hist.map(function(x){return x.xP}),"#16A34A","XTB Planos");
-  o+=chrt(hist.map(function(x){return x.xT}),"#F59E0B","XTB Transacoes");
-  o+=chrt(hist.map(function(x){return x.tC}),"#2563EB","TR Corretagem");
+  o+='<div class="cd" style="margin-bottom:12px"><div class="lb" style="margin-bottom:16px">Evolucao patrimonial</div>';
+  o+=chrt(ah.map(function(x){return x.liq+x.poup+x.inv}),"#34C759","Ativos Totais",ah);
+  o+=chrt(ah.map(function(x){return x.liq+x.poup+x.inv-x.div}),"var(--text)","Patrimonio Liquido",ah);
+  o+='</div><div class="cd"><div class="lb" style="margin-bottom:16px">Investimentos</div>';
+  o+=chrt(ah.map(function(x){return x.xP}),"#34C759","XTB Planos",ah);
+  o+=chrt(ah.map(function(x){return x.xT}),"#F59E0B","XTB Transacoes",ah);
+  o+=chrt(ah.map(function(x){return x.tC}),"#007AFF","TR Corretagem",ah);
   return o+'</div></div>';
 }
 
 function rExpenses(){
-  var ms=["JAN","FEV","MAR","ABR"],isQ=em===4;
+  var ms=["Jan","Fev","Mar","Abr"],isQ=em===4;
   // Clone byC and add manual expenses
   var eByC={};Object.keys(byC).forEach(function(k){eByC[k]=byC[k].slice();});
   addedExp.forEach(function(x){if(eByC[x.cat])eByC[x.cat][3]+=x.amount;});
@@ -180,10 +211,10 @@ function rExpenses(){
   });
   o+='<button class="ms'+(em===4?" on":"")+'" onclick="T(\'em\',4)" style="border-left:1px solid var(--border)">Q1</button></div>';
 
-  o+='<div class="cd" style="margin-bottom:16px"><div class="rw"><div><div class="lb">'+(isQ?"DESPESAS Q1":"DESPESAS "+ms[em])+'</div><div class="m" style="font-size:24px;font-weight:900;margin-top:4px">'+fm(tE)+'</div></div>';
-  if(!isQ&&em<3&&sal[em])o+='<div style="text-align:right"><div class="lb">SALARIO</div><div class="m" style="font-size:18px;font-weight:700;color:var(--success);margin-top:4px">'+fm(sal[em])+'</div></div>';
+  o+='<div class="cd" style="margin-bottom:16px"><div class="rw"><div><div class="lb">'+(isQ?"Despesas Q1":"DESPESAS "+ms[em])+'</div><div class="m" style="font-size:24px;font-weight:900;margin-top:4px">'+fm(tE)+'</div></div>';
+  if(!isQ&&em<3&&sal[em])o+='<div style="text-align:right"><div class="lb">Salario</div><div class="m" style="font-size:18px;font-weight:700;color:var(--success);margin-top:4px">'+fm(sal[em])+'</div></div>';
   o+='</div>';
-  if(em===3)o+='<div class="m" style="font-size:10px;color:var(--signal);margin-top:10px">ABRIL PARCIAL</div>';
+  if(em===3)o+='<div class="m" style="font-size:10px;color:var(--signal);margin-top:10px">Abril parcial</div>';
   o+='</div>';
 
   rows.forEach(function(r){
@@ -212,44 +243,45 @@ function rExpenses(){
       var aTxn=[];addedExp.forEach(function(x,idx){if(x.cat===r.id)aTxn.push({x:x,idx:idx});});
       if(aTxn.length>0){
         if(hTxn.length>0)o+='<div style="border-top:1px solid var(--border);margin:8px 0"></div>';
-        o+='<div class="lb" style="font-size:9px;margin-bottom:6px">IMPORTADAS</div>';
+        o+='<div class="lb" style="font-size:9px;margin-bottom:6px">Importadas</div>';
         aTxn.forEach(function(at,i){
           var x=at.x,idx=at.idx;
           o+='<div style="padding:6px 0;'+(i>0?"border-top:1px solid var(--border)":"")+'">';
           o+='<div class="rw"><span style="font-size:12px;color:var(--text)">'+e(x.desc)+'</span><span class="m" style="font-size:12px;font-weight:500">'+fm(x.amount)+'</span></div>';
           o+='<div style="display:flex;align-items:center;gap:6px;margin-top:4px">';
           o+='<span class="m" style="font-size:9px;color:var(--text3)">'+e(x.date)+'</span>';
-          o+='<select onchange="changeExpCat('+idx+',this.value)" style="padding:2px 6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:var(--mono);font-size:9px;letter-spacing:0.05em;appearance:none">';
-          bdg.forEach(function(b){o+='<option value="'+b.id+'"'+(x.cat===b.id?' selected':'')+'>'+b.nm.toUpperCase()+'</option>';});
+          o+='<select onchange="changeExpCat('+idx+',this.value)" style="padding:2px 6px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-family:var(--mono);font-size:9px;letter-spacing:0.05em;appearance:none">';
+          bdg.forEach(function(b){o+='<option value="'+b.id+'"'+(x.cat===b.id?' selected':'')+'>'+b.nm+'</option>';});
           o+='</select>';
-          o+='<button onclick="addedExp.splice('+idx+',1);render()" style="background:none;border:none;color:var(--signal);font-family:var(--mono);font-size:9px;cursor:pointer">REMOVER</button>';
+          o+='<button onclick="addedExp.splice('+idx+',1);render()" style="background:none;border:none;color:var(--signal);font-family:var(--mono);font-size:9px;cursor:pointer">Remover</button>';
           o+='</div></div>';
         });
       }
       if(hTxn.length===0&&aTxn.length===0){
-        o+='<div class="lb" style="padding:8px 0;color:var(--text3)">SEM TRANSACOES DETALHADAS</div>';
+        o+='<div class="lb" style="padding:8px 0;color:var(--text3)">Sem transacoes detalhadas</div>';
       }
       o+='</div>';
     }
     o+='</div>';
   });
   // FAB buttons
-  o+='<div style="position:fixed;bottom:24px;right:20px;display:flex;gap:8px;z-index:50">';
-  o+='<button onclick="showStmt=true;render()" style="width:48px;height:48px;border:1px solid var(--border);background:var(--bg2);color:var(--text3);display:flex;align-items:center;justify-content:center" title="Importar extracto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>';
-  o+='<button onclick="showAdd=true;render()" style="width:48px;height:48px;border:1px solid var(--text);background:var(--text);color:var(--bg2);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg></button>';
+  o+='<div style="position:fixed;bottom:24px;right:20px;display:flex;gap:10px;z-index:50">';
+  o+='<button onclick="showStmt=true;render()" style="width:48px;height:48px;border:none;background:var(--bg2);color:var(--text2);display:flex;align-items:center;justify-content:center;border-radius:24px;box-shadow:0 2px 12px rgba(0,0,0,0.12)" title="Importar extracto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>';
+  o+='<button onclick="showAdd=true;render()" style="width:48px;height:48px;border:none;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;border-radius:24px;box-shadow:0 2px 12px rgba(0,122,255,0.35)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>';
   o+='</div>';
   return o+'</div>';
 }
 
 function rLoan(){
+  var pp=((ln.cap-ln.out)/ln.cap)*100;
   var o='<div style="padding:0 20px 40px">';
-  o+='<div class="cs" style="margin-bottom:12px"><div class="lb" style="margin-bottom:6px">CREDITO HABITACAO</div><div style="font-size:13px;color:var(--text3);margin-bottom:16px">Bankinter / Taxa Fixa</div>';
+  o+='<div class="cs" style="margin-bottom:12px"><div class="lb" style="margin-bottom:6px">Credito Habitacao</div><div style="font-size:13px;color:var(--text3);margin-bottom:16px">Bankinter / Taxa Fixa</div>';
   o+='<div style="margin-bottom:16px"><div class="rw m" style="font-size:11px;color:var(--text3);margin-bottom:6px"><span>Pago: '+fm(90000-77555.06)+'</span><span>'+pp.toFixed(1)+'%</span></div>';
   o+='<div style="height:4px;background:var(--border)"><div style="height:100%;width:'+pp+'%;background:var(--success)"></div></div>';
   o+='<div class="rw m" style="font-size:10px;color:var(--text3);margin-top:4px"><span>28.10.2022</span><span>28.10.2042</span></div></div>';
-  o+='<div style="font-size:28px;font-weight:900;color:var(--signal)">'+fm(77555.06)+'</div><div class="lb" style="margin-top:4px">CAPITAL EM DIVIDA</div></div>';
+  o+='<div style="font-size:28px;font-weight:900;color:var(--signal)">'+fm(77555.06)+'</div><div class="lb" style="margin-top:4px">Capital em divida</div></div>';
   o+='<div class="g2">';
-  [["PRESTACAO","485,83 EUR"],["PROXIMA","28.05.2026"],["TAXA","2,7%"],["TIPO","TAXA FIXA"],["CAPITAL","90 000 EUR"],["PRAZO","20 ANOS"]].forEach(function(x){
+  [["Prestacao","485,83 EUR"],["Proxima","28.05.2026"],["Taxa","2,7%"],["Tipo","Taxa Fixa"],["Capital","90.000 EUR"],["Prazo","20 anos"]].forEach(function(x){
     o+='<div class="cd" style="padding:16px 20px"><div class="lb" style="margin-bottom:4px">'+x[0]+'</div><div style="font-size:15px;font-weight:600">'+x[1]+'</div></div>';
   });
   return o+'</div></div>';
@@ -319,7 +351,7 @@ function callAI(content,prompt,cb){
 window.testAPI=function(){
   var el=document.getElementById("testResult");
   if(!apiKey){el.innerHTML='<div class="lb" style="color:var(--signal)">COLA A KEY PRIMEIRO</div>';return;}
-  el.innerHTML='<div class="lb">A TESTAR...</div>';
+  el.innerHTML='<div class="lb">A testar...</div>';
   fetch("https://api.anthropic.com/v1/messages",{
     method:"POST",
     headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
@@ -327,13 +359,13 @@ window.testAPI=function(){
   }).then(function(r){
     return r.text().then(function(body){
       if(r.ok)el.innerHTML='<div class="lb" style="color:var(--success)">API OK — STATUS '+r.status+'</div><div class="m" style="font-size:9px;color:var(--text3);margin-top:4px;word-break:break-all">'+body.substring(0,150)+'</div>';
-      else el.innerHTML='<div class="lb" style="color:var(--signal)">ERRO '+r.status+'</div><div class="m" style="font-size:9px;color:var(--text3);margin-top:4px;word-break:break-all">'+body.substring(0,300)+'</div>';
+      else el.innerHTML='<div class="lb" style="color:var(--signal)">Erro '+r.status+'</div><div class="m" style="font-size:9px;color:var(--text3);margin-top:4px;word-break:break-all">'+body.substring(0,300)+'</div>';
     });
   }).catch(function(err){
     var msg=err.message||"Erro";
     var hint="";
     if(msg==="Failed to fetch")hint="<br><br>CAUSA PROVAVEL: CORS bloqueado. Estas a abrir o ficheiro com file://? Tem de ser via HTTPS (GitHub Pages).";
-    el.innerHTML='<div class="lb" style="color:var(--signal)">ERRO DE REDE</div><div class="m" style="font-size:10px;color:var(--text3);margin-top:4px">'+msg+hint+'</div><div class="m" style="font-size:9px;color:var(--text3);margin-top:8px">URL actual: '+location.protocol+"//"+location.host+'</div>';
+    el.innerHTML='<div class="lb" style="color:var(--signal)">Erro DE REDE</div><div class="m" style="font-size:10px;color:var(--text3);margin-top:4px">'+msg+hint+'</div><div class="m" style="font-size:9px;color:var(--text3);margin-top:8px">URL actual: '+location.protocol+"//"+location.host+'</div>';
   });
 };
 var STMT_PROMPT='Analisa extracto bancario. Extrai TODAS as transacoes. Descricoes CURTAS (max 20 chars). Valores negativos para debitos, positivos para creditos. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao curta","amount":-0.00,"category":"rest"}]}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
@@ -341,19 +373,19 @@ var RCPT_PROMPT='Analisa este recibo/fatura. Extrai itens e valores. JSON: {"ite
 
 /* ══ SETTINGS MODAL ══ */
 function rSettings(){
-  var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:flex;flex-direction:column;justify-content:flex-end">';
-  o+='<div style="background:var(--bg2);border-top:1px solid var(--border);padding:24px 20px 32px">';
-  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">DEFINICOES</div><button onclick="showSet=false;render()" style="background:none;border:none;color:var(--text3);font-size:20px">✕</button></div>';
-  o+='<div class="lb" style="margin-bottom:6px">ANTHROPIC API KEY</div>';
+  var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:200;display:flex;flex-direction:column;justify-content:flex-end">';
+  o+='<div style="background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px 32px">';
+  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">Definicoes</div><button onclick="showSet=false;render()" style="background:none;border:none;color:var(--text3);font-size:20px">✕</button></div>';
+  o+='<div class="lb" style="margin-bottom:6px">API Key</div>';
   o+='<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Obtem em console.anthropic.com. Guardada apenas no teu browser.</div>';
-  o+='<div style="display:flex;gap:8px;margin-bottom:16px"><input id="ki" type="password" value="'+e(apiKey)+'" placeholder="sk-ant-..." style="flex:1;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;box-sizing:border-box"/>';
-  o+='<button onclick="var el=document.getElementById(\'ki\');el.type=el.type===\'password\'?\'text\':\'password\'" style="padding:0 12px;border:1px solid var(--border);background:transparent;color:var(--text3);font-family:var(--mono);font-size:10px;letter-spacing:0.1em">VER</button></div>';
-  if(apiKey)o+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-left:3px solid var(--success)"><div style="width:8px;height:8px;background:var(--success)"></div><div class="lb" style="color:var(--success)">KEY CONFIGURADA</div></div>';
-  else o+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-left:3px solid var(--signal)"><div style="width:8px;height:8px;background:var(--signal)"></div><div class="lb" style="color:var(--signal)">SEM KEY — SCANNER INACTIVO</div></div>';
-  o+='<button onclick="apiKey=document.getElementById(\'ki\').value;try{localStorage.setItem(\'proof_api_key\',apiKey)}catch(x){};showSet=false;render()" style="width:100%;padding:14px 0;border:1px solid var(--text);background:var(--text);color:var(--bg2);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:12px">GUARDAR KEY</button>';
-  if(apiKey)o+='<button onclick="apiKey=\'\';try{localStorage.removeItem(\'proof_api_key\')}catch(x){};showSet=false;render()" style="width:100%;padding:12px 0;border:1px solid rgba(255,59,48,0.3);background:transparent;color:var(--signal);font-family:var(--mono);font-size:11px">REMOVER KEY</button>';
+  o+='<div style="display:flex;gap:8px;margin-bottom:16px"><input id="ki" type="password" value="'+e(apiKey)+'" placeholder="sk-ant-..." style="flex:1;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-family:var(--mono);font-size:13px;box-sizing:border-box"/>';
+  o+='<button onclick="var el=document.getElementById(\'ki\');el.type=el.type===\'password\'?\'text\':\'password\'" style="padding:0 12px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--r2);font-family:var(--mono);font-size:10px;letter-spacing:0.1em">Ver</button></div>';
+  if(apiKey)o+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-left:3px solid var(--success)"><div style="width:8px;height:8px;background:var(--success)"></div><div class="lb" style="color:var(--success)">Key configurada</div></div>';
+  else o+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-left:3px solid var(--signal)"><div style="width:8px;height:8px;background:var(--signal)"></div><div class="lb" style="color:var(--signal)">Sem key — scanner inactivo</div></div>';
+  o+='<button onclick="apiKey=document.getElementById(\'ki\').value;try{localStorage.setItem(\'proof_api_key\',apiKey)}catch(x){};showSet=false;render()" style="width:100%;padding:14px 0;border:none;background:var(--blue);color:#fff;font-size:15px;font-weight:600;border-radius:var(--r2);margin-bottom:12px">Guardar key</button>';
+  if(apiKey)o+='<button onclick="apiKey=\'\';try{localStorage.removeItem(\'proof_api_key\')}catch(x){};showSet=false;render()" style="width:100%;padding:12px 0;border:1px solid rgba(255,59,48,0.3);background:transparent;color:var(--signal);font-family:var(--mono);font-size:11px">Remover key</button>';
   o+='<div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border)">';
-  o+='<button onclick="testAPI()" style="width:100%;padding:12px 0;border:1px solid var(--border);background:transparent;color:var(--text3);font-family:var(--mono);font-size:11px;letter-spacing:0.1em">TESTAR LIGACAO API</button>';
+  o+='<button onclick="testAPI()" style="width:100%;padding:12px 0;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--r2);font-family:var(--mono);font-size:11px;letter-spacing:0.1em">Testar ligacao</button>';
   o+='<div id="testResult" style="margin-top:12px"></div>';
   o+='</div>';
   o+='</div></div>';
@@ -362,57 +394,57 @@ function rSettings(){
 
 /* ══ ADD EXPENSE MODAL ══ */
 function rAddExp(){
-  var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:flex;flex-direction:column;justify-content:flex-end">';
-  o+='<div style="background:var(--bg2);border-top:1px solid var(--border);padding:24px 20px 32px;max-height:90vh;overflow:auto">';
-  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">ADICIONAR DESPESA</div><button onclick="showAdd=false;scResult=null;render()" style="background:none;border:none;color:var(--text3);font-size:20px">✕</button></div>';
+  var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:100;display:flex;flex-direction:column;justify-content:flex-end">';
+  o+='<div style="background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px 32px;max-height:90vh;overflow:auto">';
+  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">Adicionar despesa</div><button onclick="showAdd=false;scResult=null;render()" style="background:none;border:none;color:var(--text3);font-size:20px">✕</button></div>';
   // Scanner buttons
   if(apiKey){
     o+='<div style="display:flex;gap:8px;margin-bottom:20px">';
     o+='<input id="scCam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanReceipt(this)"/>';
     o+='<input id="scFile" type="file" accept="image/*" style="display:none" onchange="scanReceipt(this)"/>';
-    o+='<button onclick="document.getElementById(\'scCam\').click()" style="flex:1;padding:12px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">CAMARA</button>';
+    o+='<button onclick="document.getElementById(\'scCam\').click()" style="flex:1;padding:12px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">Camara</button>';
     o+='<button onclick="document.getElementById(\'scFile\').click()" style="flex:1;padding:12px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">GALERIA</button></div>';
   }else{
-    o+='<div style="border:1px solid var(--border);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--text3)">SCANNER INDISPONIVEL — CONFIGURA API KEY</div></div>';
+    o+='<div style="border:1px solid var(--border);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--text3)">Scanner indisponivel — configura API key</div></div>';
   }
-  if(scScanning)o+='<div style="border:1px solid var(--border);padding:16px;margin-bottom:16px;text-align:center"><div class="lb">A PROCESSAR.</div></div>';
+  if(scScanning)o+='<div style="border:1px solid var(--border);padding:16px;margin-bottom:16px;text-align:center"><div class="lb">A processar...</div></div>';
   if(scResult&&!scResult.error){
-    o+='<div style="border-left:3px solid var(--success);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--success);margin-bottom:8px">RECIBO ANALISADO</div>';
+    o+='<div style="border-left:3px solid var(--success);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--success);margin-bottom:8px">Recibo analisado</div>';
     if(scResult.items)scResult.items.forEach(function(it){o+='<div class="rw" style="font-size:12px;color:var(--text2);padding:3px 0"><span>'+e(it.desc)+'</span><span class="m">'+fm(it.amount)+'</span></div>';});
     o+='</div>';
   }
   if(scResult&&scResult.error)o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">'+e(scResult.error)+'</div></div>';
   // Form
-  o+='<div style="margin-bottom:16px"><div class="lb" style="margin-bottom:6px">CATEGORIA</div><select id="adCat" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;appearance:none">';
+  o+='<div style="margin-bottom:16px"><div class="lb" style="margin-bottom:6px">CATEGORIA</div><select id="adCat" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:14px;appearance:none">';
   bdg.forEach(function(b){o+='<option value="'+b.id+'"'+(addData.cat===b.id?' selected':'')+'>'+e(b.nm)+'</option>';});
   o+='</select></div>';
-  o+='<div style="margin-bottom:16px"><div class="lb" style="margin-bottom:6px">DESCRICAO</div><input id="adDesc" value="'+e(addData.desc)+'" placeholder="Ex: Pingo Doce" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:15px;box-sizing:border-box"/></div>';
-  o+='<div style="display:flex;gap:12px;margin-bottom:16px"><div style="flex:1"><div class="lb" style="margin-bottom:6px">VALOR (EUR)</div><input id="adAmt" value="'+e(addData.amount)+'" placeholder="0,00" inputmode="decimal" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-family:var(--mono);font-size:18px;font-weight:600;box-sizing:border-box"/></div>';
-  o+='<div style="flex:1"><div class="lb" style="margin-bottom:6px">DATA</div><input id="adDate" type="date" value="'+addData.date+'" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-family:var(--mono);font-size:14px;box-sizing:border-box"/></div></div>';
-  o+='<button onclick="doAddExp()" style="width:100%;padding:14px 0;border:1px solid var(--text);background:var(--text);color:var(--bg2);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">ADICIONAR DESPESA</button>';
+  o+='<div style="margin-bottom:16px"><div class="lb" style="margin-bottom:6px">DESCRICAO</div><input id="adDesc" value="'+e(addData.desc)+'" placeholder="Ex: Pingo Doce" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:15px;box-sizing:border-box"/></div>';
+  o+='<div style="display:flex;gap:12px;margin-bottom:16px"><div style="flex:1"><div class="lb" style="margin-bottom:6px">VALOR (EUR)</div><input id="adAmt" value="'+e(addData.amount)+'" placeholder="0,00" inputmode="decimal" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-family:var(--mono);font-size:18px;font-weight:600;box-sizing:border-box"/></div>';
+  o+='<div style="flex:1"><div class="lb" style="margin-bottom:6px">DATA</div><input id="adDate" type="date" value="'+addData.date+'" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-family:var(--mono);font-size:14px;box-sizing:border-box"/></div></div>';
+  o+='<button onclick="doAddExp()" style="width:100%;padding:14px 0;border:none;background:var(--blue);color:#fff;font-size:15px;font-weight:600;border-radius:var(--r2);text-transform:uppercase">Adicionar despesa</button>';
   o+='</div></div>';
   return o;
 }
 
 /* ══ STATEMENT IMPORT MODAL ══ */
 function rStatement(){
-  var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:flex;flex-direction:column;justify-content:flex-end">';
-  o+='<div style="background:var(--bg2);border-top:1px solid var(--border);padding:24px 20px 32px;max-height:90vh;overflow:auto">';
-  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">IMPORTAR EXTRACTO</div><button onclick="showStmt=false;stResult=null;render()" style="background:none;border:none;color:var(--text3);font-size:20px">✕</button></div>';
-  if(!apiKey){o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">API KEY NECESSARIA — ABRE DEFINICOES</div></div>';o+='</div></div>';return o;}
+  var o='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:100;display:flex;flex-direction:column;justify-content:flex-end">';
+  o+='<div style="background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px 32px;max-height:90vh;overflow:auto">';
+  o+='<div class="rw" style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;text-transform:uppercase">Importar extracto</div><button onclick="showStmt=false;stResult=null;render()" style="background:none;border:none;color:var(--text3);font-size:20px">✕</button></div>';
+  if(!apiKey){o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">API KEY NECESSARIA — ABRE Definicoes</div></div>';o+='</div></div>';return o;}
   if(!stResult&&!stScanning){
     o+='<div style="font-size:12px;color:var(--text3);margin-bottom:16px">Carrega imagem, PDF ou Excel do extracto bancario.</div>';
     o+='<div style="display:flex;gap:8px;margin-bottom:16px">';
     o+='<input id="stCam" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanStmt(this)"/>';
     o+='<input id="stFile" type="file" accept="image/*,.pdf,.xlsx,.xls,.csv" style="display:none" onchange="scanStmt(this)"/>';
-    o+='<button onclick="document.getElementById(\'stCam\').click()" style="flex:1;padding:16px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">CAMARA</button>';
-    o+='<button onclick="document.getElementById(\'stFile\').click()" style="flex:1;padding:16px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">FICHEIRO</button></div>';
-    o+='<div class="m" style="font-size:9px;color:var(--text3);margin-top:-8px;margin-bottom:16px">IMAGEM / PDF / XLSX / CSV</div>';
+    o+='<button onclick="document.getElementById(\'stCam\').click()" style="flex:1;padding:16px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">Camara</button>';
+    o+='<button onclick="document.getElementById(\'stFile\').click()" style="flex:1;padding:16px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase">Ficheiro</button></div>';
+    o+='<div class="m" style="font-size:9px;color:var(--text3);margin-top:-8px;margin-bottom:16px">Imagem / PDF / Excel / CSV</div>';
   }
-  if(stScanning)o+='<div style="border:1px solid var(--border);padding:24px;text-align:center"><div class="lb">A PROCESSAR EXTRACTO.</div></div>';
+  if(stScanning)o+='<div style="border:1px solid var(--border);padding:24px;text-align:center"><div class="lb">A processar...</div></div>';
   if(stResult&&stResult.error)o+='<div style="border-left:3px solid var(--signal);padding:12px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">'+e(stResult.error)+'</div></div>';
   if(stResult&&stResult.transactions){
-    o+='<div class="rw" style="margin-bottom:12px"><div class="lb">'+(stResult.bank||"EXTRACTO")+' — '+stResult.transactions.length+' TRANSACOES</div></div>';
+    o+='<div class="rw" style="margin-bottom:12px"><div class="lb">'+(stResult.bank||"EXTRACTO")+' — '+stResult.transactions.length+' transacoes</div></div>';
     o+='<div style="max-height:50vh;overflow:auto;margin-bottom:16px">';
     stResult.transactions.forEach(function(t,i){
       var sel=!!stSel[i],isD=t.amount<0;
@@ -434,16 +466,16 @@ function rStatement(){
       o+='<div style="display:flex;align-items:center;gap:8px;margin-top:6px;padding-left:28px">';
       o+='<span class="m" style="font-size:10px;color:var(--text3)">'+e(t.date||"")+'</span>';
       o+='<select onchange="changeStCat('+i+',this.value)" style="flex:1;padding:4px 8px;border:1px solid '+(warn?'var(--signal)':'var(--border)')+';background:'+(warn?'rgba(229,57,53,0.05)':'var(--bg)')+';color:var(--text);font-family:var(--mono);font-size:9px;letter-spacing:0.05em;appearance:none">';
-      bdg.forEach(function(b){o+='<option value="'+b.id+'"'+(t.category===b.id?' selected':'')+'>'+b.nm.toUpperCase()+'</option>';});
+      bdg.forEach(function(b){o+='<option value="'+b.id+'"'+(t.category===b.id?' selected':'')+'>'+b.nm+'</option>';});
       o+='</select>';
-      if(warn)o+='<span class="m" style="font-size:9px;color:var(--signal)">VERIFICAR</span>';
+      if(warn)o+='<span class="m" style="font-size:9px;color:var(--signal)">Verificar</span>';
       o+='</div></div>';
     });
     o+='</div>';
     var selCount=Object.keys(stSel).length;
     var selTotal=0;stResult.transactions.forEach(function(t,i){if(stSel[i])selTotal+=Math.abs(t.amount);});
-    o+='<div class="rw" style="margin-bottom:16px"><div class="lb">'+selCount+' SELECCIONADAS</div><div class="lb" style="color:var(--text)">'+fm(selTotal)+'</div></div>';
-    o+='<button onclick="doImportStmt()" style="width:100%;padding:14px 0;border:1px solid '+(selCount>0?'var(--text)':'var(--border)')+';background:'+(selCount>0?'var(--text)':'transparent')+';color:'+(selCount>0?'var(--bg2)':'var(--text3)')+';font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">IMPORTAR SELECCIONADAS</button>';
+    o+='<div class="rw" style="margin-bottom:16px"><div class="lb">'+selCount+' Seleccionadas</div><div class="lb" style="color:var(--text)">'+fm(selTotal)+'</div></div>';
+    o+='<button onclick="doImportStmt()" style="width:100%;padding:14px 0;border:1px solid '+(selCount>0?'var(--text)':'var(--border)')+';background:'+(selCount>0?'var(--text)':'transparent')+';color:'+(selCount>0?'var(--bg2)':'var(--text3)')+';font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">Importar seleccionadas</button>';
   }
   o+='</div></div>';
   return o;
@@ -520,21 +552,137 @@ window.doAddExp=function(){
   scResult=null;showAdd=false;render();
 };
 
+/* ══ AI ASSISTANT ══ */
+function rAI(){
+  var o='<div style="padding:0 20px 40px">';
+  if(!apiKey){
+    o+='<div style="border-left:3px solid var(--signal);padding:16px;margin-bottom:16px"><div class="lb" style="color:var(--signal);margin-bottom:4px">API KEY NECESSARIA</div><div style="font-size:12px;color:var(--text3)">Configura a key nas Definicoes para usar o assistente.</div></div>';
+    return o+'</div>';
+  }
+  // Input area
+  o+='<div class="cd" style="margin-bottom:16px;padding:16px">';
+  o+='<div class="lb" style="margin-bottom:8px">Assistente financeiro</div>';
+  o+='<div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">Escreve em linguagem natural. Exemplos:<br>';
+  o+='<span class="m" style="font-size:10px">• "Bankinter 584€, Activobank 325€, Moey 3,79€"</span><br>';
+  o+='<span class="m" style="font-size:10px">• "TR Poupanca 7055€, TR Corretagem 2228€"</span><br>';
+  o+='<span class="m" style="font-size:10px">• "XTB Planos 10429€, Transacoes 490€"</span><br>';
+  o+='<span class="m" style="font-size:10px">• "Registar snapshot com data de hoje"</span></div>';
+  o+='<textarea id="aiInput" rows="3" placeholder="Ex: Bankinter 584€, Moey 3,79€" style="width:100%;padding:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-size:14px;resize:vertical;box-sizing:border-box;font-family:var(--font)"></textarea>';
+  o+='<button onclick="sendAI()" '+(aiLoading?'disabled':'')+' style="width:100%;padding:12px 0;border:none;background:var(--blue);color:#fff;font-size:15px;font-weight:600;border-radius:var(--r2);margin-top:8px">'+(aiLoading?'A processar...':'Enviar')+'</button>';
+  o+='</div>';
+  // History
+  if(aiHistory.length>0){
+    o+='<div class="lb" style="margin-bottom:8px">Historico</div>';
+    for(var i=aiHistory.length-1;i>=0;i--){
+      var h=aiHistory[i];
+      o+='<div class="cd" style="margin-bottom:8px;padding:16px">';
+      o+='<div class="rw" style="margin-bottom:8px"><span class="m" style="font-size:10px;color:var(--text3)">'+e(h.date)+'</span>';
+      if(h.ok)o+='<span class="m" style="font-size:9px;color:var(--success)">Executado</span>';
+      else if(h.err)o+='<span class="m" style="font-size:9px;color:var(--signal)">Erro</span>';
+      o+='</div>';
+      o+='<div style="font-size:13px;color:var(--text);margin-bottom:8px;font-weight:500">'+e(h.cmd)+'</div>';
+      if(h.actions&&h.actions.length>0){
+        h.actions.forEach(function(a){
+          if(a.type==="update_balance")o+='<div class="rw" style="padding:4px 0"><span style="font-size:11px;color:var(--text2)">'+e(a.account)+'</span><span class="m" style="font-size:11px;font-weight:600;color:var(--success)">'+fm(a.value)+'</span></div>';
+          else if(a.type==="snapshot")o+='<div style="font-size:11px;color:var(--text2);padding:4px 0">Snapshot registado: '+e(a.label)+'</div>';
+        });
+      }
+      if(h.msg)o+='<div style="font-size:11px;color:var(--text3);margin-top:4px">'+e(h.msg)+'</div>';
+      if(h.err)o+='<div style="font-size:11px;color:var(--signal);margin-top:4px">'+e(h.err)+'</div>';
+      o+='</div>';
+    }
+    o+='<button onclick="aiHistory=[];saveAI();render()" style="width:100%;padding:10px 0;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--r2);font-family:var(--mono);font-size:10px;letter-spacing:0.1em;margin-top:8px">LIMPAR Historico</button>';
+  }
+  return o+'</div>';
+}
+
+window.sendAI=function(){
+  var el=document.getElementById("aiInput");
+  if(!el)return;
+  var cmd=el.value.trim();
+  if(!cmd||aiLoading)return;
+  aiLoading=true;render();
+
+  var C=compute();
+  var acctList=getAccts().map(function(a){return a.b+" "+a.t+": "+a.v+" EUR";}).join("\n");
+  var today=new Date().toISOString().slice(0,10);
+  var dd=today.slice(8,10)+"."+today.slice(5,7);
+
+  var sysPrompt='Es o assistente financeiro do PROOF. FINANCE. O utilizador vai dar-te instrucoes em linguagem natural sobre as suas financas.\n\n'
+    +'contas ACTUAIS:\n'+acctList+'\n\n'
+    +'DATA DE HOJE: '+today+'\n\n'
+    +'Responde APENAS com JSON puro. Formato:\n'
+    +'{"actions":[...],"message":"resumo do que fizeste"}\n\n'
+    +'Tipos de actions:\n'
+    +'1. Atualizar saldo: {"type":"update_balance","account_bank":"Bankinter","account_type":"Conta a Ordem","value":584.64,"note":"584,64 / 2"}\n'
+    +'   - account_bank deve ser EXACTO: Bankinter, Activobank, Moey, Trade Republic, XTB, Goparity, Raize\n'
+    +'   - account_type deve ser EXACTO: Conta a Ordem, Poupanca, Corretagem, Private Markets, Rend. Fixo, Transacoes, Planos Invest., P2P Lending\n'
+    +'   - Para Bankinter: o valor e SEMPRE o total da conta dividido por 2 (conta partilhada)\n'
+    +'   - note e opcional (ex: para Bankinter colocar o valor total antes de dividir)\n\n'
+    +'2. Registar snapshot: {"type":"snapshot","label":"'+dd+'","liq":0,"poup":0,"inv":0,"div":77555.06,"xP":0,"xT":0,"tC":0}\n'
+    +'   - liq = soma de Bankinter+Activobank+Moey\n'
+    +'   - poup = Trade Republic Poupanca\n'
+    +'   - inv = soma de todos os investimentos (TR Corretagem+PM+RF+XTB Planos+Trans+Goparity+Raize)\n'
+    +'   - div = divida do credito (77555.06 por defeito)\n'
+    +'   - xP = XTB Planos, xT = XTB Transacoes, tC = TR Corretagem\n\n'
+    +'Se o utilizador nao mencionar snapshot, NAO cries um. So cria se ele pedir explicitamente.\n'
+    +'Se o utilizador disser "Bankinter 584€", interpreta como conta total 584€ e divide por 2 = 292€.\n'
+    +'Responde APENAS JSON.';
+
+  fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-haiku-4-5",max_tokens:4000,system:sysPrompt,messages:[{role:"user",content:cmd}]})
+  }).then(function(r){
+    if(!r.ok)return r.text().then(function(b){throw new Error("API "+r.status+": "+b.substring(0,100));});
+    return r.json();
+  }).then(function(d){
+    var txt=(d.content||[]).filter(function(i){return i.type==="text"}).map(function(i){return i.text}).join("");
+    var m=txt.match(/\{[\s\S]*\}/);
+    if(!m)throw new Error("Sem JSON na resposta.");
+    var res=JSON.parse(m[0]);
+    var entry={date:new Date().toLocaleString("pt-PT"),cmd:cmd,actions:res.actions||[],msg:res.message||"",ok:true};
+
+    // Execute actions
+    if(!dynAccts)dynAccts={};
+    (res.actions||[]).forEach(function(a){
+      if(a.type==="update_balance"){
+        var key=a.account_bank+"_"+a.account_type;
+        dynAccts[key]={v:a.value,d:new Date().toISOString().slice(0,10).replace(/-/g,"."),n:a.note||null};
+      }else if(a.type==="snapshot"){
+        dynSnaps.push({l:a.label,liq:a.liq||0,poup:a.poup||0,inv:a.inv||0,div:a.div||77555.06,xP:a.xP||0,xT:a.xT||0,tC:a.tC||0});
+      }
+    });
+    saveDyn();
+    aiHistory.push(entry);
+    saveAI();
+    aiLoading=false;
+    render();
+    // Scroll to top of history
+    setTimeout(function(){var el=document.getElementById("aiInput");if(el)el.value="";},50);
+  }).catch(function(err){
+    aiHistory.push({date:new Date().toLocaleString("pt-PT"),cmd:cmd,err:err.message});
+    saveAI();
+    aiLoading=false;
+    render();
+  });
+};
+
 /* ══ LOGIN SCREEN ══ */
 function rLogin(){
   var o='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px"><div style="width:100%;max-width:360px">';
-  o+='<div style="text-align:center;margin-bottom:48px"><span style="font-weight:900;font-size:48px;letter-spacing:-0.04em">PROOF</span><span style="font-weight:900;font-size:48px;color:var(--signal)">.</span>';
-  o+='<div class="lb" style="margin-top:8px">PERSONAL FINANCE</div></div>';
-  o+='<div style="background:var(--bg2);border:1px solid var(--border);padding:32px 24px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">';
-  o+='<div class="lb">EMAIL</div>';
-  o+='<input id="le" type="email" placeholder="mail@exemplo.pt" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;box-sizing:border-box;margin:6px 0 16px"/>';
-  o+='<div class="lb">PASSWORD</div>';
-  o+='<input id="lp" type="password" placeholder="password" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;box-sizing:border-box;margin:6px 0 24px"/>';
+  o+='<div style="text-align:center;margin-bottom:40px">';
+  o+='<div style="width:56px;height:56px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>';
+  o+='<div style="font-size:24px;font-weight:700;letter-spacing:-0.02em">Financas</div>';
+  o+='<div style="font-size:14px;color:var(--text2);margin-top:4px">Inicia sessao para continuar</div></div>';
+  o+='<div class="cd" style="padding:24px">';
+  o+='<div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:6px">Email</div>';
+  o+='<input id="le" type="email" placeholder="mail@exemplo.pt" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-size:15px;box-sizing:border-box;margin-bottom:16px"/>';
+  o+='<div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:6px">Password</div>';
+  o+='<input id="lp" type="password" placeholder="password" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-size:15px;box-sizing:border-box;margin-bottom:20px"/>';
   o+='<div id="lerr"></div>';
-  o+='<button onclick="doLogin()" style="width:100%;padding:14px 0;border:1px solid var(--text);background:var(--text);color:var(--bg);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase">ENTRAR</button>';
-  o+='</div>';
-  o+='<div class="lb" style="text-align:center;margin-top:24px;color:var(--text3)">CASE 001 / v1.1 / 2026.04.29</div>';
-  o+='</div></div>';
+  o+='<button onclick="doLogin()" style="width:100%;padding:14px 0;border:none;background:var(--blue);color:#fff;font-size:15px;font-weight:600;border-radius:var(--r2)">Entrar</button>';
+  o+='</div></div></div>';
   return o;
 }
 
@@ -542,7 +690,7 @@ window.doLogin=function(){
   var em=document.getElementById("le").value;
   var pw=document.getElementById("lp").value;
   if(!em||!pw)return;
-  document.getElementById("lerr").innerHTML='<div class="lb" style="margin-bottom:16px">A AUTENTICAR.</div>';
+  document.getElementById("lerr").innerHTML='<div class="lb" style="margin-bottom:16px">A autenticar...</div>';
   sb.auth.signInWithPassword({email:em,password:pw}).then(function(res){
     if(res.error){document.getElementById("lerr").innerHTML='<div style="border-left:3px solid var(--signal);padding:10px;margin-bottom:16px"><div class="lb" style="color:var(--signal)">'+e(res.error.message)+'</div></div>';return;}
     view="app";render();
@@ -555,24 +703,29 @@ window.doLogout=function(){
 /* ══ RENDER ══ */
 function render(){
   var el=document.getElementById("app");
-  if(view==="loading"){el.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center"><div class="lb">A CARREGAR.</div></div>';return;}
+  if(view==="loading"){el.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center"><div class="lb">A carregar...</div></div>';return;}
   if(view==="login"){el.innerHTML=rLogin();
     setTimeout(function(){var le=document.getElementById("le");if(le)le.addEventListener("keydown",function(ev){if(ev.key==="Enter")doLogin();});var lp=document.getElementById("lp");if(lp)lp.addEventListener("keydown",function(ev){if(ev.key==="Enter")doLogin();});},50);
     return;}
 
   var o='';
+  var C=compute();
   // Header
-  o+='<div class="rw" style="padding:20px 20px 0"><div><span style="font-weight:900;font-size:22px;letter-spacing:-0.03em">PROOF</span><span style="font-weight:900;font-size:22px;color:var(--signal)">.</span></div><div style="display:flex;align-items:center;gap:12px"><button onclick="showSet=true;render()" style="background:none;border:none;padding:4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="'+(apiKey?'var(--text3)':'var(--signal)')+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button><button onclick="doLogout()" style="background:none;border:none;color:var(--text3);font-family:var(--mono);font-size:10px;letter-spacing:0.1em">SAIR</button><div class="lb">29.04.2026</div></div></div>';
+  o+='<div class="rw" style="padding:16px 20px 0"><div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Financas</div><div style="display:flex;align-items:center;gap:12px"><button onclick="showSet=true;render()" style="background:none;border:none;padding:6px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="'+(apiKey?'var(--text3)':'var(--signal)')+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button><button onclick="doLogout()" style="background:none;border:none;color:var(--blue);font-size:14px;font-weight:500">Sair</button></div></div>';
   // Net Worth
-  o+='<div style="padding:28px 20px 8px"><div class="lb" style="margin-bottom:8px">PATRIMONIO LIQUIDO</div>';
-  o+='<div style="font-size:36px;font-weight:900;letter-spacing:-0.04em">'+fm(nW)+'</div>';
-  o+='<div style="display:flex;align-items:center;gap:6px;margin-top:8px"><span class="m" style="font-size:12px;color:'+(aD>=0?'var(--success)':'var(--signal)')+'">'+(aD>=0?'+':'')+fm(Math.abs(aD))+'</span><span class="m" style="font-size:11px;color:var(--text3)">desde 11.04</span></div></div>';
+  var lastH=C.hist[C.hist.length-1];
+  o+='<div style="padding:24px 20px 12px;text-align:center">';
+  o+='<div style="font-size:13px;color:var(--text2);margin-bottom:4px">Patrimonio liquido</div>';
+  o+='<div style="font-size:38px;font-weight:700;letter-spacing:-0.03em">'+fm(C.nW)+'</div>';
+  o+='<div style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:4px 10px;background:'+(C.aD>=0?'rgba(52,199,89,0.1)':'rgba(255,59,48,0.1)')+';border-radius:20px"><span style="font-size:13px;font-weight:600;color:'+(C.aD>=0?'var(--success)':'var(--signal)')+'">'+(C.aD>=0?'+':'')+fm(Math.abs(C.aD))+'</span></div></div>';
   // Asset Bar
-  o+='<div style="padding:12px 20px 16px"><div style="display:flex;height:4px;background:var(--border)">';
-  Object.keys(cT).forEach(function(c){o+='<div style="width:'+(cT[c]/tA*100)+'%;background:'+(cCol[c]||'#8A8E99')+'"></div>';});
+  o+='<div style="padding:8px 20px 20px"><div style="display:flex;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">';
+  Object.keys(C.cT).forEach(function(c){o+='<div style="width:'+(C.cT[c]/C.tA*100)+'%;background:'+(cCol[c]||'#8A8E99')+'"></div>';});
+  o+='</div><div style="display:flex;justify-content:center;gap:16px;margin-top:8px">';
+  Object.keys(C.cT).forEach(function(c){o+='<div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:3px;background:'+(cCol[c]||'#8A8E99')+'"></div><span style="font-size:11px;color:var(--text3)">'+c+'</span></div>';});
   o+='</div></div>';
   // Tabs
-  var tabs=[["overview","RESUMO"],["charts","GRAFICOS"],["expenses","DESPESAS"],["loan","CREDITO"]];
+  var tabs=[["overview","RESUMO"],["charts","GRAFICOS"],["expenses","DESPESAS"],["ai","IA"],["loan","CREDITO"]];
   o+='<div class="tab-bar">';
   tabs.forEach(function(t){o+='<button class="tb'+(tab===t[0]?' on':'')+'" onclick="T(\'tab\',\''+t[0]+'\')">'+t[1]+'</button>';});
   o+='</div>';
@@ -580,9 +733,10 @@ function render(){
   if(tab==="overview")o+=rOverview();
   else if(tab==="charts")o+=rCharts();
   else if(tab==="expenses")o+=rExpenses();
+  else if(tab==="ai")o+=rAI();
   else if(tab==="loan")o+=rLoan();
   // Footer
-  o+='<div style="padding:32px 20px 48px;border-top:1px solid var(--border)"><div><span style="font-weight:900;font-size:14px">PROOF</span><span style="font-weight:900;font-size:14px;color:var(--signal)">.</span></div><div class="m" style="font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-top:4px">CASE 001 / v1.1 / 2026.04.29</div></div>';
+  o+='<div style="padding:32px 20px 48px;text-align:center"><div style="font-size:11px;color:var(--text3)">Financas · v1.3</div></div>';
 
   // Modals
   if(showSet)o+=rSettings();
