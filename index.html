@@ -1030,22 +1030,115 @@ window.doAddExp=function(){
 };
 
 /* ══ AI ASSISTANT ══ */
+function actionLabel(a){
+  if(a.type==="update_balance")return{icon:"&#127974;",lbl:e(a.account_bank||"")+" "+e(a.account_type||""),val:fm(a.value||0),tab:"Resumo",color:"var(--blue)"};
+  if(a.type==="add_expense")return{icon:"&#128176;",lbl:e(a.desc||""),val:"-"+fm(Math.abs(a.amount||0))+" &middot; "+(a.cat||"out"),tab:"Despesas",color:"var(--signal)"};
+  if(a.type==="add_goal")return{icon:"&#127919;",lbl:e(a.name||""),val:"Meta "+fm(a.target||0),tab:"Metas",color:"var(--purple)"};
+  if(a.type==="add_recurring")return{icon:"&#128257;",lbl:e(a.name||""),val:fm(a.amount||0)+" &middot; dia "+(a.day||1),tab:"Recor.",color:"var(--orange)"};
+  if(a.type==="snapshot")return{icon:"&#128202;",lbl:"Snapshot "+e(a.label||""),val:"Liq "+fc(a.liq||0)+" &middot; Inv "+fc(a.inv||0),tab:"Resumo",color:"var(--success)"};
+  return{icon:"?",lbl:e(a.type||"desconhecido"),val:"",tab:"",color:"var(--text3)"};
+}
+
+function rAIImportPanel(){
+  if(aiImport.error){
+    var o='<div class="cd fadeUp" style="margin-bottom:16px;padding:18px;border-left:3px solid var(--signal)">';
+    o+='<div class="lb" style="color:var(--signal);margin-bottom:6px">Erro a analisar</div>';
+    o+='<div style="font-size:13px;color:var(--text2)">'+e(aiImport.error)+'</div>';
+    o+='<button onclick="cancelAIImport()" style="margin-top:12px;padding:10px 16px;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:var(--r2);font-size:12px;font-weight:600">Fechar</button>';
+    o+='</div>';
+    return o;
+  }
+  var actions=aiImport.actions||[];
+  var docLabel={extrato_bancario:"Extrato bancario",recibo:"Recibo",recibo_vencimento:"Recibo de vencimento",contrato_credito:"Contrato de credito",extrato_investimento:"Extrato de investimento",factura:"Factura",outro:"Documento"}[aiImport.docType]||"Documento";
+  var selCount=0,selDebit=0,selCredit=0;
+  actions.forEach(function(a,i){
+    if(aiImportSel[i]){
+      selCount++;
+      if(a.type==="add_expense")selDebit+=Math.abs(a.amount||0);
+      if(a.type==="update_balance")selCredit+=a.value||0;
+    }
+  });
+  var o='<div class="cd fadeUp" style="margin-bottom:16px;padding:0;overflow:hidden">';
+  o+='<div style="background:var(--grad-hero);color:#fff;padding:18px 20px">';
+  o+='<div class="lb" style="color:rgba(255,255,255,0.8);margin-bottom:6px">'+e(docLabel)+'</div>';
+  o+='<div style="font-size:14px;font-weight:600;line-height:1.4">'+e(aiImport.summary||"Analise concluida")+'</div>';
+  o+='<div style="margin-top:10px;display:flex;gap:14px;font-size:11px;opacity:0.9"><span><b>'+actions.length+'</b> '+(actions.length===1?"accao":"accoes")+'</span>';
+  if(selDebit>0)o+='<span>Despesa: <b>'+fc(selDebit)+'</b></span>';
+  o+='</div></div>';
+  if(actions.length===0){
+    o+='<div class="empty" style="padding:30px 20px">Nada para importar deste documento</div>';
+    o+='<div style="padding:0 16px 16px"><button onclick="cancelAIImport()" style="width:100%;padding:12px 0;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:var(--r2);font-size:13px;font-weight:600">Fechar</button></div>';
+    o+='</div>';
+    return o;
+  }
+  // Selection toolbar
+  o+='<div class="rw" style="padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border)">';
+  o+='<div style="font-size:11px;font-weight:600;color:var(--text2)"><b>'+selCount+'</b> de '+actions.length+' seleccionadas</div>';
+  o+='<div style="display:flex;gap:6px"><button onclick="selectAllAI(true)" style="padding:4px 10px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);border-radius:14px;font-size:10px;font-weight:600">Todas</button>';
+  o+='<button onclick="selectAllAI(false)" style="padding:4px 10px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);border-radius:14px;font-size:10px;font-weight:600">Nenhuma</button></div>';
+  o+='</div>';
+  // Action list
+  o+='<div style="max-height:50vh;overflow:auto">';
+  actions.forEach(function(a,i){
+    var info=actionLabel(a);
+    var sel=!!aiImportSel[i];
+    o+='<div onclick="toggleAIImportSel('+i+')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--border);cursor:pointer;background:'+(sel?'var(--blue-soft)':'transparent')+'">';
+    o+='<div style="width:18px;height:18px;border:2px solid '+(sel?'var(--blue)':'var(--border2)')+';border-radius:5px;background:'+(sel?'var(--blue)':'transparent')+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'+(sel?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':"")+'</div>';
+    o+='<div style="font-size:18px;line-height:1;flex-shrink:0">'+info.icon+'</div>';
+    o+='<div style="flex:1;min-width:0"><div class="rw"><span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+info.lbl+'</span><span class="m" style="font-size:11px;font-weight:700;color:'+info.color+'">'+info.val+'</span></div>';
+    if(a.date||a.deadline)o+='<div class="m" style="font-size:10px;color:var(--text3);margin-top:2px">'+e(a.date||a.deadline||"")+'</div>';
+    o+='</div></div>';
+  });
+  o+='</div>';
+  // Footer buttons
+  o+='<div style="padding:14px 16px;display:flex;gap:8px;border-top:1px solid var(--border)">';
+  o+='<button onclick="cancelAIImport()" style="padding:12px 16px;border:1px solid var(--border);background:transparent;color:var(--text2);border-radius:var(--r2);font-size:12px;font-weight:600">Cancelar</button>';
+  o+='<button onclick="applyAIImport()" '+(selCount===0?'disabled':'')+' style="flex:1;padding:12px 0;border:none;background:'+(selCount>0?'var(--grad-hero)':'var(--bg3)')+';color:'+(selCount>0?'#fff':'var(--text3)')+';font-size:13px;font-weight:700;border-radius:var(--r2);'+(selCount>0?'box-shadow:var(--shadow-hero)':'')+'">Aplicar '+selCount+'</button>';
+  o+='</div>';
+  o+='</div>';
+  return o;
+}
+
 function rAI(){
-  var o='<div style="padding:0 20px 40px">';
+  var o='<div class="fadeUp" style="padding:0 20px calc(40px + var(--safe-bottom))">';
   if(!apiKey){
-    o+='<div style="border-left:3px solid var(--signal);padding:16px;margin-bottom:16px"><div class="lb" style="color:var(--signal);margin-bottom:4px">API KEY NECESSARIA</div><div style="font-size:12px;color:var(--text3)">Configura a key nas Definicoes para usar o assistente.</div></div>';
+    o+='<div class="cd" style="padding:18px;margin-bottom:16px;border-left:3px solid var(--signal)"><div class="lb" style="color:var(--signal);margin-bottom:4px">API key necessaria</div><div style="font-size:12px;color:var(--text3);line-height:1.5">Configura a key da Anthropic nas Definicoes para usar o assistente e o importador.</div></div>';
     return o+'</div>';
   }
-  // Input area
+  // Review panel takes over when there's an import in flight or pending
+  if(aiImport){
+    o+=rAIImportPanel();
+    return o+'</div>';
+  }
+  // Loading state for import
+  if(aiImportLoading){
+    o+='<div class="cd" style="padding:30px 20px;text-align:center;margin-bottom:16px">';
+    o+='<div style="margin-bottom:14px"><div class="skel" style="width:64px;height:64px;border-radius:50%;margin:0 auto"></div></div>';
+    o+='<div class="lb" style="margin-bottom:6px;color:var(--text2)">A analisar documento</div>';
+    o+='<div style="font-size:11px;color:var(--text3);line-height:1.5">A IA esta a ler e extrair informacao.<br>Pode demorar ate 30 segundos.</div>';
+    o+='</div>';
+    return o+'</div>';
+  }
+  // Import card
+  o+='<div class="cd" style="margin-bottom:16px;padding:18px;background:linear-gradient(135deg,var(--blue-soft) 0%,transparent 100%);border-left:3px solid var(--blue)">';
+  o+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><div style="font-size:14px;font-weight:700">Importar documento</div></div>';
+  o+='<div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5">Carrega PDF, imagem ou Excel. A IA classifica e preenche automaticamente saldos, despesas, metas, subscricoes ou snapshots.</div>';
+  o+='<input id="aiFile" type="file" accept="image/*,.pdf,.xlsx,.xls,.csv" style="display:none" onchange="aiImportFile(this)"/>';
+  o+='<input id="aiCam" type="file" accept="image/*" capture="environment" style="display:none" onchange="aiImportFile(this)"/>';
+  o+='<div style="display:flex;gap:8px">';
+  o+='<button onclick="document.getElementById(\'aiCam\').click()" style="flex:1;padding:12px 0;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camara</button>';
+  o+='<button onclick="document.getElementById(\'aiFile\').click()" style="flex:1;padding:12px 0;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF / Imagem / Excel</button>';
+  o+='</div></div>';
+  // Text input area
   o+='<div class="cd" style="margin-bottom:16px;padding:16px">';
-  o+='<div class="lb" style="margin-bottom:8px">Assistente financeiro</div>';
-  o+='<div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">Escreve em linguagem natural. Exemplos:<br>';
-  o+='<span class="m" style="font-size:10px">• "Bankinter 584€, Activobank 325€, Moey 3,79€"</span><br>';
-  o+='<span class="m" style="font-size:10px">• "TR Poupanca 7055€, TR Corretagem 2228€"</span><br>';
-  o+='<span class="m" style="font-size:10px">• "XTB Planos 10429€, Transacoes 490€"</span><br>';
-  o+='<span class="m" style="font-size:10px">• "Registar snapshot com data de hoje"</span></div>';
-  o+='<textarea id="aiInput" rows="3" placeholder="Ex: Bankinter 584€, Moey 3,79€" style="width:100%;padding:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-size:14px;resize:vertical;box-sizing:border-box;font-family:var(--font)"></textarea>';
-  o+='<button onclick="sendAI()" '+(aiLoading?'disabled':'')+' style="width:100%;padding:12px 0;border:none;background:var(--blue);color:#fff;font-size:15px;font-weight:600;border-radius:var(--r2);margin-top:8px">'+(aiLoading?'A processar...':'Enviar')+'</button>';
+  o+='<div class="lb" style="margin-bottom:8px">Ou escreve em linguagem natural</div>';
+  o+='<div style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.5">';
+  o+='<span class="m" style="font-size:10px">&bull; "Bankinter 584&euro;, Activobank 325&euro;"</span><br>';
+  o+='<span class="m" style="font-size:10px">&bull; "TR Poupanca 7055&euro;"</span><br>';
+  o+='<span class="m" style="font-size:10px">&bull; "Registar snapshot com data de hoje"</span>';
+  o+='</div>';
+  o+='<textarea id="aiInput" rows="3" placeholder="Ex: Bankinter 584&euro;, Moey 3,79&euro;" style="width:100%;padding:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-size:14px;resize:vertical;box-sizing:border-box;font-family:var(--font)"></textarea>';
+  o+='<button onclick="sendAI()" '+(aiLoading?'disabled':'')+' style="width:100%;padding:12px 0;border:none;background:var(--grad-hero);color:#fff;font-size:14px;font-weight:700;border-radius:var(--r2);margin-top:8px;box-shadow:var(--shadow-hero)">'+(aiLoading?"A processar...":"Enviar")+'</button>';
   o+='</div>';
   // History
   if(aiHistory.length>0){
@@ -1059,10 +1152,11 @@ function rAI(){
       o+='</div>';
       o+='<div style="font-size:13px;color:var(--text);margin-bottom:8px;font-weight:500">'+e(h.cmd)+'</div>';
       if(h.actions&&h.actions.length>0){
-        h.actions.forEach(function(a){
-          if(a.type==="update_balance")o+='<div class="rw" style="padding:4px 0"><span style="font-size:11px;color:var(--text2)">'+e(a.account)+'</span><span class="m" style="font-size:11px;font-weight:600;color:var(--success)">'+fm(a.value)+'</span></div>';
-          else if(a.type==="snapshot")o+='<div style="font-size:11px;color:var(--text2);padding:4px 0">Snapshot registado: '+e(a.label)+'</div>';
+        h.actions.slice(0,8).forEach(function(a){
+          var info=actionLabel(a);
+          o+='<div class="rw" style="padding:4px 0"><span style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+info.icon+' '+info.lbl+'</span><span class="m" style="font-size:11px;font-weight:600;color:'+info.color+'">'+info.val+'</span></div>';
         });
+        if(h.actions.length>8)o+='<div style="font-size:10px;color:var(--text3);padding:4px 0;font-style:italic">+ '+(h.actions.length-8)+' outras</div>';
       }
       if(h.msg)o+='<div style="font-size:11px;color:var(--text3);margin-top:4px">'+e(h.msg)+'</div>';
       if(h.err)o+='<div style="font-size:11px;color:var(--signal);margin-top:4px">'+e(h.err)+'</div>';
@@ -1143,6 +1237,108 @@ window.sendAI=function(){
     aiLoading=false;
     render();
   });
+};
+
+/* ══ AI IMPORT (PDF / Image / Excel) ══ */
+window.aiImportFile=function(el){
+  var f=el&&el.files&&el.files[0];
+  el.value="";
+  if(!f)return;
+  if(!apiKey){toast("Configura API key nas Definicoes","error");return;}
+  if(f.size>20*1024*1024){toast("Ficheiro demasiado grande (max 20MB)","error");return;}
+  var name=(f.name||"").toLowerCase();
+  var isPDF=f.type==="application/pdf"||name.endsWith(".pdf");
+  var isXLS=name.endsWith(".xlsx")||name.endsWith(".xls")||name.endsWith(".csv")||(f.type||"").indexOf("spreadsheet")>-1||(f.type||"").indexOf("excel")>-1;
+  aiImportLoading=true;aiImport=null;aiImportSel={};render();
+  var handler=function(res){
+    aiImportLoading=false;
+    if(res.error){aiImport={error:res.error};}
+    else{
+      aiImport=res;
+      aiImportSel={};
+      (res.actions||[]).forEach(function(_,i){aiImportSel[i]=true;});
+    }
+    render();
+  };
+  if(isPDF){
+    readFileB64(f).then(function(b64){
+      callAI([{type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}}],AI_IMPORT_PROMPT,handler);
+    });
+  }else if(isXLS){
+    parseExcel(f).then(function(csv){
+      if(!csv){aiImportLoading=false;aiImport={error:"Nao consegui ler o ficheiro Excel/CSV."};render();return;}
+      callAI([{type:"text",text:"Dados do ficheiro ("+e(f.name)+"):\n\n"+csv}],AI_IMPORT_PROMPT,handler);
+    });
+  }else{
+    // Image (camera or gallery)
+    resizeImg(f,1600).then(function(b64){
+      callAI([{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}}],AI_IMPORT_PROMPT,handler);
+    });
+  }
+};
+
+window.toggleAIImportSel=function(i){
+  if(aiImportSel[i])delete aiImportSel[i];else aiImportSel[i]=true;
+  render();
+};
+window.selectAllAI=function(on){
+  if(!aiImport||!aiImport.actions)return;
+  aiImportSel={};
+  if(on)aiImport.actions.forEach(function(_,i){aiImportSel[i]=true;});
+  render();
+};
+window.cancelAIImport=function(){
+  aiImport=null;aiImportSel={};aiImportLoading=false;render();
+};
+
+window.applyAIImport=function(){
+  if(!aiImport||!aiImport.actions)return;
+  var actions=aiImport.actions;
+  var applied={balance:0,expense:0,goal:0,recurring:0,snapshot:0};
+  if(!dynAccts)dynAccts={};
+  var todayD=new Date().toISOString().slice(0,10).replace(/-/g,".");
+  actions.forEach(function(a,i){
+    if(!aiImportSel[i])return;
+    try{
+      if(a.type==="update_balance"&&a.account_bank&&a.account_type){
+        var key=a.account_bank+"_"+a.account_type;
+        dynAccts[key]={v:Number(a.value)||0,d:todayD,n:a.note||null};
+        applied.balance++;
+      }else if(a.type==="add_expense"&&a.desc){
+        addedExp.push({desc:String(a.desc).substring(0,60),amount:Math.abs(Number(a.amount)||0),cat:a.cat||"out",date:a.date||""});
+        applied.expense++;
+      }else if(a.type==="add_goal"&&a.name){
+        goals.push({id:uid(),name:String(a.name).substring(0,60),target:Number(a.target)||0,current:Number(a.current)||0,deadline:a.deadline||"",color:a.color||"#007AFF",createdAt:Date.now()});
+        applied.goal++;
+      }else if(a.type==="add_recurring"&&a.name){
+        var day=parseInt(a.day);if(isNaN(day)||day<1||day>31)day=1;
+        recurring.push({id:uid(),name:String(a.name).substring(0,60),amount:Number(a.amount)||0,day:day,cat:a.cat||"sub",createdAt:Date.now()});
+        applied.recurring++;
+      }else if(a.type==="snapshot"&&a.label){
+        dynSnaps.push({l:String(a.label).substring(0,8),liq:Number(a.liq)||0,poup:Number(a.poup)||0,inv:Number(a.inv)||0,div:Number(a.div)||77555.06,xP:Number(a.xP)||0,xT:Number(a.xT)||0,tC:Number(a.tC)||0});
+        applied.snapshot++;
+      }
+    }catch(_e){console.warn("Falha a aplicar accao",a,_e);}
+  });
+  // History entry
+  var totalApplied=applied.balance+applied.expense+applied.goal+applied.recurring+applied.snapshot;
+  aiHistory.push({
+    date:new Date().toLocaleString("pt-PT"),
+    cmd:"Documento: "+(aiImport.docType||"importado"),
+    actions:actions.filter(function(_,i){return aiImportSel[i];}),
+    msg:(aiImport.summary||"")+" ("+totalApplied+" aplicada"+(totalApplied===1?"":"s")+")",
+    ok:true
+  });
+  persistUser();
+  aiImport=null;aiImportSel={};
+  render();
+  var bits=[];
+  if(applied.expense)bits.push(applied.expense+" despesa"+(applied.expense===1?"":"s"));
+  if(applied.balance)bits.push(applied.balance+" saldo"+(applied.balance===1?"":"s"));
+  if(applied.goal)bits.push(applied.goal+" meta"+(applied.goal===1?"":"s"));
+  if(applied.recurring)bits.push(applied.recurring+" subscri"+(applied.recurring===1?"cao":"coes"));
+  if(applied.snapshot)bits.push(applied.snapshot+" snapshot");
+  toast(bits.length?bits.join(" + ")+" aplicado"+(totalApplied===1?"":"s"):"Nada aplicado","success");
 };
 
 /* ══ LOGIN SCREEN ══ */
