@@ -226,6 +226,8 @@ var recurring=[];
 var incomes=[];
 var showSet=false,showStmt=false,showAdd=false,showGoal=false,showRec=false,showInc=false,showCat=false;
 var catDraft={id:"",nm:"",lm:""};
+var showCalDay=null;
+var searchQuery="";
 var stScanning=false,stResult=null,stSel={};
 var scScanning=false,scResult=null;
 var addData={desc:"",amount:"",cat:"rest",date:new Date().toISOString().slice(0,10),shared:false,total:"",split:"2"};
@@ -336,6 +338,67 @@ function chrt(data,color,label,histData){
 }
 
 /* ══ SECTIONS ══ */
+// Compute cash flow projection: N months ahead
+function cashFlowProjection(months){
+  months=months||3;
+  var now=new Date();
+  // Starting liquid: Bankinter + Activobank + Moey (categoria "Liquidez")
+  var ca=getAccts();
+  var liquid=0;
+  ca.forEach(function(a){if(a.c==="Liquidez")liquid+=a.v;});
+  // Recurring monthly income (only the recurring ones)
+  var monthlyIncome=0;
+  incomes.forEach(function(i){if(i.recurring!==false)monthlyIncome+=(i.amount||0);});
+  // Recurring monthly expenses + loan payment
+  var monthlyRecExpense=0;
+  recurring.forEach(function(r){monthlyRecExpense+=(r.amount||0);});
+  var loanPay=ln.pay||0;
+  // Average non-recurring expense from history (per month)
+  var nonRecExpenses=[];
+  for(var mIdx=0;mIdx<4;mIdx++){
+    var t=0;
+    Object.keys(byC).forEach(function(k){if(byC[k]&&byC[k][mIdx]!=null)t+=byC[k][mIdx];});
+    nonRecExpenses.push(t);
+  }
+  var avgNonRec=nonRecExpenses.slice(0,3).reduce(function(s,v){return s+v;},0)/3;
+  // Subtract recurring portion (rough estimate — recurring is already included in byC)
+  // For projection, just use avg as "discretionary" floor
+  var discretionary=Math.max(avgNonRec-monthlyRecExpense-loanPay,200);
+  var rows=[];
+  var bal=liquid;
+  var monthNames=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  for(var m=1;m<=months;m++){
+    var d=new Date(now.getFullYear(),now.getMonth()+m,1);
+    var inc=monthlyIncome;
+    // One-off incomes in this month
+    var ymStr=d.toISOString().slice(0,7);
+    incomes.forEach(function(i){if(i.recurring===false&&i.date&&i.date.indexOf(ymStr)===0)inc+=(i.amount||0);});
+    var exp=monthlyRecExpense+loanPay+discretionary;
+    bal=bal+inc-exp;
+    rows.push({label:monthNames[d.getMonth()]+" "+String(d.getFullYear()).slice(-2),income:inc,expense:exp,balance:bal});
+  }
+  return{startBalance:liquid,monthlyIncome:monthlyIncome,monthlyRecExpense:monthlyRecExpense,loanPay:loanPay,avgDiscretionary:discretionary,rows:rows};
+}
+
+// Emergency fund analysis: how many months covered
+function emergencyFund(){
+  var ca=getAccts();
+  var safe=0;
+  ca.forEach(function(a){if(a.c==="Liquidez"||a.c==="Poupanca")safe+=a.v;});
+  // Average monthly expense (recurring + avg discretionary + loan)
+  var monthlyRec=0;recurring.forEach(function(r){monthlyRec+=(r.amount||0);});
+  var loanPay=ln.pay||0;
+  var nonRec=[];
+  for(var mIdx=0;mIdx<4;mIdx++){
+    var t=0;Object.keys(byC).forEach(function(k){if(byC[k]&&byC[k][mIdx]!=null)t+=byC[k][mIdx];});
+    nonRec.push(t);
+  }
+  var avgNonRec=nonRec.slice(0,3).reduce(function(s,v){return s+v;},0)/3;
+  var avgMonthly=Math.max(avgNonRec,monthlyRec+loanPay+300);
+  var months=avgMonthly>0?safe/avgMonthly:0;
+  return{safe:safe,avgMonthly:avgMonthly,months:months};
+}
+
 function monthlySummary(){
   // Compute current period (em=3 = current month partial)
   var monthIdx=em>=3?3:em;
@@ -390,6 +453,43 @@ function rOverview(){
   o+='<div class="cd" style="border-left:3px solid var(--signal);position:relative;overflow:hidden"><div class="lb" style="margin-bottom:6px">Divida</div><div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:var(--signal)">'+fc(ln.out)+'</div></div>';
   o+='</div>';
 
+  // ── Emergency Fund + Cash Flow widgets
+  var ef=emergencyFund();
+  var efPct=Math.min(ef.months/6*100,100);
+  var efColor=ef.months>=6?"var(--success)":ef.months>=3?"var(--orange)":"var(--signal)";
+  var efLabel=ef.months>=6?"Solido":ef.months>=3?"Razoavel":ef.months>=1?"Fraco":"Critico";
+  o+='<div class="cd" style="margin-bottom:16px;padding:18px 20px">';
+  o+='<div class="rw" style="margin-bottom:10px"><div><div class="lb">Fundo de emergencia</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Liquidez + Poupanca / despesa media</div></div>';
+  o+='<div class="chip" style="background:'+efColor+';color:#fff">'+efLabel+'</div></div>';
+  o+='<div style="display:flex;align-items:baseline;gap:6px"><div class="m" style="font-size:30px;font-weight:800;color:'+efColor+';letter-spacing:-0.02em">'+ef.months.toFixed(1)+'</div><div style="font-size:13px;color:var(--text2);font-weight:600">meses cobertos</div></div>';
+  o+='<div class="rw m" style="font-size:11px;color:var(--text3);margin-top:6px"><span>Reserva: '+fc(ef.safe)+'</span><span>Despesa/mes: '+fc(ef.avgMonthly)+'</span></div>';
+  o+='<div class="bar" style="height:6px;margin-top:10px"><div class="bar-fill" style="width:'+efPct+'%;background:'+efColor+'"></div></div>';
+  o+='<div class="rw m" style="font-size:9px;color:var(--text3);margin-top:4px"><span>0</span><span>3 meses</span><span>6 meses (ideal)</span></div>';
+  o+='</div>';
+
+  // ── Cash Flow projection
+  var cf=cashFlowProjection(3);
+  o+='<div class="cd" style="margin-bottom:16px;padding:18px 20px">';
+  o+='<div class="rw" style="margin-bottom:12px"><div class="lb">Projecao 3 meses</div><div class="chip '+(cf.rows[2].balance>=cf.startBalance?"up-solid":"down-solid")+'">'+(cf.rows[2].balance>=cf.startBalance?"+":"")+fc(cf.rows[2].balance-cf.startBalance)+'</div></div>';
+  o+='<div style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.4">Baseado em receitas recorrentes ('+fc(cf.monthlyIncome)+'/mes), recorrentes ('+fc(cf.monthlyRecExpense)+'), credito ('+fc(cf.loanPay)+') e media discricionaria ('+fc(cf.avgDiscretionary)+')</div>';
+  // Mini bar chart
+  var maxAbs=Math.max.apply(null,cf.rows.map(function(r){return Math.abs(r.balance);}).concat([cf.startBalance]));
+  o+='<div style="display:flex;align-items:flex-end;gap:8px;height:90px;margin-bottom:10px">';
+  // Starting bar
+  var startPct=cf.startBalance>0?cf.startBalance/maxAbs*100:0;
+  o+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--bg3);border-radius:4px 4px 0 0;height:'+startPct+'%;min-height:4px"></div><div style="font-size:9px;color:var(--text3);font-weight:600">Hoje</div></div>';
+  cf.rows.forEach(function(r){
+    var pct=Math.abs(r.balance)/maxAbs*100;
+    var col=r.balance>=0?"var(--success)":"var(--signal)";
+    o+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:'+col+';border-radius:4px 4px 0 0;height:'+pct+'%;min-height:4px;opacity:0.85"></div><div style="font-size:9px;color:var(--text3);font-weight:600">'+e(r.label)+'</div></div>';
+  });
+  o+='</div>';
+  o+='<div class="rw m" style="font-size:11px;color:var(--text)"><span style="color:var(--text2)">Hoje</span><span style="font-weight:700">'+fc(cf.startBalance)+'</span></div>';
+  cf.rows.forEach(function(r){
+    o+='<div class="rw m" style="font-size:11px;padding-top:4px"><span style="color:var(--text2)">'+e(r.label)+'</span><span style="font-weight:700;color:'+(r.balance>=0?"var(--text)":"var(--signal)")+'">'+fc(r.balance)+'</span></div>';
+  });
+  o+='</div>';
+
   // ── Accounts grouped by category
   o+='<div class="lb" style="margin-bottom:10px;padding-left:4px">Contas por categoria</div>';
   Object.keys(C.grp).forEach(function(cat){
@@ -432,6 +532,41 @@ function rCharts(){
 
 function rExpenses(){
   var ms=["Jan","Fev","Mar","Abr"],isQ=em===4;
+  // Search filter
+  var q=(searchQuery||"").toLowerCase().trim();
+  if(q){
+    var matches=addedExp.filter(function(x){
+      if((x.desc||"").toLowerCase().indexOf(q)>-1)return true;
+      if((x.cat||"").toLowerCase().indexOf(q)>-1)return true;
+      if(x.tags&&x.tags.some(function(t){return t.toLowerCase().indexOf(q)>-1;}))return true;
+      var b=bdg.find(function(bb){return bb.id===x.cat;});
+      if(b&&b.nm.toLowerCase().indexOf(q)>-1)return true;
+      return false;
+    });
+    var tot=matches.reduce(function(s,x){return s+x.amount;},0);
+    var o='<div class="fadeUp" style="padding:0 20px 80px">';
+    o+='<div style="position:relative;margin-bottom:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+    o+='<input id="exSearch" value="'+e(searchQuery)+'" placeholder="Pesquisar despesas, categoria, tag..." oninput="searchQuery=this.value;clearTimeout(window._sT);window._sT=setTimeout(render,200)" style="width:100%;padding:12px 40px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:13px;box-sizing:border-box"/>';
+    o+='<button onclick="searchQuery=\'\';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);font-size:18px;line-height:1;padding:6px">&times;</button></div>';
+    o+='<div class="rw" style="margin-bottom:10px;padding:0 4px"><div class="lb">'+matches.length+' resultado'+(matches.length===1?"":"s")+'</div><div class="m" style="font-size:12px;font-weight:700">'+fm(tot)+'</div></div>';
+    if(matches.length===0)o+='<div class="empty"><div style="font-size:13px">Sem resultados para "'+e(searchQuery)+'"</div></div>';
+    else{
+      matches.sort(function(a,b){return (b.date||"").localeCompare(a.date||"");});
+      matches.forEach(function(x){
+        var idx=addedExp.indexOf(x);
+        var b=bdg.find(function(bb){return bb.id===x.cat;});
+        o+='<div class="cd" style="margin-bottom:8px;padding:12px 16px">';
+        o+='<div class="rw"><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+e(x.desc)+(x.shared?' <span style="font-size:9px;color:var(--blue);background:var(--blue-soft);padding:1px 6px;border-radius:8px;font-weight:600;margin-left:4px">/'+(x.split||2)+'</span>':"")+'</div>';
+        o+='<div style="font-size:11px;color:var(--text3);margin-top:2px">'+(b?e(b.nm):"-")+' &middot; '+(x.date||"")+'</div>';
+        if(x.tags&&x.tags.length>0){o+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">';x.tags.forEach(function(t){o+='<span style="font-size:9px;background:var(--bg3);color:var(--text2);padding:2px 7px;border-radius:8px;font-weight:600">#'+e(t)+'</span>';});o+='</div>';}
+        o+='</div><div style="display:flex;align-items:center;gap:6px"><div class="m" style="font-size:14px;font-weight:700">'+fm(x.amount)+'</div>';
+        o+='<button onclick="editExp('+idx+')" class="icon-btn" style="width:28px;height:28px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>';
+        o+='</div></div></div>';
+      });
+    }
+    o+='</div>';
+    return o;
+  }
   // Clone byC and add manual expenses
   var eByC={};Object.keys(byC).forEach(function(k){eByC[k]=byC[k].slice();});
   addedExp.forEach(function(x){if(eByC[x.cat])eByC[x.cat][3]+=x.amount;});
@@ -445,7 +580,11 @@ function rExpenses(){
   rows.sort(function(a,b){return b.val-a.val});
   var tE=0;rows.forEach(function(r){tE+=r.val});
 
-  var o='<div style="padding:0 20px 100px"><div class="ms-bar">';
+  var o='<div style="padding:0 20px 100px">';
+  // Search bar
+  o+='<div style="position:relative;margin-bottom:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+  o+='<input id="exSearch" value="" placeholder="Pesquisar despesas, categoria, tag..." oninput="searchQuery=this.value;clearTimeout(window._sT);window._sT=setTimeout(render,200)" style="width:100%;padding:12px 16px 12px 40px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:13px;box-sizing:border-box"/></div>';
+  o+='<div class="ms-bar">';
   ms.forEach(function(m,i){
     o+='<button class="ms'+(em===i?" on":"")+'" onclick="T(\'em\','+i+')" style="'+(i<3?"border-right:1px solid var(--border)":"")+'">' +m+'</button>';
   });
@@ -510,6 +649,121 @@ function rExpenses(){
   o+='<button onclick="showStmt=true;render()" style="width:48px;height:48px;border:none;background:var(--bg2);color:var(--text2);display:flex;align-items:center;justify-content:center;border-radius:24px;box-shadow:0 2px 12px rgba(0,0,0,0.12)" title="Importar extracto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>';
   o+='<button onclick="showAdd=true;render()" style="width:48px;height:48px;border:none;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;border-radius:24px;box-shadow:0 2px 12px rgba(0,122,255,0.35)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>';
   o+='</div>';
+  return o+'</div>';
+}
+
+/* ══ CALENDAR ══ */
+var calOffset=0; // months from current
+function rCalendar(){
+  var now=new Date();
+  var d=new Date(now.getFullYear(),now.getMonth()+calOffset,1);
+  var year=d.getFullYear(),month=d.getMonth();
+  var monthNames=["Janeiro","Fevereiro","Marco","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  var daysInMonth=new Date(year,month+1,0).getDate();
+  var firstDay=new Date(year,month,1).getDay(); // 0=Sun
+  // Monday-first offset
+  var startOffset=firstDay===0?6:firstDay-1;
+  // Build events map: day -> [{type, name, amount, color}]
+  var events={};
+  // Loan payment
+  var loanDay=28;
+  events[loanDay]=events[loanDay]||[];
+  events[loanDay].push({type:"loan",name:"Credito Habitacao",amount:-ln.pay,color:"var(--signal)"});
+  // Recurring expenses
+  recurring.forEach(function(r){
+    var day=Math.min(parseInt(r.day)||1,daysInMonth);
+    events[day]=events[day]||[];
+    events[day].push({type:"rec_out",name:r.name,amount:-(r.amount||0),color:"var(--orange)"});
+  });
+  // Recurring incomes
+  incomes.forEach(function(i){
+    if(i.recurring!==false){
+      var day=Math.min(parseInt(i.day)||1,daysInMonth);
+      events[day]=events[day]||[];
+      events[day].push({type:"income",name:i.name,amount:(i.amount||0),color:"var(--success)"});
+    }else if(i.date){
+      // one-off — check if in this month
+      var dt=new Date(i.date);
+      if(dt.getFullYear()===year&&dt.getMonth()===month){
+        var dd=dt.getDate();
+        events[dd]=events[dd]||[];
+        events[dd].push({type:"income_one",name:i.name,amount:(i.amount||0),color:"var(--success)"});
+      }
+    }
+  });
+  // Added expenses with dates in this month
+  addedExp.forEach(function(x){
+    if(!x.date)return;
+    var dt=new Date(x.date);
+    if(dt.getFullYear()===year&&dt.getMonth()===month){
+      var dd=dt.getDate();
+      events[dd]=events[dd]||[];
+      events[dd].push({type:"exp",name:x.desc,amount:-x.amount,color:"var(--signal)"});
+    }
+  });
+  // Totals
+  var totalIn=0,totalOut=0;
+  Object.keys(events).forEach(function(k){events[k].forEach(function(ev){if(ev.amount>0)totalIn+=ev.amount;else totalOut+=Math.abs(ev.amount);});});
+  var net=totalIn-totalOut;
+  var todayDate=now.getDate();
+  var isCurrentMonth=year===now.getFullYear()&&month===now.getMonth();
+
+  var o='<div class="fadeUp" style="padding:0 20px calc(40px + var(--safe-bottom))">';
+  // Header navigator
+  o+='<div class="rw" style="margin-bottom:14px"><button onclick="calOffset--;render()" class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>';
+  o+='<div style="text-align:center"><div style="font-size:16px;font-weight:700">'+monthNames[month]+' '+year+'</div>';
+  if(calOffset!==0)o+='<button onclick="calOffset=0;render()" style="background:none;border:none;color:var(--blue);font-size:11px;font-weight:600;margin-top:2px">Voltar a hoje</button>';
+  else o+='<div style="font-size:11px;color:var(--text3);font-weight:500;margin-top:2px">Mes atual</div>';
+  o+='</div>';
+  o+='<button onclick="calOffset++;render()" class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button></div>';
+  // Summary
+  o+='<div class="g3" style="margin-bottom:16px">';
+  o+='<div class="cd" style="padding:12px"><div class="lb" style="font-size:9px">Receita</div><div class="m" style="font-size:14px;font-weight:700;color:var(--success);margin-top:2px">+'+fc(totalIn)+'</div></div>';
+  o+='<div class="cd" style="padding:12px"><div class="lb" style="font-size:9px">Despesa</div><div class="m" style="font-size:14px;font-weight:700;color:var(--signal);margin-top:2px">-'+fc(totalOut)+'</div></div>';
+  o+='<div class="cd" style="padding:12px;border-left:3px solid '+(net>=0?"var(--success)":"var(--signal)")+'"><div class="lb" style="font-size:9px">Net</div><div class="m" style="font-size:14px;font-weight:800;color:'+(net>=0?"var(--success)":"var(--signal)")+';margin-top:2px">'+(net>=0?"+":"")+fc(net)+'</div></div>';
+  o+='</div>';
+  // Calendar grid
+  o+='<div class="cd" style="padding:14px;margin-bottom:16px">';
+  o+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">';
+  ["S","T","Q","Q","S","S","D"].forEach(function(dn){o+='<div style="text-align:center;font-size:9px;color:var(--text3);font-weight:700;padding:4px 0">'+dn+'</div>';});
+  o+='</div>';
+  o+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">';
+  // Empty cells before first day
+  for(var i=0;i<startOffset;i++){o+='<div></div>';}
+  for(var day=1;day<=daysInMonth;day++){
+    var ev=events[day]||[];
+    var hasIn=ev.some(function(e){return e.amount>0;});
+    var hasOut=ev.some(function(e){return e.amount<0;});
+    var isToday=isCurrentMonth&&day===todayDate;
+    var bg=isToday?"var(--blue)":(ev.length>0?"var(--bg3)":"transparent");
+    var col=isToday?"#fff":(ev.length>0?"var(--text)":"var(--text2)");
+    o+='<button onclick="showCalDay='+day+';render()" style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border:'+(showCalDay===day?"2px solid var(--blue)":"none")+';background:'+bg+';color:'+col+';border-radius:8px;font-size:12px;font-weight:'+(isToday?"700":"500")+';position:relative;padding:2px">';
+    o+='<span>'+day+'</span>';
+    if(ev.length>0){
+      o+='<div style="display:flex;gap:2px;margin-top:2px">';
+      if(hasIn)o+='<div style="width:4px;height:4px;border-radius:50%;background:var(--success)"></div>';
+      if(hasOut)o+='<div style="width:4px;height:4px;border-radius:50%;background:var(--signal)"></div>';
+      o+='</div>';
+    }
+    o+='</button>';
+  }
+  o+='</div></div>';
+  // Selected day details
+  if(showCalDay&&events[showCalDay]){
+    o+='<div class="cd fadeUp" style="padding:16px;margin-bottom:16px">';
+    o+='<div class="rw" style="margin-bottom:10px"><div class="lb">Dia '+showCalDay+'</div><button onclick="showCalDay=null;render()" style="background:none;border:none;color:var(--text3);font-size:18px;line-height:1">&times;</button></div>';
+    events[showCalDay].forEach(function(ev){
+      o+='<div class="rw" style="padding:8px 0;border-top:1px solid var(--bg3)"><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;border-radius:50%;background:'+ev.color+'"></div><span style="font-size:13px">'+e(ev.name)+'</span></div><span class="m" style="font-size:13px;font-weight:700;color:'+ev.color+'">'+(ev.amount>0?"+":"")+fm(ev.amount)+'</span></div>';
+    });
+    o+='</div>';
+  }
+  // Legend
+  o+='<div class="cd" style="padding:12px 14px"><div class="lb" style="margin-bottom:8px">Legenda</div>';
+  o+='<div style="display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--text2)">';
+  o+='<div style="display:flex;align-items:center;gap:5px"><div style="width:6px;height:6px;border-radius:50%;background:var(--success)"></div>Receita</div>';
+  o+='<div style="display:flex;align-items:center;gap:5px"><div style="width:6px;height:6px;border-radius:50%;background:var(--orange)"></div>Recorrente</div>';
+  o+='<div style="display:flex;align-items:center;gap:5px"><div style="width:6px;height:6px;border-radius:50%;background:var(--signal)"></div>Credito / Despesa</div>';
+  o+='</div></div>';
   return o+'</div>';
 }
 
@@ -917,6 +1171,39 @@ window.deleteCat=function(id){
   toast("Categoria eliminada","success");
 };
 
+/* ══ IMPORT BACKUP (Restore JSON) ══ */
+window.restoreData=function(el){
+  var f=el&&el.files&&el.files[0];
+  el.value="";
+  if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(ev){
+    try{
+      var d=JSON.parse(ev.target.result);
+      if(typeof d!=="object"||d===null)throw new Error("formato invalido");
+      if(!confirm("Restaurar substitui TODOS os dados atuais. Continuar?"))return;
+      apiKey=typeof d.apiKey==="string"?d.apiKey:apiKey;
+      aiHistory=Array.isArray(d.aiHistory)?d.aiHistory:[];
+      dynAccts=d.dynAccts&&typeof d.dynAccts==="object"?d.dynAccts:null;
+      dynSnaps=Array.isArray(d.dynSnaps)?d.dynSnaps:[];
+      addedExp=Array.isArray(d.addedExp)?d.addedExp:[];
+      theme=typeof d.theme==="string"?d.theme:"system";
+      goals=Array.isArray(d.goals)?d.goals:[];
+      recurring=Array.isArray(d.recurring)?d.recurring:[];
+      incomes=Array.isArray(d.incomes)?d.incomes:[];
+      if(Array.isArray(d.bdg)&&d.bdg.length>0)bdg=d.bdg;
+      applyTheme(theme);
+      persistUser();
+      render();
+      toast("Dados restaurados","success");
+    }catch(err){
+      console.error("Restore falhou",err);
+      toast("Ficheiro invalido: "+(err.message||"erro"),"error");
+    }
+  };
+  rd.readAsText(f);
+};
+
 /* ══ EXPORT BACKUP ══ */
 window.exportData=function(){
   var data={
@@ -1111,7 +1398,9 @@ function rSettings(){
   // ── Categorias
   o+='<div class="lb" style="margin-bottom:10px;margin-top:8px">Dados</div>';
   o+='<button onclick="showCat=true;showSet=false;render()" style="width:100%;padding:14px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Gerir categorias</span><span style="color:var(--text3);font-size:12px">'+bdg.length+' &rsaquo;</span></button>';
-  o+='<button onclick="if(confirm(\'Exportar todos os dados para JSON?\'))exportData()" style="width:100%;padding:14px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px"><span style="display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Backup JSON</span><span style="color:var(--text3)">&rsaquo;</span></button>';
+  o+='<button onclick="if(confirm(\'Exportar todos os dados para JSON?\'))exportData()" style="width:100%;padding:14px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Backup JSON</span><span style="color:var(--text3)">&rsaquo;</span></button>';
+  o+='<input id="restoreFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreData(this)"/>';
+  o+='<button onclick="document.getElementById(\'restoreFile\').click()" style="width:100%;padding:14px 16px;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px"><span style="display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Restaurar JSON</span><span style="color:var(--text3)">&rsaquo;</span></button>';
 
   // ── About
   o+='<div style="text-align:center;padding-top:16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);letter-spacing:0.05em">PROOF &middot; FINANCE &middot; v2.1</div>';
@@ -1173,8 +1462,11 @@ function rAddExp(){
   }
   if(addData.shared){
     o+='<div class="lb" style="margin-bottom:6px">Data</div>';
-    o+='<input id="adDate" type="date" value="'+addData.date+'" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-family:var(--mono);font-size:13px;box-sizing:border-box;margin-bottom:20px"/>';
+    o+='<input id="adDate" type="date" value="'+addData.date+'" style="width:100%;padding:12px 16px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-family:var(--mono);font-size:13px;box-sizing:border-box;margin-bottom:14px"/>';
   }
+  // Tags
+  o+='<div class="lb" style="margin-bottom:6px">Tags (opcional)</div>';
+  o+='<input id="adTags" value="'+e((addData.tags||[]).join(", "))+'" placeholder="Ex: viagem-acores, casa, presente" style="width:100%;padding:11px 14px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-size:13px;box-sizing:border-box;margin-bottom:20px"/>';
   o+='<button onclick="doAddExp()" style="width:100%;padding:14px 0;border:none;background:var(--grad-hero);color:#fff;font-size:15px;font-weight:700;border-radius:var(--r2);box-shadow:var(--shadow-hero)">'+(isEdit?"Guardar alteracoes":"Adicionar despesa")+'</button>';
   if(isEdit)o+='<button onclick="addedExp.splice(addData.editIdx,1);persistUser();showAdd=false;addData={desc:\'\',amount:\'\',cat:\'rest\',date:new Date().toISOString().slice(0,10)};render();toast(\'Despesa eliminada\',\'success\')" style="width:100%;padding:10px 0;border:none;background:transparent;color:var(--signal);font-size:12px;font-weight:600;margin-top:8px">Eliminar despesa</button>';
   o+='</div></div>';
@@ -1191,7 +1483,8 @@ window.editExp=function(idx){
     date:x.date||new Date().toISOString().slice(0,10),
     shared:!!x.shared,
     total:x.shared&&x.total!=null?String(x.total).replace(".",","):"",
-    split:x.shared&&x.split?String(x.split):"2"
+    split:x.shared&&x.split?String(x.split):"2",
+    tags:x.tags||[]
   };
   scResult=null;showAdd=true;render();
 };
@@ -1329,8 +1622,11 @@ window.doAddExp=function(){
     amt=parseFloat((document.getElementById("adAmt").value||"0").replace(",","."));
   }
   if(!desc||isNaN(amt)||amt<=0){toast("Preenche descricao e valor","error");return;}
+  var tagsRaw=(document.getElementById("adTags")||{}).value||"";
+  var tags=tagsRaw.split(",").map(function(t){return t.trim().toLowerCase().replace(/\s+/g,"-");}).filter(function(t){return t.length>0;}).slice(0,5);
   var exp={desc:desc,amount:amt,cat:cat,date:date};
   if(addData.shared){exp.shared=true;exp.total=total;exp.split=split;}
+  if(tags.length>0)exp.tags=tags;
   var msg="";
   if(addData.editIdx!=null&&addedExp[addData.editIdx]){
     addedExp[addData.editIdx]=exp;
@@ -1346,6 +1642,44 @@ window.doAddExp=function(){
 };
 
 /* ══ AI ASSISTANT ══ */
+// Simple markdown renderer (subset: bold, italic, code, lists, tables, line breaks)
+function renderMD(t){
+  if(!t)return"";
+  var s=e(t);
+  // Tables: detect blocks of | ... | lines
+  s=s.replace(/((?:^|\n)\|[^\n]+\|(?:\n\|[^\n]+\|)+)/g,function(m){
+    var lines=m.trim().split("\n");
+    if(lines.length<2)return m;
+    var header=lines[0].split("|").map(function(c){return c.trim();}).filter(function(c){return c!=="";});
+    var sep=lines[1].match(/^\|?\s*[-:]+/);
+    var bodyStart=sep?2:1;
+    var rows=lines.slice(bodyStart).map(function(l){return l.split("|").map(function(c){return c.trim();}).filter(function(c){return c!=="";});});
+    var out='<table style="border-collapse:collapse;width:100%;margin:8px 0;font-size:11px"><thead><tr>';
+    header.forEach(function(h){out+='<th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.04em">'+h+'</th>';});
+    out+='</tr></thead><tbody>';
+    rows.forEach(function(r){
+      out+='<tr>';
+      r.forEach(function(c){out+='<td style="padding:6px 8px;border-bottom:1px solid var(--bg3);color:var(--text)">'+c+'</td>';});
+      out+='</tr>';
+    });
+    return out+'</tbody></table>';
+  });
+  // Bold
+  s=s.replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>');
+  // Inline code
+  s=s.replace(/`([^`\n]+)`/g,'<code style="font-family:var(--mono);background:var(--bg3);padding:1px 5px;border-radius:4px;font-size:11px">$1</code>');
+  // Italics (avoid ** already replaced)
+  s=s.replace(/(^|[^\*])\*([^*\n]+)\*([^\*]|$)/g,'$1<i>$2</i>$3');
+  // Lists
+  s=s.replace(/(^|\n)([-*])\s+(.+)/g,'$1<div style="padding:2px 0;padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--blue)">&bull;</span>$3</div>');
+  // Headings (simple)
+  s=s.replace(/(^|\n)#{1,3}\s+(.+)/g,'$1<div style="font-weight:700;margin-top:8px;margin-bottom:4px;font-size:13px">$2</div>');
+  // Line breaks (only outside tables, simple approach)
+  s=s.replace(/\n\n/g,'<div style="height:6px"></div>');
+  s=s.replace(/\n/g,'<br>');
+  return s;
+}
+
 function actionLabel(a){
   if(a.type==="update_balance")return{icon:"&#127974;",lbl:e(a.account_bank||"")+" "+e(a.account_type||""),val:fm(a.value||0),tab:"Resumo",color:"var(--blue)"};
   if(a.type==="add_expense")return{icon:"&#128176;",lbl:e(a.desc||""),val:"-"+fm(Math.abs(a.amount||0))+" &middot; "+(a.cat||"out"),tab:"Despesas",color:"var(--signal)"};
@@ -1446,28 +1780,36 @@ function rAI(){
   o+='<button onclick="document.getElementById(\'aiCam\').click()" style="flex:1;padding:12px 0;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camara</button>';
   o+='<button onclick="document.getElementById(\'aiFile\').click()" style="flex:1;padding:12px 0;border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--r2);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF / Imagem / Excel</button>';
   o+='</div></div>';
-  // Text input area
+  // Chat / text input area
   o+='<div class="cd" style="margin-bottom:16px;padding:16px">';
-  o+='<div class="lb" style="margin-bottom:8px">Ou escreve em linguagem natural</div>';
-  o+='<div style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.5">';
+  o+='<div class="lb" style="margin-bottom:8px">Chat &middot; pergunta ou comanda</div>';
+  o+='<div style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.7">';
+  o+='<div style="margin-bottom:4px"><b style="color:var(--text2)">Perguntas:</b></div>';
+  o+='<span class="m" style="font-size:10px">&bull; "Procura despesas repetidas em Abril"</span><br>';
+  o+='<span class="m" style="font-size:10px">&bull; "Quanto gastei em restauracao vs media?"</span><br>';
+  o+='<span class="m" style="font-size:10px">&bull; "Quais as 3 subscricoes mais caras?"</span><br>';
+  o+='<span class="m" style="font-size:10px">&bull; "Quantos meses de fundo emergencia tenho?"</span><br>';
+  o+='<div style="margin:6px 0 4px"><b style="color:var(--text2)">Acoes:</b></div>';
   o+='<span class="m" style="font-size:10px">&bull; "Bankinter 584&euro;, Activobank 325&euro;"</span><br>';
-  o+='<span class="m" style="font-size:10px">&bull; "TR Poupanca 7055&euro;"</span><br>';
+  o+='<span class="m" style="font-size:10px">&bull; "Adiciona despesa 45,67 supermercado hoje"</span><br>';
   o+='<span class="m" style="font-size:10px">&bull; "Registar snapshot com data de hoje"</span>';
   o+='</div>';
-  o+='<textarea id="aiInput" rows="3" placeholder="Ex: Bankinter 584&euro;, Moey 3,79&euro;" style="width:100%;padding:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-size:14px;resize:vertical;box-sizing:border-box;font-family:var(--font)"></textarea>';
+  o+='<textarea id="aiInput" rows="3" placeholder="Pergunta ou comanda..." style="width:100%;padding:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:var(--r2);font-size:14px;resize:vertical;box-sizing:border-box;font-family:var(--font)"></textarea>';
   o+='<button onclick="sendAI()" '+(aiLoading?'disabled':'')+' style="width:100%;padding:12px 0;border:none;background:var(--grad-hero);color:#fff;font-size:14px;font-weight:700;border-radius:var(--r2);margin-top:8px;box-shadow:var(--shadow-hero)">'+(aiLoading?"A processar...":"Enviar")+'</button>';
   o+='</div>';
   // History
   if(aiHistory.length>0){
-    o+='<div class="lb" style="margin-bottom:8px">Historico</div>';
+    o+='<div class="lb" style="margin-bottom:8px">Conversa</div>';
     for(var i=aiHistory.length-1;i>=0;i--){
       var h=aiHistory[i];
-      o+='<div class="cd" style="margin-bottom:8px;padding:16px">';
-      o+='<div class="rw" style="margin-bottom:8px"><span class="m" style="font-size:10px;color:var(--text3)">'+e(h.date)+'</span>';
-      if(h.ok)o+='<span class="m" style="font-size:9px;color:var(--success)">Executado</span>';
-      else if(h.err)o+='<span class="m" style="font-size:9px;color:var(--signal)">Erro</span>';
-      o+='</div>';
-      o+='<div style="font-size:13px;color:var(--text);margin-bottom:8px;font-weight:500">'+e(h.cmd)+'</div>';
+      var isAnalysis=h.mode==="analysis"||h.analysis;
+      var badge=h.err?'<span class="m" style="font-size:9px;color:var(--signal)">Erro</span>':isAnalysis?'<span class="m" style="font-size:9px;color:var(--blue);background:var(--blue-soft);padding:2px 8px;border-radius:8px">Analise</span>':h.ok?'<span class="m" style="font-size:9px;color:var(--success);background:var(--success-soft);padding:2px 8px;border-radius:8px">Executado</span>':"";
+      o+='<div class="cd fadeUp" style="margin-bottom:8px;padding:14px 16px">';
+      o+='<div class="rw" style="margin-bottom:8px"><span class="m" style="font-size:10px;color:var(--text3)">'+e(h.date)+'</span>'+badge+'</div>';
+      o+='<div style="font-size:13px;color:var(--text);margin-bottom:10px;font-weight:600">'+e(h.cmd)+'</div>';
+      if(isAnalysis&&h.analysis){
+        o+='<div style="font-size:12px;color:var(--text);line-height:1.6;padding:12px;background:var(--bg);border-radius:var(--r2);border-left:3px solid var(--blue)">'+renderMD(h.analysis)+'</div>';
+      }
       if(h.actions&&h.actions.length>0){
         h.actions.slice(0,8).forEach(function(a){
           var info=actionLabel(a);
@@ -1475,13 +1817,40 @@ function rAI(){
         });
         if(h.actions.length>8)o+='<div style="font-size:10px;color:var(--text3);padding:4px 0;font-style:italic">+ '+(h.actions.length-8)+' outras</div>';
       }
-      if(h.msg)o+='<div style="font-size:11px;color:var(--text3);margin-top:4px">'+e(h.msg)+'</div>';
+      if(h.msg&&!isAnalysis)o+='<div style="font-size:11px;color:var(--text3);margin-top:4px">'+e(h.msg)+'</div>';
       if(h.err)o+='<div style="font-size:11px;color:var(--signal);margin-top:4px">'+e(h.err)+'</div>';
       o+='</div>';
     }
     o+='<button onclick="aiHistory=[];persistUser();render()" style="width:100%;padding:10px 0;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--r2);font-family:var(--mono);font-size:10px;letter-spacing:0.1em;margin-top:8px">LIMPAR Historico</button>';
   }
   return o+'</div>';
+}
+
+function buildAIContext(){
+  var C=compute();
+  var today=new Date().toISOString().slice(0,10);
+  var monthNames=["Jan","Fev","Mar","Abr"];
+  var ctx={
+    today:today,
+    currentMonth:today.slice(0,7),
+    accounts:getAccts().map(function(a){return{bank:a.b,type:a.t,balance:a.v,note:a.n||null,category:a.c};}),
+    totalAssets:C.tA,
+    netWorth:C.nW,
+    loan:{capital:ln.cap,outstanding:ln.out,payment:ln.pay,rate:2.7,nextPayment:"28."+(new Date().getMonth()+2).toString().padStart(2,"0")},
+    incomes:incomes.map(function(i){return{name:i.name,amount:i.amount,source:i.source,recurring:i.recurring!==false,day:i.day,date:i.date||null};}),
+    recurring:recurring.map(function(r){return{name:r.name,amount:r.amount,day:r.day,category:r.cat};}),
+    goals:goals.map(function(g){return{name:g.name,target:g.target,current:g.current,deadline:g.deadline||null,progress:g.target>0?(g.current/g.target*100).toFixed(0)+"%":"0%"};}),
+    budgetCategories:bdg.map(function(b){return{id:b.id,name:b.nm,monthlyLimit:b.lm};}),
+    historicalExpensesByCategory:{},
+    addedExpenses:addedExp.slice(-100).map(function(x){return{desc:x.desc,amount:x.amount,category:x.cat,date:x.date,shared:!!x.shared,total:x.total||null,tags:x.tags||null};}),
+    netWorthHistory:getAllHist().slice(-12)
+  };
+  // Historical by category (with month labels)
+  Object.keys(byC).forEach(function(k){
+    var arr={};byC[k].forEach(function(v,i){arr[monthNames[i]||"M"+i]=v;});
+    ctx.historicalExpensesByCategory[k]=arr;
+  });
+  return ctx;
 }
 
 window.sendAI=function(){
@@ -1491,31 +1860,35 @@ window.sendAI=function(){
   if(!cmd||aiLoading)return;
   aiLoading=true;render();
 
-  var C=compute();
-  var acctList=getAccts().map(function(a){return a.b+" "+a.t+": "+a.v+" EUR";}).join("\n");
-  var today=new Date().toISOString().slice(0,10);
+  var ctx=buildAIContext();
+  var today=ctx.today;
   var dd=today.slice(8,10)+"."+today.slice(5,7);
 
-  var sysPrompt='Es o assistente financeiro do PROOF. FINANCE. O utilizador vai dar-te instrucoes em linguagem natural sobre as suas financas.\n\n'
-    +'contas ACTUAIS:\n'+acctList+'\n\n'
-    +'DATA DE HOJE: '+today+'\n\n'
-    +'Responde APENAS com JSON puro. Formato:\n'
-    +'{"actions":[...],"message":"resumo do que fizeste"}\n\n'
-    +'Tipos de actions:\n'
-    +'1. Atualizar saldo: {"type":"update_balance","account_bank":"Bankinter","account_type":"Conta a Ordem","value":584.64,"note":"584,64 / 2"}\n'
-    +'   - account_bank deve ser EXACTO: Bankinter, Activobank, Moey, Trade Republic, XTB, Goparity, Raize\n'
-    +'   - account_type deve ser EXACTO: Conta a Ordem, Poupanca, Corretagem, Private Markets, Rend. Fixo, Transacoes, Planos Invest., P2P Lending\n'
-    +'   - Para Bankinter: o valor e SEMPRE o total da conta dividido por 2 (conta partilhada)\n'
-    +'   - note e opcional (ex: para Bankinter colocar o valor total antes de dividir)\n\n'
-    +'2. Registar snapshot: {"type":"snapshot","label":"'+dd+'","liq":0,"poup":0,"inv":0,"div":77555.06,"xP":0,"xT":0,"tC":0}\n'
-    +'   - liq = soma de Bankinter+Activobank+Moey\n'
-    +'   - poup = Trade Republic Poupanca\n'
-    +'   - inv = soma de todos os investimentos (TR Corretagem+PM+RF+XTB Planos+Trans+Goparity+Raize)\n'
-    +'   - div = divida do credito (77555.06 por defeito)\n'
-    +'   - xP = XTB Planos, xT = XTB Transacoes, tC = TR Corretagem\n\n'
-    +'Se o utilizador nao mencionar snapshot, NAO cries um. So cria se ele pedir explicitamente.\n'
-    +'Se o utilizador disser "Bankinter 584€", interpreta como conta total 584€ e divide por 2 = 292€.\n'
-    +'Responde APENAS JSON.';
+  var sysPrompt='Es o assistente financeiro PROOF. FINANCE. Tens acesso aos dados do utilizador (em CONTEXTO) e respondes em portugues (PT-PT).\n\n'
+    +'O utilizador pode pedir:\n\n'
+    +'A) PERGUNTA / ANALISE (mostra-me, quais, quantos, procura, compara, lista, analisa, top, sugere, audita)\n'
+    +'   Responde com TEXTO em portugues, usando markdown simples:\n'
+    +'   - **negrito** para destaques\n'
+    +'   - Listas com - item\n'
+    +'   - Tabelas markdown (| col | col |) quando ajuda a leitura\n'
+    +'   - Valores em formato europeu: 1.234,56 EUR\n'
+    +'   - Se a resposta tem dados financeiros, da contexto e conclusoes acionaveis\n'
+    +'   - Conciso (max ~250 palavras), direto, sem preambulos\n\n'
+    +'B) ACAO (registar, adicionar, atualizar, guardar, criar, eliminar, snapshot)\n'
+    +'   Responde APENAS JSON puro (sem markdown):\n'
+    +'   {"actions":[...],"message":"resumo do que fizeste"}\n\n'
+    +'   Tipos de actions:\n'
+    +'   - update_balance: {"type":"update_balance","account_bank":"Bankinter","account_type":"Conta a Ordem","value":584.64,"note":""}\n'
+    +'     account_bank EXACTO: Bankinter, Activobank, Moey, Trade Republic, XTB, Goparity, Raize\n'
+    +'     account_type EXACTO: Conta a Ordem, Poupanca, Corretagem, Private Markets, Rend. Fixo, Transacoes, Planos Invest., P2P Lending\n'
+    +'     Bankinter: dividir total por 2 (conta partilhada), por o total na note\n'
+    +'   - add_expense: {"type":"add_expense","desc":"...","amount":0.00,"cat":"rest","date":"YYYY-MM-DD","tags":["tag1"]}\n'
+    +'   - add_income: {"type":"add_income","name":"...","amount":0,"source":"salary","recurring":true,"day":25}\n'
+    +'   - add_goal: {"type":"add_goal","name":"...","target":0,"current":0,"deadline":"YYYY-MM-DD"}\n'
+    +'   - add_recurring: {"type":"add_recurring","name":"...","amount":0,"cat":"sub","day":1}\n'
+    +'   - snapshot: {"type":"snapshot","label":"'+dd+'","liq":0,"poup":0,"inv":0,"div":'+ln.out+',"xP":0,"xT":0,"tC":0}\n\n'
+    +'COMO DECIDIR? Verbos imperativos (adiciona/regista/atualiza/cria/guarda) -> ACAO. Verbos interrogativos ou analise (quanto/quais/lista/mostra/procura/compara/audita/sugere) -> ANALISE.\n\n'
+    +'CONTEXTO (dados atuais do utilizador):\n'+JSON.stringify(ctx).substring(0,15000);
 
   fetch("https://api.anthropic.com/v1/messages",{
     method:"POST",
@@ -1525,32 +1898,51 @@ window.sendAI=function(){
     if(!r.ok)return r.text().then(function(b){throw new Error("API "+r.status+": "+b.substring(0,100));});
     return r.json();
   }).then(function(d){
-    var txt=(d.content||[]).filter(function(i){return i.type==="text"}).map(function(i){return i.text}).join("");
-    var m=txt.match(/\{[\s\S]*\}/);
-    if(!m)throw new Error("Sem JSON na resposta.");
-    var res=JSON.parse(m[0]);
-    var entry={date:new Date().toLocaleString("pt-PT"),cmd:cmd,actions:res.actions||[],msg:res.message||"",ok:true};
-
-    // Execute actions
-    if(!dynAccts)dynAccts={};
-    (res.actions||[]).forEach(function(a){
-      if(a.type==="update_balance"){
-        var key=a.account_bank+"_"+a.account_type;
-        dynAccts[key]={v:a.value,d:new Date().toISOString().slice(0,10).replace(/-/g,"."),n:a.note||null};
-      }else if(a.type==="snapshot"){
-        dynSnaps.push({l:a.label,liq:a.liq||0,poup:a.poup||0,inv:a.inv||0,div:a.div||77555.06,xP:a.xP||0,xT:a.xT||0,tC:a.tC||0});
-      }
-    });
-    saveDyn();
+    var txt=(d.content||[]).filter(function(i){return i.type==="text"}).map(function(i){return i.text}).join("").trim();
+    // Try to detect JSON (starts with { and has "actions")
+    var isJSON=false;
+    var jsonMatch=txt.match(/^\s*(\{[\s\S]*\})\s*$/);
+    var res=null;
+    if(jsonMatch){
+      try{res=JSON.parse(jsonMatch[1]);isJSON=Array.isArray(res.actions);}catch(_e){}
+    }
+    var entry;
+    if(isJSON){
+      // ACTION mode
+      entry={date:new Date().toLocaleString("pt-PT"),cmd:cmd,actions:res.actions||[],msg:res.message||"",ok:true,mode:"action"};
+      if(!dynAccts)dynAccts={};
+      (res.actions||[]).forEach(function(a){
+        try{
+          if(a.type==="update_balance"&&a.account_bank&&a.account_type){
+            var key=a.account_bank+"_"+a.account_type;
+            dynAccts[key]={v:Number(a.value)||0,d:new Date().toISOString().slice(0,10).replace(/-/g,"."),n:a.note||null};
+          }else if(a.type==="snapshot"&&a.label){
+            dynSnaps.push({l:a.label,liq:Number(a.liq)||0,poup:Number(a.poup)||0,inv:Number(a.inv)||0,div:Number(a.div)||77555.06,xP:Number(a.xP)||0,xT:Number(a.xT)||0,tC:Number(a.tC)||0});
+          }else if(a.type==="add_expense"&&a.desc){
+            addedExp.push({desc:String(a.desc).substring(0,60),amount:Math.abs(Number(a.amount)||0),cat:a.cat||"out",date:a.date||"",tags:Array.isArray(a.tags)?a.tags.slice(0,5):undefined});
+          }else if(a.type==="add_income"&&a.name){
+            var rec=a.recurring!==false;var day=parseInt(a.day);if(isNaN(day)||day<1||day>31)day=1;
+            incomes.push({id:uid(),name:String(a.name).substring(0,60),amount:Math.abs(Number(a.amount)||0),source:a.source||"salary",recurring:rec,day:day,date:a.date||"",createdAt:Date.now()});
+          }else if(a.type==="add_goal"&&a.name){
+            goals.push({id:uid(),name:String(a.name).substring(0,60),target:Number(a.target)||0,current:Number(a.current)||0,deadline:a.deadline||"",color:a.color||"#007AFF",createdAt:Date.now()});
+          }else if(a.type==="add_recurring"&&a.name){
+            var rd=parseInt(a.day);if(isNaN(rd)||rd<1||rd>31)rd=1;
+            recurring.push({id:uid(),name:String(a.name).substring(0,60),amount:Number(a.amount)||0,day:rd,cat:a.cat||"sub",createdAt:Date.now()});
+          }
+        }catch(_e){}
+      });
+    }else{
+      // ANALYSIS mode
+      entry={date:new Date().toLocaleString("pt-PT"),cmd:cmd,analysis:txt,ok:true,mode:"analysis"};
+    }
+    persistUser();
     aiHistory.push(entry);
-    saveAI();
     aiLoading=false;
     render();
-    // Scroll to top of history
     setTimeout(function(){var el=document.getElementById("aiInput");if(el)el.value="";},50);
   }).catch(function(err){
     aiHistory.push({date:new Date().toLocaleString("pt-PT"),cmd:cmd,err:err.message});
-    saveAI();
+    persistUser();
     aiLoading=false;
     render();
   });
@@ -1784,13 +2176,14 @@ function renderInternal(){
   o+='</div></div>';
 
   // ── Tabs
-  var tabs=[["overview","Resumo"],["charts","Graficos"],["income","Receitas"],["expenses","Despesas"],["goals","Metas"],["rec","Recor."],["ai","IA"],["loan","Credito"]];
+  var tabs=[["overview","Resumo"],["cal","Calendario"],["charts","Graficos"],["income","Receitas"],["expenses","Despesas"],["goals","Metas"],["rec","Recor."],["ai","IA"],["loan","Credito"]];
   o+='<div class="tab-bar" style="overflow-x:auto;flex-wrap:nowrap">';
   tabs.forEach(function(t){o+='<button class="tb'+(tab===t[0]?' on':'')+'" onclick="T(\'tab\',\''+t[0]+'\')" style="flex:0 0 auto;padding:9px 12px">'+t[1]+'</button>';});
   o+='</div>';
 
   // ── Content
   if(tab==="overview")o+=rOverview();
+  else if(tab==="cal")o+=rCalendar();
   else if(tab==="charts")o+=rCharts();
   else if(tab==="income")o+=rIncomes();
   else if(tab==="expenses")o+=rExpenses();
