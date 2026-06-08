@@ -1,0 +1,225 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Income modal (Nova / Editar receita) — React port of rIncomeModal
+   (orig 1596-1622) + editIncome (1624) / saveIncome (1630) / deleteIncome
+   (1650).
+
+   - Rendered inside the shared <Sheet>.
+   - Open via useUI().open('income', { id }) — payload { id } means edit.
+   - Recurring vs one-off toggle: recurring shows a "Dia" field, one-off shows
+     a "Data" date field.
+   - Source <select> driven by INCOME_SOURCES (copied locally).
+   - Save validates (name required, amount > 0) then add/update.
+   ════════════════════════════════════════════════════════════════════════ */
+
+import React, { useState, useEffect } from 'react';
+import Sheet from '../components/Sheet.jsx';
+import { useStore } from '../store/store.jsx';
+import { useModal } from '../store/ui.jsx';
+import { useToast } from '../components/Toast.jsx';
+import { uid } from '../lib/format.js';
+
+// INCOME_SOURCES (orig 1541) — copied into this file.
+const INCOME_SOURCES = [
+  ['salary', 'Salario', '#22c55e'],
+  ['freelance', 'Freelance', '#0b1220'],
+  ['dividend', 'Dividendos', '#4a5366'],
+  ['rental', 'Aluguer', '#f59e0b'],
+  ['bonus', 'Bonus / Premio', '#ef4444'],
+  ['other', 'Outro', '#8A8E99'],
+];
+
+const EMPTY = { id: null, name: '', amount: '', source: 'salary', day: '1', recurring: true, date: '' };
+
+const inputStyle = {
+  width: '100%',
+  padding: '12px 16px',
+  border: '1px solid var(--border)',
+  background: 'var(--bg)',
+  color: 'var(--text)',
+  borderRadius: 'var(--r2)',
+  fontSize: 15,
+  boxSizing: 'border-box',
+};
+const numStyle = {
+  width: '100%',
+  padding: '12px 16px',
+  border: '1px solid var(--border)',
+  background: 'var(--elevated)',
+  color: 'var(--fg)',
+  borderRadius: 8,
+  fontFamily: 'var(--mono)',
+  fontSize: 15,
+  fontWeight: 600,
+  boxSizing: 'border-box',
+};
+
+export default function IncomeModal() {
+  const { state, actions } = useStore();
+  const { isOpen, payload, close } = useModal('income');
+  const toast = useToast();
+  const [draft, setDraft] = useState(EMPTY);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const id = payload && typeof payload === 'object' ? payload.id : null;
+    if (id) {
+      const i = (state.incomes || []).find((x) => x.id === id);
+      if (i) {
+        setDraft({
+          id: i.id,
+          name: i.name,
+          amount: String(i.amount),
+          source: i.source || 'salary',
+          day: String(i.day || 1),
+          recurring: i.recurring !== false,
+          date: i.date || '',
+        });
+        return;
+      }
+    }
+    setDraft(EMPTY);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, payload]);
+
+  const isEdit = !!draft.id;
+  const isRec = draft.recurring !== false;
+  const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
+
+  function saveIncome() {
+    const n = (draft.name || '').trim();
+    const a = parseFloat((String(draft.amount) || '0').replace(',', '.'));
+    const s = draft.source;
+    let day = 1;
+    let date = '';
+    if (isRec) {
+      day = parseInt(String(draft.day) || '1');
+      if (isNaN(day) || day < 1 || day > 31) day = 1;
+    } else {
+      date = draft.date || '';
+    }
+    if (!n) {
+      toast('Nome obrigatorio', 'error');
+      return;
+    }
+    if (isNaN(a) || a <= 0) {
+      toast('Valor invalido', 'error');
+      return;
+    }
+    if (draft.id) {
+      actions.updateIncome(draft.id, { name: n, amount: a, source: s, recurring: isRec, day, date });
+    } else {
+      actions.addIncome({ id: uid(), name: n, amount: a, source: s, recurring: isRec, day, date, createdAt: Date.now() });
+    }
+    close();
+    toast(draft.id ? 'Receita atualizada' : 'Receita adicionada', 'success');
+  }
+
+  function deleteIncome() {
+    if (!draft.id) return;
+    actions.deleteIncome(draft.id);
+    close();
+    toast('Receita eliminada', 'success');
+  }
+
+  if (!isOpen) return null;
+
+  const footer = (
+    <>
+      <button
+        type="button"
+        onClick={saveIncome}
+        style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
+      >
+        {isEdit ? 'Guardar alteracoes' : 'Adicionar receita'}
+      </button>
+      {isEdit && (
+        <button
+          type="button"
+          onClick={deleteIncome}
+          style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--signal)', fontSize: 12, fontWeight: 600, marginTop: 8 }}
+        >
+          Eliminar
+        </button>
+      )}
+    </>
+  );
+
+  const toggleBtn = (label, active, onClick) => (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flex: 1,
+        padding: '8px 0',
+        border: 'none',
+        borderRadius: 9,
+        background: active ? 'var(--bg2)' : 'transparent',
+        color: active ? 'var(--text)' : 'var(--text2)',
+        fontSize: 12,
+        fontWeight: 600,
+        boxShadow: active ? '0 1px 3px rgba(0,0,0,0.1)' : undefined,
+      }}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <Sheet open={isOpen} onClose={close} title={isEdit ? 'Editar receita' : 'Nova receita'} footer={footer}>
+      {/* Toggle recurring vs one-off */}
+      <div style={{ display: 'flex', background: 'var(--bg3)', borderRadius: 'var(--r2)', padding: 3, marginBottom: 16, gap: 2 }}>
+        {toggleBtn('Recorrente', isRec, () => set('recurring', true))}
+        {toggleBtn('Pontual', !isRec, () => set('recurring', false))}
+      </div>
+
+      <div className="lb" style={{ marginBottom: 6 }}>Nome</div>
+      <input
+        value={draft.name}
+        onChange={(e) => set('name', e.target.value)}
+        placeholder="Ex: Salario, Aluguer, Bonus"
+        style={{ ...inputStyle, marginBottom: 16 }}
+      />
+
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        <div style={{ flex: 1 }}>
+          <div className="lb" style={{ marginBottom: 6 }}>Valor (EUR)</div>
+          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="1500,00" inputMode="decimal" style={numStyle} />
+        </div>
+        {isRec ? (
+          <div style={{ width: 90 }}>
+            <div className="lb" style={{ marginBottom: 6 }}>Dia</div>
+            <input value={draft.day} onChange={(e) => set('day', e.target.value)} placeholder="1" inputMode="numeric" style={{ ...numStyle, textAlign: 'center' }} />
+          </div>
+        ) : (
+          <div style={{ flex: 1 }}>
+            <div className="lb" style={{ marginBottom: 6 }}>Data</div>
+            <input type="date" value={draft.date} onChange={(e) => set('date', e.target.value)} style={{ ...numStyle, fontSize: 13, fontWeight: 400 }} />
+          </div>
+        )}
+      </div>
+
+      <div className="lb" style={{ marginBottom: 6 }}>Origem</div>
+      <select
+        value={draft.source}
+        onChange={(e) => set('source', e.target.value)}
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          border: '1px solid var(--border)',
+          background: 'var(--elevated)',
+          color: 'var(--fg)',
+          borderRadius: 8,
+          fontSize: 14,
+          appearance: 'none',
+          marginBottom: 4,
+        }}
+      >
+        {INCOME_SOURCES.map((s) => (
+          <option key={s[0]} value={s[0]}>
+            {s[1]}
+          </option>
+        ))}
+      </select>
+    </Sheet>
+  );
+}
