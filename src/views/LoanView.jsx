@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { useStore } from '../store/store.jsx';
-import { compute, isNewUser } from '../lib/finance.js';
+import { isNewUser } from '../lib/finance.js';
 import { fm, fc } from '../lib/format.js';
 
 const STATS = [
@@ -43,7 +43,13 @@ export default function LoanView() {
     );
   }
 
-  const pp = compute(s).pp;
+  // Loan figures (literal, as the original). Derive paid % from them so the
+  // progress bar fills by the amount already paid out of the total loan,
+  // regardless of preview/auth mode (compute().pp is 0 for authed users).
+  const TOTAL = 90000;
+  const OUT = 77555.06;
+  const PAID = TOTAL - OUT;
+  const pp = (PAID / TOTAL) * 100;
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px calc(40px + var(--safe-bottom))' }}>
@@ -56,15 +62,15 @@ export default function LoanView() {
           Bankinter · Taxa Fixa 2,7%
         </div>
         <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--signal)', letterSpacing: '-0.02em' }}>
-          {fm(77555.06)}
+          {fm(OUT)}
         </div>
         <div className="lb" style={{ marginTop: 4 }}>
           Capital em divida
         </div>
         <div style={{ marginTop: 18 }}>
           <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6 }}>
-            <span>Pago: {fc(90000 - 77555.06)}</span>
-            <span>Total: {fc(90000)}</span>
+            <span>Pago: {fc(PAID)}</span>
+            <span>Total: {fc(TOTAL)}</span>
           </div>
           <div className="bar" style={{ height: 6, background: 'var(--bg3)' }}>
             <div className="bar-fill" style={{ width: pp + '%', background: 'var(--success)' }} />
