@@ -11,11 +11,40 @@
    import-statement list; pass 'cat' for the addedExp expense list).
    ════════════════════════════════════════════════════════════════════════ */
 
+import { normalizeStmtDate } from './format.js';
+
 export function normalizeDesc(desc) {
   return String(desc || '')
     .toLowerCase()
     .trim()
     .replace(/\s+/g, ' ');
+}
+
+// Stable identity for an expense: normalized beneficiary + cents + ISO date.
+// Using the normalized date merges legacy 'DD.MM' entries with their ISO twins.
+export function expenseKey(x) {
+  return (
+    normalizeDesc(x && x.desc) +
+    '|' +
+    Math.round((Number(x && x.amount) || 0) * 100) +
+    '|' +
+    normalizeStmtDate(x && x.date)
+  );
+}
+
+// Remove duplicate expenses (keep first occurrence) AND normalize each kept
+// entry's date to ISO 'YYYY-MM-DD' so it buckets into the right month.
+export function dedupeAddedExp(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const x of list) {
+    const k = expenseKey(x);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({ ...x, date: normalizeStmtDate(x.date) });
+  }
+  return out;
 }
 
 export function applySameBeneficiaryCategory(list, idx, cat, keyName = 'category') {

@@ -24,7 +24,7 @@ import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fm, uid, normalizeStmtDate } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
-import { applySameBeneficiaryCategory, normalizeDesc } from '../lib/dedupe.js';
+import { applySameBeneficiaryCategory, normalizeDesc, dedupeAddedExp } from '../lib/dedupe.js';
 import {
   callAI,
   STMT_PROMPT,
@@ -174,11 +174,18 @@ export default function ImportStatementSheet() {
     const selected = stResult.transactions
       .filter((t) => stSel[t._id])
       .map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date) }));
-    const n = selected.length;
-    actions.setAddedExp([...(state.addedExp || []), ...selected]);
+    // Dedup against existing + normalize dates so re-imports don't duplicate.
+    const before = (state.addedExp || []).length;
+    const merged = dedupeAddedExp([...(state.addedExp || []), ...selected]);
+    const added = merged.length - before;
+    const skipped = selected.length - added;
+    actions.setAddedExp(merged);
     resetState();
     close();
-    toast(n + ' transa' + (n === 1 ? 'ção' : 'ções') + ' importadas', 'success');
+    const msg =
+      added + ' transa' + (added === 1 ? 'ção' : 'ções') + ' importada' + (added === 1 ? '' : 's') +
+      (skipped > 0 ? ' · ' + skipped + ' duplicada' + (skipped === 1 ? '' : 's') + ' ignorada' + (skipped === 1 ? '' : 's') : '');
+    toast(msg, 'success');
   }, [stResult, stSel, actions, state.addedExp, resetState, close, toast]);
 
   if (!isOpen) return null;
@@ -211,14 +218,14 @@ export default function ImportStatementSheet() {
               <button
                 type="button"
                 onClick={() => document.getElementById('stCam').click()}
-                style={{ flex: 1, padding: 16, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                style={{ flex: 1, padding: 16, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 'var(--r2)', fontSize: 12, fontWeight: 600, boxShadow: 'var(--shadow)' }}
               >
                 Câmara
               </button>
               <button
                 type="button"
                 onClick={() => document.getElementById('stFile').click()}
-                style={{ flex: 1, padding: 16, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                style={{ flex: 1, padding: 16, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 'var(--r2)', fontSize: 12, fontWeight: 600, boxShadow: 'var(--shadow)' }}
               >
                 Ficheiro
               </button>
@@ -261,9 +268,9 @@ export default function ImportStatementSheet() {
                   <div
                     key={t._id}
                     style={{
-                      border: '1px solid ' + (sel ? 'var(--text)' : 'var(--border)'),
-                      borderTop: i > 0 ? 'none' : undefined,
-                      background: sel ? 'var(--bg3)' : 'var(--bg2)',
+                      border: '1px solid ' + (sel ? 'var(--primary)' : 'var(--border)'),
+                      borderTop: i > 0 && !sel ? 'none' : undefined,
+                      background: sel ? 'var(--blue-soft)' : 'var(--bg2)',
                       padding: '10px 12px',
                     }}
                   >
@@ -274,7 +281,9 @@ export default function ImportStatementSheet() {
                         style={{
                           width: 18,
                           height: 18,
-                          border: '1.5px solid ' + (sel ? 'var(--text)' : 'var(--border)'),
+                          borderRadius: 6,
+                          border: '1.5px solid ' + (sel ? 'var(--primary)' : 'var(--border)'),
+                          background: sel ? 'var(--primary)' : 'transparent',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -282,7 +291,11 @@ export default function ImportStatementSheet() {
                           cursor: 'pointer',
                         }}
                       >
-                        {sel && <div style={{ width: 9, height: 9, background: 'var(--text)' }} />}
+                        {sel && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div className="rw">
@@ -335,16 +348,15 @@ export default function ImportStatementSheet() {
               style={{
                 width: '100%',
                 padding: '14px 0',
-                border: '1px solid ' + (selCount > 0 ? 'var(--text)' : 'var(--border)'),
-                background: selCount > 0 ? 'var(--text)' : 'transparent',
-                color: selCount > 0 ? 'var(--bg2)' : 'var(--text3)',
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
+                border: 'none',
+                background: selCount > 0 ? 'var(--primary)' : 'var(--bg3)',
+                color: selCount > 0 ? '#fff' : 'var(--text3)',
+                fontSize: 14,
+                fontWeight: 600,
+                borderRadius: 999,
               }}
             >
-              Importar seleccionadas
+              Importar selecionadas
             </button>
           </>
         )}

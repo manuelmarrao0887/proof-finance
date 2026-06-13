@@ -1,5 +1,35 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeDesc, applySameBeneficiaryCategory } from './dedupe.js';
+import { normalizeDesc, applySameBeneficiaryCategory, dedupeAddedExp } from './dedupe.js';
+
+describe('dedupeAddedExp', () => {
+  it('removes exact duplicates', () => {
+    const list = [
+      { desc: 'VivaGym', amount: 35.9, cat: 'gym', date: '2026-06-05' },
+      { desc: 'VivaGym', amount: 35.9, cat: 'gym', date: '2026-06-05' },
+    ];
+    expect(dedupeAddedExp(list)).toHaveLength(1);
+  });
+  it('merges legacy DD.MM with its ISO twin (same desc/amount/date)', () => {
+    const list = [
+      { desc: 'VivaGym', amount: 35.9, cat: 'gym', date: '2026-06-05' },
+      { desc: 'VIVAGYM', amount: 35.9, cat: 'gym', date: '05.06' },
+    ];
+    const out = dedupeAddedExp(list);
+    expect(out).toHaveLength(1);
+    expect(out[0].date).toBe('2026-06-05'); // kept entry has ISO date
+  });
+  it('keeps genuinely different dates apart', () => {
+    const list = [
+      { desc: 'VivaGym', amount: 35.9, cat: 'gym', date: '2026-04-08' },
+      { desc: 'VivaGym', amount: 35.9, cat: 'gym', date: '2026-06-05' },
+    ];
+    expect(dedupeAddedExp(list)).toHaveLength(2);
+  });
+  it('normalizes dates on kept entries', () => {
+    const out = dedupeAddedExp([{ desc: 'X', amount: 1, date: '05.06' }]);
+    expect(out[0].date).toMatch(/^\d{4}-06-05$/);
+  });
+});
 
 describe('normalizeDesc', () => {
   it('lowercases, trims, and collapses internal whitespace', () => {

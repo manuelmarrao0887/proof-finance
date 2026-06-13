@@ -33,7 +33,8 @@ import { useUI } from '../store/ui.jsx';
 import { fm } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
-import { applySameBeneficiaryCategory } from '../lib/dedupe.js';
+import { applySameBeneficiaryCategory, dedupeAddedExp } from '../lib/dedupe.js';
+import { useToast } from '../components/Toast.jsx';
 import {
   isPreviewMode,
   isNewUser,
@@ -60,6 +61,7 @@ const EditIcon = () => (
 export default function ExpensesView() {
   const { state, actions, currentUser } = useStore();
   const ui = useUI();
+  const toast = useToast();
   const s = useMemo(() => ({ ...state, currentUser }), [state, currentUser]);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -297,6 +299,15 @@ export default function ExpensesView() {
     );
   }
 
+  // Duplicate imported expenses (e.g. same statement imported twice). Offer a
+  // one-click cleanup that also normalizes legacy 'DD.MM' dates to ISO.
+  const dupCount = addedExp.length - dedupeAddedExp(addedExp).length;
+  const cleanDuplicates = () => {
+    const cleaned = dedupeAddedExp(addedExp);
+    actions.setAddedExp(cleaned);
+    toast(dupCount + ' duplicad' + (dupCount === 1 ? 'a removida' : 'as removidas'), 'success');
+  };
+
   return (
     <div style={{ padding: '0 20px 24px' }}>
       {/* Search bar */}
@@ -310,6 +321,21 @@ export default function ExpensesView() {
           style={{ width: '100%', padding: '12px 16px 12px 40px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 16, boxSizing: 'border-box' }}
         />
       </div>
+
+      {/* Duplicate cleanup (only when duplicates exist) */}
+      {dupCount > 0 && (
+        <button
+          type="button"
+          onClick={cleanDuplicates}
+          style={{ width: '100%', marginBottom: 12, padding: '10px 14px', border: '1px solid var(--warning)', background: 'var(--orange-soft)', color: 'var(--warning)', borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+          Remover {dupCount} despesa{dupCount === 1 ? '' : 's'} duplicada{dupCount === 1 ? '' : 's'}
+        </button>
+      )}
 
       {/* Tag chips */}
       {tagList.length > 0 && (

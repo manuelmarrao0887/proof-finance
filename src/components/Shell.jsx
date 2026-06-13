@@ -8,6 +8,9 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { hasUnseenNotes } from '../lib/patchNotes.js';
 import { isNewUser } from '../lib/finance.js';
+import { useDevice } from '../store/device.jsx';
+import Sidebar from './Sidebar.jsx';
+import DeviceToggle from './DeviceToggle.jsx';
 
 import Hero from './Hero.jsx';
 import ContextStrip from './ContextStrip.jsx';
@@ -177,21 +180,11 @@ export default function Shell() {
   }, [state.theme, actions]);
 
   const View = VIEWS[tab] || OverviewView;
+  const { mode, canToggle } = useDevice();
 
-  return (
-    <div className="fadeIn">
-      <Header theme={state.theme} onToggleTheme={toggleTheme} syncStatus={syncStatus} />
-
-      {tab === 'overview' ? <Hero /> : <ContextStrip tab={tab} />}
-      <Onboarding />
-
-      <main className="has-bnav scroll-body" style={{ minHeight: '60svh' }}>
-        <View />
-      </main>
-
-      <BottomNav tab={tab} onTab={goTab} onPlus={() => open('action')} onMore={() => open('more')} />
-
-      {/* All modals/sheets — each reads its own open-state via useModal(). */}
+  // Modals are shared by both layouts.
+  const modals = (
+    <>
       <AddExpenseSheet />
       <ImportStatementSheet />
       <SettingsSheet />
@@ -206,6 +199,54 @@ export default function Shell() {
       <RulesModal />
       <ActionSheet />
       <MoreMenu />
+    </>
+  );
+
+  if (mode === 'desktop') {
+    return (
+      <div className="fadeIn">
+        <div className="dshell">
+          <Sidebar />
+          <div className="dcontent">
+            <div className="dmain">
+              <Onboarding />
+              {tab === 'overview' ? (
+                <>
+                  <Hero />
+                  <div className="dgrid">
+                    <View />
+                  </div>
+                </>
+              ) : (
+                <div className="dnarrow">
+                  <ContextStrip tab={tab} />
+                  <View />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {modals}
+      </div>
+    );
+  }
+
+  // Mobile layout (also used to preview mobile on a desktop screen).
+  return (
+    <div className="fadeIn">
+      {canToggle && <DeviceToggle />}
+      <Header theme={state.theme} onToggleTheme={toggleTheme} syncStatus={syncStatus} />
+
+      {tab === 'overview' ? <Hero /> : <ContextStrip tab={tab} />}
+      <Onboarding />
+
+      <main className="has-bnav scroll-body" style={{ minHeight: '60svh' }}>
+        <View />
+      </main>
+
+      <BottomNav tab={tab} onTab={goTab} onPlus={() => open('action')} onMore={() => open('more')} />
+
+      {modals}
     </div>
   );
 }
