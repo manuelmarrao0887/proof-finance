@@ -18,10 +18,10 @@ export default function BalanceHistorySheet() {
 
   const acctKey = payload && payload.acctKey;
   const rows = accountHistory(state.balanceLog, acctKey); // ascending by date
-  const title = payload ? (payload.bank || '') + ' · ' + (payload.type || '') : 'Historico';
+  const title = payload ? (payload.bank || '') + ' · ' + (payload.type || '') : 'Histórico';
 
   return (
-    <Sheet open={isOpen} onClose={close} title="Historico de saldos">
+    <Sheet open={isOpen} onClose={close} title="Histórico de saldos">
       <div className="lb" style={{ marginBottom: 12 }}>{title}</div>
       {rows.length === 0 ? (
         <div className="empty" style={{ padding: '24px 0' }}>Sem leituras registadas para esta conta.</div>

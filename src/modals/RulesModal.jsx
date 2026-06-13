@@ -42,7 +42,7 @@ export default function RulesModal() {
   const addRule = () => {
     const pat = pattern.trim();
     if (!pat) {
-      toast('Padrao obrigatorio', 'error');
+      toast('Padrao obrigatório', 'error');
       return;
     }
     const c = cat || (cats[0] && cats[0].id) || 'out';

@@ -63,7 +63,7 @@ export default function AcctModal() {
     const cur = draft.currency;
     const note = (draft.note || '').trim();
     if (!bank) {
-      toast('Banco obrigatorio', 'error');
+      toast('Banco obrigatório', 'error');
       return;
     }
     if (isNaN(val)) val = 0;
@@ -96,7 +96,7 @@ export default function AcctModal() {
   return (
     <Sheet open={isOpen} onClose={close} title={isEdit ? 'Editar conta' : 'Nova conta'}>
       {/* Bank name */}
-      <label className="lb" style={labelStyle} htmlFor="acBank">Banco / Instituicao</label>
+      <label className="lb" style={labelStyle} htmlFor="acBank">Banco / Instituição</label>
       <input id="acBank" value={draft.bank} onChange={(e) => set('bank', e.target.value)} placeholder="Ex: Revolut, N26, Coinbase" style={inputStyle} />
 
       {/* Type */}

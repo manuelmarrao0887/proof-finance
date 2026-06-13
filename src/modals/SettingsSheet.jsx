@@ -201,7 +201,7 @@ export default function SettingsSheet() {
   const dataBtn = { width: '100%', padding: '14px 16px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 };
 
   return (
-    <Sheet open={isOpen} onClose={close} title="Definicoes">
+    <Sheet open={isOpen} onClose={close} title="Definições">
       {/* ── Account ── */}
       <div className="lb" style={{ marginBottom: 10 }}>Conta</div>
       <div className="cd" style={{ marginBottom: 24, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>

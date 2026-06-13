@@ -20,11 +20,11 @@ import { uid } from '../lib/format.js';
 
 // INCOME_SOURCES (orig 1541) — copied into this file.
 const INCOME_SOURCES = [
-  ['salary', 'Salario', '#3fc97a'],
+  ['salary', 'Salário', '#3fc97a'],
   ['freelance', 'Freelance', '#3b6fee'],
   ['dividend', 'Dividendos', '#7b5fe0'],
   ['rental', 'Aluguer', '#f5a623'],
-  ['bonus', 'Bonus / Premio', '#f25555'],
+  ['bonus', 'Bónus / Prémio', '#f25555'],
   ['other', 'Outro', '#9aa3b5'],
 ];
 
@@ -98,7 +98,7 @@ export default function IncomeModal() {
       date = draft.date || '';
     }
     if (!n) {
-      toast('Nome obrigatorio', 'error');
+      toast('Nome obrigatório', 'error');
       return;
     }
     if (isNaN(a) || a <= 0) {
@@ -176,7 +176,7 @@ export default function IncomeModal() {
       <input
         value={draft.name}
         onChange={(e) => set('name', e.target.value)}
-        placeholder="Ex: Salario, Aluguer, Bonus"
+        placeholder="Ex: Salário, Aluguer, Bónus"
         style={{ ...inputStyle, marginBottom: 16 }}
       />
 

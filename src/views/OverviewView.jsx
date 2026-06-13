@@ -3,7 +3,7 @@
 
    Sections (each gated exactly as the original):
      • Monthly summary card           (monthlySummary)
-     • Ativos / Divida quick stats     (compute + getLoan via compute.loan)
+     • Ativos / Dívida quick stats     (compute + getLoan via compute.loan)
      • Financial health score          (healthScore: score/grade/breakdown/recs)
      • Subscriptions detected          (detectSubscriptions; "Adicionar" →
                                         actions.addRecurring like addSubFromSuggestion)
@@ -36,7 +36,7 @@ import {
 import { fm, fc, uid } from '../lib/format.js';
 
 const MONTHS_LONG = [
-  'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
@@ -86,13 +86,13 @@ export default function OverviewView() {
       cat: sub.cat || 'sub',
       createdAt: Date.now(),
     });
-    toast('Recorrencia criada', 'success');
+    toast('Recorrência criada', 'success');
   };
 
   // Dismiss a suggestion: mark its key so detectSubscriptions stops suggesting it.
   const dismissSub = (sub) => {
     actions.dismissSub(sub.key);
-    toast('Sugestao dispensada', 'success');
+    toast('Sugestão dispensada', 'success');
   };
 
   // ── Health score (only when not new) ──────────────────────────────────
@@ -111,7 +111,7 @@ export default function OverviewView() {
     ef = emergencyFund(s);
     efPct = Math.min((ef.months / 6) * 100, 100);
     efColor = ef.months >= 6 ? 'var(--success)' : ef.months >= 3 ? 'var(--orange)' : 'var(--signal)';
-    efLabel = ef.months >= 6 ? 'Solido' : ef.months >= 3 ? 'Razoavel' : ef.months >= 1 ? 'Fraco' : 'Critico';
+    efLabel = ef.months >= 6 ? 'Sólido' : ef.months >= 3 ? 'Razoável' : ef.months >= 1 ? 'Fraco' : 'Crítico';
     cf = cashFlowProjection(s); // defaults to state.forecastMonths
     lastBal = cf.rows[cf.rows.length - 1].balance;
   }
@@ -212,7 +212,7 @@ export default function OverviewView() {
               </div>
             </div>
             <div className="cd" style={{ position: 'relative', overflow: 'hidden' }}>
-              <div className="lb" style={{ marginBottom: 6 }}>Divida</div>
+              <div className="lb" style={{ marginBottom: 6 }}>Dívida</div>
               <div style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', color: C.loan.out > 0 ? 'var(--danger)' : 'var(--fg-subtle)' }}>
                 {fc(C.loan.out)}
               </div>
@@ -223,7 +223,7 @@ export default function OverviewView() {
           <div className="cd" style={{ marginBottom: 16, padding: 20 }}>
             <div className="rw" style={{ marginBottom: 14, alignItems: 'flex-start' }}>
               <div>
-                <div className="lb">Saude financeira</div>
+                <div className="lb">Saúde financeira</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
                   <div className="m" style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.02em', color: hsCol }}>
                     {hs.score}
@@ -278,7 +278,7 @@ export default function OverviewView() {
           {subs.length > 0 && (
             <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
               <div className="rw" style={{ marginBottom: 6 }}>
-                <div className="lb">Subscricoes detectadas</div>
+                <div className="lb">Subscrições detectadas</div>
                 <div className="chip" style={{ background: 'transparent', color: 'var(--fg-muted)', border: '1px solid var(--border)' }}>
                   {subs.length}
                 </div>
@@ -291,14 +291,14 @@ export default function OverviewView() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 500 }}>{sub.desc}</div>
                     <div className="m" style={{ fontSize: 10, color: 'var(--fg-subtle)', marginTop: 2 }}>
-                      {sub.count} vezes · ~{fc(sub.monthlyEstimate)}/mes
+                      {sub.count} vezes · ~{fc(sub.monthlyEstimate)}/mês
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                     <button
                       type="button"
                       onClick={() => dismissSub(sub)}
-                      aria-label={'Nao e subscricao: ' + sub.desc}
+                      aria-label={'Não e subscrição: ' + sub.desc}
                       style={{
                         padding: '6px 12px',
                         border: '1px solid var(--border)',
@@ -310,7 +310,7 @@ export default function OverviewView() {
                         fontFamily: 'inherit',
                       }}
                     >
-                      Nao e
+                      Não e
                     </button>
                     <button
                       type="button"
@@ -347,7 +347,7 @@ export default function OverviewView() {
           <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
             <div className="rw" style={{ marginBottom: 10 }}>
               <div>
-                <div className="lb">Fundo de emergencia</div>
+                <div className="lb">Fundo de emergência</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
                   Liquidez + Poupanca / despesa media
                 </div>
@@ -362,7 +362,7 @@ export default function OverviewView() {
             </div>
             <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
               <span>Reserva: {fc(ef.safe)}</span>
-              <span>Despesa/mes: {fc(ef.avgMonthly)}</span>
+              <span>Despesa/mês: {fc(ef.avgMonthly)}</span>
             </div>
             <div className="bar" style={{ height: 6, marginTop: 10 }}>
               <div className="bar-fill" style={{ width: efPct + '%', background: efColor }} />
@@ -395,7 +395,7 @@ export default function OverviewView() {
               ))}
             </div>
             <div style={{ fontSize: 11, color: 'var(--fg-subtle)', marginBottom: 14, lineHeight: 1.5 }}>
-              Receitas {fc(cf.monthlyIncome)}/mes · recorrentes {fc(cf.monthlyRecExpense)} · credito {fc(cf.loanPay)} · discricionario {fc(cf.avgDiscretionary)}
+              Receitas {fc(cf.monthlyIncome)}/mês · recorrentes {fc(cf.monthlyRecExpense)} · crédito {fc(cf.loanPay)} · discricionario {fc(cf.avgDiscretionary)}
             </div>
 
             {cf.rows.length <= 6 ? (
@@ -501,7 +501,7 @@ export default function OverviewView() {
                             onClick={() => open('balanceHistory', { acctKey: a.custom ? a.id : a.b + '_' + a.t, bank: a.b, type: a.t })}
                             className="icon-btn"
                             style={{ width: 28, height: 28 }}
-                            aria-label="Historico de saldos"
+                            aria-label="Histórico de saldos"
                           >
                             <Icon name="history" size={15} />
                           </button>

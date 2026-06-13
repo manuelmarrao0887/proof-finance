@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   Recurring (Subscricoes / Despesas Recorrentes) view — React port of
+   Recurring (Subscrições / Despesas Recorrentes) view — React port of
    rRecurring (orig 1452-1485).
 
    - Empty state when no recurring entries.
@@ -35,7 +35,7 @@ export default function RecurringView() {
             Sem despesas recorrentes
           </div>
           <div style={{ fontSize: 12, lineHeight: 1.6 }}>
-            Regista subscricoes (Netflix, ginasio,
+            Regista subscrições (Netflix, ginásio,
             <br />
             seguros, telecom...) para teres uma
             <br />
@@ -58,7 +58,7 @@ export default function RecurringView() {
         <div className="lb" style={{ marginBottom: 6, color: 'rgba(255,255,255,0.85)' }}>Custo Mensal Fixo</div>
         <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em' }}>{fc(total)}</div>
         <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
-          {fc(yearly)} por ano &middot; {recurring.length} {recurring.length === 1 ? 'subscricao' : 'subscricoes'}
+          {fc(yearly)} por ano &middot; {recurring.length} {recurring.length === 1 ? 'subscrição' : 'subscrições'}
         </div>
       </div>
 
@@ -89,7 +89,7 @@ export default function RecurringView() {
                   onClick={() => open('rec', { id: r.id })}
                   className="icon-btn"
                   style={{ width: 30, height: 30 }}
-                  aria-label="Editar recorrencia"
+                  aria-label="Editar recorrência"
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 20h9" />
@@ -104,7 +104,7 @@ export default function RecurringView() {
                   }}
                   className="icon-btn"
                   style={{ width: 30, height: 30, color: 'var(--signal)' }}
-                  aria-label="Eliminar recorrencia"
+                  aria-label="Eliminar recorrência"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
                     <polyline points="3 6 5 6 21 6" />

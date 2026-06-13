@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   Calendar (Calendario) view — React port of rCalendar (orig 1198-1312).
+   Calendar (Calendário) view — React port of rCalendar (orig 1198-1312).
 
    Builds an events map { day: [{ type, name, amount, color }] } for the
    displayed month (current month + calOffset) from:
@@ -21,7 +21,7 @@ import { fc, fm } from '../lib/format.js';
 import { getLoan } from '../lib/finance.js';
 
 const MONTH_NAMES = [
-  'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 const DOW = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']; // Monday-first labels
@@ -53,7 +53,7 @@ export default function CalendarView() {
   // Loan payment (only if user has loan)
   const lnC = getLoan({ ...state, currentUser });
   if (lnC.pay > 0) {
-    push(28, { type: 'loan', name: 'Credito Habitacao', amount: -lnC.pay, color: 'var(--signal)' });
+    push(28, { type: 'loan', name: 'Crédito Habitação', amount: -lnC.pay, color: 'var(--signal)' });
   }
   // Recurring expenses
   recurring.forEach((r) => {
@@ -140,7 +140,7 @@ export default function CalendarView() {
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
       {/* Header navigator */}
       <div className="rw" style={{ marginBottom: 14 }}>
-        <button type="button" onClick={() => setCalOffset((o) => o - 1)} className="icon-btn" aria-label="Mes anterior">
+        <button type="button" onClick={() => setCalOffset((o) => o - 1)} className="icon-btn" aria-label="Mês anterior">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
             <polyline points="15 18 9 12 15 6" />
           </svg>
@@ -162,13 +162,13 @@ export default function CalendarView() {
               type="button"
               disabled
               style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 11, fontWeight: 500, marginTop: 2, padding: '2px 6px', opacity: 0.6 }}
-              aria-label="Ja estas no mes atual"
+              aria-label="Ja estas no mês atual"
             >
-              Mes atual
+              Mês atual
             </button>
           )}
         </div>
-        <button type="button" onClick={() => setCalOffset((o) => o + 1)} className="icon-btn" aria-label="Mes seguinte">
+        <button type="button" onClick={() => setCalOffset((o) => o + 1)} className="icon-btn" aria-label="Mês seguinte">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
             <polyline points="9 18 15 12 9 6" />
           </svg>
@@ -249,7 +249,7 @@ export default function CalendarView() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--signal)' }} />
-            Credito / Despesa
+            Crédito / Despesa
           </div>
         </div>
       </div>

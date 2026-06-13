@@ -29,7 +29,7 @@ export default function Onboarding() {
     },
     {
       n: '02',
-      label: 'Cria uma meta de poupanca',
+      label: 'Cria uma meta de poupança',
       // orig seeded goalDraft then opened the goal modal.
       onClick: () => open('goal', { name: '', target: '', current: '0', deadline: '', color: '#3b6fee' }),
     },
@@ -47,7 +47,7 @@ export default function Onboarding() {
           Comeca em tres passos
         </div>
         <div style={{ fontSize: 13, color: 'var(--fg-muted)', lineHeight: 1.55, marginBottom: 18 }}>
-          Importa um extracto, regista uma despesa ou liga a tua IA. Tu defines o ritmo.
+          Importa um extrato, regista uma despesa ou liga a tua IA. Tu defines o ritmo.
         </div>
         {steps.map((st, i) => (
           <button

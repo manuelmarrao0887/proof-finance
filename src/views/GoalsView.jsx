@@ -44,12 +44,12 @@ export default function GoalsView() {
             <circle cx="12" cy="12" r="2" />
           </svg>
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
-            Ainda nao tens metas
+            Ainda não tens metas
           </div>
           <div style={{ fontSize: 12, lineHeight: 1.6 }}>
-            Cria a tua primeira meta de poupanca:
+            Cria a tua primeira meta de poupança:
             <br />
-            fundo de emergencia, ferias, casa nova...
+            fundo de emergência, ferias, casa nova...
           </div>
         </div>
       </div>
@@ -167,7 +167,7 @@ export default function GoalsView() {
                 </div>
                 {monthly != null && (
                   <div style={{ fontSize: 10, color: 'var(--text2)', marginTop: 6, fontWeight: 600 }}>
-                    ~ {fc(monthly)}/mes
+                    ~ {fc(monthly)}/mês
                   </div>
                 )}
               </div>

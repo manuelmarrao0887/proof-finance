@@ -2,7 +2,7 @@
    Hero — net-worth hero + asset-allocation bar.
 
    Ported from the overview branch of renderInternal (orig 2892-2919): the big
-   "Patrimonio Liquido" number, the up/down delta chip, a mini net-worth
+   "Património Liquido" number, the up/down delta chip, a mini net-worth
    sparkline, and the compact asset-allocation bar (by category, coloured via
    `cCol`). Default export, reads everything from the store (no props).
    ════════════════════════════════════════════════════════════════════════ */
@@ -58,7 +58,7 @@ export default function Hero() {
               opacity: 0.85,
             }}
           >
-            Patrimonio Liquido
+            Património Liquido
           </div>
           {!newU && (
             <div className={'chip ' + (C.aD >= 0 ? 'up' : 'down')} aria-label={'Variacao ' + heroPct}>
@@ -89,7 +89,7 @@ export default function Hero() {
         </div>
         <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, position: 'relative', zIndex: 1 }}>
           Ativos {fc(C.tA)}
-          {C.loan.out > 0 ? ' · Divida ' + fc(C.loan.out) : ''}
+          {C.loan.out > 0 ? ' · Dívida ' + fc(C.loan.out) : ''}
         </div>
         {nwSeries.length > 1 && (
           <svg

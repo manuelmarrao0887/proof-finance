@@ -81,7 +81,7 @@ export default function GoalModal() {
     let c = parseFloat((String(draft.current) || '0').replace(',', '.'));
     const d = draft.deadline;
     if (!n) {
-      toast('Nome obrigatorio', 'error');
+      toast('Nome obrigatório', 'error');
       return;
     }
     if (isNaN(t) || t <= 0) {
@@ -134,7 +134,7 @@ export default function GoalModal() {
       <input
         value={draft.name}
         onChange={(e) => set('name', e.target.value)}
-        placeholder="Ex: Fundo Emergencia"
+        placeholder="Ex: Fundo Emergência"
         style={{ ...inputStyle, marginBottom: 16 }}
       />
 

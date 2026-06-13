@@ -10,9 +10,9 @@
      - Nova despesa      -> open('add')               (blank expense)
      - Nova receita      -> open('income')
      - Scan recibo       -> open('add', {scan:true})  (AddExp auto-triggers camera)
-     - Importar extracto -> open('stmt')
+     - Importar extrato -> open('stmt')
      - Nova meta         -> open('goal')
-     - Nova recorrencia  -> open('rec')
+     - Nova recorrência  -> open('rec')
      - Nova conta        -> open('acct')
    ════════════════════════════════════════════════════════════════════════ */
 
@@ -51,7 +51,7 @@ export default function ActionSheet() {
     },
     {
       title: 'Nova receita',
-      sub: 'Salario, freelance, dividendos',
+      sub: 'Salário, freelance, dividendos',
       onClick: () => go('income'),
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -72,7 +72,7 @@ export default function ActionSheet() {
       ),
     },
     {
-      title: 'Importar extracto',
+      title: 'Importar extrato',
       sub: 'PDF, imagem, Excel ou CSV',
       onClick: () => go('stmt'),
       icon: (
@@ -84,7 +84,7 @@ export default function ActionSheet() {
     },
     {
       title: 'Nova meta',
-      sub: 'Definir objectivo de poupanca',
+      sub: 'Definir objectivo de poupança',
       onClick: () => go('goal'),
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -95,8 +95,8 @@ export default function ActionSheet() {
       ),
     },
     {
-      title: 'Nova recorrencia',
-      sub: 'Subscricoes e despesas fixas',
+      title: 'Nova recorrência',
+      sub: 'Subscrições e despesas fixas',
       onClick: () => go('rec'),
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

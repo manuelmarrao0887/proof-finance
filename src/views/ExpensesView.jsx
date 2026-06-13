@@ -288,7 +288,7 @@ export default function ExpensesView() {
     const pct = Math.round((dToday.getDate() / dEnd) * 100);
     partialNote = (
       <div className="m" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 10 }}>
-        {ms[3] + ' parcial · ' + pct + '% do mes'}
+        {ms[3] + ' parcial · ' + pct + '% do mês'}
       </div>
     );
   } else if (em === 3 && preview) {
@@ -371,7 +371,7 @@ export default function ExpensesView() {
           </div>
           {!isQ && em < 3 && salP[em] != null && (
             <div style={{ textAlign: 'right' }}>
-              <div className="lb">Salario</div>
+              <div className="lb">Salário</div>
               <div className="m" style={{ fontSize: 18, fontWeight: 700, color: 'var(--success)', marginTop: 4 }}>{fm(salP[em])}</div>
             </div>
           )}
@@ -386,7 +386,7 @@ export default function ExpensesView() {
             <rect x="2" y="5" width="20" height="14" rx="2" />
             <line x1="2" y1="10" x2="22" y2="10" />
           </svg>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Sem despesas neste periodo</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Sem despesas neste período</div>
           <div style={{ fontSize: 11, lineHeight: 1.5 }}>
             Toca no <span style={{ color: 'var(--blue)', fontWeight: 700 }}>+</span> em baixo
             <br />
@@ -498,7 +498,7 @@ export default function ExpensesView() {
                 )}
 
                 {hTxn.length === 0 && aTxn.length === 0 && (
-                  <div className="lb" style={{ padding: '8px 0', color: 'var(--text3)' }}>Sem transacoes detalhadas</div>
+                  <div className="lb" style={{ padding: '8px 0', color: 'var(--text3)' }}>Sem transações detalhadas</div>
                 )}
               </div>
             )}
