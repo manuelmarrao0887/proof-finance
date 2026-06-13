@@ -39,7 +39,7 @@ export default function PatchNotesSheet() {
           ))}
         </div>
       ))}
-      <button type="button" onClick={onClose} style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 14, fontWeight: 600, borderRadius: 999, marginTop: 6 }}>
+      <button type="button" onClick={onClose} style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 600, borderRadius: 999, marginTop: 6 }}>
         Percebido
       </button>
     </Sheet>

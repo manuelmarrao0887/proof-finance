@@ -75,7 +75,7 @@ export default function GoalsView() {
           </div>
         </div>
         <div className="bar" style={{ height: 8 }}>
-          <div className="bar-fill" style={{ width: Math.min(overall, 100) + '%', background: 'var(--fg)' }} />
+          <div className="bar-fill" style={{ width: Math.min(overall, 100) + '%', background: 'var(--primary)' }} />
         </div>
         <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
           <span>
@@ -89,7 +89,7 @@ export default function GoalsView() {
       {goals.map((g) => {
         const pct = g.target > 0 ? Math.min((g.current / g.target) * 100, 100) : 0;
         const pctAbs = g.target > 0 ? (g.current / g.target) * 100 : 0;
-        const c = g.color || '#0b1220';
+        const c = g.color || '#3b6fee';
         const rem = Math.max(g.target - g.current, 0);
         let daysLeft = null;
         if (g.deadline) {

@@ -54,7 +54,7 @@ export default function RecurringView() {
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
-      <div className="cd" style={{ marginBottom: 16, padding: '18px 20px', background: 'var(--fg)', color: '#fff', boxShadow: 'var(--shadow-hero)' }}>
+      <div className="cd" style={{ marginBottom: 16, padding: '18px 20px', background: 'var(--primary)', color: '#fff', boxShadow: 'var(--shadow-hero)' }}>
         <div className="lb" style={{ marginBottom: 6, color: 'rgba(255,255,255,0.85)' }}>Custo Mensal Fixo</div>
         <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em' }}>{fc(total)}</div>
         <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>

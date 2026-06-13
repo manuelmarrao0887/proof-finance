@@ -16,6 +16,7 @@ import { useAuth } from './store/store.jsx';
 import { onAuth, setAuthPersistenceLocal, IS_FILE, initError } from './firebase/client.js';
 import Login from './components/Login.jsx';
 import Shell from './components/Shell.jsx';
+import Gate, { gatePassed } from './components/Gate.jsx';
 
 function Skeleton() {
   return (
@@ -71,6 +72,7 @@ const DEMO = typeof location !== 'undefined' &&
 export default function App() {
   const { setCurrentUser, loadUser, resetUser } = useAuth();
   const [view, setView] = useState('loading'); // loading | login | app
+  const [gateOk, setGateOk] = useState(gatePassed); // access gate (soft password barrier)
   const viewRef = useRef('loading');
   viewRef.current = view;
 
@@ -118,6 +120,9 @@ export default function App() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Access gate first — blocks everything (incl. demo) until the password is entered.
+  if (!gateOk) return <Gate onPass={() => setGateOk(true)} />;
 
   if (DEMO) return <Shell />;
 

@@ -31,7 +31,7 @@ export default function Onboarding() {
       n: '02',
       label: 'Cria uma meta de poupanca',
       // orig seeded goalDraft then opened the goal modal.
-      onClick: () => open('goal', { name: '', target: '', current: '0', deadline: '', color: '#0b1220' }),
+      onClick: () => open('goal', { name: '', target: '', current: '0', deadline: '', color: '#3b6fee' }),
     },
     {
       n: '03',

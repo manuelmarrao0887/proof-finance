@@ -13,12 +13,12 @@ import { compute, isNewUser } from '../lib/finance.js';
 import { fm, fc } from '../lib/format.js';
 
 const STATS = [
-  ['Prestacao', '485,83 EUR', '#0b1220'],
-  ['Proxima', '28.05.2026', '#4a5366'],
-  ['Taxa', '2,7%', '#f59e0b'],
-  ['Tipo', 'Taxa Fixa', '#22c55e'],
-  ['Capital', '90.000 EUR', '#8b95a8'],
-  ['Prazo', '20 anos', '#ef4444'],
+  ['Prestacao', '485,83 EUR', '#3b6fee'],
+  ['Proxima', '28.05.2026', '#7b5fe0'],
+  ['Taxa', '2,7%', '#f5a623'],
+  ['Tipo', 'Taxa Fixa', '#3fc97a'],
+  ['Capital', '90.000 EUR', '#12b3a6'],
+  ['Prazo', '20 anos', '#f25555'],
 ];
 
 export default function LoanView() {

@@ -17,9 +17,9 @@ import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
 
-const COLORS = ['#0b1220', '#22c55e', '#f59e0b', '#4a5366', '#ef4444', '#8b95a8'];
+const COLORS = ['#3b6fee', '#3fc97a', '#f5a623', '#7b5fe0', '#f25555', '#12b3a6'];
 
-const EMPTY = { id: null, name: '', target: '', current: '', deadline: '', color: '#0b1220' };
+const EMPTY = { id: null, name: '', target: '', current: '', deadline: '', color: '#3b6fee' };
 
 const inputStyle = {
   width: '100%',
@@ -63,7 +63,7 @@ export default function GoalModal() {
           target: String(g.target),
           current: String(g.current),
           deadline: g.deadline || '',
-          color: g.color || '#0b1220',
+          color: g.color || '#3b6fee',
         });
         return;
       }
@@ -92,7 +92,7 @@ export default function GoalModal() {
     if (draft.id) {
       actions.updateGoal(draft.id, { name: n, target: t, current: c, deadline: d, color: draft.color });
     } else {
-      actions.addGoal({ id: uid(), name: n, target: t, current: c, deadline: d, color: draft.color || '#0b1220', createdAt: Date.now() });
+      actions.addGoal({ id: uid(), name: n, target: t, current: c, deadline: d, color: draft.color || '#3b6fee', createdAt: Date.now() });
     }
     close();
     toast(draft.id ? 'Meta atualizada' : 'Meta criada', 'success');
@@ -112,7 +112,7 @@ export default function GoalModal() {
       <button
         type="button"
         onClick={saveGoal}
-        style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
+        style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
       >
         {isEdit ? 'Guardar alteracoes' : 'Criar meta'}
       </button>

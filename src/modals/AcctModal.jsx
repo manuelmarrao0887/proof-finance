@@ -148,7 +148,7 @@ export default function AcctModal() {
       <input id="acNote" value={draft.note} onChange={(e) => set('note', e.target.value)} placeholder="Juros, IBAN parcial, etc." style={{ ...inputStyle, fontSize: 14, marginBottom: 22 }} />
 
       {/* Save */}
-      <button type="button" onClick={saveAcct} style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}>
+      <button type="button" onClick={saveAcct} style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}>
         {isEdit ? 'Guardar alteracoes' : 'Adicionar conta'}
       </button>
       {isEdit && (

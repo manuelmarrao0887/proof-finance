@@ -205,7 +205,7 @@ export default function SettingsSheet() {
       {/* ── Account ── */}
       <div className="lb" style={{ marginBottom: 10 }}>Conta</div>
       <div className="cd" style={{ marginBottom: 24, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--fg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 18, overflow: 'hidden' }}>
+        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 18, overflow: 'hidden' }}>
           {ph ? (
             <img src={ph} style={{ width: '100%', height: '100%', objectFit: 'cover' }} referrerPolicy="no-referrer" alt="" />
           ) : (
@@ -272,7 +272,7 @@ export default function SettingsSheet() {
         </div>
       )}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        <button type="button" onClick={onSaveKey} style={{ flex: 1, padding: '12px 0', border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 13, fontWeight: 500, borderRadius: 999 }}>
+        <button type="button" onClick={onSaveKey} style={{ flex: 1, padding: '12px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 13, fontWeight: 500, borderRadius: 999 }}>
           Guardar
         </button>
         <button type="button" onClick={testAPI} style={{ padding: '12px 16px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text2)', borderRadius: 'var(--r2)', fontSize: 11, fontWeight: 600 }}>
