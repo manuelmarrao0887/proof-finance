@@ -22,7 +22,7 @@ import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { fm, uid } from '../lib/format.js';
+import { fm, uid, normalizeStmtDate } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
 import { applySameBeneficiaryCategory, normalizeDesc } from '../lib/dedupe.js';
 import {
@@ -173,7 +173,7 @@ export default function ImportStatementSheet() {
     if (!stResult || !stResult.transactions) return;
     const selected = stResult.transactions
       .filter((t) => stSel[t._id])
-      .map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: t.date || '' }));
+      .map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date) }));
     const n = selected.length;
     actions.setAddedExp([...(state.addedExp || []), ...selected]);
     resetState();
