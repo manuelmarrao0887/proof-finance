@@ -30,9 +30,12 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth';
 import {
-  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   doc,
   getDoc,
+  getDocFromCache,
   setDoc,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -63,7 +66,9 @@ if (IS_FILE) {
   try {
     _app = initializeApp(firebaseConfig);
     _auth = getAuth(_app);
-    _db = getFirestore(_app);
+    _db = initializeFirestore(_app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error('Firebase init falhou', e);
@@ -123,9 +128,12 @@ export function onAuth(cb) {
 
 export function loadUserDoc(uid) {
   if (!db || !uid) return Promise.resolve(null);
-  return getDoc(doc(db, 'users', uid)).then((snap) =>
-    snap.exists() ? snap.data() : null
-  );
+  const ref = doc(db, 'users', uid);
+  // Cache-first: serve from IndexedDB cache when available (0 server reads),
+  // only hit the server on a cache miss. Reduces Firestore read volume.
+  return getDocFromCache(ref)
+    .then((snap) => (snap.exists() ? snap.data() : null))
+    .catch(() => getDoc(ref).then((snap) => (snap.exists() ? snap.data() : null)));
 }
 
 export function saveUserDoc(uid, data) {
