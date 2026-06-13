@@ -70,7 +70,14 @@ export const txn = {
 
 export const sal = [1923.54, 1849.33, 1898.89, null];
 
-export const cCol = { Liquidez: '#0b1220', Poupanca: '#4a5366', Investimentos: '#8b95a8' };
+export const cCol = {
+  Liquidez: '#3b6fee',
+  Poupanca: '#3fc97a',
+  Investimentos: '#7b5fe0',
+  Cripto: '#f5a623',
+  Imobiliario: '#f25592',
+  Outros: '#9aa3b5',
+};
 
 /* ══ MODE ACCESSORS (orig 582-610) ══
    In the original isPreviewMode() === !currentUser. Here we read state.currentUser. */

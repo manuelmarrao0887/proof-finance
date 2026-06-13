@@ -32,6 +32,7 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { fm } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
+import CategoryIcon from '../components/CategoryIcon.jsx';
 import { applySameBeneficiaryCategory } from '../lib/dedupe.js';
 import {
   isPreviewMode,
@@ -408,7 +409,8 @@ export default function ExpensesView() {
         });
         return (
           <div key={r.id} style={{ marginBottom: 4 }}>
-            <button type="button" className="exp-btn" onClick={() => setXExp(isE ? null : r.id)}>
+            <button type="button" className="exp-btn" style={{ alignItems: 'center', gap: 12 }} onClick={() => setXExp(isE ? null : r.id)}>
+              <CategoryIcon id={r.id} size={40} />
               <div style={{ flex: 1 }}>
                 <div className="rw">
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{r.nm}</span>
