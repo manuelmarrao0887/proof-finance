@@ -20,6 +20,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
+import Icon from '../components/Icon.jsx';
 import { useToast } from '../components/Toast.jsx';
 import {
   compute,
@@ -466,6 +467,15 @@ export default function OverviewView() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div className="m" style={{ fontSize: 14, fontWeight: 500 }}>{fm(a.v)}</div>
+                          <button
+                            type="button"
+                            onClick={() => open('balanceHistory', { acctKey: a.custom ? a.id : a.b + '_' + a.t, bank: a.b, type: a.t })}
+                            className="icon-btn"
+                            style={{ width: 28, height: 28 }}
+                            aria-label="Historico de saldos"
+                          >
+                            <Icon name="history" size={15} />
+                          </button>
                           {a.custom && (
                             <button
                               type="button"

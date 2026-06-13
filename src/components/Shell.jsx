@@ -30,6 +30,8 @@ import IncomeModal from '../modals/IncomeModal.jsx';
 import CatManagerModal from '../modals/CatManagerModal.jsx';
 import AcctModal from '../modals/AcctModal.jsx';
 import RulesModal from '../modals/RulesModal.jsx';
+import BalanceUpdateSheet from '../modals/BalanceUpdateSheet.jsx';
+import BalanceHistorySheet from '../modals/BalanceHistorySheet.jsx';
 import ActionSheet from '../modals/ActionSheet.jsx';
 import MoreMenu from '../modals/MoreMenu.jsx';
 
@@ -184,6 +186,8 @@ export default function Shell() {
       <IncomeModal />
       <CatManagerModal />
       <AcctModal />
+      <BalanceUpdateSheet />
+      <BalanceHistorySheet />
       <RulesModal />
       <ActionSheet />
       <MoreMenu />

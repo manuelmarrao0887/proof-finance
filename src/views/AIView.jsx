@@ -16,6 +16,7 @@ import React, { useState, useCallback } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useUI } from '../store/ui.jsx';
+import Icon from '../components/Icon.jsx';
 import { fm, fc, uid } from '../lib/format.js';
 import {
   callAI,
@@ -786,6 +787,22 @@ export default function AIView() {
             PDF / Imagem / Excel
           </button>
         </div>
+      </div>
+
+      {/* Atualizar saldo por print — conta escolhida manualmente */}
+      <div className="cd" style={{ marginBottom: 16, padding: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <div style={{ width: 32, height: 32, background: 'var(--bg3)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="balance" size={16} />
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700 }}>Atualizar saldo</div>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 14, lineHeight: 1.5 }}>
+          Carrega um print do saldo, escolhe a conta e a IA le o valor. Fica registado com data.
+        </div>
+        <button type="button" onClick={() => ui.open('balanceUpdate')} style={{ width: '100%', padding: '12px 0', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', borderRadius: 'var(--r2)', fontSize: 12, fontWeight: 600 }}>
+          Atualizar saldo de uma conta
+        </button>
       </div>
 
       {/* Chat / text input */}
