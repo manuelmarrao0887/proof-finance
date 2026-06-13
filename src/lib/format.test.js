@@ -23,4 +23,16 @@ describe('normalizeStmtDate', () => {
   it('unknown format passes through', () => {
     expect(normalizeStmtDate('ontem')).toBe('ontem');
   });
+  it('fixes YYYY-DD-MM swap when month is impossible', () => {
+    expect(normalizeStmtDate('2025-15-05')).toBe('2025-05-15');
+    expect(normalizeStmtDate('2025-28-05')).toBe('2025-05-28');
+    expect(normalizeStmtDate('2025-22-05')).toBe('2025-05-22');
+  });
+  it('leaves valid YYYY-MM-DD untouched', () => {
+    expect(normalizeStmtDate('2026-04-24')).toBe('2026-04-24');
+    expect(normalizeStmtDate('2025-07-05')).toBe('2025-07-05');
+  });
+  it('pads single-digit ISO parts', () => {
+    expect(normalizeStmtDate('2025-7-5')).toBe('2025-07-05');
+  });
 });

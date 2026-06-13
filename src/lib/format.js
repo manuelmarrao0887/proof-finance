@@ -39,7 +39,19 @@ export function uid() {
 export function normalizeStmtDate(d) {
   if (!d) return '';
   const s = String(d).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // already ISO
+  // ISO-like YYYY-AA-BB. Pad, and FIX day/month swap (YYYY-DD-MM) when the
+  // month field is impossible (>12) — e.g. '2025-15-05' -> '2025-05-15'.
+  const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (iso) {
+    let mon = parseInt(iso[2], 10);
+    let day = parseInt(iso[3], 10);
+    if (mon > 12 && day <= 12) {
+      const t = mon;
+      mon = day;
+      day = t;
+    }
+    return iso[1] + '-' + String(mon).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+  }
   // DD.MM.YYYY or DD/MM/YYYY (also 2-digit year)
   let m = s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);
   if (m) {

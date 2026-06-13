@@ -17,7 +17,7 @@ import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useUI } from '../store/ui.jsx';
 import Icon from '../components/Icon.jsx';
-import { fm, fc, uid } from '../lib/format.js';
+import { fm, fc, uid, normalizeStmtDate } from '../lib/format.js';
 import {
   callAI,
   AI_IMPORT_PROMPT,
@@ -383,7 +383,7 @@ export default function AIView() {
                   desc: String(a.desc).substring(0, 60),
                   amount: Math.abs(Number(a.amount) || 0),
                   cat: a.cat || 'out',
-                  date: a.date || '',
+                  date: normalizeStmtDate(a.date),
                   tags: Array.isArray(a.tags) ? a.tags.slice(0, 5) : undefined,
                 });
                 expTouched = true;
@@ -398,7 +398,7 @@ export default function AIView() {
                   source: a.source || 'salary',
                   recurring: rec,
                   day: day,
-                  date: a.date || '',
+                  date: normalizeStmtDate(a.date),
                   createdAt: Date.now(),
                 });
                 incTouched = true;
@@ -579,7 +579,7 @@ export default function AIView() {
             desc: String(a.desc).substring(0, 60),
             amount: Math.abs(Number(a.amount) || 0),
             cat: a.cat || 'out',
-            date: a.date || '',
+            date: normalizeStmtDate(a.date),
           });
           applied.expense++;
         } else if (a.type === 'add_income' && a.name) {
@@ -593,7 +593,7 @@ export default function AIView() {
             source: a.source || 'salary',
             recurring: rec,
             day: d,
-            date: a.date || '',
+            date: normalizeStmtDate(a.date),
             createdAt: Date.now(),
           });
           applied.income++;

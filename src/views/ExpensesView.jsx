@@ -30,7 +30,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
-import { fm } from '../lib/format.js';
+import { fm, normalizeStmtDate } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import { applySameBeneficiaryCategory, dedupeAddedExp } from '../lib/dedupe.js';
@@ -299,14 +299,24 @@ export default function ExpensesView() {
     );
   }
 
-  // Duplicate imported expenses (e.g. same statement imported twice). Offer a
-  // one-click cleanup that also normalizes legacy 'DD.MM' dates to ISO.
+  // Imported-expense cleanup: remove duplicates AND fix wrong/legacy dates
+  // (DD.MM → ISO and YYYY-DD-MM day/month swaps). One button, only when needed.
   const dupCount = addedExp.length - dedupeAddedExp(addedExp).length;
-  const cleanDuplicates = () => {
-    const cleaned = dedupeAddedExp(addedExp);
-    actions.setAddedExp(cleaned);
-    toast(dupCount + ' duplicad' + (dupCount === 1 ? 'a removida' : 'as removidas'), 'success');
+  const dateBad = addedExp.filter((x) => (x.date || '') !== normalizeStmtDate(x.date)).length;
+  const needsClean = dupCount > 0 || dateBad > 0;
+  const cleanExpenses = () => {
+    actions.setAddedExp(dedupeAddedExp(addedExp));
+    const parts = [];
+    if (dupCount > 0) parts.push(dupCount + ' duplicada' + (dupCount === 1 ? '' : 's') + ' removida' + (dupCount === 1 ? '' : 's'));
+    if (dateBad > 0) parts.push(dateBad + ' data' + (dateBad === 1 ? '' : 's') + ' corrigida' + (dateBad === 1 ? '' : 's'));
+    toast(parts.join(' · ') || 'Despesas importadas limpas', 'success');
   };
+  const cleanLabel =
+    dupCount > 0 && dateBad > 0
+      ? 'Limpar importadas: ' + dupCount + ' duplicada' + (dupCount === 1 ? '' : 's') + ' + ' + dateBad + ' data' + (dateBad === 1 ? '' : 's')
+      : dupCount > 0
+        ? 'Remover ' + dupCount + ' despesa' + (dupCount === 1 ? '' : 's') + ' duplicada' + (dupCount === 1 ? '' : 's')
+        : 'Corrigir ' + dateBad + ' data' + (dateBad === 1 ? '' : 's') + ' errada' + (dateBad === 1 ? '' : 's');
 
   return (
     <div style={{ padding: '0 20px 24px' }}>
@@ -322,18 +332,18 @@ export default function ExpensesView() {
         />
       </div>
 
-      {/* Duplicate cleanup (only when duplicates exist) */}
-      {dupCount > 0 && (
+      {/* Imported-expense cleanup (only when duplicates or wrong dates exist) */}
+      {needsClean && (
         <button
           type="button"
-          onClick={cleanDuplicates}
+          onClick={cleanExpenses}
           style={{ width: '100%', marginBottom: 12, padding: '10px 14px', border: '1px solid var(--warning)', background: 'var(--orange-soft)', color: 'var(--warning)', borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="3 6 5 6 21 6" />
+            <path d="M3 6h18" />
             <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           </svg>
-          Remover {dupCount} despesa{dupCount === 1 ? '' : 's'} duplicada{dupCount === 1 ? '' : 's'}
+          {cleanLabel}
         </button>
       )}
 
