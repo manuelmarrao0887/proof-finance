@@ -73,6 +73,7 @@ export function initialPersisted() {
     forecastMonths: 3,
     fxRates: { EUR: 1, USD: 1.08, GBP: 0.85, BRL: 5.5 },
     aiInsights: null,
+    lastSeenPatchVersion: 0,
   };
 }
 
@@ -102,6 +103,7 @@ export const PERSISTED_KEYS = [
   'forecastMonths',
   'fxRates',
   'aiInsights',
+  'lastSeenPatchVersion',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -124,6 +126,7 @@ export function buildPersistPayload(state) {
     forecastMonths: state.forecastMonths || 3,
     fxRates: state.fxRates || { EUR: 1 },
     aiInsights: state.aiInsights || null,
+    lastSeenPatchVersion: Number(state.lastSeenPatchVersion) || 0,
   };
 }
 
@@ -151,6 +154,7 @@ export function hydrateFromDoc(d) {
     // fxRates merged onto {EUR:1} (orig 557).
     fxRates: d.fxRates && typeof d.fxRates === 'object' ? Object.assign({ EUR: 1 }, d.fxRates) : base.fxRates,
     aiInsights: d.aiInsights || null,
+    lastSeenPatchVersion: Number(d.lastSeenPatchVersion) || 0,
   };
 }
 
@@ -312,6 +316,7 @@ export function StoreProvider({ children }) {
       setDynSnaps: (dynSnaps) => setField('dynSnaps', dynSnaps),
       setFxRates: (fxRates) => setField('fxRates', fxRates),
       setAiInsights: (aiInsights) => setField('aiInsights', aiInsights),
+      setLastSeenPatchVersion: (v) => setField('lastSeenPatchVersion', Number(v) || 0),
       setAiHistory: (aiHistory) => setField('aiHistory', aiHistory),
       pushAiHistory: (entry) =>
         setField('aiHistory', [...(getState().aiHistory || []), entry].slice(-20)),
