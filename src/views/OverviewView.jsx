@@ -21,6 +21,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import Icon from '../components/Icon.jsx';
+import QuickActions from '../components/QuickActions.jsx';
 import { useToast } from '../components/Toast.jsx';
 import {
   compute,
@@ -150,6 +151,9 @@ export default function OverviewView() {
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
+      {/* ── Quick actions (Finany-style) ── */}
+      <QuickActions />
+
       {/* ── Monthly summary card ── */}
       {(!newU || (state.addedExp || []).length > 0 || (state.incomes || []).length > 0) && (
         <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
