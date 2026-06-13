@@ -74,6 +74,7 @@ export function initialPersisted() {
     fxRates: { EUR: 1, USD: 1.08, GBP: 0.85, BRL: 5.5 },
     aiInsights: null,
     lastSeenPatchVersion: 0,
+    dismissedSubs: [],
   };
 }
 
@@ -104,6 +105,7 @@ export const PERSISTED_KEYS = [
   'fxRates',
   'aiInsights',
   'lastSeenPatchVersion',
+  'dismissedSubs',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -127,6 +129,7 @@ export function buildPersistPayload(state) {
     fxRates: state.fxRates || { EUR: 1 },
     aiInsights: state.aiInsights || null,
     lastSeenPatchVersion: Number(state.lastSeenPatchVersion) || 0,
+    dismissedSubs: state.dismissedSubs || [],
   };
 }
 
@@ -155,6 +158,7 @@ export function hydrateFromDoc(d) {
     fxRates: d.fxRates && typeof d.fxRates === 'object' ? Object.assign({ EUR: 1 }, d.fxRates) : base.fxRates,
     aiInsights: d.aiInsights || null,
     lastSeenPatchVersion: Number(d.lastSeenPatchVersion) || 0,
+    dismissedSubs: Array.isArray(d.dismissedSubs) ? d.dismissedSubs : [],
   };
 }
 
@@ -317,6 +321,7 @@ export function StoreProvider({ children }) {
       setFxRates: (fxRates) => setField('fxRates', fxRates),
       setAiInsights: (aiInsights) => setField('aiInsights', aiInsights),
       setLastSeenPatchVersion: (v) => setField('lastSeenPatchVersion', Number(v) || 0),
+      dismissSub: (key) => setField('dismissedSubs', [...(getState().dismissedSubs || []), key]),
       setAiHistory: (aiHistory) => setField('aiHistory', aiHistory),
       pushAiHistory: (entry) =>
         setField('aiHistory', [...(getState().aiHistory || []), entry].slice(-20)),

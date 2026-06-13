@@ -32,6 +32,7 @@ export const hist = [
 export const accts = [
   { b: 'Bankinter', t: 'Conta a Ordem', v: 292.32, n: '584,64 / 2', c: 'Liquidez' },
   { b: 'Activobank', t: 'Conta a Ordem', v: 325.46, c: 'Liquidez' },
+  { b: 'Revolut', t: 'Conta a Ordem', v: 0, c: 'Liquidez' },
   { b: 'Moey', t: 'Conta a Ordem', v: 3.79, n: '3 contas', c: 'Liquidez' },
   { b: 'Trade Republic', t: 'Poupanca', v: 7055.85, n: 'Juros: 82 EUR', c: 'Poupanca' },
   { b: 'Trade Republic', t: 'Corretagem', v: 2228.09, n: '44%', c: 'Investimentos' },
@@ -265,6 +266,7 @@ export function cashFlowProjection(state, months) {
 export function detectSubscriptions(state) {
   const addedExp = (state && state.addedExp) || [];
   const recurring = (state && state.recurring) || [];
+  const dismissed = (state && state.dismissedSubs) || [];
   const now = Date.now();
   const dayMs = 86400000;
   const byKey = {};
@@ -281,6 +283,8 @@ export function detectSubscriptions(state) {
   Object.keys(byKey).forEach(function (k) {
     const g = byKey[k];
     if (g.occurrences.length < 2) return;
+    // Skip suggestions the user has dismissed ("nao e subscricao").
+    if (dismissed.indexOf(k) > -1) return;
     // Check if already in recurring
     const existing = recurring.find(function (r) {
       return r.name.toLowerCase() === k;

@@ -88,6 +88,12 @@ export default function OverviewView() {
     toast('Recorrencia criada', 'success');
   };
 
+  // Dismiss a suggestion: mark its key so detectSubscriptions stops suggesting it.
+  const dismissSub = (sub) => {
+    actions.dismissSub(sub.key);
+    toast('Sugestao dispensada', 'success');
+  };
+
   // ── Health score (only when not new) ──────────────────────────────────
   const hs = !newU ? healthScore(s) : null;
   const hsCol = hs ? (hs.score >= 70 ? 'var(--success)' : hs.score >= 50 ? 'var(--warning)' : 'var(--danger)') : '';
@@ -284,22 +290,41 @@ export default function OverviewView() {
                       {sub.count} vezes · ~{fc(sub.monthlyEstimate)}/mes
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => addSub(sub)}
-                    style={{
-                      padding: '6px 12px',
-                      border: '1px solid var(--fg)',
-                      background: 'var(--fg)',
-                      color: 'var(--bg)',
-                      borderRadius: 999,
-                      fontSize: 11,
-                      fontWeight: 500,
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    Adicionar
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={() => dismissSub(sub)}
+                      aria-label={'Nao e subscricao: ' + sub.desc}
+                      style={{
+                        padding: '6px 12px',
+                        border: '1px solid var(--border)',
+                        background: 'transparent',
+                        color: 'var(--fg-muted)',
+                        borderRadius: 999,
+                        fontSize: 11,
+                        fontWeight: 500,
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      Nao e
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => addSub(sub)}
+                      style={{
+                        padding: '6px 12px',
+                        border: '1px solid var(--primary)',
+                        background: 'var(--primary)',
+                        color: '#fff',
+                        borderRadius: 999,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      Adicionar
+                    </button>
+                  </div>
                 </div>
               ))}
               {subs.length > 3 && (

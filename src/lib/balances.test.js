@@ -105,8 +105,8 @@ describe('listAccounts', () => {
     expect(acti.custom).toBe(false);
   });
   it('appends custom accounts keyed by id', () => {
-    const out = listAccounts({ customAccts: [{ id: 'x1', bank: 'Revolut', type: 'Conta a Ordem', category: 'Liquidez' }] });
-    const rev = out.find((a) => a.bank === 'Revolut');
+    const out = listAccounts({ customAccts: [{ id: 'x1', bank: 'Wise', type: 'Conta a Ordem', category: 'Liquidez' }] });
+    const rev = out.find((a) => a.bank === 'Wise');
     expect(rev.acctKey).toBe('x1');
     expect(rev.custom).toBe(true);
     expect(rev.id).toBe('x1');
