@@ -5,6 +5,9 @@ import {
   accountHistory,
   addReading,
   formatReadingDate,
+  parseBalanceResult,
+  listAccounts,
+  BALANCE_PROMPT,
 } from './balances.js';
 
 describe('balanceAcctKey', () => {
@@ -66,5 +69,52 @@ describe('formatReadingDate', () => {
   });
   it('passes through unknown formats', () => {
     expect(formatReadingDate('hoje')).toBe('hoje');
+  });
+});
+
+describe('parseBalanceResult', () => {
+  it('numeric value passes through', () => {
+    expect(parseBalanceResult({ value: 750.5 })).toEqual({ value: 750.5 });
+  });
+  it('pt string "1.300,00" -> 1300', () => {
+    expect(parseBalanceResult({ value: '1.300,00' })).toEqual({ value: 1300 });
+  });
+  it('us string "1234.56" -> 1234.56', () => {
+    expect(parseBalanceResult({ value: '1234.56' })).toEqual({ value: 1234.56 });
+  });
+  it('string with currency symbol', () => {
+    expect(parseBalanceResult({ value: '€ 325,46' })).toEqual({ value: 325.46 });
+  });
+  it('error passthrough', () => {
+    expect(parseBalanceResult({ error: 'Saldo nao encontrado' })).toEqual({ error: 'Saldo nao encontrado' });
+  });
+  it('junk -> error', () => {
+    expect(parseBalanceResult({ value: 'abc' }).error).toBeTruthy();
+  });
+  it('null -> error', () => {
+    expect(parseBalanceResult(null).error).toBeTruthy();
+  });
+});
+
+describe('listAccounts', () => {
+  it('includes template accounts with acctKey', () => {
+    const out = listAccounts({ customAccts: [] });
+    const acti = out.find((a) => a.bank === 'Activobank');
+    expect(acti).toBeTruthy();
+    expect(acti.acctKey).toBe('Activobank_Conta a Ordem');
+    expect(acti.custom).toBe(false);
+  });
+  it('appends custom accounts keyed by id', () => {
+    const out = listAccounts({ customAccts: [{ id: 'x1', bank: 'Revolut', type: 'Conta a Ordem', category: 'Liquidez' }] });
+    const rev = out.find((a) => a.bank === 'Revolut');
+    expect(rev.acctKey).toBe('x1');
+    expect(rev.custom).toBe(true);
+    expect(rev.id).toBe('x1');
+  });
+});
+
+describe('BALANCE_PROMPT', () => {
+  it('asks for a value-only JSON', () => {
+    expect(BALANCE_PROMPT).toMatch(/value/);
   });
 });
