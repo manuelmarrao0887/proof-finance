@@ -29,6 +29,7 @@ import React, {
 } from 'react';
 import { loadUserDoc, saveUserDoc } from '../firebase/client.js';
 import { bdgDefault } from '../lib/finance.js';
+import { uid } from '../lib/format.js';
 
 /* ── Theme (orig applyTheme 310-316) ─────────────────────────────────────── */
 export function applyTheme(t) {
@@ -61,6 +62,7 @@ export function initialPersisted() {
     dynAccts: null,
     dynSnaps: [],
     addedExp: [],
+    balanceLog: [],
     theme: 'system',
     goals: [],
     recurring: [],
@@ -89,6 +91,7 @@ export const PERSISTED_KEYS = [
   'dynAccts',
   'dynSnaps',
   'addedExp',
+  'balanceLog',
   'theme',
   'goals',
   'recurring',
@@ -110,6 +113,7 @@ export function buildPersistPayload(state) {
     dynAccts: state.dynAccts || null,
     dynSnaps: state.dynSnaps || [],
     addedExp: state.addedExp || [],
+    balanceLog: state.balanceLog || [],
     theme: state.theme || 'system',
     goals: state.goals || [],
     recurring: state.recurring || [],
@@ -134,6 +138,7 @@ export function hydrateFromDoc(d) {
     dynAccts: d.dynAccts || null,
     dynSnaps: Array.isArray(d.dynSnaps) ? d.dynSnaps : [],
     addedExp: Array.isArray(d.addedExp) ? d.addedExp : [],
+    balanceLog: Array.isArray(d.balanceLog) ? d.balanceLog : [],
     theme: d.theme || 'system',
     goals: Array.isArray(d.goals) ? d.goals : [],
     recurring: Array.isArray(d.recurring) ? d.recurring : [],
@@ -321,6 +326,38 @@ export function StoreProvider({ children }) {
         ),
       deleteExpense: (idx) =>
         setField('addedExp', (getState().addedExp || []).filter((_, i) => i !== idx)),
+
+      // balance readings (balanceLog) — dated balance snapshots per account.
+      setBalanceLog: (balanceLog) => setField('balanceLog', balanceLog),
+      addBalanceReading: ({ account, value, date }) => {
+        const st = getState();
+        const v = Number(value) || 0;
+        const acctKey = account.custom ? account.id : account.bank + '_' + account.type;
+        const reading = {
+          id: uid(),
+          acctKey,
+          bank: account.bank,
+          type: account.type,
+          value: v,
+          date,
+          createdAt: Date.now(),
+        };
+        setField('balanceLog', [...(st.balanceLog || []), reading]);
+        // Update the live balance so compute()/net worth reflect the new value.
+        if (account.custom) {
+          setField(
+            'customAccts',
+            (st.customAccts || []).map((a) =>
+              a.id === account.id ? { ...a, value: v, updated: (date || '').replace(/-/g, '.') } : a
+            )
+          );
+        } else {
+          const dyn = st.dynAccts ? { ...st.dynAccts } : {};
+          const prev = dyn[acctKey] || {};
+          dyn[acctKey] = { v, d: (date || '').replace(/-/g, '.'), n: prev.n || null };
+          setField('dynAccts', dyn);
+        }
+      },
 
       // categories (bdg)
       setBdg: (bdg) => setField('bdg', bdg),
