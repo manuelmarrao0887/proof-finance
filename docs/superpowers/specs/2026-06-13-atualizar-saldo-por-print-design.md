@@ -191,6 +191,32 @@ balanceLog: [
 Ambas avançam neste ciclo ("avança com tudo de uma vez"), mas são planeadas e
 verificadas como blocos distintos.
 
+## Adendas (pedidos posteriores)
+
+### D — Otimização de leituras Firebase (cache)
+
+- Ativar **cache persistente do Firestore** (IndexedDB) na init via
+  `initializeFirestore(app, { localCache: persistentLocalCache({ tabManager:
+  persistentMultipleTabManager() }) })`.
+- `loadUserDoc` passa a **cache-first**: tenta `getDocFromCache` e só vai ao
+  servidor (`getDoc`) em cache-miss. Resultado: após o primeiro carregamento,
+  cargas seguintes servem da cache (0 leituras de servidor até nova escrita).
+- Caveat assumido (app pessoal): alterações feitas noutro dispositivo só são
+  lidas em cache-miss; aceitável para o uso single-user.
+
+### E — Modelo de patch notes
+
+- Lista de notas versionada **em código** (`src/lib/patchNotes.js`):
+  `PATCH_NOTES = [{ version:int, date, title, items:[] }]` (mais recente
+  primeiro); `LATEST_PATCH_VERSION` e `hasUnseenNotes(lastSeen)`.
+- "Versão vista" guardada no **perfil Firestore** (novo campo persistido
+  `lastSeenPatchVersion`, sincroniza entre dispositivos via o save já existente).
+- **Auto-abre** um sheet `PatchNotesSheet` quando `LATEST_PATCH_VERSION >
+  lastSeenPatchVersion` (gancho no `Shell`, só para utilizadores com dados —
+  `!isNewUser` — para não interromper o onboarding). Ao fechar, grava
+  `lastSeenPatchVersion = LATEST_PATCH_VERSION`.
+- **Acesso pelo menu:** entrada "Novidades" no `MoreMenu`.
+
 ## Riscos / notas
 
 - O delta de saldo é líquido; o cálculo de despesa foi deliberadamente deixado

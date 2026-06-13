@@ -1025,7 +1025,400 @@ git commit -m "refactor(ai): actionLabel usa nomes de icone + render via <Icon>"
 
 ---
 
-## Verificação manual final (Fase A+B+C)
+## FASE D — Otimização de leituras Firebase (cache)
+
+### Task 10: Firestore cache persistente + load cache-first
+
+**Files:**
+- Modify: `src/firebase/client.js` (imports do firestore; init do `_db`; `loadUserDoc`)
+
+- [ ] **Step 1: Trocar a init do Firestore para cache persistente**
+
+In `src/firebase/client.js`, replace the firestore import block:
+
+```js
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+```
+
+with:
+
+```js
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  doc,
+  getDoc,
+  getDocFromCache,
+  setDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+```
+
+- [ ] **Step 2: Use `initializeFirestore` with persistent cache**
+
+In the init `try` block, replace:
+
+```js
+    _db = getFirestore(_app);
+```
+
+with:
+
+```js
+    _db = initializeFirestore(_app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
+```
+
+- [ ] **Step 3: Make `loadUserDoc` cache-first**
+
+Replace the existing `loadUserDoc`:
+
+```js
+export function loadUserDoc(uid) {
+  if (!db || !uid) return Promise.resolve(null);
+  return getDoc(doc(db, 'users', uid)).then((snap) =>
+    snap.exists() ? snap.data() : null
+  );
+}
+```
+
+with:
+
+```js
+export function loadUserDoc(uid) {
+  if (!db || !uid) return Promise.resolve(null);
+  const ref = doc(db, 'users', uid);
+  // Cache-first: serve from IndexedDB cache when available (0 server reads),
+  // only hit the server on a cache miss. Reduces Firestore read volume.
+  return getDocFromCache(ref)
+    .then((snap) => (snap.exists() ? snap.data() : null))
+    .catch(() => getDoc(ref).then((snap) => (snap.exists() ? snap.data() : null)));
+}
+```
+
+- [ ] **Step 4: Verify build**
+
+Run: `npm run build`
+Expected: build succeeds (no unresolved firestore exports).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/firebase/client.js
+git commit -m "perf(firebase): cache persistente do Firestore + loadUserDoc cache-first"
+```
+
+---
+
+## FASE E — Modelo de patch notes
+
+### Task 11: `lib/patchNotes.js` + campo `lastSeenPatchVersion` no store
+
+**Files:**
+- Create: `src/lib/patchNotes.js`
+- Create: `src/lib/patchNotes.test.js`
+- Modify: `src/store/store.jsx`
+
+- [ ] **Step 1: Write the failing test**
+
+Create `src/lib/patchNotes.test.js`:
+
+```js
+import { describe, it, expect } from 'vitest';
+import { PATCH_NOTES, LATEST_PATCH_VERSION, hasUnseenNotes } from './patchNotes.js';
+
+describe('PATCH_NOTES', () => {
+  it('is non-empty and newest-first (descending version)', () => {
+    expect(PATCH_NOTES.length).toBeGreaterThan(0);
+    for (let i = 1; i < PATCH_NOTES.length; i++) {
+      expect(PATCH_NOTES[i - 1].version).toBeGreaterThan(PATCH_NOTES[i].version);
+    }
+  });
+  it('each note has version, date, title, items[]', () => {
+    PATCH_NOTES.forEach((n) => {
+      expect(typeof n.version).toBe('number');
+      expect(typeof n.date).toBe('string');
+      expect(typeof n.title).toBe('string');
+      expect(Array.isArray(n.items)).toBe(true);
+    });
+  });
+});
+
+describe('LATEST_PATCH_VERSION', () => {
+  it('equals the highest version', () => {
+    expect(LATEST_PATCH_VERSION).toBe(PATCH_NOTES[0].version);
+  });
+});
+
+describe('hasUnseenNotes', () => {
+  it('true when lastSeen < latest', () => {
+    expect(hasUnseenNotes(LATEST_PATCH_VERSION - 1)).toBe(true);
+  });
+  it('false when lastSeen >= latest', () => {
+    expect(hasUnseenNotes(LATEST_PATCH_VERSION)).toBe(false);
+    expect(hasUnseenNotes(LATEST_PATCH_VERSION + 1)).toBe(false);
+  });
+  it('treats undefined/0 as unseen', () => {
+    expect(hasUnseenNotes(undefined)).toBe(true);
+    expect(hasUnseenNotes(0)).toBe(true);
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/lib/patchNotes.test.js`
+Expected: FAIL — module not found.
+
+- [ ] **Step 3: Write minimal implementation**
+
+Create `src/lib/patchNotes.js`:
+
+```js
+/* ════════════════════════════════════════════════════════════════════════
+   Patch notes — changelog versionado em código. `version` é um inteiro
+   incremental (não confundir com package.json). Mais recente primeiro.
+   Para lançar novas notas: adiciona uma entrada no topo com version+1.
+   ════════════════════════════════════════════════════════════════════════ */
+
+export const PATCH_NOTES = [
+  {
+    version: 1,
+    date: '2026-06-13',
+    title: 'Atualizar saldo por print + Novidades',
+    items: [
+      'Novo: atualizar o saldo de uma conta a partir de um print (assistente IA).',
+      'Novo: histórico de saldos datado por conta.',
+      'Novo: ecrã de Novidades (patch notes).',
+      'Melhoria: ícones SVG em vez de emojis.',
+      'Melhoria: menos leituras ao Firebase (cache).',
+    ],
+  },
+];
+
+export const LATEST_PATCH_VERSION = PATCH_NOTES.reduce(
+  (m, n) => (n.version > m ? n.version : m),
+  0
+);
+
+// True when the user hasn't seen the latest notes yet.
+export function hasUnseenNotes(lastSeenVersion) {
+  return (Number(lastSeenVersion) || 0) < LATEST_PATCH_VERSION;
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run src/lib/patchNotes.test.js`
+Expected: PASS.
+
+- [ ] **Step 5: Add `lastSeenPatchVersion` to the store**
+
+In `src/store/store.jsx`:
+
+(a) In `initialPersisted()`, add after `aiInsights: null,`:
+
+```js
+    aiInsights: null,
+    lastSeenPatchVersion: 0,
+```
+
+(b) In `PERSISTED_KEYS`, add after `'aiInsights',`:
+
+```js
+  'aiInsights',
+  'lastSeenPatchVersion',
+```
+
+(c) In `buildPersistPayload`, add after `aiInsights: state.aiInsights || null,`:
+
+```js
+    aiInsights: state.aiInsights || null,
+    lastSeenPatchVersion: Number(state.lastSeenPatchVersion) || 0,
+```
+
+(d) In `hydrateFromDoc`, add after the `aiInsights` line:
+
+```js
+    aiInsights: d.aiInsights || null,
+    lastSeenPatchVersion: Number(d.lastSeenPatchVersion) || 0,
+```
+
+(e) In the `actions` useMemo, near the other scalar setters (after `setAiInsights`), add:
+
+```js
+      setLastSeenPatchVersion: (v) => setField('lastSeenPatchVersion', Number(v) || 0),
+```
+
+- [ ] **Step 6: Run the full suite**
+
+Run: `npx vitest run`
+Expected: PASS.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/lib/patchNotes.js src/lib/patchNotes.test.js src/store/store.jsx
+git commit -m "feat(patch-notes): modelo de notas + lastSeenPatchVersion no store"
+```
+
+---
+
+### Task 12: `PatchNotesSheet` + registar modal + auto-abrir + entrada no menu
+
+**Files:**
+- Create: `src/modals/PatchNotesSheet.jsx`
+- Modify: `src/store/ui.jsx` (add `'patchNotes'` modal key)
+- Modify: `src/components/Shell.jsx` (mount + auto-open effect)
+- Modify: `src/modals/MoreMenu.jsx` (entrada "Novidades")
+
+- [ ] **Step 1: Create the sheet**
+
+Create `src/modals/PatchNotesSheet.jsx`:
+
+```jsx
+/* ════════════════════════════════════════════════════════════════════════
+   PatchNotesSheet — "Novidades". Lista PATCH_NOTES; ao fechar marca a versao
+   mais recente como vista (lastSeenPatchVersion). useModal('patchNotes').
+   ════════════════════════════════════════════════════════════════════════ */
+
+import React, { useCallback } from 'react';
+import Sheet from '../components/Sheet.jsx';
+import { useModal } from '../store/ui.jsx';
+import { useStore } from '../store/store.jsx';
+import { PATCH_NOTES, LATEST_PATCH_VERSION } from '../lib/patchNotes.js';
+import { formatReadingDate } from '../lib/balances.js';
+
+export default function PatchNotesSheet() {
+  const { isOpen, close } = useModal('patchNotes');
+  const { state, actions } = useStore();
+
+  const onClose = useCallback(() => {
+    if ((Number(state.lastSeenPatchVersion) || 0) < LATEST_PATCH_VERSION) {
+      actions.setLastSeenPatchVersion(LATEST_PATCH_VERSION);
+    }
+    close();
+  }, [state.lastSeenPatchVersion, actions, close]);
+
+  if (!isOpen) return null;
+
+  return (
+    <Sheet open={isOpen} onClose={onClose} title="Novidades">
+      {PATCH_NOTES.map((n) => (
+        <div key={n.version} style={{ marginBottom: 18 }}>
+          <div className="rw" style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>{n.title}</div>
+            <span className="m" style={{ fontSize: 10, color: 'var(--text3)' }}>{formatReadingDate(n.date)}</span>
+          </div>
+          {n.items.map((it, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, padding: '3px 0', fontSize: 13, color: 'var(--text)' }}>
+              <span style={{ color: 'var(--blue)' }}>&bull;</span>
+              <span>{it}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+      <button type="button" onClick={onClose} style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 14, fontWeight: 600, borderRadius: 999, marginTop: 6 }}>
+        Percebido
+      </button>
+    </Sheet>
+  );
+}
+```
+
+- [ ] **Step 2: Register the modal key**
+
+In `src/store/ui.jsx`, in `MODALS`, add after `'balanceHistory',`:
+
+```js
+  'balanceHistory', // historico de saldos de uma conta
+  'patchNotes',     // novidades / changelog
+```
+
+- [ ] **Step 3: Mount + auto-open in Shell**
+
+In `src/components/Shell.jsx`:
+
+(a) Add imports after the `BalanceHistorySheet` import:
+
+```js
+import BalanceHistorySheet from '../modals/BalanceHistorySheet.jsx';
+import PatchNotesSheet from '../modals/PatchNotesSheet.jsx';
+```
+
+(b) Add a `useEffect` that auto-opens patch notes once for users with data. Near the top of the `Shell` component body (after the hooks that obtain `state`, `currentUser`/store and `useUI`), add. First ensure these imports exist at the top of the file:
+
+```js
+import { useEffect, useRef } from 'react';
+import { hasUnseenNotes } from '../lib/patchNotes.js';
+import { isNewUser } from '../lib/finance.js';
+```
+
+(If `react` is imported as `import React from 'react';`, change to `import React, { useEffect, useRef } from 'react';`. If `useUI`/`useStore` are already destructured in Shell, reuse them; otherwise add `const { state, currentUser } = useStore();` and `const ui = useUI();` — check existing Shell code and DO NOT duplicate.)
+
+Add the effect:
+
+```js
+  const patchChecked = useRef(false);
+  useEffect(() => {
+    if (patchChecked.current) return;
+    if (!currentUser) return;
+    patchChecked.current = true;
+    if (!isNewUser(state) && hasUnseenNotes(state.lastSeenPatchVersion)) {
+      ui.open('patchNotes');
+    }
+  }, [currentUser, state, ui]);
+```
+
+(c) In the render block, after `<BalanceHistorySheet />`, add:
+
+```jsx
+      <BalanceHistorySheet />
+      <PatchNotesSheet />
+```
+
+- [ ] **Step 4: Add "Novidades" entry in MoreMenu**
+
+In `src/modals/MoreMenu.jsx`, add a button between the Definicoes button and the final "Fechar" cancel button (after the `</button>` that closes the Definicoes `sheet-item`):
+
+```jsx
+        <button className="sheet-item" type="button" onClick={() => { close(); ui.open('patchNotes'); }}>
+          <div className="sheet-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z" />
+            </svg>
+          </div>
+          <div className="sheet-text">
+            <div className="sheet-text-title">Novidades</div>
+            <div className="sheet-text-sub">O que mudou nesta versao</div>
+          </div>
+          {Chevron}
+        </button>
+```
+
+- [ ] **Step 5: Verify**
+
+Run: `npx vitest run` → Expected: PASS.
+Run: `npm run build` → Expected: build succeeds.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/modals/PatchNotesSheet.jsx src/store/ui.jsx src/components/Shell.jsx src/modals/MoreMenu.jsx
+git commit -m "feat(patch-notes): PatchNotesSheet, auto-abrir e entrada no menu"
+```
+
+---
+
+## Verificação manual final (Fase A+B+C+D+E)
 
 - [ ] `npm run dev`, autenticar.
 - [ ] Tab IA → "Atualizar saldo de uma conta" → escolher Activobank · Conta a Ordem → "Introduzir manualmente" → valor 1300, data 2026-05-01 → Confirmar. Repetir com 750 / 2026-05-30.
@@ -1033,6 +1426,8 @@ git commit -m "refactor(ai): actionLabel usa nomes de icone + render via <Icon>"
 - [ ] Confirmar que o saldo da conta no Overview reflete 750 e "Atualizado 2026.05.30".
 - [ ] (Com API key) repetir usando um print real via Câmara/Ficheiro; confirmar que a AI preenche o valor.
 - [ ] Tab IA → importar um documento que gere ações → confirmar que os ícones aparecem como SVG (não emoji).
+- [ ] Recarregar a app já autenticado → no separador Network/DevTools, confirmar que não há nova leitura de servidor do doc `users/{uid}` (servido da cache).
+- [ ] Primeiro arranque após esta versão (com dados) → abre automaticamente "Novidades"; fechar → não reaparece em recargas. Menu "Mais" → "Novidades" reabre.
 
 ---
 
