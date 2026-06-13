@@ -19,6 +19,8 @@ export const MODALS = [
   'rules',      // auto-categorize rules   (rRulesModal)
   'action',     // central "+" action sheet(rActionSheet)
   'more',       // "Mais" menu             (rMoreMenu)
+  'balanceUpdate',  // atualizar saldo por print
+  'balanceHistory', // historico de saldos de uma conta
 ]
 
 const VALID_TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai']
