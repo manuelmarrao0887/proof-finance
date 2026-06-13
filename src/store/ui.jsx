@@ -21,6 +21,7 @@ export const MODALS = [
   'more',       // "Mais" menu             (rMoreMenu)
   'balanceUpdate',  // atualizar saldo por print
   'balanceHistory', // historico de saldos de uma conta
+  'patchNotes',     // novidades / changelog
 ]
 
 const VALID_TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai']

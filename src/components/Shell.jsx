@@ -3,9 +3,11 @@
    with all modals/sheets mounted. Navigation + modal state come from useUI().
    ════════════════════════════════════════════════════════════════════════ */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
+import { hasUnseenNotes } from '../lib/patchNotes.js';
+import { isNewUser } from '../lib/finance.js';
 
 import Hero from './Hero.jsx';
 import ContextStrip from './ContextStrip.jsx';
@@ -32,6 +34,7 @@ import AcctModal from '../modals/AcctModal.jsx';
 import RulesModal from '../modals/RulesModal.jsx';
 import BalanceUpdateSheet from '../modals/BalanceUpdateSheet.jsx';
 import BalanceHistorySheet from '../modals/BalanceHistorySheet.jsx';
+import PatchNotesSheet from '../modals/PatchNotesSheet.jsx';
 import ActionSheet from '../modals/ActionSheet.jsx';
 import MoreMenu from '../modals/MoreMenu.jsx';
 
@@ -152,8 +155,19 @@ function BottomNav({ tab, onTab, onPlus, onMore }) {
 }
 
 export default function Shell() {
-  const { state, actions, syncStatus } = useStore();
+  const { state, actions, syncStatus, currentUser } = useStore();
   const { tab, goTab, open } = useUI();
+
+  // Auto-open "Novidades" once per session for existing users with unseen notes.
+  const patchChecked = useRef(false);
+  useEffect(() => {
+    if (patchChecked.current) return;
+    if (!currentUser) return;
+    patchChecked.current = true;
+    if (!isNewUser(state) && hasUnseenNotes(state.lastSeenPatchVersion)) {
+      open('patchNotes');
+    }
+  }, [currentUser, state, open]);
 
   const toggleTheme = React.useCallback(() => {
     // light -> dark -> system -> light (orig toggleTheme 3111 cycles theme)
@@ -188,6 +202,7 @@ export default function Shell() {
       <AcctModal />
       <BalanceUpdateSheet />
       <BalanceHistorySheet />
+      <PatchNotesSheet />
       <RulesModal />
       <ActionSheet />
       <MoreMenu />

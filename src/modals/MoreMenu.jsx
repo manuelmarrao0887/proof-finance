@@ -92,6 +92,19 @@ export default function MoreMenu() {
           {Chevron}
         </button>
 
+        <button className="sheet-item" type="button" onClick={() => { close(); ui.open('patchNotes'); }}>
+          <div className="sheet-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z" />
+            </svg>
+          </div>
+          <div className="sheet-text">
+            <div className="sheet-text-title">Novidades</div>
+            <div className="sheet-text-sub">O que mudou nesta versao</div>
+          </div>
+          {Chevron}
+        </button>
+
         <button className="sheet-cancel" type="button" onClick={close} style={{ marginTop: 14 }}>
           Fechar
         </button>
