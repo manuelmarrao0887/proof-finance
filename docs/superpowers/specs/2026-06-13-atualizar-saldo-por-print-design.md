@@ -44,8 +44,10 @@ saldo.
 3. **Lista de contas no seletor:** contas-template + `customAccts`, agrupadas
    por plataforma.
 4. **Data:** cada leitura tem data (default hoje, editável).
-5. **Histórico:** guardar todas as leituras datadas E mostrá-las numa lista no
-   detalhe da conta (`AcctModal`).
+5. **Histórico:** guardar todas as leituras datadas E mostrá-las numa lista.
+   Como o `AcctModal` só serve contas custom, a lista vive num sheet dedicado
+   (`BalanceHistorySheet`) aberto a partir de um botão em cada linha de conta na
+   `OverviewView` — cobre contas template e custom de forma uniforme.
 6. **Ícones:** remover TODOS os emojis de sistema da app e usar ícones SVG do
    /ui-ux-pro-max.
 
@@ -133,20 +135,22 @@ balanceLog: [
     `customAccts`) conforme o tipo de conta.
   - Setter `setBalanceLog`.
 
-- `src/store/ui.jsx` — registar o modal `balanceUpdate`.
+- `src/store/ui.jsx` — registar os modais `balanceUpdate` e `balanceHistory`.
 
 - `src/views/AIView.jsx`:
   - Botão "Atualizar saldo" que abre o `balanceUpdate` modal.
   - Substituir os ícones-emoji de `actionLabel` por `<Icon>`.
 
-- `src/modals/AcctModal.jsx` — secção "Histórico de saldos" com a lista de
-  leituras datadas da conta (via `accountHistory`).
+- `src/views/OverviewView.jsx` — botão "histórico" em cada linha de conta que
+  abre o `BalanceHistorySheet` para aquela conta.
 
-- Ficheiros com emojis de sistema a converter para `<Icon>`: `App.jsx`,
-  `components/Onboarding.jsx`, `views/OverviewView.jsx`, `views/GoalsView.jsx`,
-  `modals/ImportStatementSheet.jsx` (e quaisquer outros encontrados num grep
-  final). Testes (`finance.test.js`) só são tocados se o emoji fizer parte de
-  uma asserção que mude.
+- `src/components/Shell.jsx` — montar `<BalanceUpdateSheet />` e
+  `<BalanceHistorySheet />`.
+
+- Emojis de sistema: a única ocorrência renderizada na UI são os 6 ícones-emoji
+  do `actionLabel` no `AIView.jsx` (🏦 💰 🧾 🎯 🔁 📊). São substituídos por
+  `<Icon>`. (Os `→`/`•` noutros ficheiros são setas/bullets em comentários de
+  código, não emojis de UI — não são tocados.)
 
 ### Fluxo de dados (atualizar saldo)
 
@@ -176,12 +180,12 @@ balanceLog: [
 - `src/lib/balances.test.js` (TDD): `balanceAcctKey`, `latestReading`,
   `accountHistory` (ordenação), `addReading` (imutabilidade), `parseBalanceResult`
   (número válido, string com símbolos, erro).
-- Verificação manual do fluxo no sheet e da lista no `AcctModal`.
+- Verificação manual do fluxo no sheet e da lista no `BalanceHistorySheet`.
 
 ## Faseamento
 
 1. **Fase A+B** — modelo `balanceLog` + ação do store + `lib/balances.js` (+
-   testes) + `BalanceUpdateSheet` + botão no AIView + histórico no `AcctModal`.
+   testes) + `BalanceUpdateSheet` + botão no AIView + `BalanceHistorySheet`.
 2. **Fase C** — `Icon.jsx` + remoção app-wide de emojis.
 
 Ambas avançam neste ciclo ("avança com tudo de uma vez"), mas são planeadas e
