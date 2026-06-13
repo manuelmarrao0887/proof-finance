@@ -118,7 +118,7 @@ function renderMD(t) {
 function actionLabel(a) {
   if (a.type === 'update_balance')
     return {
-      icon: '&#127974;',
+      icon: 'bank',
       lbl: (a.account_bank || '') + ' ' + (a.account_type || ''),
       val: fm(a.value || 0),
       tab: 'Resumo',
@@ -126,7 +126,7 @@ function actionLabel(a) {
     };
   if (a.type === 'add_expense')
     return {
-      icon: '&#128176;',
+      icon: 'expense',
       lbl: a.desc || '',
       val: '-' + fm(Math.abs(a.amount || 0)) + ' &middot; ' + (a.cat || 'out'),
       tab: 'Despesas',
@@ -134,7 +134,7 @@ function actionLabel(a) {
     };
   if (a.type === 'add_income')
     return {
-      icon: '&#129534;',
+      icon: 'income',
       lbl: a.name || '',
       val: '+' + fm(a.amount || 0) + ' &middot; ' + (a.source || 'other'),
       tab: 'Receitas',
@@ -142,7 +142,7 @@ function actionLabel(a) {
     };
   if (a.type === 'add_goal')
     return {
-      icon: '&#127919;',
+      icon: 'goal',
       lbl: a.name || '',
       val: 'Meta ' + fm(a.target || 0),
       tab: 'Metas',
@@ -150,7 +150,7 @@ function actionLabel(a) {
     };
   if (a.type === 'add_recurring')
     return {
-      icon: '&#128257;',
+      icon: 'recurring',
       lbl: a.name || '',
       val: fm(a.amount || 0) + ' &middot; dia ' + (a.day || 1),
       tab: 'Recor.',
@@ -158,13 +158,13 @@ function actionLabel(a) {
     };
   if (a.type === 'snapshot')
     return {
-      icon: '&#128202;',
+      icon: 'chart',
       lbl: 'Snapshot ' + (a.label || ''),
       val: 'Liq ' + fc(a.liq || 0) + ' &middot; Inv ' + fc(a.inv || 0),
       tab: 'Resumo',
       color: 'var(--success)',
     };
-  return { icon: '?', lbl: a.type || 'desconhecido', val: '', tab: '', color: 'var(--text3)' };
+  return { icon: 'help', lbl: a.type || 'desconhecido', val: '', tab: '', color: 'var(--text3)' };
 }
 
 /* tiny helper: render an HTML entity / small html string inline. */
@@ -881,7 +881,7 @@ export default function AIView() {
                       return (
                         <div key={ai} className="rw" style={{ padding: '4px 0' }}>
                           <span style={{ fontSize: 11, color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>
-                            <H html={info.icon} /> {info.lbl}
+                            <Icon name={info.icon} size={12} /> {info.lbl}
                           </span>
                           <H className="m" style={{ fontSize: 11, fontWeight: 600, color: info.color }} html={info.val} />
                         </div>
@@ -1016,7 +1016,7 @@ function AIImportPanel({ aiImport, aiImportSel, onToggle, onSelectAll, onCancel,
                       </svg>
                     )}
                   </div>
-                  <H style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }} html={info.icon} />
+                  <Icon name={info.icon} size={18} style={{ flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="rw">
                       <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>{info.lbl}</span>
