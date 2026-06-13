@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   Recurring modal (Nova / Editar subscricao) — React port of rRecModal
+   Recurring modal (Nova / Editar subscrição) — React port of rRecModal
    (orig 1487-1506) + editRec (1508) / saveRec (1514) / deleteRec (1532).
 
    - Rendered inside the shared <Sheet>.
@@ -72,11 +72,11 @@ export default function RecModal() {
     let d = parseInt(String(draft.day) || '1');
     const c = draft.cat;
     if (!n) {
-      toast('Nome obrigatorio', 'error');
+      toast('Nome obrigatório', 'error');
       return;
     }
     if (isNaN(a) || a <= 0) {
-      toast('Valor invalido', 'error');
+      toast('Valor inválido', 'error');
       return;
     }
     if (isNaN(d) || d < 1 || d > 31) d = 1;
@@ -86,7 +86,7 @@ export default function RecModal() {
       actions.addRecurring({ id: uid(), name: n, amount: a, day: d, cat: c, createdAt: Date.now() });
     }
     close();
-    toast(draft.id ? 'Subscricao atualizada' : 'Subscricao adicionada', 'success');
+    toast(draft.id ? 'Subscrição atualizada' : 'Subscrição adicionada', 'success');
   }
 
   function deleteRec() {
@@ -105,7 +105,7 @@ export default function RecModal() {
         onClick={saveRec}
         style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
       >
-        {isEdit ? 'Guardar alteracoes' : 'Adicionar'}
+        {isEdit ? 'Guardar alterações' : 'Adicionar'}
       </button>
       {isEdit && (
         <button
@@ -120,7 +120,7 @@ export default function RecModal() {
   );
 
   return (
-    <Sheet open={isOpen} onClose={close} title={isEdit ? 'Editar subscricao' : 'Nova subscricao'} footer={footer}>
+    <Sheet open={isOpen} onClose={close} title={isEdit ? 'Editar subscrição' : 'Nova subscrição'} footer={footer}>
       <div className="lb" style={{ marginBottom: 6 }}>Nome</div>
       <input
         value={draft.name}

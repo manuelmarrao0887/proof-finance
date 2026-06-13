@@ -1,8 +1,8 @@
 /* ════════════════════════════════════════════════════════════════════════
-   LoanView — "Credito" tab. Ported from rLoan (orig 1315-1334).
+   LoanView — "Crédito" tab. Ported from rLoan (orig 1315-1334).
 
-   New users get an empty state; otherwise the mortgage card (Credito
-   Habitacao) with the literal values from the original, plus a 6-cell stats
+   New users get an empty state; otherwise the mortgage card (Crédito
+   Habitação) with the literal values from the original, plus a 6-cell stats
    grid. `pp` (percentage paid) comes from compute() — in preview mode this is
    identical to the original's inline ((ln.cap-ln.out)/ln.cap)*100.
    ════════════════════════════════════════════════════════════════════════ */
@@ -13,8 +13,8 @@ import { isNewUser } from '../lib/finance.js';
 import { fm, fc } from '../lib/format.js';
 
 const STATS = [
-  ['Prestacao', '485,83 EUR', '#3b6fee'],
-  ['Proxima', '28.05.2026', '#7b5fe0'],
+  ['Prestação', '485,83 EUR', '#3b6fee'],
+  ['Próxima', '28.05.2026', '#7b5fe0'],
   ['Taxa', '2,7%', '#f5a623'],
   ['Tipo', 'Taxa Fixa', '#3fc97a'],
   ['Capital', '90.000 EUR', '#12b3a6'],
@@ -32,10 +32,10 @@ export default function LoanView() {
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
         </svg>
         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
-          Sem creditos registados
+          Sem créditos registados
         </div>
         <div style={{ fontSize: 12, lineHeight: 1.6 }}>
-          Credito habitacao, automovel ou pessoal
+          Crédito habitação, automóvel ou pessoal
           <br />
           podem ser geridos aqui em breve.
         </div>
@@ -55,7 +55,7 @@ export default function LoanView() {
     <div className="fadeUp" style={{ padding: '0 20px calc(40px + var(--safe-bottom))' }}>
       <div className="cd" style={{ marginBottom: 12, padding: 22, borderLeft: '3px solid var(--signal)' }}>
         <div className="rw" style={{ marginBottom: 6 }}>
-          <div className="lb">Credito Habitacao</div>
+          <div className="lb">Crédito Habitação</div>
           <div className="chip down-solid">{pp.toFixed(1)}%</div>
         </div>
         <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 18 }}>
@@ -65,7 +65,7 @@ export default function LoanView() {
           {fm(OUT)}
         </div>
         <div className="lb" style={{ marginTop: 4 }}>
-          Capital em divida
+          Capital em dívida
         </div>
         <div style={{ marginTop: 18 }}>
           <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6 }}>

@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   ChartsView — "Graficos" tab. Ported from rCharts (orig 993-1004).
+   ChartsView — "Gráficos" tab. Ported from rCharts (orig 993-1004).
 
    Stacks chrt() sparklines over getAllHist(state). chrt(...) returns an SVG
    HTML string, so each card's series are concatenated and rendered with
@@ -47,19 +47,19 @@ export default function ChartsView() {
   // Net-worth evolution card (orig 996-998).
   const evoHtml =
     chrt(ah.map((x) => x.liq + x.poup + x.inv), '#3fc97a', 'Ativos Totais', ah, fm) +
-    chrt(ah.map((x) => x.liq + x.poup + x.inv - x.div), '#3b6fee', 'Patrimonio Liquido', ah, fm);
+    chrt(ah.map((x) => x.liq + x.poup + x.inv - x.div), '#3b6fee', 'Património Liquido', ah, fm);
 
   // Investments card (orig 999-1002).
   const invHtml =
     chrt(ah.map((x) => x.xP), '#3fc97a', 'XTB Planos', ah, fm) +
-    chrt(ah.map((x) => x.xT), '#f5a623', 'XTB Transacoes', ah, fm) +
+    chrt(ah.map((x) => x.xT), '#f5a623', 'XTB Transações', ah, fm) +
     chrt(ah.map((x) => x.tC), '#7b5fe0', 'TR Corretagem', ah, fm);
 
   return (
     <div style={{ padding: '0 20px 40px' }}>
       <div className="cd" style={{ marginBottom: 12 }}>
         <div className="lb" style={{ marginBottom: 16 }}>
-          Evolucao patrimonial
+          Evolução patrimonial
         </div>
         <div dangerouslySetInnerHTML={{ __html: evoHtml }} />
       </div>

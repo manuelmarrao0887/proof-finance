@@ -29,7 +29,7 @@ export default function ContextStrip({ tab: tabProp }) {
 
   if (tab === 'expenses') {
     const ms = monthlySummary(s);
-    label = 'Gastos do mes';
+    label = 'Gastos do mês';
     val = fc(ms.exp);
     col = 'var(--signal)';
   } else if (tab === 'income') {
@@ -52,11 +52,11 @@ export default function ContextStrip({ tab: tabProp }) {
     val = p.toFixed(0) + '%';
     col = 'var(--blue)';
   } else if (tab === 'loan') {
-    label = 'Patrimonio liquido';
+    label = 'Património liquido';
     val = fc(C.nW);
     col = C.nW >= 0 ? 'var(--success)' : 'var(--signal)';
   } else if (tab === 'cal' || tab === 'charts' || tab === 'rec' || tab === 'ai') {
-    label = 'Patrimonio liquido';
+    label = 'Património liquido';
     val = fc(C.nW);
     col = 'var(--text)';
   }

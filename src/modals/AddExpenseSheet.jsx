@@ -21,6 +21,7 @@ import { useToast } from '../components/Toast.jsx';
 import { fm } from '../lib/format.js';
 import { applyRules } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
+import CategoryIcon from '../components/CategoryIcon.jsx';
 
 // Fresh draft for a brand-new expense (orig addData default 417 / reset 2364).
 function freshDraft() {
@@ -104,7 +105,7 @@ export default function AddExpenseSheet() {
       split = parseInt(d.split || '2', 10);
       if (isNaN(split) || split < 2) split = 2;
       if (isNaN(total) || total <= 0) {
-        toast('Total invalido', 'error');
+        toast('Total inválido', 'error');
         return;
       }
       amt = total / split;
@@ -112,7 +113,7 @@ export default function AddExpenseSheet() {
       amt = parseFloat((d.amount || '0').toString().replace(',', '.'));
     }
     if (!desc || isNaN(amt) || amt <= 0) {
-      toast('Preenche descricao e valor', 'error');
+      toast('Preenche descrição e valor', 'error');
       return;
     }
     // Tags: comma-split -> trimmed, lowercased, kebab; cap 5 (orig 2342).
@@ -190,7 +191,7 @@ export default function AddExpenseSheet() {
           borderRadius: 999,
         }}
       >
-        {isEdit ? 'Guardar alteracoes' : 'Adicionar despesa'}
+        {isEdit ? 'Guardar alterações' : 'Adicionar despesa'}
       </button>
       {isEdit && (
         <button
@@ -215,22 +216,40 @@ export default function AddExpenseSheet() {
 
   return (
     <Sheet open={isOpen} onClose={onClose} title={isEdit ? 'Editar despesa' : 'Nova despesa'} footer={footer}>
-      {/* Categoria (FIX 3 — alphabetical) */}
-      <div className="lb" style={{ marginBottom: 6 }}>Categoria</div>
-      <select
-        value={d.cat}
-        onChange={(e) => set('cat', e.target.value)}
-        style={{ ...inputStyle, appearance: 'none', marginBottom: 14 }}
-      >
-        {cats.map((b) => (
-          <option key={b.id} value={b.id}>
-            {b.nm}
-          </option>
-        ))}
-      </select>
+      {/* Categoria — grelha de ícones (estilo Finany), alfabética (FIX 3) */}
+      <div className="lb" style={{ marginBottom: 8 }}>Categoria</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+        {cats.map((b) => {
+          const on = d.cat === b.id;
+          return (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => set('cat', b.id)}
+              aria-pressed={on}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 5,
+                padding: '10px 4px',
+                borderRadius: 14,
+                border: '1px solid ' + (on ? 'var(--primary)' : 'var(--border)'),
+                background: on ? 'var(--blue-soft)' : 'var(--surface)',
+                cursor: 'pointer',
+              }}
+            >
+              <CategoryIcon id={b.id} size={34} />
+              <span style={{ fontSize: 9, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15 }}>
+                {b.nm}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-      {/* Descricao */}
-      <div className="lb" style={{ marginBottom: 6 }}>Descricao</div>
+      {/* Descrição */}
+      <div className="lb" style={{ marginBottom: 6 }}>Descrição</div>
       <input
         value={d.desc}
         onChange={(e) => set('desc', e.target.value)}

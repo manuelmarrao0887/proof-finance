@@ -22,7 +22,7 @@ import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { fm, uid } from '../lib/format.js';
+import { fm, uid, normalizeStmtDate } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
 import { applySameBeneficiaryCategory, normalizeDesc } from '../lib/dedupe.js';
 import {
@@ -115,7 +115,7 @@ export default function ImportStatementSheet() {
             return;
           }
           callAI(
-            [{ type: 'text', text: 'Dados do extracto bancario:\n\n' + csv + '\n\n' + STMT_PROMPT }],
+            [{ type: 'text', text: 'Dados do extrato bancário:\n\n' + csv + '\n\n' + STMT_PROMPT }],
             undefined,
             apiKey,
             onRes
@@ -173,12 +173,12 @@ export default function ImportStatementSheet() {
     if (!stResult || !stResult.transactions) return;
     const selected = stResult.transactions
       .filter((t) => stSel[t._id])
-      .map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: t.date || '' }));
+      .map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date) }));
     const n = selected.length;
     actions.setAddedExp([...(state.addedExp || []), ...selected]);
     resetState();
     close();
-    toast(n + ' transac' + (n === 1 ? 'ao' : 'oes') + ' importadas', 'success');
+    toast(n + ' transa' + (n === 1 ? 'ção' : 'ções') + ' importadas', 'success');
   }, [stResult, stSel, actions, state.addedExp, resetState, close, toast]);
 
   if (!isOpen) return null;
@@ -190,7 +190,7 @@ export default function ImportStatementSheet() {
   if (!apiKey) {
     body = (
       <div style={{ borderLeft: '3px solid var(--signal)', padding: 12, marginBottom: 16 }}>
-        <div className="lb" style={{ color: 'var(--signal)' }}>API KEY NECESSARIA — ABRE Definicoes</div>
+        <div className="lb" style={{ color: 'var(--signal)' }}>API KEY NECESSÁRIA — ABRE Definições</div>
       </div>
     );
   } else {
@@ -203,7 +203,7 @@ export default function ImportStatementSheet() {
         {!stResult && !stScanning && (
           <>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>
-              Carrega imagem, PDF ou Excel do extracto bancario.
+              Carrega imagem, PDF ou Excel do extrato bancário.
             </div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
               <input id="stCam" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={(e) => scanStmt(e.target)} />
@@ -213,7 +213,7 @@ export default function ImportStatementSheet() {
                 onClick={() => document.getElementById('stCam').click()}
                 style={{ flex: 1, padding: 16, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', textTransform: 'uppercase' }}
               >
-                Camara
+                Câmara
               </button>
               <button
                 type="button"
@@ -244,7 +244,7 @@ export default function ImportStatementSheet() {
         {stResult && stResult.transactions && (
           <>
             <div className="rw" style={{ marginBottom: 12 }}>
-              <div className="lb">{(stResult.bank || 'EXTRACTO') + ' — ' + stResult.transactions.length + ' transacoes'}</div>
+              <div className="lb">{(stResult.bank || 'EXTRATO') + ' — ' + stResult.transactions.length + ' transações'}</div>
             </div>
             <div style={{ maxHeight: '50vh', overflow: 'auto', marginBottom: 16 }}>
               {/* FIX 2: iterate in original array order with a stable _id key; never sort. */}
@@ -353,7 +353,7 @@ export default function ImportStatementSheet() {
   }
 
   return (
-    <Sheet open={isOpen} onClose={onClose} title="Importar extracto">
+    <Sheet open={isOpen} onClose={onClose} title="Importar extrato">
       {body}
     </Sheet>
   );

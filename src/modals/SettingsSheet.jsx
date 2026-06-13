@@ -162,7 +162,7 @@ export default function SettingsSheet() {
       rd.onload = (ev) => {
         try {
           const d = JSON.parse(ev.target.result);
-          if (typeof d !== 'object' || d === null) throw new Error('formato invalido');
+          if (typeof d !== 'object' || d === null) throw new Error('formato inválido');
           if (!confirm('Restaurar substitui TODOS os dados atuais. Continuar?')) return;
           const theme = typeof d.theme === 'string' ? d.theme : 'system';
           const partial = {
@@ -183,7 +183,7 @@ export default function SettingsSheet() {
         } catch (err) {
           // eslint-disable-next-line no-console
           console.error('Restore falhou', err);
-          toast('Ficheiro invalido: ' + (err.message || 'erro'), 'error');
+          toast('Ficheiro inválido: ' + (err.message || 'erro'), 'error');
         }
       };
       rd.readAsText(file);
@@ -201,7 +201,7 @@ export default function SettingsSheet() {
   const dataBtn = { width: '100%', padding: '14px 16px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 };
 
   return (
-    <Sheet open={isOpen} onClose={close} title="Definicoes">
+    <Sheet open={isOpen} onClose={close} title="Definições">
       {/* ── Account ── */}
       <div className="lb" style={{ marginBottom: 10 }}>Conta</div>
       <div className="cd" style={{ marginBottom: 24, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>

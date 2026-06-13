@@ -58,7 +58,7 @@ export default function CatManagerModal() {
     const nm = (draft.nm || '').trim();
     let lm = parseFloat((draft.lm || '0').toString().replace(',', '.'));
     if (!nm) {
-      toast('Nome obrigatorio', 'error');
+      toast('Nome obrigatório', 'error');
       return;
     }
     if (isNaN(lm) || lm < 0) lm = 0;
@@ -87,7 +87,7 @@ export default function CatManagerModal() {
 
   const deleteCat = (id) => {
     if (isInUse(id, state)) {
-      toast('Em uso — nao pode eliminar', 'error');
+      toast('Em uso — não pode eliminar', 'error');
       return;
     }
     actions.deleteCategory(id);
@@ -182,7 +182,7 @@ export default function CatManagerModal() {
         )}
       </div>
       <div style={{ fontSize: 10, color: 'var(--text3)', lineHeight: 1.5 }}>
-        Categorias em uso (com despesas ou recorrentes associadas) nao podem ser eliminadas, apenas renomeadas.
+        Categorias em uso (com despesas ou recorrentes associadas) não podem ser eliminadas, apenas renomeadas.
       </div>
     </Sheet>
   );

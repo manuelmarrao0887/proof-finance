@@ -16,11 +16,11 @@ import { fc, fm } from '../lib/format.js';
 
 // INCOME_SOURCES + helpers (orig 1541-1550) — copied locally.
 const INCOME_SOURCES = [
-  ['salary', 'Salario', '#3fc97a'],
+  ['salary', 'Salário', '#3fc97a'],
   ['freelance', 'Freelance', '#3b6fee'],
   ['dividend', 'Dividendos', '#7b5fe0'],
   ['rental', 'Aluguer', '#f5a623'],
-  ['bonus', 'Bonus / Premio', '#f25555'],
+  ['bonus', 'Bónus / Prémio', '#f25555'],
   ['other', 'Outro', '#9aa3b5'],
 ];
 function srcLabel(s) {
@@ -64,7 +64,7 @@ export default function IncomesView() {
             Sem rendimentos registados
           </div>
           <div style={{ fontSize: 12, lineHeight: 1.6 }}>
-            Adiciona o teu salario, freelances,
+            Adiciona o teu salário, freelances,
             <br />
             dividendos ou rendimentos extra
             <br />
@@ -88,7 +88,7 @@ export default function IncomesView() {
         <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em' }}>{fc(totMonth)}</div>
         <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>
           {fc(yearly)} por ano (recorrente)
-          {totOne > 0 && <> &middot; +{fc(totOne)} extra este mes</>}
+          {totOne > 0 && <> &middot; +{fc(totOne)} extra este mês</>}
         </div>
       </div>
 

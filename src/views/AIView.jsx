@@ -4,7 +4,7 @@
    2728-2784 + actionLabel 2408-2416 + renderMD 2371-2406).
 
    Three states share the view:
-     1. API-key missing  -> prompt to set it in Definicoes.
+     1. API-key missing  -> prompt to set it in Definições.
      2. Import in flight / pending review -> rAIImportPanel (per-action checkboxes).
      3. Default -> import card + chat textarea + conversation history.
 
@@ -276,7 +276,7 @@ export default function AIView() {
       '   Tipos de actions:\n' +
       '   - update_balance: {"type":"update_balance","account_bank":"Bankinter","account_type":"Conta a Ordem","value":584.64,"note":""}\n' +
       '     account_bank EXACTO: Bankinter, Activobank, Moey, Trade Republic, XTB, Goparity, Raize\n' +
-      '     account_type EXACTO: Conta a Ordem, Poupanca, Corretagem, Private Markets, Rend. Fixo, Transacoes, Planos Invest., P2P Lending\n' +
+      '     account_type EXACTO: Conta a Ordem, Poupanca, Corretagem, Private Markets, Rend. Fixo, Transações, Planos Invest., P2P Lending\n' +
       '     Bankinter: dividir total por 2 (conta partilhada), por o total na note\n' +
       '   - add_expense: {"type":"add_expense","desc":"...","amount":0.00,"cat":"rest","date":"YYYY-MM-DD","tags":["tag1"]}\n' +
       '   - add_income: {"type":"add_income","name":"...","amount":0,"source":"salary","recurring":true,"day":25}\n' +
@@ -287,7 +287,7 @@ export default function AIView() {
       '","liq":0,"poup":0,"inv":0,"div":' +
       lnOut +
       ',"xP":0,"xT":0,"tC":0}\n\n' +
-      'COMO DECIDIR? Verbos imperativos (adiciona/regista/atualiza/cria/guarda) -> ACAO. Verbos interrogativos ou analise (quanto/quais/lista/mostra/procura/compara/audita/sugere) -> ANALISE.\n\n' +
+      'COMO DECIDIR? Verbos imperativos (adiciona/regista/atualiza/cria/guarda) -> ACAO. Verbos interrogativos ou análise (quanto/quais/lista/mostra/procura/compara/audita/sugere) -> ANALISE.\n\n' +
       'CONTEXTO (dados atuais do utilizador):\n' +
       JSON.stringify(ctx).substring(0, 15000);
 
@@ -455,7 +455,7 @@ export default function AIView() {
     (file) => {
       if (!file) return;
       if (!apiKey) {
-        toast('Configura API key nas Definicoes', 'error');
+        toast('Configura API key nas Definições', 'error');
         return;
       }
       if (file.size > 20 * 1024 * 1024) {
@@ -502,7 +502,7 @@ export default function AIView() {
         parseExcel(file).then((csv) => {
           if (!csv) {
             setAiImportLoading(false);
-            setAiImport({ error: 'Nao consegui ler o ficheiro Excel/CSV.' });
+            setAiImport({ error: 'Não consegui ler o ficheiro Excel/CSV.' });
             return;
           }
           callAI(
@@ -683,7 +683,7 @@ export default function AIView() {
     return (
       <div className="fadeUp" style={wrap}>
         <div className="cd" style={{ padding: 18, marginBottom: 16, borderLeft: '3px solid var(--signal)' }}>
-          <div className="lb" style={{ color: 'var(--signal)', marginBottom: 4 }}>API key necessaria</div>
+          <div className="lb" style={{ color: 'var(--signal)', marginBottom: 4 }}>API key necessária</div>
           <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>
             Configura a key da Anthropic nas{' '}
             <button
@@ -691,7 +691,7 @@ export default function AIView() {
               onClick={() => ui.open('settings')}
               style={{ background: 'none', border: 'none', color: 'var(--blue)', font: 'inherit', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
             >
-              Definicoes
+              Definições
             </button>{' '}
             para usar o assistente e o importador.
           </div>
@@ -759,7 +759,7 @@ export default function AIView() {
           <div style={{ fontSize: 14, fontWeight: 700 }}>Importar documento</div>
         </div>
         <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 14, lineHeight: 1.5 }}>
-          Carrega PDF, imagem ou Excel. A IA classifica e preenche automaticamente saldos, despesas, metas, subscricoes ou snapshots.
+          Carrega PDF, imagem ou Excel. A IA classifica e preenche automaticamente saldos, despesas, metas, subscrições ou snapshots.
         </div>
         <input id="aiFile" type="file" accept="image/*,.pdf,.xlsx,.xls,.csv" style={{ display: 'none' }} onChange={onFileInput} />
         <input id="aiCam" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={onFileInput} />
@@ -773,7 +773,7 @@ export default function AIView() {
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
               <circle cx="12" cy="13" r="4" />
             </svg>
-            Camara
+            Câmara
           </button>
           <button
             type="button"
@@ -818,12 +818,12 @@ export default function AIView() {
           <br />
           <span className="m" style={{ fontSize: 10 }}>&bull; "Quanto gastei em restauracao vs media?"</span>
           <br />
-          <span className="m" style={{ fontSize: 10 }}>&bull; "Quais as 3 subscricoes mais caras?"</span>
+          <span className="m" style={{ fontSize: 10 }}>&bull; "Quais as 3 subscrições mais caras?"</span>
           <br />
-          <span className="m" style={{ fontSize: 10 }}>&bull; "Quantos meses de fundo emergencia tenho?"</span>
+          <span className="m" style={{ fontSize: 10 }}>&bull; "Quantos meses de fundo emergência tenho?"</span>
           <br />
           <div style={{ margin: '6px 0 4px' }}>
-            <b style={{ color: 'var(--text2)' }}>Acoes:</b>
+            <b style={{ color: 'var(--text2)' }}>Ações:</b>
           </div>
           <span className="m" style={{ fontSize: 10 }}>&bull; "Bankinter 584&euro;, Activobank 325&euro;"</span>
           <br />
@@ -862,7 +862,7 @@ export default function AIView() {
                   {h.err ? (
                     <span className="m" style={{ fontSize: 9, color: 'var(--signal)' }}>Erro</span>
                   ) : isAnalysis ? (
-                    <span className="m" style={{ fontSize: 9, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '2px 8px', borderRadius: 8 }}>Analise</span>
+                    <span className="m" style={{ fontSize: 9, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '2px 8px', borderRadius: 8 }}>Análise</span>
                   ) : h.ok ? (
                     <span className="m" style={{ fontSize: 9, color: 'var(--success)', background: 'var(--success-soft)', padding: '2px 8px', borderRadius: 8 }}>Executado</span>
                   ) : null}
@@ -906,7 +906,7 @@ export default function AIView() {
             onClick={() => actions.setAiHistory([])}
             style={{ width: '100%', padding: '10px 0', border: 'none', background: 'var(--bg3)', color: 'var(--text2)', borderRadius: 'var(--r2)', fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', marginTop: 8 }}
           >
-            LIMPAR Historico
+            LIMPAR Histórico
           </button>
         </>
       )}
@@ -934,10 +934,10 @@ function AIImportPanel({ aiImport, aiImportSel, onToggle, onSelectAll, onCancel,
   const actList = aiImport.actions || [];
   const docLabel =
     {
-      extrato_bancario: 'Extrato bancario',
+      extrato_bancário: 'Extrato bancário',
       recibo: 'Recibo',
       recibo_vencimento: 'Recibo de vencimento',
-      contrato_credito: 'Contrato de credito',
+      contrato_crédito: 'Contrato de crédito',
       extrato_investimento: 'Extrato de investimento',
       factura: 'Factura',
       outro: 'Documento',
@@ -955,7 +955,7 @@ function AIImportPanel({ aiImport, aiImportSel, onToggle, onSelectAll, onCancel,
     <div className="cd fadeUp" style={{ marginBottom: 16, padding: 0, overflow: 'hidden' }}>
       <div style={{ background: 'var(--primary)', color: 'var(--bg)', padding: '18px 20px' }}>
         <div className="lb" style={{ color: 'rgba(255,255,255,0.8)', marginBottom: 6 }}>{docLabel}</div>
-        <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>{aiImport.summary || 'Analise concluida'}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>{aiImport.summary || 'Análise concluida'}</div>
         <div style={{ marginTop: 10, display: 'flex', gap: 14, fontSize: 11, opacity: 0.9 }}>
           <span>
             <b>{actList.length}</b> {actList.length === 1 ? 'accao' : 'accoes'}

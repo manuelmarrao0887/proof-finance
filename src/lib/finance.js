@@ -38,7 +38,7 @@ export const accts = [
   { b: 'Trade Republic', t: 'Corretagem', v: 2228.09, n: '44%', c: 'Investimentos' },
   { b: 'Trade Republic', t: 'Private Markets', v: 2060.8, n: '41%', c: 'Investimentos' },
   { b: 'Trade Republic', t: 'Rend. Fixo', v: 752.24, n: '15%', c: 'Investimentos' },
-  { b: 'XTB', t: 'Transacoes', v: 490.53, n: 'P&L: -8,42', c: 'Investimentos' },
+  { b: 'XTB', t: 'Transações', v: 490.53, n: 'P&L: -8,42', c: 'Investimentos' },
   { b: 'XTB', t: 'Planos Invest.', v: 10429.01, n: 'P&L: +1.228', c: 'Investimentos' },
   { b: 'Goparity', t: 'P2P Lending', v: 555.88, n: 'Juros: 82,24', c: 'Investimentos' },
   { b: 'Raize', t: 'P2P Lending', v: 37.13, c: 'Investimentos' },
@@ -47,11 +47,11 @@ export const accts = [
 export const ln = { cap: 90000, out: 77555.06, pay: 485.83 };
 
 export const bdgDefault = [
-  { id: 'rest', nm: 'Restauracao', lm: 250 }, { id: 'sup', nm: 'Supermercado', lm: 250 }, { id: 'cas', nm: 'Prestacao Casa', lm: 350 },
+  { id: 'rest', nm: 'Restauração', lm: 250 }, { id: 'sup', nm: 'Supermercado', lm: 250 }, { id: 'cas', nm: 'Prestação Casa', lm: 350 },
   { id: 'emp', nm: 'Empregada', lm: 360 }, { id: 'seg', nm: 'Seguros', lm: 100 }, { id: 'ani', nm: 'Animais', lm: 105 },
-  { id: 'sau', nm: 'Saude', lm: 40 }, { id: 'tel', nm: 'Telecom', lm: 60 }, { id: 'car', nm: 'Carro', lm: 55 },
-  { id: 'sub', nm: 'Subscricoes', lm: 50 }, { id: 'gym', nm: 'Ginasio', lm: 36 }, { id: 'cmb', nm: 'Combustivel', lm: 90 },
-  { id: 'neg', nm: 'Negocio', lm: 50 }, { id: 'laz', nm: 'Lazer', lm: 100 }, { id: 'trf', nm: 'Transferencias', lm: 100 }, { id: 'out', nm: 'Outros', lm: 30 },
+  { id: 'sau', nm: 'Saúde', lm: 40 }, { id: 'tel', nm: 'Telecom', lm: 60 }, { id: 'car', nm: 'Carro', lm: 55 },
+  { id: 'sub', nm: 'Subscrições', lm: 50 }, { id: 'gym', nm: 'Ginásio', lm: 36 }, { id: 'cmb', nm: 'Combustível', lm: 90 },
+  { id: 'neg', nm: 'Negócio', lm: 50 }, { id: 'laz', nm: 'Lazer', lm: 100 }, { id: 'trf', nm: 'Transferências', lm: 100 }, { id: 'out', nm: 'Outros', lm: 30 },
 ];
 
 export const byC = {
@@ -301,7 +301,7 @@ export function detectSubscriptions(state) {
   Object.keys(byKey).forEach(function (k) {
     const g = byKey[k];
     if (g.occurrences.length < 2) return;
-    // Skip suggestions the user has dismissed ("nao e subscricao").
+    // Skip suggestions the user has dismissed ("não e subscrição").
     if (dismissed.indexOf(k) > -1) return;
     // Check if already in recurring
     const existing = recurring.find(function (r) {
@@ -426,14 +426,14 @@ export function healthScore(state) {
   const br = [];
   // 1. Emergency fund (0-30)
   const efPts = Math.min((ef.months / 6) * 30, 30);
-  br.push({ label: 'Fundo de emergencia', pts: Math.round(efPts), max: 30, detail: ef.months.toFixed(1) + ' meses' });
+  br.push({ label: 'Fundo de emergência', pts: Math.round(efPts), max: 30, detail: ef.months.toFixed(1) + ' meses' });
   // 2. Savings rate (0-25)
   const srPts = Math.max(0, Math.min((s.rate / 20) * 25, 25));
   br.push({ label: 'Taxa de poupanca', pts: Math.round(srPts), max: 25, detail: s.rate.toFixed(0) + '%' });
   // 3. Debt-to-asset (0-20)
   const dta = C.tA > 0 ? (C.loan.out / C.tA) * 100 : C.loan.out > 0 ? 100 : 0;
   const dtaPts = Math.max(0, 20 - dta / 5);
-  br.push({ label: 'Divida vs ativos', pts: Math.round(dtaPts), max: 20, detail: C.loan.out > 0 ? dta.toFixed(0) + '%' : 'sem divida' });
+  br.push({ label: 'Dívida vs ativos', pts: Math.round(dtaPts), max: 20, detail: C.loan.out > 0 ? dta.toFixed(0) + '%' : 'sem dívida' });
   // 4. Budget adherence (0-15)
   const _byCh = getByC(state);
   let totCat = 0,
@@ -468,7 +468,7 @@ export function healthScore(state) {
   }
   br.push({ label: 'Progresso de metas', pts: Math.round(gpPts), max: 10, detail: goals.length > 0 ? goals.length + ' metas' : 'sem metas' });
   const score = Math.round(efPts + srPts + dtaPts + baPts + gpPts);
-  const grade = score >= 85 ? 'Excelente' : score >= 70 ? 'Bom' : score >= 50 ? 'Razoavel' : score >= 30 ? 'Fragil' : 'Critico';
+  const grade = score >= 85 ? 'Excelente' : score >= 70 ? 'Bom' : score >= 50 ? 'Razoável' : score >= 30 ? 'Fragil' : 'Crítico';
   // Recommendations: pick 3 lowest scoring areas
   const recs = [];
   br.slice()
@@ -477,10 +477,10 @@ export function healthScore(state) {
     })
     .slice(0, 3)
     .forEach(function (b) {
-      if (b.label === 'Fundo de emergencia' && b.pts < 20) recs.push('Aumenta a tua reserva. Objetivo: 6 meses de despesa media.');
+      if (b.label === 'Fundo de emergência' && b.pts < 20) recs.push('Aumenta a tua reserva. Objetivo: 6 meses de despesa media.');
       else if (b.label === 'Taxa de poupanca' && b.pts < 15) recs.push('Poupa pelo menos 15% do que ganhas todos os meses.');
-      else if (b.label === 'Divida vs ativos' && b.pts < 10) recs.push('Reduz divida activa para baixo de 30% dos teus ativos.');
-      else if (b.label === 'Adesao ao orcamento' && b.pts < 10) recs.push('Reve os limites das categorias que ultrapassaste este mes.');
+      else if (b.label === 'Dívida vs ativos' && b.pts < 10) recs.push('Reduz dívida activa para baixo de 30% dos teus ativos.');
+      else if (b.label === 'Adesao ao orcamento' && b.pts < 10) recs.push('Reve os limites das categorias que ultrapassaste este mês.');
       else if (b.label === 'Progresso de metas' && b.pts < 5) recs.push('Cria pelo menos uma meta de poupanca para teres direccao.');
     });
   return { score: score, grade: grade, breakdown: br, recommendations: recs };

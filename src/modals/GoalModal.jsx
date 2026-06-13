@@ -81,11 +81,11 @@ export default function GoalModal() {
     let c = parseFloat((String(draft.current) || '0').replace(',', '.'));
     const d = draft.deadline;
     if (!n) {
-      toast('Nome obrigatorio', 'error');
+      toast('Nome obrigatório', 'error');
       return;
     }
     if (isNaN(t) || t <= 0) {
-      toast('Objetivo invalido', 'error');
+      toast('Objetivo inválido', 'error');
       return;
     }
     if (isNaN(c) || c < 0) c = 0;
@@ -114,7 +114,7 @@ export default function GoalModal() {
         onClick={saveGoal}
         style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
       >
-        {isEdit ? 'Guardar alteracoes' : 'Criar meta'}
+        {isEdit ? 'Guardar alterações' : 'Criar meta'}
       </button>
       {isEdit && (
         <button
@@ -134,7 +134,7 @@ export default function GoalModal() {
       <input
         value={draft.name}
         onChange={(e) => set('name', e.target.value)}
-        placeholder="Ex: Fundo Emergencia"
+        placeholder="Ex: Fundo Emergência"
         style={{ ...inputStyle, marginBottom: 16 }}
       />
 
