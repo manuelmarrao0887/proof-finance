@@ -176,7 +176,8 @@ export default function ExpensesView() {
             const b = bdg.find((bb) => bb.id === x.cat);
             return (
               <div key={idx} className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
-                <div className="rw">
+                <div className="rw" style={{ gap: 12 }}>
+                  <CategoryIcon id={x.cat} size={40} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>
                       {x.desc}
