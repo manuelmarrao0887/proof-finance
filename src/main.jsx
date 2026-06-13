@@ -11,6 +11,7 @@ import App from './App.jsx';
 import { StoreProvider } from './store/store.jsx';
 import { ToastProvider } from './components/Toast.jsx';
 import { UIProvider } from './store/ui.jsx';
+import { DeviceProvider } from './store/device.jsx';
 
 const container = document.getElementById('app');
 const root = createRoot(container);
@@ -19,7 +20,9 @@ root.render(
     <StoreProvider>
       <ToastProvider>
         <UIProvider>
-          <App />
+          <DeviceProvider>
+            <App />
+          </DeviceProvider>
         </UIProvider>
       </ToastProvider>
     </StoreProvider>

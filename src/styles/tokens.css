@@ -237,3 +237,35 @@ html[data-theme="dark"] .sheet-overlay{background:rgba(0,0,0,0.55)}
 .bnav{left:50%;right:auto;transform:translateX(-50%);width:100%;max-width:480px}
 .sheet-overlay{align-items:center}                /* center the panel horizontally (column cross-axis) */
 .sheet-panel{width:100%;max-width:480px}
+
+/* ════════════════════════════════════════════════════════════════════════
+   DESKTOP MODE — #app[data-mode="desktop"] (sidebar + multi-column content).
+   Mobile mode keeps the centered 480px column above; desktop expands to full
+   width with a left sidebar.
+   ════════════════════════════════════════════════════════════════════════ */
+#app[data-mode="desktop"]{max-width:none;width:100%;background:var(--surface)}
+@media (min-width:481px){
+  #app[data-mode="desktop"]{background:var(--surface);box-shadow:none}
+}
+.dshell{display:flex;min-height:100svh;align-items:stretch}
+.dsidebar{width:248px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);padding:18px 14px calc(18px + var(--safe-bottom));position:sticky;top:0;height:100svh;display:flex;flex-direction:column;gap:3px;overflow-y:auto}
+.dbrand{display:flex;align-items:baseline;gap:7px;padding:6px 10px 12px}
+.dnav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;border:none;background:transparent;color:var(--fg-muted);font-size:14px;font-weight:600;cursor:pointer;width:100%;text-align:left;font-family:inherit;transition:background 0.15s,color 0.15s}
+.dnav-item:hover{background:var(--surface);color:var(--fg)}
+.dnav-item.on{background:var(--blue-soft);color:var(--primary)}
+.dnav-item svg{width:20px;height:20px;flex-shrink:0;stroke-width:1.8}
+.dnav-add{margin:8px 0;background:var(--grad-hero);color:#fff;justify-content:center;box-shadow:var(--shadow-hero)}
+.dnav-add:hover{color:#fff;opacity:0.95}
+.dspacer{flex:1}
+.dcontent{flex:1;min-width:0;height:100svh;overflow-y:auto}
+.dmain{max-width:1140px;margin:0 auto;padding:24px 32px 64px}
+.dnarrow{max-width:760px;margin:0 auto}
+.dtophead{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:0 4px}
+/* Multi-column dashboard: flow the overview cards into 2 columns. */
+.dgrid > .fadeUp{column-count:2;column-gap:20px}
+.dgrid > .fadeUp > *{break-inside:avoid}
+/* Device toggle (segmented) */
+.dtoggle{display:flex;background:var(--elevated);border-radius:10px;padding:3px;gap:2px;margin:0 4px 10px}
+.dtoggle button{flex:1;border:none;background:transparent;color:var(--fg-muted);font-size:11px;font-weight:600;padding:7px 6px;border-radius:8px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;letter-spacing:0.02em}
+.dtoggle button.on{background:var(--primary);color:#fff}
+.dtoggle button svg{width:14px;height:14px}
