@@ -76,7 +76,7 @@ export default function RecModal() {
       return;
     }
     if (isNaN(a) || a <= 0) {
-      toast('Valor invalido', 'error');
+      toast('Valor inválido', 'error');
       return;
     }
     if (isNaN(d) || d < 1 || d > 31) d = 1;
@@ -105,7 +105,7 @@ export default function RecModal() {
         onClick={saveRec}
         style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
       >
-        {isEdit ? 'Guardar alteracoes' : 'Adicionar'}
+        {isEdit ? 'Guardar alterações' : 'Adicionar'}
       </button>
       {isEdit && (
         <button

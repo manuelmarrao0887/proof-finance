@@ -85,7 +85,7 @@ export default function GoalModal() {
       return;
     }
     if (isNaN(t) || t <= 0) {
-      toast('Objetivo invalido', 'error');
+      toast('Objetivo inválido', 'error');
       return;
     }
     if (isNaN(c) || c < 0) c = 0;
@@ -114,7 +114,7 @@ export default function GoalModal() {
         onClick={saveGoal}
         style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
       >
-        {isEdit ? 'Guardar alteracoes' : 'Criar meta'}
+        {isEdit ? 'Guardar alterações' : 'Criar meta'}
       </button>
       {isEdit && (
         <button

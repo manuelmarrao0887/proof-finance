@@ -90,7 +90,7 @@ export default function BalanceUpdateSheet() {
     if (!account) return;
     const v = parseFloat(String(value).replace(',', '.'));
     if (isNaN(v)) {
-      setError('Valor invalido');
+      setError('Valor inválido');
       return;
     }
     actions.addBalanceReading({ account, value: v, date });

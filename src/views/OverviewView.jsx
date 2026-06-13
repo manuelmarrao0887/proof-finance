@@ -166,27 +166,27 @@ export default function OverviewView() {
             ) : null}
           </div>
           <div className="g3">
-            <div>
+            <div style={{ background: 'var(--success-soft)', borderRadius: 14, padding: '12px 14px' }}>
               <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Receita
               </div>
-              <div className="m" style={{ fontSize: 15, fontWeight: 700, color: 'var(--success)', marginTop: 2 }}>
+              <div className="m" style={{ fontSize: 15, fontWeight: 700, color: 'var(--success)', marginTop: 4 }}>
                 {ms.inc > 0 ? fc(ms.inc) : '—'}
               </div>
             </div>
-            <div>
+            <div style={{ background: 'var(--signal-soft)', borderRadius: 14, padding: '12px 14px' }}>
               <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Despesa
               </div>
-              <div className="m" style={{ fontSize: 15, fontWeight: 700, color: 'var(--signal)', marginTop: 2 }}>
+              <div className="m" style={{ fontSize: 15, fontWeight: 700, color: 'var(--signal)', marginTop: 4 }}>
                 {fc(ms.exp)}
               </div>
             </div>
-            <div>
+            <div style={{ background: 'var(--blue-soft)', borderRadius: 14, padding: '12px 14px' }}>
               <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Saldo
               </div>
-              <div className="m" style={{ fontSize: 15, fontWeight: 700, color: ms.saved >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 2 }}>
+              <div className="m" style={{ fontSize: 15, fontWeight: 700, color: ms.saved >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 4 }}>
                 {(ms.saved >= 0 ? '+' : '') + fc(ms.saved)}
               </div>
             </div>

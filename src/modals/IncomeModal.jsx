@@ -102,7 +102,7 @@ export default function IncomeModal() {
       return;
     }
     if (isNaN(a) || a <= 0) {
-      toast('Valor invalido', 'error');
+      toast('Valor inválido', 'error');
       return;
     }
     if (draft.id) {
@@ -130,7 +130,7 @@ export default function IncomeModal() {
         onClick={saveIncome}
         style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
       >
-        {isEdit ? 'Guardar alteracoes' : 'Adicionar receita'}
+        {isEdit ? 'Guardar alterações' : 'Adicionar receita'}
       </button>
       {isEdit && (
         <button

@@ -44,7 +44,7 @@ export default function MoreMenu() {
       className="sheet-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label="Mais opcoes"
+      aria-label="Mais opções"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) close();
       }}

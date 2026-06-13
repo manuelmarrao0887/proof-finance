@@ -83,7 +83,7 @@ export default function RulesModal() {
   return (
     <Sheet open={isOpen} onClose={close} title="Regras">
       <div style={{ fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.55, marginBottom: 18 }}>
-        Se uma descricao contiver o padrao definido, a categoria sera aplicada automaticamente a novas despesas e importacoes.
+        Se uma descrição contiver o padrao definido, a categoria sera aplicada automaticamente a novas despesas e importacoes.
       </div>
 
       {/* New rule form */}

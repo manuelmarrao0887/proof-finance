@@ -149,7 +149,7 @@ export default function AcctModal() {
 
       {/* Save */}
       <button type="button" onClick={saveAcct} style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}>
-        {isEdit ? 'Guardar alteracoes' : 'Adicionar conta'}
+        {isEdit ? 'Guardar alterações' : 'Adicionar conta'}
       </button>
       {isEdit && (
         <button type="button" onClick={deleteAcct} style={{ width: '100%', padding: '12px 0', border: 'none', background: 'transparent', color: 'var(--danger)', fontSize: 13, fontWeight: 500, marginTop: 8 }}>
