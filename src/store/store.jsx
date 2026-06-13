@@ -28,7 +28,7 @@ import React, {
   useState,
 } from 'react';
 import { loadUserDoc, saveUserDoc } from '../firebase/client.js';
-import { bdgDefault } from '../lib/finance.js';
+import { bdgDefault, snapshotFromState } from '../lib/finance.js';
 import { uid } from '../lib/format.js';
 
 /* ── Theme (orig applyTheme 310-316) ─────────────────────────────────────── */
@@ -354,19 +354,29 @@ export function StoreProvider({ children }) {
         };
         setField('balanceLog', [...(st.balanceLog || []), reading]);
         // Update the live balance so compute()/net worth reflect the new value.
+        const dDot = (date || '').replace(/-/g, '.');
+        let nextDyn = st.dynAccts ? { ...st.dynAccts } : {};
+        let nextCustom = st.customAccts || [];
         if (account.custom) {
-          setField(
-            'customAccts',
-            (st.customAccts || []).map((a) =>
-              a.id === account.id ? { ...a, value: v, updated: (date || '').replace(/-/g, '.') } : a
-            )
+          nextCustom = (st.customAccts || []).map((a) =>
+            a.id === account.id ? { ...a, value: v, updated: dDot } : a
           );
+          setField('customAccts', nextCustom);
         } else {
-          const dyn = st.dynAccts ? { ...st.dynAccts } : {};
-          const prev = dyn[acctKey] || {};
-          dyn[acctKey] = { v, d: (date || '').replace(/-/g, '.'), n: prev.n || null };
-          setField('dynAccts', dyn);
+          const prev = nextDyn[acctKey] || {};
+          nextDyn[acctKey] = { v, d: dDot, n: prev.n || null };
+          setField('dynAccts', nextDyn);
         }
+        // Upsert a patrimonial snapshot for this date so the evolution charts
+        // populate over time (one snapshot per date label, latest values win).
+        const nextState = { ...st, currentUser: true, dynAccts: nextDyn, customAccts: nextCustom };
+        const label = date && date.length >= 10 ? date.slice(8, 10) + '.' + date.slice(5, 7) : dDot;
+        const snap = snapshotFromState(nextState, label);
+        const snaps = [...(st.dynSnaps || [])];
+        const li = snaps.findIndex((x) => x.l === snap.l);
+        if (li > -1) snaps[li] = snap;
+        else snaps.push(snap);
+        setField('dynSnaps', snaps);
       },
 
       // categories (bdg)

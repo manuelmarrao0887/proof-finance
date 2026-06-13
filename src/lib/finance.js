@@ -140,6 +140,24 @@ export function getAccts(state) {
   return out;
 }
 
+/* ══ snapshotFromState ══
+   Build a patrimonial snapshot {l,liq,poup,inv,div,xP,xT,tC} from the current
+   accounts, used to feed the evolution charts (dynSnaps) when a balance is
+   updated. xP/xT/tC are investment sub-series we don't break down here → 0. */
+export function snapshotFromState(state, label) {
+  const ca = getAccts(state);
+  let liq = 0,
+    poup = 0,
+    inv = 0;
+  ca.forEach(function (a) {
+    if (a.c === 'Liquidez') liq += a.v;
+    else if (a.c === 'Poupanca') poup += a.v;
+    else if (a.c === 'Investimentos') inv += a.v;
+  });
+  const loan = getLoan(state);
+  return { l: label, liq: liq, poup: poup, inv: inv, div: loan.out || 0, xP: 0, xT: 0, tC: 0 };
+}
+
 export function getAllHist(state) {
   const dynSnaps = (state && state.dynSnaps) || [];
   if (isPreviewMode(state)) return hist.concat(dynSnaps);
