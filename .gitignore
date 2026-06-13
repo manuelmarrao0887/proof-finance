@@ -1,12 +1,4 @@
-.DS_Store
-*.swp
-.idea/
-.vscode/
 node_modules/
-
-# Firebase Admin SDK credentials — NEVER commit
-*firebase-adminsdk*.json
-*-firebase-adminsdk-*.json
-
-# Local backups
-OLD/
+dist/
+.DS_Store
+*.log
