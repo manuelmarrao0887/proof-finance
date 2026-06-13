@@ -87,7 +87,7 @@ export default function Login() {
             style={{
               width: 64,
               height: 64,
-              background: 'var(--fg)',
+              background: 'var(--primary)',
               color: 'var(--bg)',
               borderRadius: 16,
               margin: '0 auto 22px',
@@ -195,7 +195,7 @@ export default function Login() {
                 width: '100%',
                 padding: '14px 0',
                 border: 'none',
-                background: 'var(--fg)',
+                background: 'var(--primary)',
                 color: 'var(--bg)',
                 fontSize: 14,
                 fontWeight: 500,

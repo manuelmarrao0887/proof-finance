@@ -459,7 +459,7 @@ export default function OverviewView() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
-                    <div style={{ width: 8, height: 40, borderRadius: 4, background: cCol[cat] || '#8A8E99' }} />
+                    <div style={{ width: 8, height: 40, borderRadius: 4, background: cCol[cat] || '#9aa3b5' }} />
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 600 }}>{cat}</div>
                       <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>

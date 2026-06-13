@@ -183,7 +183,7 @@ export default function AddExpenseSheet() {
           width: '100%',
           padding: '14px 0',
           border: 'none',
-          background: 'var(--fg)',
+          background: 'var(--primary)',
           color: 'var(--bg)',
           fontSize: 14,
           fontWeight: 500,

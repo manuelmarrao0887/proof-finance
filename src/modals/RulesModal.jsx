@@ -107,7 +107,7 @@ export default function RulesModal() {
               <option key={b.id} value={b.id}>{b.nm}</option>
             ))}
           </select>
-          <button type="button" onClick={addRule} style={{ padding: '10px 16px', border: 'none', background: 'var(--fg)', color: 'var(--bg)', borderRadius: 999, fontSize: 13, fontWeight: 500, fontFamily: 'inherit' }}>
+          <button type="button" onClick={addRule} style={{ padding: '10px 16px', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 999, fontSize: 13, fontWeight: 500, fontFamily: 'inherit' }}>
             Adicionar
           </button>
         </div>

@@ -156,7 +156,7 @@ export default function ExpensesView() {
                 key={t}
                 type="button"
                 onClick={() => toggleTagFilter(t)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--fg)', background: 'var(--fg)', color: 'var(--bg)', borderRadius: 999, fontSize: 11, fontWeight: 500, fontFamily: 'var(--mono)' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--fg)', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 999, fontSize: 11, fontWeight: 500, fontFamily: 'var(--mono)' }}
               >
                 #{t} &times;
               </button>
@@ -399,7 +399,7 @@ export default function ExpensesView() {
       {rows.map((r) => {
         const isE = xExp === r.id;
         const ov = r.pct > 100;
-        const bc = ov ? 'var(--signal)' : r.pct > 75 ? '#F59E0B' : 'var(--text)';
+        const bc = ov ? 'var(--signal)' : r.pct > 75 ? '#f5a623' : 'var(--text)';
         const op = ov ? '1' : '0.6';
         // Historical demo transactions (orig 1161).
         const hTxn = (txn[r.id] && txn[r.id][em]) ? txn[r.id][em] : [];

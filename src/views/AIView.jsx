@@ -409,7 +409,7 @@ export default function AIView() {
                   target: Number(a.target) || 0,
                   current: Number(a.current) || 0,
                   deadline: a.deadline || '',
-                  color: a.color || '#0b1220',
+                  color: a.color || '#3b6fee',
                   createdAt: Date.now(),
                 });
                 goalTouched = true;
@@ -604,7 +604,7 @@ export default function AIView() {
             target: Number(a.target) || 0,
             current: Number(a.current) || 0,
             deadline: a.deadline || '',
-            color: a.color || '#0b1220',
+            color: a.color || '#3b6fee',
             createdAt: Date.now(),
           });
           applied.goal++;
@@ -843,7 +843,7 @@ export default function AIView() {
           type="button"
           onClick={sendAI}
           disabled={aiLoading}
-          style={{ width: '100%', padding: '12px 0', border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999, marginTop: 8 }}
+          style={{ width: '100%', padding: '12px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999, marginTop: 8 }}
         >
           {aiLoading ? 'A processar...' : 'Enviar'}
         </button>
@@ -953,7 +953,7 @@ function AIImportPanel({ aiImport, aiImportSel, onToggle, onSelectAll, onCancel,
 
   return (
     <div className="cd fadeUp" style={{ marginBottom: 16, padding: 0, overflow: 'hidden' }}>
-      <div style={{ background: 'var(--fg)', color: 'var(--bg)', padding: '18px 20px' }}>
+      <div style={{ background: 'var(--primary)', color: 'var(--bg)', padding: '18px 20px' }}>
         <div className="lb" style={{ color: 'rgba(255,255,255,0.8)', marginBottom: 6 }}>{docLabel}</div>
         <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>{aiImport.summary || 'Analise concluida'}</div>
         <div style={{ marginTop: 10, display: 'flex', gap: 14, fontSize: 11, opacity: 0.9 }}>

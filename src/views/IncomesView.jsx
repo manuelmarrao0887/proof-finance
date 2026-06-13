@@ -16,12 +16,12 @@ import { fc, fm } from '../lib/format.js';
 
 // INCOME_SOURCES + helpers (orig 1541-1550) — copied locally.
 const INCOME_SOURCES = [
-  ['salary', 'Salario', '#22c55e'],
-  ['freelance', 'Freelance', '#0b1220'],
-  ['dividend', 'Dividendos', '#4a5366'],
-  ['rental', 'Aluguer', '#f59e0b'],
-  ['bonus', 'Bonus / Premio', '#ef4444'],
-  ['other', 'Outro', '#8A8E99'],
+  ['salary', 'Salario', '#3fc97a'],
+  ['freelance', 'Freelance', '#3b6fee'],
+  ['dividend', 'Dividendos', '#7b5fe0'],
+  ['rental', 'Aluguer', '#f5a623'],
+  ['bonus', 'Bonus / Premio', '#f25555'],
+  ['other', 'Outro', '#9aa3b5'],
 ];
 function srcLabel(s) {
   const f = INCOME_SOURCES.find((x) => x[0] === s);
@@ -29,7 +29,7 @@ function srcLabel(s) {
 }
 function srcColor(s) {
   const f = INCOME_SOURCES.find((x) => x[0] === s);
-  return f ? f[2] : '#8A8E99';
+  return f ? f[2] : '#9aa3b5';
 }
 
 export default function IncomesView() {
