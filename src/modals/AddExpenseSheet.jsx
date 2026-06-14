@@ -21,6 +21,7 @@ import { useToast } from '../components/Toast.jsx';
 import { fm } from '../lib/format.js';
 import { applyRules } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
+import { listAccounts } from '../lib/balances.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 
 // Fresh draft for a brand-new expense (orig addData default 417 / reset 2364).
@@ -30,6 +31,7 @@ function freshDraft() {
     amount: '',
     cat: 'rest',
     date: new Date().toISOString().slice(0, 10),
+    acct: '',
     shared: false,
     total: '',
     split: '2',
@@ -45,6 +47,7 @@ function draftFromExpense(x) {
     amount: String(x.amount || '').replace('.', ','),
     cat: x.cat || 'rest',
     date: x.date || new Date().toISOString().slice(0, 10),
+    acct: x.acct || '',
     shared: !!x.shared,
     total: x.shared && x.total != null ? String(x.total).replace('.', ',') : '',
     split: x.shared && x.split ? String(x.split) : '2',
@@ -78,6 +81,7 @@ export default function AddExpenseSheet() {
   }, [isOpen, editIdx]);
 
   const cats = useMemo(() => sortedCats(state.bdg), [state.bdg]); // FIX 3
+  const accounts = useMemo(() => listAccounts(state), [state]);
 
   if (!isOpen) return null;
 
@@ -131,6 +135,7 @@ export default function AddExpenseSheet() {
     }
     const notes = (d.notes || '').trim();
     const exp = { desc, amount: amt, cat, date };
+    if (d.acct) exp.acct = d.acct;
     if (d.shared) {
       exp.shared = true;
       exp.total = total;
@@ -363,6 +368,22 @@ export default function AddExpenseSheet() {
           </div>
         </div>
       )}
+
+      {/* Conta debitada (opcional) */}
+      <div className="lb" style={{ marginBottom: 6 }}>Conta debitada (opcional)</div>
+      <select
+        value={d.acct}
+        onChange={(e) => set('acct', e.target.value)}
+        style={{ ...inputStyle, appearance: 'none', marginBottom: 14, fontSize: 14 }}
+      >
+        <option value="">— sem conta —</option>
+        {accounts.map((a) => {
+          const label = a.bank + ' · ' + a.type;
+          return (
+            <option key={a.acctKey} value={label}>{label}</option>
+          );
+        })}
+      </select>
 
       {/* Tags */}
       <div className="lb" style={{ marginBottom: 6 }}>Tags (opcional)</div>

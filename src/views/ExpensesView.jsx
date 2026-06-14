@@ -190,7 +190,7 @@ export default function ExpensesView() {
                       )}
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-                      {(b ? b.nm : '-') + ' · ' + (x.date || '')}
+                      {(b ? b.nm : '-') + ' · ' + (x.date || '') + (x.acct ? ' · ' + x.acct : '')}
                     </div>
                     {x.tags && x.tags.length > 0 && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>

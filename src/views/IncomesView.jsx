@@ -104,7 +104,8 @@ export default function IncomesView() {
                   {srcLabel(i.source)} &middot;{' '}
                   {i.recurring !== false
                     ? 'mensal · dia ' + (i.day || 1)
-                    : 'unico' + (i.date ? ' · ' + i.date : '')}
+                    : 'único' + (i.date ? ' · ' + i.date : '')}
+                  {i.acct ? ' · ' + i.acct : ''}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
