@@ -400,13 +400,20 @@ export function monthlySummary(state) {
   Object.keys(_byCm).forEach(function (k) {
     if (_byCm[k] && _byCm[k][monthIdx] != null) exp += _byCm[k][monthIdx];
   });
+  // Only count addedExp dated in the month being summarised (NOT every expense).
+  const _nowM = new Date();
+  const _target = new Date(_nowM.getFullYear(), _nowM.getMonth() - (3 - monthIdx), 1);
+  const _targetYM = _target.getFullYear() + '-' + String(_target.getMonth() + 1).padStart(2, '0');
   addedExp.forEach(function (x) {
-    if (monthIdx === 3) exp += x.amount;
+    if ((x.date || '').slice(0, 7) === _targetYM) exp += x.amount;
   });
-  // Add recurring expenses
-  recurring.forEach(function (r) {
-    exp += r.amount || 0;
-  });
+  // Add recurring expenses (monthly fixed) only when there is no demo byC data,
+  // to avoid double-counting against the seed series in preview mode.
+  if (Object.keys(_byCm).length === 0) {
+    recurring.forEach(function (r) {
+      exp += r.amount || 0;
+    });
+  }
   const saved = inc - exp;
   const rate = inc > 0 ? (saved / inc) * 100 : 0;
   return { inc: inc, exp: exp, saved: saved, rate: rate };
