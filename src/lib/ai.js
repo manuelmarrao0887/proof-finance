@@ -15,7 +15,13 @@ const MODEL = 'claude-haiku-4-5';
 /* ── Prompt constants (orig 2024-2059, verbatim) ────────────────────────── */
 
 export const STMT_PROMPT =
-  'Analisa extracto bancario. Extrai TODAS as transacoes. Descricoes CURTAS (max 20 chars). Valores negativos para debitos, positivos para creditos. JSON: {"bank":"nome","transactions":[{"date":"DD.MM","desc":"descricao curta","amount":-0.00,"category":"rest"}]}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
+  'Analisa o extrato bancario. Extrai TODAS as transacoes (movimentos).\n' +
+  'DATAS (MUITO IMPORTANTE): muitos extratos (ex: ActivoBank) mostram a data como "M.DD" ou "MM.DD" — o MES vem PRIMEIRO e depois o DIA. Ex: "5.06" = dia 06 do mes 05 (6 de Maio), "5.29" = 29 de Maio. Usa o cabecalho/periodo do extrato (ex: "EXTRATO DE 2026/05/04 A 2026/05/29") para saberes o ANO e confirmar o MES. ' +
+  'Se houver duas colunas de data por linha (data movimento e data valor), usa a PRIMEIRA. ' +
+  'Devolve SEMPRE a data no formato ISO "YYYY-MM-DD".\n' +
+  'Descricoes CURTAS (max 24 chars). Valores: negativos para debitos, positivos para creditos.\n' +
+  'JSON: {"bank":"nome","transactions":[{"date":"YYYY-MM-DD","desc":"descricao curta","amount":-0.00,"category":"rest"}]}\n' +
+  'Categorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
 
 export const RCPT_PROMPT =
   'Analisa este recibo/fatura. Extrai itens e valores. JSON: {"items":[{"desc":"nome","amount":0.00}],"total":0.00,"suggested_category":"rest"}\nCategorias: rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out\nSe nao for recibo: {"error":"Nao e um recibo."}';
