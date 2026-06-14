@@ -318,6 +318,30 @@ export default function ExpensesView() {
         ? 'Remover ' + dupCount + ' despesa' + (dupCount === 1 ? '' : 's') + ' duplicada' + (dupCount === 1 ? '' : 's')
         : 'Corrigir ' + dateBad + ' data' + (dateBad === 1 ? '' : 's') + ' errada' + (dateBad === 1 ? '' : 's');
 
+  // Remove every expense in the currently-selected month (em 0..3) so the user
+  // can wipe a bad statement and re-import it. Q1 view (em === 4) is excluded.
+  let selMonthKey = null;
+  let selMonthLabel = '';
+  if (!preview && em >= 0 && em <= 3) {
+    const now = new Date();
+    const dd = new Date(now.getFullYear(), now.getMonth() - (3 - em), 1);
+    selMonthKey = dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0');
+    selMonthLabel = ms[em];
+  }
+  const monthExpCount = selMonthKey
+    ? addedExp.filter((x) => (x.date || '').slice(0, 7) === selMonthKey).length
+    : 0;
+  const removeMonthExpenses = () => {
+    if (!selMonthKey) return;
+    if (
+      typeof confirm === 'function' &&
+      !confirm('Remover as ' + monthExpCount + ' despesas de ' + selMonthLabel + '? Inclui manuais e importadas. Depois podes reimportar o extrato.')
+    )
+      return;
+    actions.setAddedExp(addedExp.filter((x) => (x.date || '').slice(0, 7) !== selMonthKey));
+    toast(monthExpCount + ' despesa' + (monthExpCount === 1 ? '' : 's') + ' de ' + selMonthLabel + ' removida' + (monthExpCount === 1 ? '' : 's'), 'success');
+  };
+
   return (
     <div style={{ padding: '0 20px 24px' }}>
       {/* Search bar */}
@@ -344,6 +368,21 @@ export default function ExpensesView() {
             <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           </svg>
           {cleanLabel}
+        </button>
+      )}
+
+      {/* Remove all expenses in the selected month (wipe & re-import) */}
+      {monthExpCount > 0 && (
+        <button
+          type="button"
+          onClick={removeMonthExpenses}
+          style={{ width: '100%', marginBottom: 12, padding: '10px 14px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--signal)', borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 6h18" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+          Remover as {monthExpCount} despesas de {selMonthLabel} (limpar p/ reimportar)
         </button>
       )}
 
