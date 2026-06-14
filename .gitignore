@@ -2,3 +2,6 @@ node_modules/
 dist/
 .DS_Store
 *.log
+# Ficheiros pessoais / sensiveis (extratos bancarios, referencias) — nunca commitar
+*.pdf
+Print Screens/
