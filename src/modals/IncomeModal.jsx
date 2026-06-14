@@ -79,7 +79,10 @@ export default function IncomeModal() {
         return;
       }
     }
-    setDraft(EMPTY);
+    // New income: seed from EMPTY, optionally overridden by payload.defaults
+    // (used by "Registar receita de {mês}" to pre-fill one-off + month date).
+    const defaults = payload && typeof payload === 'object' && payload.defaults ? payload.defaults : null;
+    setDraft(defaults ? { ...EMPTY, ...defaults, recurring: defaults.recurring !== false } : EMPTY);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, payload]);
 
