@@ -17,6 +17,7 @@ import { useStore } from '../store/store.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
+import { listAccounts } from '../lib/balances.js';
 
 // INCOME_SOURCES (orig 1541) — copied into this file.
 const INCOME_SOURCES = [
@@ -28,7 +29,7 @@ const INCOME_SOURCES = [
   ['other', 'Outro', '#9aa3b5'],
 ];
 
-const EMPTY = { id: null, name: '', amount: '', source: 'salary', day: '1', recurring: true, date: '' };
+const EMPTY = { id: null, name: '', amount: '', source: 'salary', day: '1', recurring: true, date: '', acct: '' };
 
 const inputStyle = {
   width: '100%',
@@ -73,6 +74,7 @@ export default function IncomeModal() {
           day: String(i.day || 1),
           recurring: i.recurring !== false,
           date: i.date || '',
+          acct: i.acct || '',
         });
         return;
       }
@@ -105,10 +107,11 @@ export default function IncomeModal() {
       toast('Valor inválido', 'error');
       return;
     }
+    const acct = draft.acct || '';
     if (draft.id) {
-      actions.updateIncome(draft.id, { name: n, amount: a, source: s, recurring: isRec, day, date });
+      actions.updateIncome(draft.id, { name: n, amount: a, source: s, recurring: isRec, day, date, acct });
     } else {
-      actions.addIncome({ id: uid(), name: n, amount: a, source: s, recurring: isRec, day, date, createdAt: Date.now() });
+      actions.addIncome({ id: uid(), name: n, amount: a, source: s, recurring: isRec, day, date, acct, createdAt: Date.now() });
     }
     close();
     toast(draft.id ? 'Receita atualizada' : 'Receita adicionada', 'success');
@@ -219,6 +222,32 @@ export default function IncomeModal() {
             {s[1]}
           </option>
         ))}
+      </select>
+
+      {/* Conta creditada (opcional) */}
+      <div className="lb" style={{ margin: '16px 0 6px' }}>Conta creditada (opcional)</div>
+      <select
+        value={draft.acct}
+        onChange={(e) => set('acct', e.target.value)}
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          border: '1px solid var(--border)',
+          background: 'var(--elevated)',
+          color: 'var(--fg)',
+          borderRadius: 8,
+          fontSize: 14,
+          appearance: 'none',
+          marginBottom: 4,
+        }}
+      >
+        <option value="">— sem conta —</option>
+        {listAccounts(state).map((a) => {
+          const label = a.bank + ' · ' + a.type;
+          return (
+            <option key={a.acctKey} value={label}>{label}</option>
+          );
+        })}
       </select>
     </Sheet>
   );
