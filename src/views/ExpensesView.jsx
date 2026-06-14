@@ -342,6 +342,36 @@ export default function ExpensesView() {
     toast(monthExpCount + ' despesa' + (monthExpCount === 1 ? '' : 's') + ' de ' + selMonthLabel + ' removida' + (monthExpCount === 1 ? '' : 's'), 'success');
   };
 
+  // Recurring expenses pending for the selected month: those not yet materialised
+  // into addedExp (no addedExp carrying their recId this month). Registering one
+  // opens the add sheet pre-filled so the user can set the day it was charged.
+  const recurring = state.recurring || [];
+  let pendingRec = [];
+  if (selMonthKey) {
+    const matRecIds = new Set(
+      addedExp
+        .filter((x) => x.recId && (x.date || '').slice(0, 7) === selMonthKey)
+        .map((x) => x.recId)
+    );
+    pendingRec = recurring.filter((r) => (r.amount || 0) > 0 && !matRecIds.has(r.id));
+  }
+  const daysInSelMonth = selMonthKey
+    ? new Date(Number(selMonthKey.slice(0, 4)), Number(selMonthKey.slice(5, 7)), 0).getDate()
+    : 31;
+  const registerRec = (r) => {
+    if (!selMonthKey) return;
+    const day = Math.min(Math.max(parseInt(r.day, 10) || 1, 1), daysInSelMonth);
+    ui.open('add', {
+      prefill: {
+        desc: r.name,
+        amount: r.amount,
+        cat: r.cat,
+        date: selMonthKey + '-' + String(day).padStart(2, '0'),
+        recId: r.id,
+      },
+    });
+  };
+
   return (
     <div style={{ padding: '0 20px 24px' }}>
       {/* Search bar */}
@@ -453,6 +483,38 @@ export default function ExpensesView() {
         </div>
         {partialNote}
       </div>
+
+      {/* Recorrentes pendentes do mês selecionado — registar com o dia da cobrança */}
+      {pendingRec.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div className="lb" style={{ marginBottom: 8, padding: '0 4px' }}>
+            Recorrentes de {selMonthLabel} ({pendingRec.length})
+          </div>
+          {pendingRec.map((r) => {
+            const b = bdg.find((bb) => bb.id === r.cat);
+            return (
+              <div key={r.id} className="cd" style={{ marginBottom: 8, padding: '10px 14px' }}>
+                <div className="rw" style={{ gap: 12 }}>
+                  <CategoryIcon id={r.cat} size={36} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>
+                      {(b ? b.nm : '-') + ' · dia ' + (r.day || '?') + ' · ' + fm(r.amount)}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => registerRec(r)}
+                    style={{ padding: '7px 12px', border: '1px solid var(--primary)', background: 'var(--blue-soft)', color: 'var(--primary)', borderRadius: 999, fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    Registar
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Empty state */}
       {rows.length === 0 && (

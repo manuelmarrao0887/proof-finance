@@ -65,20 +65,34 @@ export default function AddExpenseSheet() {
   const editIdx =
     payload && typeof payload === 'object' && payload.editIdx != null ? payload.editIdx : null;
   const isEdit = editIdx != null;
+  // prefill comes from the open payload ({prefill}); used to materialise a
+  // recurring expense into a dated list item (carries recId).
+  const prefill =
+    payload && typeof payload === 'object' && payload.prefill ? payload.prefill : null;
 
   const [d, setD] = useState(freshDraft);
 
-  // (Re)seed the draft whenever the sheet opens (new -> fresh; edit -> record).
+  // (Re)seed the draft whenever the sheet opens (edit -> record; prefill -> seed;
+  // otherwise fresh).
   useEffect(() => {
     if (!isOpen) return;
     if (isEdit) {
       const x = (state.addedExp || [])[editIdx];
       setD(x ? draftFromExpense(x) : freshDraft());
+    } else if (prefill) {
+      setD({
+        ...freshDraft(),
+        desc: prefill.desc || '',
+        amount: prefill.amount != null ? String(prefill.amount).replace('.', ',') : '',
+        cat: prefill.cat || 'rest',
+        date: prefill.date || new Date().toISOString().slice(0, 10),
+        recId: prefill.recId || null,
+      });
     } else {
       setD(freshDraft());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, editIdx]);
+  }, [isOpen, editIdx, prefill]);
 
   const cats = useMemo(() => sortedCats(state.bdg), [state.bdg]); // FIX 3
   const accounts = useMemo(() => listAccounts(state), [state]);
@@ -126,8 +140,9 @@ export default function AddExpenseSheet() {
       .map((t) => t.trim().toLowerCase().replace(/\s+/g, '-'))
       .filter((t) => t.length > 0)
       .slice(0, 5);
-    // Auto-categorize new expenses via rules (orig 2344-2349); never on edit.
-    if (!isEdit) {
+    // Auto-categorize new expenses via rules (orig 2344-2349); never on edit, and
+    // never when materialising a recurring (keep the recurring's own category).
+    if (!isEdit && !d.recId) {
       const autoCat = applyRules({ ...state }, desc);
       if (autoCat && autoCat !== cat && (state.bdg || []).find((b) => b.id === autoCat)) {
         cat = autoCat;
@@ -135,6 +150,7 @@ export default function AddExpenseSheet() {
     }
     const notes = (d.notes || '').trim();
     const exp = { desc, amount: amt, cat, date };
+    if (d.recId) exp.recId = d.recId;
     if (d.acct) exp.acct = d.acct;
     if (d.shared) {
       exp.shared = true;
@@ -196,7 +212,7 @@ export default function AddExpenseSheet() {
           borderRadius: 999,
         }}
       >
-        {isEdit ? 'Guardar alterações' : 'Adicionar despesa'}
+        {isEdit ? 'Guardar alterações' : d.recId ? 'Registar despesa' : 'Adicionar despesa'}
       </button>
       {isEdit && (
         <button
@@ -220,7 +236,7 @@ export default function AddExpenseSheet() {
   );
 
   return (
-    <Sheet open={isOpen} onClose={onClose} title={isEdit ? 'Editar despesa' : 'Nova despesa'} footer={footer}>
+    <Sheet open={isOpen} onClose={onClose} title={isEdit ? 'Editar despesa' : d.recId ? 'Registar recorrente' : 'Nova despesa'} footer={footer}>
       {/* Categoria — grelha de ícones (estilo Finany), alfabética (FIX 3) */}
       <div className="lb" style={{ marginBottom: 8 }}>Categoria</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>

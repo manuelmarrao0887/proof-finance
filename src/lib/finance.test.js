@@ -91,6 +91,28 @@ describe('monthlySummary (authenticated → deterministic)', () => {
     expect(s.rate).toBeCloseTo(((2000 - 110) / 2000) * 100, 6);
   });
 
+  it('skips a recurring expense once materialised into addedExp (recId) for the month', () => {
+    const now = new Date();
+    const ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    const state = {
+      currentUser: { uid: 'u1' },
+      em: 3,
+      incomes: [{ id: 'i1', name: 'Salario', amount: 2000, recurring: true }],
+      recurring: [
+        { id: 'r1', name: 'Netflix', amount: 10 },
+        { id: 'r2', name: 'Spotify', amount: 8 },
+      ],
+      addedExp: [
+        { desc: 'Pingo Doce', amount: 40, cat: 'sup', date: ym + '-01' },
+        // Netflix materialised this month → must NOT be double-counted.
+        { desc: 'Netflix', amount: 10, cat: 'sub', date: ym + '-05', recId: 'r1' },
+      ],
+    };
+    const s = monthlySummary(state);
+    // exp = addedExp(40+10=50) + recurring(only r2=8; r1 skipped) = 58
+    expect(s.exp).toBe(58);
+  });
+
   it('falls back to zero income when no incomes and authed (getSal is null)', () => {
     const state = { currentUser: { uid: 'u1' }, em: 3, incomes: [], recurring: [], addedExp: [] };
     const s = monthlySummary(state);

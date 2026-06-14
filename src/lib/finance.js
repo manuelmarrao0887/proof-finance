@@ -409,9 +409,15 @@ export function monthlySummary(state) {
   });
   // Add recurring expenses (monthly fixed) only when there is no demo byC data,
   // to avoid double-counting against the seed series in preview mode.
+  // Skip a recurring expense once it has been materialised into addedExp for this
+  // month (an addedExp carrying its recId) — the list item replaces the auto-sum.
   if (Object.keys(_byCm).length === 0) {
+    var _matRec = {};
+    addedExp.forEach(function (x) {
+      if (x.recId && (x.date || '').slice(0, 7) === _targetYM) _matRec[x.recId] = 1;
+    });
     recurring.forEach(function (r) {
-      exp += r.amount || 0;
+      if (!_matRec[r.id]) exp += r.amount || 0;
     });
   }
   const saved = inc - exp;
