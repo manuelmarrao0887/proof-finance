@@ -58,13 +58,16 @@ function draftFromExpense(x) {
 
 export default function AddExpenseSheet() {
   const { isOpen, payload, close } = useModal('add');
-  const { state, actions } = useStore();
+  const { state, actions, currentUser } = useStore();
   const toast = useToast();
 
-  // editIdx comes from the open payload ({editIdx}); null/true = new expense.
-  const editIdx =
-    payload && typeof payload === 'object' && payload.editIdx != null ? payload.editIdx : null;
-  const isEdit = editIdx != null;
+  // editId comes from the open payload ({editId}); null/true = new expense.
+  // (Stable id, not array index, so the right record is edited even if the list
+  // reordered since the sheet was opened.)
+  const editId =
+    payload && typeof payload === 'object' && payload.editId != null ? payload.editId : null;
+  const editExp = editId != null ? (state.addedExp || []).find((x) => x.id === editId) : null;
+  const isEdit = !!editExp;
   // prefill comes from the open payload ({prefill}); used to materialise a
   // recurring expense into a dated list item (carries recId).
   const prefill =
@@ -77,8 +80,7 @@ export default function AddExpenseSheet() {
   useEffect(() => {
     if (!isOpen) return;
     if (isEdit) {
-      const x = (state.addedExp || [])[editIdx];
-      setD(x ? draftFromExpense(x) : freshDraft());
+      setD(draftFromExpense(editExp));
     } else if (prefill) {
       setD({
         ...freshDraft(),
@@ -92,10 +94,10 @@ export default function AddExpenseSheet() {
       setD(freshDraft());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, editIdx, prefill]);
+  }, [isOpen, editId, prefill]);
 
   const cats = useMemo(() => sortedCats(state.bdg), [state.bdg]); // FIX 3
-  const accounts = useMemo(() => listAccounts(state), [state]);
+  const accounts = useMemo(() => listAccounts({ ...state, currentUser }), [state, currentUser]);
 
   if (!isOpen) return null;
 
@@ -161,8 +163,8 @@ export default function AddExpenseSheet() {
     if (notes) exp.notes = notes;
 
     let msg;
-    if (isEdit && (state.addedExp || [])[editIdx]) {
-      actions.updateExpense(editIdx, exp);
+    if (isEdit) {
+      actions.updateExpense(editId, exp);
       msg = 'Despesa atualizada';
     } else {
       actions.addExpense(exp);
@@ -174,7 +176,7 @@ export default function AddExpenseSheet() {
 
   const remove = () => {
     if (!isEdit) return;
-    actions.deleteExpense(editIdx);
+    actions.deleteExpense(editId);
     close();
     toast('Despesa eliminada', 'success');
   };

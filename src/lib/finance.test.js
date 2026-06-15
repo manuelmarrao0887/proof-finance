@@ -7,7 +7,15 @@ import {
   applyRules,
   getAccts,
   emergencyFund,
+  detectSubscriptions,
+  chrt,
 } from './finance.js';
+
+// A date `daysAgo` days before now, as YYYY-MM-DD (for time-window tests).
+function recentDate(daysAgo) {
+  const d = new Date(Date.now() - daysAgo * 86400000);
+  return d.toISOString().slice(0, 10);
+}
 
 /* Preview mode = no currentUser → demo seed data is used.
    Authenticated mode (currentUser truthy) → getByC/getSal return empty so the
@@ -119,6 +127,47 @@ describe('monthlySummary (authenticated → deterministic)', () => {
     expect(s.inc).toBe(0);
     expect(s.exp).toBe(0);
     expect(s.rate).toBe(0);
+  });
+});
+
+describe('detectSubscriptions', () => {
+  it('suggests a recurring-looking expense seen 2+ times in 90 days', () => {
+    const state = {
+      addedExp: [
+        { desc: 'Netflix', amount: 10, cat: 'sub', date: recentDate(40) },
+        { desc: 'Netflix', amount: 10, cat: 'sub', date: recentDate(10) },
+      ],
+      recurring: [],
+      dismissedSubs: [],
+    };
+    const out = detectSubscriptions(state);
+    expect(out.some((s) => s.desc === 'Netflix')).toBe(true);
+  });
+
+  it('does NOT suggest one whose long name is already in recurring (normalized match)', () => {
+    const longName = 'Spotify Premium Family Plan Subscription Monthly';
+    const state = {
+      addedExp: [
+        { desc: longName, amount: 18, cat: 'sub', date: recentDate(40) },
+        { desc: longName, amount: 18, cat: 'sub', date: recentDate(10) },
+      ],
+      recurring: [{ id: 'r1', name: longName, amount: 18, cat: 'sub' }],
+      dismissedSubs: [],
+    };
+    const out = detectSubscriptions(state);
+    expect(out.some((s) => s.desc === longName)).toBe(false);
+  });
+});
+
+describe('chrt (sparkline)', () => {
+  it('keeps all points within the viewBox for negative-only data', () => {
+    const html = chrt([-100, -500, -300], 'var(--success)', 'NetWorth', [], (v) => String(v));
+    const ys = [...html.matchAll(/cy="([\d.]+)"/g)].map((m) => parseFloat(m[1]));
+    expect(ys.length).toBe(3);
+    ys.forEach((y) => {
+      expect(y).toBeGreaterThanOrEqual(0);
+      expect(y).toBeLessThanOrEqual(56);
+    });
   });
 });
 

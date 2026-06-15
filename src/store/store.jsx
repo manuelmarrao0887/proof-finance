@@ -30,6 +30,14 @@ import React, {
 import { loadUserDoc, saveUserDoc } from '../firebase/client.js';
 import { bdgDefault, snapshotFromState } from '../lib/finance.js';
 import { uid } from '../lib/format.js';
+import { applySameBeneficiaryCategory } from '../lib/dedupe.js';
+
+// Ensure every addedExp row carries a stable `id` (backfills legacy rows saved
+// before ids existed). Used on hydrate and on any whole-array replacement.
+export function withExpenseIds(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map((x) => (x && x.id ? x : { ...x, id: uid() }));
+}
 
 /* ── Theme (orig applyTheme 310-316) ─────────────────────────────────────── */
 export function applyTheme(t) {
@@ -143,7 +151,7 @@ export function hydrateFromDoc(d) {
     aiHistory: Array.isArray(d.aiHistory) ? d.aiHistory : [],
     dynAccts: d.dynAccts || null,
     dynSnaps: Array.isArray(d.dynSnaps) ? d.dynSnaps : [],
-    addedExp: Array.isArray(d.addedExp) ? d.addedExp : [],
+    addedExp: withExpenseIds(Array.isArray(d.addedExp) ? d.addedExp : []),
     balanceLog: Array.isArray(d.balanceLog) ? d.balanceLog : [],
     theme: d.theme || 'system',
     goals: Array.isArray(d.goals) ? d.goals : [],
@@ -326,16 +334,27 @@ export function StoreProvider({ children }) {
       pushAiHistory: (entry) =>
         setField('aiHistory', [...(getState().aiHistory || []), entry].slice(-20)),
 
-      // expenses (addedExp)
-      setAddedExp: (addedExp) => setField('addedExp', addedExp),
-      addExpense: (exp) => setField('addedExp', [...(getState().addedExp || []), exp]),
-      updateExpense: (idx, exp) =>
+      // expenses (addedExp) — mutated by STABLE id, never array index, so that
+      // edits/deletes survive list reordering (clean-imported, remove-month) and
+      // background re-hydrates. setAddedExp backfills ids defensively.
+      setAddedExp: (addedExp) => setField('addedExp', withExpenseIds(addedExp)),
+      addExpense: (exp) =>
+        setField('addedExp', [...(getState().addedExp || []), exp.id ? exp : { ...exp, id: uid() }]),
+      updateExpense: (id, exp) =>
         setField(
           'addedExp',
-          (getState().addedExp || []).map((x, i) => (i === idx ? { ...x, ...exp } : x))
+          (getState().addedExp || []).map((x) => (x.id === id ? { ...x, ...exp } : x))
         ),
-      deleteExpense: (idx) =>
-        setField('addedExp', (getState().addedExp || []).filter((_, i) => i !== idx)),
+      deleteExpense: (id) =>
+        setField('addedExp', (getState().addedExp || []).filter((x) => x.id !== id)),
+      // Classify by id, applying the chosen category to every same-beneficiary
+      // row (resolves the index fresh against current state — no stale closure).
+      classifyExpense: (id, cat) => {
+        const list = getState().addedExp || [];
+        const idx = list.findIndex((x) => x.id === id);
+        if (idx < 0) return;
+        setField('addedExp', applySameBeneficiaryCategory(list, idx, cat, 'cat'));
+      },
 
       // balance readings (balanceLog) — dated balance snapshots per account.
       setBalanceLog: (balanceLog) => setField('balanceLog', balanceLog),

@@ -55,7 +55,7 @@ const numStyle = {
 };
 
 export default function IncomeModal() {
-  const { state, actions } = useStore();
+  const { state, actions, currentUser } = useStore();
   const { isOpen, payload, close } = useModal('income');
   const toast = useToast();
   const [draft, setDraft] = useState(EMPTY);
@@ -100,7 +100,10 @@ export default function IncomeModal() {
       day = parseInt(String(draft.day) || '1');
       if (isNaN(day) || day < 1 || day > 31) day = 1;
     } else {
-      date = draft.date || '';
+      // A one-off with no date would never land in any month bucket (silently
+      // uncounted — happens from the Q1 view where the seed date is empty).
+      // Fall back to today so it always counts somewhere.
+      date = draft.date || new Date().toISOString().slice(0, 10);
     }
     if (!n) {
       toast('Nome obrigatório', 'error');
@@ -245,7 +248,7 @@ export default function IncomeModal() {
         }}
       >
         <option value="">— sem conta —</option>
-        {listAccounts(state).map((a) => {
+        {listAccounts({ ...state, currentUser }).map((a) => {
           const label = a.bank + ' · ' + a.type;
           return (
             <option key={a.acctKey} value={label}>{label}</option>

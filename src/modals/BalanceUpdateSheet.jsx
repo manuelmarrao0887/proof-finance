@@ -26,10 +26,10 @@ function todayISO() {
 
 export default function BalanceUpdateSheet() {
   const { isOpen, close } = useModal('balanceUpdate');
-  const { state, actions } = useStore();
+  const { state, actions, currentUser } = useStore();
   const toast = useToast();
 
-  const accounts = useMemo(() => listAccounts(state), [state]);
+  const accounts = useMemo(() => listAccounts({ ...state, currentUser }), [state, currentUser]);
   const [acctKey, setAcctKey] = useState('');
   const [step, setStep] = useState('pick'); // pick | scanning | confirm
   const [value, setValue] = useState('');

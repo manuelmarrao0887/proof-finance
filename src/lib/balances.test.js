@@ -111,6 +111,15 @@ describe('listAccounts', () => {
     expect(rev.custom).toBe(true);
     expect(rev.id).toBe('x1');
   });
+  it('omits demo template accounts for an authenticated user (only custom shown)', () => {
+    const out = listAccounts({
+      currentUser: { uid: 'u1' },
+      customAccts: [{ id: 'x1', bank: 'Wise', type: 'Conta a Ordem', category: 'Liquidez' }],
+    });
+    expect(out.find((a) => a.bank === 'Activobank')).toBeFalsy();
+    expect(out.length).toBe(1);
+    expect(out[0].bank).toBe('Wise');
+  });
 });
 
 describe('BALANCE_PROMPT', () => {

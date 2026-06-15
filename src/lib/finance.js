@@ -303,9 +303,10 @@ export function detectSubscriptions(state) {
     if (g.occurrences.length < 2) return;
     // Skip suggestions the user has dismissed ("não e subscrição").
     if (dismissed.indexOf(k) > -1) return;
-    // Check if already in recurring
+    // Check if already in recurring — normalize the recurring name the SAME way
+    // the key was built (lowercase, collapse spaces, cap 40) so long names match.
     const existing = recurring.find(function (r) {
-      return r.name.toLowerCase() === k;
+      return (r.name || '').toLowerCase().trim().replace(/\s+/g, ' ').substring(0, 40) === k;
     });
     if (existing) return;
     const avg = g.totalAmount / g.occurrences.length;
@@ -392,7 +393,7 @@ export function monthlySummary(state) {
   } else {
     // Fallback to hardcoded salary (empty if new user)
     const _sal = getSal(state);
-    inc = em < 3 && _sal[em] ? _sal[em] : _sal[em] || 0;
+    inc = _sal[em] || 0;
   }
   // Sum expenses for the month from byC + addedExp
   let exp = 0;
@@ -518,8 +519,13 @@ export function chrt(data, color, label, histData, fmFn) {
   };
   const ht = 56;
   if (!data || data.length < 2) return '';
-  const mn = Math.min.apply(null, data) * 0.95,
-    mx = Math.max.apply(null, data) * 1.05,
+  // Additive padding (not multiplicative) so negative series don't invert: a
+  // multiplicative *0.95 on a negative min pushes it UP, plotting off the top.
+  const rawMn = Math.min.apply(null, data),
+    rawMx = Math.max.apply(null, data),
+    pad = (rawMx - rawMn) * 0.05 || Math.abs(rawMx) * 0.05 || 1;
+  const mn = rawMn - pad,
+    mx = rawMx + pad,
     rg = mx - mn || 1,
     w = 100;
   const pts = data

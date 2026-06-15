@@ -33,7 +33,7 @@ import { useUI } from '../store/ui.jsx';
 import { fm, normalizeStmtDate } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
-import { applySameBeneficiaryCategory, dedupeAddedExp } from '../lib/dedupe.js';
+import { dedupeAddedExp } from '../lib/dedupe.js';
 import { useToast } from '../components/Toast.jsx';
 import {
   isPreviewMode,
@@ -88,20 +88,19 @@ export default function ExpensesView() {
     return out;
   }, [preview]);
 
-  const openAdd = (editIdx) => ui.open('add', editIdx != null ? { editIdx } : true);
+  const openAdd = (editId) => ui.open('add', editId != null ? { editId } : true);
 
   const toggleTagFilter = (t) =>
     setTagFilter((tf) => (tf.indexOf(t) > -1 ? tf.filter((x) => x !== t) : [...tf, t]));
   const clearTagFilter = () => setTagFilter([]);
 
-  // ── Expanded-row category change — FIX 1 (same beneficiary) ────────────────
-  const changeExpCat = (idx, cat) => {
+  // ── Expanded-row category change — FIX 1 (same beneficiary), by stable id ───
+  const changeExpCat = (id, cat) => {
     // Apply the chosen category to every expense sharing the normalized desc.
-    const next = applySameBeneficiaryCategory(addedExp, idx, cat, 'cat'); // 'cat' key for addedExp
-    actions.setAddedExp(next);
+    actions.classifyExpense(id, cat);
   };
-  const deleteExp = (idx) => {
-    actions.deleteExpense(idx);
+  const deleteExp = (id) => {
+    actions.deleteExpense(id);
   };
 
   // ════════════════════════════════════════════════════════════════════════
@@ -174,10 +173,10 @@ export default function ExpensesView() {
             <div style={{ fontSize: 13 }}>{'Sem resultados para "' + searchQuery + '"'}</div>
           </div>
         ) : (
-          sorted.map(({ x, idx }) => {
+          sorted.map(({ x }) => {
             const b = bdg.find((bb) => bb.id === x.cat);
             return (
-              <div key={idx} className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
+              <div key={x.id} className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
                 <div className="rw" style={{ gap: 12 }}>
                   <CategoryIcon id={x.cat} size={40} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -215,7 +214,7 @@ export default function ExpensesView() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div className="m" style={{ fontSize: 14, fontWeight: 700 }}>{fm(x.amount)}</div>
-                    <button type="button" onClick={() => openAdd(idx)} className="icon-btn" style={{ width: 28, height: 28 }} aria-label="Editar despesa">
+                    <button type="button" onClick={() => openAdd(x.id)} className="icon-btn" style={{ width: 28, height: 28 }} aria-label="Editar despesa">
                       <EditIcon />
                     </button>
                   </div>
@@ -463,7 +462,7 @@ export default function ExpensesView() {
           onClick={() => actions.setEm(4)}
           style={{ borderLeft: '1px solid var(--border)' }}
         >
-          Q1
+          {preview ? 'Q1' : '3M'}
         </button>
       </div>
 
@@ -471,7 +470,7 @@ export default function ExpensesView() {
       <div className="cd" style={{ marginBottom: 16 }}>
         <div className="rw">
           <div>
-            <div className="lb">{isQ ? 'Despesas Q1' : 'DESPESAS ' + ms[em]}</div>
+            <div className="lb">{isQ ? (preview ? 'Despesas Q1' : 'Despesas 3M (últimos 3 meses)') : 'DESPESAS ' + ms[em]}</div>
             <div className="m" style={{ fontSize: 24, fontWeight: 900, marginTop: 4 }}>{fm(tE)}</div>
           </div>
           {!isQ && em < 3 && salP[em] != null && (
@@ -540,11 +539,8 @@ export default function ExpensesView() {
         const op = ov ? '1' : '0.6';
         // Historical demo transactions (orig 1161).
         const hTxn = (txn[r.id] && txn[r.id][em]) ? txn[r.id][em] : [];
-        // Imported/added expenses in this category (orig 1168) — carry their real index.
-        const aTxn = [];
-        addedExp.forEach((x, idx) => {
-          if (x.cat === r.id) aTxn.push({ x, idx });
-        });
+        // Imported/added expenses in this category (orig 1168) — carry stable id.
+        const aTxn = addedExp.filter((x) => x.cat === r.id);
         return (
           <div key={r.id} style={{ marginBottom: 4 }}>
             <button type="button" className="exp-btn" style={{ alignItems: 'center', gap: 12 }} onClick={() => setXExp(isE ? null : r.id)}>
@@ -586,11 +582,9 @@ export default function ExpensesView() {
                   <>
                     {hTxn.length > 0 && <div style={{ borderTop: '1px solid var(--border)', margin: '8px 0' }} />}
                     <div className="lb" style={{ fontSize: 9, marginBottom: 6 }}>Importadas</div>
-                    {aTxn.map((at, i) => {
-                      const x = at.x;
-                      const idx = at.idx;
+                    {aTxn.map((x, i) => {
                       return (
-                        <div key={'a' + idx} style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+                        <div key={'a' + x.id} style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
                           <div className="rw">
                             <span style={{ fontSize: 12, color: 'var(--text)' }}>
                               {x.desc}
@@ -612,7 +606,7 @@ export default function ExpensesView() {
                             {/* FIX 3: alphabetical picker · FIX 1 applied in changeExpCat */}
                             <select
                               value={x.cat}
-                              onChange={(e) => changeExpCat(idx, e.target.value)}
+                              onChange={(e) => changeExpCat(x.id, e.target.value)}
                               style={{ padding: '2px 6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', borderRadius: 'var(--r2)', fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.05em', appearance: 'none' }}
                             >
                               {cats.map((b) => (
@@ -621,10 +615,10 @@ export default function ExpensesView() {
                                 </option>
                               ))}
                             </select>
-                            <button type="button" onClick={() => openAdd(idx)} style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--mono)', fontSize: 9, cursor: 'pointer', fontWeight: 600 }}>
+                            <button type="button" onClick={() => openAdd(x.id)} style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--mono)', fontSize: 9, cursor: 'pointer', fontWeight: 600 }}>
                               Editar
                             </button>
-                            <button type="button" onClick={() => deleteExp(idx)} style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 9, cursor: 'pointer' }}>
+                            <button type="button" onClick={() => deleteExp(x.id)} style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 9, cursor: 'pointer' }}>
                               Remover
                             </button>
                           </div>
