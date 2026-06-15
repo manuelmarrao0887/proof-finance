@@ -140,6 +140,38 @@ export function getAccts(state) {
   return out;
 }
 
+/* ══ getAcctsLive ══
+   Transaction-adjusted account values for DISPLAY/totals: base reading value
+   ± one-off transactions allocated to the account and dated AFTER the reading.
+   The reading by print already reflects spending up to its own date, so only
+   later transactions move the live balance. Accounts without a base reading
+   date are left untouched (we can't date-bound them → avoid double-counting).
+   Snapshots/history keep using the raw getAccts so the past is never rewritten.
+   Match is by the picker label "banco · tipo" stored on exp.acct / income.acct. */
+export function getAcctsLive(state) {
+  const ca = getAccts(state);
+  if (isPreviewMode(state)) return ca; // demo accounts: no live adjust
+  const addedExp = (state && state.addedExp) || [];
+  const incomes = (state && state.incomes) || [];
+  return ca.map(function (a) {
+    const baseISO = a.updated ? String(a.updated).replace(/\./g, '-') : null;
+    if (!baseISO) return a; // no reading → cannot date-bound → leave as-is
+    const label = a.b + ' · ' + a.t;
+    let delta = 0;
+    addedExp.forEach(function (x) {
+      if (x.acct === label && (x.date || '') > baseISO) delta -= Number(x.amount) || 0;
+    });
+    incomes.forEach(function (i) {
+      // Only one-off (dated) incomes move a specific account's balance;
+      // recurring incomes are modelled in the cash-flow projection instead.
+      if (i.acct === label && i.recurring === false && (i.date || '') > baseISO) {
+        delta += Number(i.amount) || 0;
+      }
+    });
+    return delta ? Object.assign({}, a, { v: a.v + delta }) : a;
+  });
+}
+
 /* ══ snapshotFromState ══
    Build a patrimonial snapshot {l,liq,poup,inv,div,xP,xT,tC} from the current
    accounts, used to feed the evolution charts (dynSnaps) when a balance is
@@ -168,7 +200,7 @@ export function getAllHist(state) {
 /* ══ COMPUTE (orig 288-300) ══ */
 
 export function compute(state) {
-  const ca = getAccts(state);
+  const ca = getAcctsLive(state); // display totals reflect live (txn-adjusted) balances
   const ah = getAllHist(state);
   const _ln = getLoan(state);
   const g = {};
@@ -217,8 +249,8 @@ export function cashFlowProjection(state, months) {
   const now = new Date();
   const incomes = (state && state.incomes) || [];
   const recurring = (state && state.recurring) || [];
-  // Starting liquid: categoria "Liquidez"
-  const ca = getAccts(state);
+  // Starting liquid: categoria "Liquidez" (live, txn-adjusted)
+  const ca = getAcctsLive(state);
   let liquid = 0;
   ca.forEach(function (a) {
     if (a.c === 'Liquidez') liquid += a.v;

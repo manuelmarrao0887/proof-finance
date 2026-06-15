@@ -9,6 +9,7 @@ import {
   emergencyFund,
   detectSubscriptions,
   chrt,
+  getAcctsLive,
 } from './finance.js';
 
 // A date `daysAgo` days before now, as YYYY-MM-DD (for time-window tests).
@@ -168,6 +169,44 @@ describe('chrt (sparkline)', () => {
       expect(y).toBeGreaterThanOrEqual(0);
       expect(y).toBeLessThanOrEqual(56);
     });
+  });
+});
+
+describe('getAcctsLive (transaction-adjusted balances)', () => {
+  const base = {
+    currentUser: { uid: 'u1' },
+    customAccts: [
+      { id: 'x1', bank: 'Wise', type: 'Conta a Ordem', value: 1000, updated: '2026.06.01', category: 'Liquidez' },
+    ],
+  };
+  const label = 'Wise · Conta a Ordem';
+
+  it('subtracts expenses and adds one-off incomes dated after the reading', () => {
+    const state = {
+      ...base,
+      addedExp: [
+        { id: 'e1', desc: 'Compra', amount: 50, cat: 'sup', date: '2026-06-10', acct: label },
+        { id: 'e2', desc: 'Antiga', amount: 30, cat: 'sup', date: '2026-05-20', acct: label }, // before base → ignored
+        { id: 'e3', desc: 'Outra conta', amount: 99, cat: 'sup', date: '2026-06-12', acct: 'Banco X · Conta' }, // other acct
+      ],
+      incomes: [
+        { id: 'i1', name: 'Extra', amount: 200, recurring: false, date: '2026-06-15', acct: label },
+        { id: 'i2', name: 'Salário', amount: 3000, recurring: true, acct: label }, // recurring → ignored
+      ],
+    };
+    const acc = getAcctsLive(state).find((a) => a.b === 'Wise');
+    expect(acc.v).toBe(1000 - 50 + 200); // 1150
+  });
+
+  it('leaves an account untouched when it has no base reading date', () => {
+    const state = {
+      currentUser: { uid: 'u1' },
+      customAccts: [{ id: 'x9', bank: 'Novo', type: 'Conta', value: 500, category: 'Liquidez' }], // no `updated`
+      addedExp: [{ id: 'e1', desc: 'X', amount: 50, cat: 'sup', date: '2026-06-10', acct: 'Novo · Conta' }],
+      incomes: [],
+    };
+    const acc = getAcctsLive(state).find((a) => a.b === 'Novo');
+    expect(acc.v).toBe(500);
   });
 });
 
