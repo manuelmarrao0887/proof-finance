@@ -16,6 +16,7 @@ import { useStore } from '../store/store.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
+import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 const COLORS = ['#3b6fee', '#3fc97a', '#f5a623', '#7b5fe0', '#f25555', '#12b3a6'];
 
@@ -109,21 +110,13 @@ export default function GoalModal() {
 
   const footer = (
     <>
-      <button
-        type="button"
-        onClick={saveGoal}
-        style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
-      >
+      <PrimaryButton onClick={saveGoal}>
         {isEdit ? 'Guardar alterações' : 'Criar meta'}
-      </button>
+      </PrimaryButton>
       {isEdit && (
-        <button
-          type="button"
-          onClick={deleteGoal}
-          style={{ width: '100%', padding: '12px 0', border: 'none', background: 'transparent', color: 'var(--signal)', fontSize: 13, fontWeight: 600, marginTop: 8 }}
-        >
+        <SecondaryButton onClick={deleteGoal} style={{ marginTop: 8 }}>
           Eliminar meta
-        </button>
+        </SecondaryButton>
       )}
     </>
   );

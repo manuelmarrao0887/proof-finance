@@ -23,6 +23,7 @@ import { applyRules } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
 import { listAccounts } from '../lib/balances.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
+import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 // Fresh draft for a brand-new expense (orig addData default 417 / reset 2364).
 function freshDraft() {
@@ -208,7 +209,7 @@ export default function AddExpenseSheet() {
     ...inputStyle,
     fontFamily: 'var(--mono)',
     fontSize: 17,
-    fontWeight: 700,
+    fontWeight: 600,
   };
   // Inline error helper text (orig had only a toast).
   const errText = (msg) =>
@@ -216,39 +217,13 @@ export default function AddExpenseSheet() {
 
   const footer = (
     <>
-      <button
-        type="button"
-        onClick={submit}
-        style={{
-          width: '100%',
-          padding: '14px 0',
-          border: 'none',
-          background: 'var(--primary)',
-          color: 'var(--bg)',
-          fontSize: 14,
-          fontWeight: 500,
-          borderRadius: 999,
-        }}
-      >
+      <PrimaryButton onClick={submit}>
         {isEdit ? 'Guardar alterações' : d.recId ? 'Registar despesa' : 'Adicionar despesa'}
-      </button>
+      </PrimaryButton>
       {isEdit && (
-        <button
-          type="button"
-          onClick={remove}
-          style={{
-            width: '100%',
-            padding: '10px 0',
-            border: 'none',
-            background: 'transparent',
-            color: 'var(--signal)',
-            fontSize: 12,
-            fontWeight: 600,
-            marginTop: 8,
-          }}
-        >
+        <SecondaryButton onClick={remove} style={{ marginTop: 8 }}>
           Eliminar despesa
-        </button>
+        </SecondaryButton>
       )}
     </>
   );
@@ -279,7 +254,7 @@ export default function AddExpenseSheet() {
               }}
             >
               <CategoryIcon id={b.id} size={34} />
-              <span style={{ fontSize: 9, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15 }}>
                 {b.nm}
               </span>
             </button>

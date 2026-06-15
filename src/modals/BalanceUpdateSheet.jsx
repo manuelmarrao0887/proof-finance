@@ -19,6 +19,7 @@ import {
   formatReadingDate,
   BALANCE_PROMPT,
 } from '../lib/balances.js';
+import { PrimaryButton } from '../components/Buttons.jsx';
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);

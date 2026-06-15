@@ -16,6 +16,7 @@ import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
+import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 const EMPTY = { id: null, name: '', amount: '', day: '', cat: 'sub' };
 
@@ -100,21 +101,13 @@ export default function RecModal() {
 
   const footer = (
     <>
-      <button
-        type="button"
-        onClick={saveRec}
-        style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
-      >
+      <PrimaryButton onClick={saveRec}>
         {isEdit ? 'Guardar alterações' : 'Adicionar'}
-      </button>
+      </PrimaryButton>
       {isEdit && (
-        <button
-          type="button"
-          onClick={deleteRec}
-          style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--signal)', fontSize: 12, fontWeight: 600, marginTop: 8 }}
-        >
+        <SecondaryButton onClick={deleteRec} style={{ marginTop: 8 }}>
           Eliminar
-        </button>
+        </SecondaryButton>
       )}
     </>
   );

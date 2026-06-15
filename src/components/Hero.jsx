@@ -47,7 +47,7 @@ export default function Hero() {
 
   return (
     <>
-      <div className="hero fadeUp" style={{ margin: '6px 16px 16px' }}>
+      <div className="hero fadeUp" style={{ margin: '6px 20px 16px' }}>
         <div className="rw" style={{ marginBottom: 10, position: 'relative', zIndex: 1 }}>
           <div
             style={{

@@ -18,6 +18,7 @@ import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
 import { listAccounts } from '../lib/balances.js';
+import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 // INCOME_SOURCES (orig 1541) — copied into this file.
 const INCOME_SOURCES = [
@@ -134,21 +135,13 @@ export default function IncomeModal() {
 
   const footer = (
     <>
-      <button
-        type="button"
-        onClick={saveIncome}
-        style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
-      >
+      <PrimaryButton onClick={saveIncome}>
         {isEdit ? 'Guardar alterações' : 'Adicionar receita'}
-      </button>
+      </PrimaryButton>
       {isEdit && (
-        <button
-          type="button"
-          onClick={deleteIncome}
-          style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--signal)', fontSize: 12, fontWeight: 600, marginTop: 8 }}
-        >
+        <SecondaryButton onClick={deleteIncome} style={{ marginTop: 8 }}>
           Eliminar
-        </button>
+        </SecondaryButton>
       )}
     </>
   );

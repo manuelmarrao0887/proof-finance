@@ -14,6 +14,7 @@ import { useStore } from '../store/store.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
+import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 const ACCT_CATEGORIES = ['Liquidez', 'Poupanca', 'Investimentos', 'Cripto', 'Imobiliario', 'Outros'];
 const ACCT_TYPES = ['Conta a Ordem', 'Poupanca', 'Corretagem', 'P2P Lending', 'Rend. Fixo', 'Crypto Wallet', 'Imobiliario', 'Outros'];
@@ -148,13 +149,13 @@ export default function AcctModal() {
       <input id="acNote" value={draft.note} onChange={(e) => set('note', e.target.value)} placeholder="Juros, IBAN parcial, etc." style={{ ...inputStyle, fontSize: 14, marginBottom: 22 }} />
 
       {/* Save */}
-      <button type="button" onClick={saveAcct} style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}>
+      <PrimaryButton onClick={saveAcct}>
         {isEdit ? 'Guardar alterações' : 'Adicionar conta'}
-      </button>
+      </PrimaryButton>
       {isEdit && (
-        <button type="button" onClick={deleteAcct} style={{ width: '100%', padding: '12px 0', border: 'none', background: 'transparent', color: 'var(--danger)', fontSize: 13, fontWeight: 500, marginTop: 8 }}>
+        <SecondaryButton onClick={deleteAcct} style={{ color: 'var(--danger)', marginTop: 8 }}>
           Eliminar conta
-        </button>
+        </SecondaryButton>
       )}
     </Sheet>
   );
