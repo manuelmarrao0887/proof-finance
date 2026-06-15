@@ -138,7 +138,7 @@ export default function IncomesView() {
         <div className="rw" style={{ marginBottom: 4 }}>
           <div className="lb">{(isQ ? 'RECEITA Q1' : 'RECEITA ' + (ms[em] || '').toUpperCase())}</div>
         </div>
-        <div className="m" style={{ fontSize: 26, fontWeight: 900, color: 'var(--success)' }}>{fc(monthTotal)}</div>
+        <div className="m" style={{ fontSize: 26, fontWeight: 800, color: 'var(--success)' }}>{fc(monthTotal)}</div>
         <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
           {fc(recTotal)} recorrente{oneTotal > 0 ? ' · +' + fc(oneTotal) + ' pontual' : ''}
         </div>
@@ -179,7 +179,7 @@ export default function IncomesView() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div className="m" style={{ fontSize: 15, fontWeight: 700, color: 'var(--success)' }}>+{fm(i.amount || 0)}</div>
+                  <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)' }}>+{fm(i.amount || 0)}</div>
                   <button
                     type="button"
                     onClick={() => open('income', { id: i.id })}

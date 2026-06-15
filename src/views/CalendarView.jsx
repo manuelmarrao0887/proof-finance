@@ -178,15 +178,15 @@ export default function CalendarView() {
       {/* Summary */}
       <div className="g3" style={{ marginBottom: 16 }}>
         <div className="cd" style={{ padding: 12 }}>
-          <div className="lb" style={{ fontSize: 9 }}>Receita</div>
-          <div className="m" style={{ fontSize: 14, fontWeight: 700, color: 'var(--success)', marginTop: 2 }}>+{fc(totalIn)}</div>
+          <div className="lb" style={{ fontSize: 11 }}>Receita</div>
+          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--success)', marginTop: 2 }}>+{fc(totalIn)}</div>
         </div>
         <div className="cd" style={{ padding: 12 }}>
-          <div className="lb" style={{ fontSize: 9 }}>Despesa</div>
-          <div className="m" style={{ fontSize: 14, fontWeight: 700, color: 'var(--signal)', marginTop: 2 }}>-{fc(totalOut)}</div>
+          <div className="lb" style={{ fontSize: 11 }}>Despesa</div>
+          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--signal)', marginTop: 2 }}>-{fc(totalOut)}</div>
         </div>
         <div className="cd" style={{ padding: 12, borderLeft: '3px solid ' + (net >= 0 ? 'var(--success)' : 'var(--signal)') }}>
-          <div className="lb" style={{ fontSize: 9 }}>Net</div>
+          <div className="lb" style={{ fontSize: 11 }}>Net</div>
           <div className="m" style={{ fontSize: 14, fontWeight: 800, color: net >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 2 }}>
             {net >= 0 ? '+' : ''}
             {fc(net)}
@@ -198,7 +198,7 @@ export default function CalendarView() {
       <div className="cd" style={{ padding: 14, marginBottom: 16 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 6 }}>
           {DOW.map((dn, i) => (
-            <div key={i} style={{ textAlign: 'center', fontSize: 9, color: 'var(--text3)', fontWeight: 700, padding: '4px 0' }}>
+            <div key={i} style={{ textAlign: 'center', fontSize: 11, color: 'var(--text3)', fontWeight: 700, padding: '4px 0' }}>
               {dn}
             </div>
           ))}
@@ -226,7 +226,7 @@ export default function CalendarView() {
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: ev.color }} />
                 <span style={{ fontSize: 13 }}>{ev.name}</span>
               </div>
-              <span className="m" style={{ fontSize: 13, fontWeight: 700, color: ev.color }}>
+              <span className="m" style={{ fontSize: 13, fontWeight: 600, color: ev.color }}>
                 {ev.amount > 0 ? '+' : ''}
                 {fm(ev.amount)}
               </span>

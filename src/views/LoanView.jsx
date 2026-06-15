@@ -75,7 +75,7 @@ export default function LoanView() {
           <div className="bar" style={{ height: 6, background: 'var(--bg3)' }}>
             <div className="bar-fill" style={{ width: pp + '%', background: 'var(--success)' }} />
           </div>
-          <div className="rw m" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 6 }}>
+          <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
             <span>28.10.2022</span>
             <span>28.10.2042</span>
           </div>

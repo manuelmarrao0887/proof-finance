@@ -169,7 +169,7 @@ export default function ExpensesView() {
         )}
         <div className="rw" style={{ marginBottom: 10, padding: '0 4px' }}>
           <div className="lb">{matches.length + ' resultado' + (matches.length === 1 ? '' : 's')}</div>
-          <div className="m" style={{ fontSize: 13, fontWeight: 500 }}>{fm(tot)}</div>
+          <div className="m" style={{ fontSize: 13, fontWeight: 600 }}>{fm(tot)}</div>
         </div>
         {sorted.length === 0 ? (
           <div className="empty">
@@ -186,7 +186,7 @@ export default function ExpensesView() {
                     <div style={{ fontSize: 14, fontWeight: 600 }}>
                       {x.desc}
                       {x.shared && (
-                        <span style={{ fontSize: 9, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 6px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
+                        <span style={{ fontSize: 11, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 5px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
                           /{x.split || 2}
                         </span>
                       )}
@@ -206,7 +206,7 @@ export default function ExpensesView() {
                                 ev.stopPropagation();
                                 toggleTagFilter(t);
                               }}
-                              style={{ fontSize: 10, background: on ? 'var(--fg)' : 'var(--elevated)', color: on ? 'var(--bg)' : 'var(--fg-muted)', padding: '2px 8px', borderRadius: 999, fontWeight: 500, border: '1px solid ' + (on ? 'var(--fg)' : 'var(--border)'), fontFamily: 'var(--mono)', cursor: 'pointer' }}
+                              style={{ fontSize: 11, background: on ? 'var(--fg)' : 'var(--elevated)', color: on ? 'var(--bg)' : 'var(--fg-muted)', padding: '2px 8px', borderRadius: 999, fontWeight: 500, border: '1px solid ' + (on ? 'var(--fg)' : 'var(--border)'), fontFamily: 'var(--mono)', cursor: 'pointer' }}
                             >
                               #{t}
                             </button>
@@ -216,7 +216,7 @@ export default function ExpensesView() {
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div className="m" style={{ fontSize: 14, fontWeight: 700 }}>{fm(x.amount)}</div>
+                    <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{fm(x.amount)}</div>
                     <button type="button" onClick={() => openAdd(x.id)} className="icon-btn" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Editar despesa">
                       <EditIcon />
                     </button>
@@ -291,13 +291,13 @@ export default function ExpensesView() {
     const dEnd = new Date(dToday.getFullYear(), dToday.getMonth() + 1, 0).getDate();
     const pct = Math.round((dToday.getDate() / dEnd) * 100);
     partialNote = (
-      <div className="m" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 10 }}>
+      <div className="m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
         {ms[3] + ' parcial · ' + pct + '% do mês'}
       </div>
     );
   } else if (em === 3 && preview) {
     partialNote = (
-      <div className="m" style={{ fontSize: 10, color: 'var(--signal)', marginTop: 10 }}>Abril parcial</div>
+      <div className="m" style={{ fontSize: 11, color: 'var(--signal)', marginTop: 10 }}>Abril parcial</div>
     );
   }
 
@@ -478,12 +478,12 @@ export default function ExpensesView() {
         <div className="rw">
           <div>
             <div className="lb">{isQ ? (preview ? 'Despesas Q1' : 'Despesas 3M (últimos 3 meses)') : 'DESPESAS ' + ms[em]}</div>
-            <div className="m" style={{ fontSize: 24, fontWeight: 900, marginTop: 4 }}>{fm(tE)}</div>
+            <div className="m" style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{fm(tE)}</div>
           </div>
           {!isQ && em < 3 && salP[em] != null && (
             <div style={{ textAlign: 'right' }}>
               <div className="lb">Salário</div>
-              <div className="m" style={{ fontSize: 18, fontWeight: 700, color: 'var(--success)', marginTop: 4 }}>{fm(salP[em])}</div>
+              <div className="m" style={{ fontSize: 18, fontWeight: 600, color: 'var(--success)', marginTop: 4 }}>{fm(salP[em])}</div>
             </div>
           )}
         </div>
@@ -504,7 +504,7 @@ export default function ExpensesView() {
                   <CategoryIcon id={r.cat} size={36} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
-                    <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
                       {(b ? b.nm : '-') + ' · dia ' + (r.day || '?') + ' · ' + fm(r.amount)}
                     </div>
                   </div>
@@ -564,11 +564,11 @@ export default function ExpensesView() {
                   <div className="bar-fill" style={{ width: Math.min(r.pct, 100) + '%', background: bc, opacity: op }} />
                 </div>
                 <div className="rw" style={{ marginTop: 4 }}>
-                  <span className="m" style={{ fontSize: 10, color: ov ? 'var(--signal)' : 'var(--text3)' }}>{r.pct.toFixed(0)}%</span>
+                  <span className="m" style={{ fontSize: 11, color: ov ? 'var(--signal)' : 'var(--text3)' }}>{r.pct.toFixed(0)}%</span>
                   {ov ? (
-                    <span className="m" style={{ fontSize: 10, color: 'var(--signal)' }}>+{fm(r.val - r.lm)}</span>
+                    <span className="m" style={{ fontSize: 11, color: 'var(--signal)' }}>+{fm(r.val - r.lm)}</span>
                   ) : (
-                    <span className="m" style={{ fontSize: 10, color: 'var(--success)' }}>Resta {fm(r.lm - r.val)}</span>
+                    <span className="m" style={{ fontSize: 11, color: 'var(--success)' }}>Resta {fm(r.lm - r.val)}</span>
                   )}
                 </div>
               </div>
@@ -580,7 +580,7 @@ export default function ExpensesView() {
                 {hTxn.map((t, i) => (
                   <div key={'h' + i} className="rw" style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
                     <span style={{ fontSize: 12, color: 'var(--text2)' }}>{t[0]}</span>
-                    <span className="m" style={{ fontSize: 12, fontWeight: 500 }}>{fm(t[1])}</span>
+                    <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>{fm(t[1])}</span>
                   </div>
                 ))}
 
@@ -588,7 +588,7 @@ export default function ExpensesView() {
                 {aTxn.length > 0 && (
                   <>
                     {hTxn.length > 0 && <div style={{ borderTop: '1px solid var(--border)', margin: '8px 0' }} />}
-                    <div className="lb" style={{ fontSize: 9, marginBottom: 6 }}>Importadas</div>
+                    <div className="lb" style={{ fontSize: 11, marginBottom: 6 }}>Importadas</div>
                     {aTxn.map((x, i) => {
                       return (
                         <div key={'a' + x.id} style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
@@ -596,20 +596,20 @@ export default function ExpensesView() {
                             <span style={{ fontSize: 12, color: 'var(--text)' }}>
                               {x.desc}
                               {x.shared && (
-                                <span style={{ fontSize: 9, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 6px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
+                                <span style={{ fontSize: 11, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 5px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
                                   /{x.split || 2}
                                 </span>
                               )}
                             </span>
-                            <span className="m" style={{ fontSize: 12, fontWeight: 500 }}>
+                            <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>
                               {fm(x.amount)}
                               {x.shared && x.total != null && (
-                                <span style={{ fontSize: 9, color: 'var(--text3)', marginLeft: 4 }}>de {fm(x.total)}</span>
+                                <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>de {fm(x.total)}</span>
                               )}
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                            <span className="m" style={{ fontSize: 9, color: 'var(--text3)' }}>{x.date}</span>
+                            <span className="m" style={{ fontSize: 11, color: 'var(--text3)' }}>{x.date}</span>
                             {/* FIX 3: alphabetical picker · FIX 1 applied in changeExpCat */}
                             <select
                               value={x.cat}
