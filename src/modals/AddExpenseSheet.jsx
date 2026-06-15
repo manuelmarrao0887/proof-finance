@@ -74,11 +74,14 @@ export default function AddExpenseSheet() {
     payload && typeof payload === 'object' && payload.prefill ? payload.prefill : null;
 
   const [d, setD] = useState(freshDraft);
+  // Inline validation errors keyed by field (desc / amount / total).
+  const [errors, setErrors] = useState({});
 
   // (Re)seed the draft whenever the sheet opens (edit -> record; prefill -> seed;
   // otherwise fresh).
   useEffect(() => {
     if (!isOpen) return;
+    setErrors({});
     if (isEdit) {
       setD(draftFromExpense(editExp));
     } else if (prefill) {
@@ -101,7 +104,11 @@ export default function AddExpenseSheet() {
 
   if (!isOpen) return null;
 
-  const set = (k, v) => setD((p) => ({ ...p, [k]: v }));
+  const set = (k, v) => {
+    setD((p) => ({ ...p, [k]: v }));
+    // Clear the inline error for the field as the user edits it.
+    setErrors((e) => (e[k] ? { ...e, [k]: undefined } : e));
+  };
 
   // Shared-split derived "your part" (orig 2160-2169).
   const totVal = parseFloat((d.total || '0').toString().replace(',', '.')) || 0;
@@ -125,6 +132,7 @@ export default function AddExpenseSheet() {
       split = parseInt(d.split || '2', 10);
       if (isNaN(split) || split < 2) split = 2;
       if (isNaN(total) || total <= 0) {
+        setErrors({ total: 'Total inválido' });
         toast('Total inválido', 'error');
         return;
       }
@@ -132,10 +140,15 @@ export default function AddExpenseSheet() {
     } else {
       amt = parseFloat((d.amount || '0').toString().replace(',', '.'));
     }
-    if (!desc || isNaN(amt) || amt <= 0) {
+    const fieldErrs = {};
+    if (!desc) fieldErrs.desc = 'Preenche a descrição';
+    if (!d.shared && (isNaN(amt) || amt <= 0)) fieldErrs.amount = 'Preenche o valor';
+    if (Object.keys(fieldErrs).length > 0) {
+      setErrors(fieldErrs);
       toast('Preenche descrição e valor', 'error');
       return;
     }
+    setErrors({});
     // Tags: comma-split -> trimmed, lowercased, kebab; cap 5 (orig 2342).
     const tags = (Array.isArray(d.tags) ? d.tags.join(', ') : d.tags || '')
       .split(',')
@@ -197,6 +210,9 @@ export default function AddExpenseSheet() {
     fontSize: 17,
     fontWeight: 700,
   };
+  // Inline error helper text (orig had only a toast).
+  const errText = (msg) =>
+    msg ? <div style={{ color: 'var(--signal)', fontSize: 11, marginTop: 4 }}>{msg}</div> : null;
 
   const footer = (
     <>
@@ -277,8 +293,11 @@ export default function AddExpenseSheet() {
         value={d.desc}
         onChange={(e) => set('desc', e.target.value)}
         placeholder="Ex: Pingo Doce"
-        style={{ ...inputStyle, fontSize: 15, marginBottom: 14 }}
+        aria-label="Descrição"
+        style={{ ...inputStyle, fontSize: 15, marginBottom: errors.desc ? 0 : 14 }}
       />
+      {errText(errors.desc)}
+      {errors.desc && <div style={{ height: 14 }} />}
 
       {/* Shared toggle */}
       <div className="rw" style={{ padding: '10px 14px', background: 'var(--bg3)', borderRadius: 'var(--r2)', marginBottom: 14 }}>
@@ -290,6 +309,7 @@ export default function AddExpenseSheet() {
           <input
             type="checkbox"
             checked={d.shared}
+            aria-label="Despesa partilhada"
             onChange={(e) => {
               const on = e.target.checked;
               // Seed total from the single-amount field when turning on (orig 2156).
@@ -334,8 +354,10 @@ export default function AddExpenseSheet() {
                 onChange={(e) => set('total', e.target.value)}
                 placeholder="100,00"
                 inputMode="decimal"
+                aria-label="Total (EUR)"
                 style={{ ...monoBig, fontSize: 15, padding: '11px 14px' }}
               />
+              {errText(errors.total)}
             </div>
             <div style={{ width: 80 }}>
               <div className="lb" style={{ marginBottom: 6 }}>Pessoas</div>
@@ -345,6 +367,7 @@ export default function AddExpenseSheet() {
                 type="number"
                 min="2"
                 max="10"
+                aria-label="Pessoas"
                 style={{ ...monoBig, fontSize: 15, padding: '11px 12px', textAlign: 'center' }}
               />
             </div>
@@ -360,6 +383,7 @@ export default function AddExpenseSheet() {
             type="date"
             value={d.date}
             onChange={(e) => set('date', e.target.value)}
+            aria-label="Data"
             style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 13, marginBottom: 14 }}
           />
         </>
@@ -372,8 +396,10 @@ export default function AddExpenseSheet() {
               onChange={(e) => set('amount', e.target.value)}
               placeholder="0,00"
               inputMode="decimal"
+              aria-label="Valor (EUR)"
               style={monoBig}
             />
+            {errText(errors.amount)}
           </div>
           <div style={{ flex: 1 }}>
             <div className="lb" style={{ marginBottom: 6 }}>Data</div>
@@ -381,6 +407,7 @@ export default function AddExpenseSheet() {
               type="date"
               value={d.date}
               onChange={(e) => set('date', e.target.value)}
+              aria-label="Data"
               style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 13 }}
             />
           </div>
@@ -392,6 +419,7 @@ export default function AddExpenseSheet() {
       <select
         value={d.acct}
         onChange={(e) => set('acct', e.target.value)}
+        aria-label="Conta debitada (opcional)"
         style={{ ...inputStyle, appearance: 'none', marginBottom: 14, fontSize: 14 }}
       >
         <option value="">— sem conta —</option>
@@ -409,6 +437,7 @@ export default function AddExpenseSheet() {
         value={Array.isArray(d.tags) ? d.tags.join(', ') : d.tags || ''}
         onChange={(e) => set('tags', e.target.value)}
         placeholder="Ex: viagem-acores, casa, presente"
+        aria-label="Tags (opcional)"
         style={{ ...inputStyle, fontSize: 13, marginBottom: 14 }}
       />
 
@@ -418,6 +447,7 @@ export default function AddExpenseSheet() {
         value={d.notes || ''}
         onChange={(e) => set('notes', e.target.value)}
         placeholder="Detalhes ou contexto"
+        aria-label="Nota (opcional)"
         rows={2}
         style={{ ...inputStyle, fontSize: 13, marginBottom: 4, resize: 'vertical', fontFamily: 'var(--font)' }}
       />

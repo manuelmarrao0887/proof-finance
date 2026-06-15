@@ -7,7 +7,7 @@
    .sheet-overlay/.sheet-panel structure (matches the original). useModal('more').
    ════════════════════════════════════════════════════════════════════════ */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI, useModal } from '../store/ui.jsx';
 
@@ -31,6 +31,16 @@ export default function MoreMenu() {
   const { state } = useStore();
   const ui = useUI();
   const { isOpen, close } = useModal('more');
+
+  // Escape-to-close while open (a11y).
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = (ev) => {
+      if (ev.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, close]);
 
   if (!isOpen) return null;
 

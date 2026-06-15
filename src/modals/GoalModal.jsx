@@ -135,17 +135,18 @@ export default function GoalModal() {
         value={draft.name}
         onChange={(e) => set('name', e.target.value)}
         placeholder="Ex: Fundo Emergência"
+        aria-label="Nome"
         style={{ ...inputStyle, marginBottom: 16 }}
       />
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Objetivo</div>
-          <input value={draft.target} onChange={(e) => set('target', e.target.value)} placeholder="10000" inputMode="decimal" style={numStyle} />
+          <input value={draft.target} onChange={(e) => set('target', e.target.value)} placeholder="10000" inputMode="decimal" aria-label="Objetivo" style={numStyle} />
         </div>
         <div style={{ flex: 1 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Atual</div>
-          <input value={draft.current} onChange={(e) => set('current', e.target.value)} placeholder="0" inputMode="decimal" style={numStyle} />
+          <input value={draft.current} onChange={(e) => set('current', e.target.value)} placeholder="0" inputMode="decimal" aria-label="Atual" style={numStyle} />
         </div>
       </div>
 
@@ -154,6 +155,7 @@ export default function GoalModal() {
         type="date"
         value={draft.deadline}
         onChange={(e) => set('deadline', e.target.value)}
+        aria-label="Data alvo (opcional)"
         style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 14, marginBottom: 16 }}
       />
 

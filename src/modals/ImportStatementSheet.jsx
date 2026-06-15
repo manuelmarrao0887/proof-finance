@@ -237,8 +237,8 @@ export default function ImportStatementSheet() {
         )}
 
         {stScanning && (
-          <div style={{ border: '1px solid var(--border)', padding: 24, textAlign: 'center' }}>
-            <div className="lb">A processar...</div>
+          <div aria-live="polite" style={{ border: '1px solid var(--border)', padding: 24, textAlign: 'center' }}>
+            <div className="lb">A processar…</div>
           </div>
         )}
 
@@ -276,14 +276,19 @@ export default function ImportStatementSheet() {
                   >
                     {/* Row 1: checkbox + desc + amount */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={sel}
+                        aria-label={'Selecionar ' + (t.desc || 'transação')}
                         onClick={() => toggleStSel(t._id)}
                         style={{
-                          width: 18,
-                          height: 18,
-                          borderRadius: 6,
-                          border: '1.5px solid ' + (sel ? 'var(--primary)' : 'var(--border)'),
-                          background: sel ? 'var(--primary)' : 'transparent',
+                          width: 44,
+                          height: 44,
+                          margin: '-13px 0 -13px -13px',
+                          padding: 0,
+                          border: 'none',
+                          background: 'transparent',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -291,12 +296,26 @@ export default function ImportStatementSheet() {
                           cursor: 'pointer',
                         }}
                       >
-                        {sel && (
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </div>
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            width: 18,
+                            height: 18,
+                            borderRadius: 6,
+                            border: '1.5px solid ' + (sel ? 'var(--primary)' : 'var(--border)'),
+                            background: sel ? 'var(--primary)' : 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {sel && (
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </span>
+                      </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div className="rw">
                           <span style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%' }}>
@@ -314,6 +333,7 @@ export default function ImportStatementSheet() {
                       <select
                         value={t.category || ''}
                         onChange={(e) => changeStCat(i, e.target.value)}
+                        aria-label={'Categoria de ' + (t.desc || 'transação')}
                         style={{
                           flex: 1,
                           padding: '4px 8px',
@@ -321,7 +341,7 @@ export default function ImportStatementSheet() {
                           background: warn ? 'rgba(229,57,53,0.05)' : 'var(--bg)',
                           color: 'var(--text)',
                           fontFamily: 'var(--mono)',
-                          fontSize: 9,
+                          fontSize: 11,
                           letterSpacing: '0.05em',
                           appearance: 'none',
                         }}

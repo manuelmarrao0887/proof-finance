@@ -109,7 +109,7 @@ export default function BalanceUpdateSheet() {
 
   const selStyle = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 14, marginBottom: 14 };
   const inputStyle = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 16, boxSizing: 'border-box', marginBottom: 14 };
-  const btnPrimary = (enabled) => ({ width: '100%', padding: '14px 0', border: 'none', background: enabled ? 'var(--fg)' : 'var(--bg3)', color: enabled ? 'var(--bg)' : 'var(--text3)', fontSize: 14, fontWeight: 600, borderRadius: 999 });
+  const btnPrimary = (enabled) => ({ width: '100%', padding: '14px 0', border: 'none', background: enabled ? 'var(--primary)' : 'var(--bg3)', color: enabled ? 'var(--bg)' : 'var(--text3)', fontSize: 14, fontWeight: 600, borderRadius: 999 });
 
   return (
     <Sheet open={isOpen} onClose={onClose} title="Atualizar saldo">

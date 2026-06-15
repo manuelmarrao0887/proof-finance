@@ -18,12 +18,12 @@ import { isPreviewMode } from '../lib/finance.js';
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 const INCOME_SOURCES = [
-  ['salary', 'Salário', '#3fc97a'],
-  ['freelance', 'Freelance', '#3b6fee'],
-  ['dividend', 'Dividendos', '#7b5fe0'],
-  ['rental', 'Aluguer', '#f5a623'],
-  ['bonus', 'Bónus / Prémio', '#f25555'],
-  ['other', 'Outro', '#9aa3b5'],
+  ['salary', 'Salário', 'var(--success)'],
+  ['freelance', 'Freelance', 'var(--primary)'],
+  ['dividend', 'Dividendos', 'var(--secondary)'],
+  ['rental', 'Aluguer', 'var(--warning)'],
+  ['bonus', 'Bónus / Prémio', 'var(--danger)'],
+  ['other', 'Outro', 'var(--fg-subtle)'],
 ];
 function srcLabel(s) {
   const f = INCOME_SOURCES.find((x) => x[0] === s);
@@ -31,7 +31,7 @@ function srcLabel(s) {
 }
 function srcColor(s) {
   const f = INCOME_SOURCES.find((x) => x[0] === s);
-  return f ? f[2] : '#9aa3b5';
+  return f ? f[2] : 'var(--fg-subtle)';
 }
 
 // YYYY-MM for window index i (0..3 = oldest..current of the 4-month window).

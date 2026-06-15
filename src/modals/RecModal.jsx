@@ -126,17 +126,18 @@ export default function RecModal() {
         value={draft.name}
         onChange={(e) => set('name', e.target.value)}
         placeholder="Ex: Netflix"
+        aria-label="Nome"
         style={{ ...inputStyle, marginBottom: 16 }}
       />
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Valor</div>
-          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="9,99" inputMode="decimal" style={numStyle} />
+          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="9,99" inputMode="decimal" aria-label="Valor" style={numStyle} />
         </div>
         <div style={{ width: 90 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Dia</div>
-          <input value={draft.day} onChange={(e) => set('day', e.target.value)} placeholder="1" inputMode="numeric" style={{ ...numStyle, textAlign: 'center' }} />
+          <input value={draft.day} onChange={(e) => set('day', e.target.value)} placeholder="1" inputMode="numeric" aria-label="Dia" style={{ ...numStyle, textAlign: 'center' }} />
         </div>
       </div>
 
@@ -144,6 +145,7 @@ export default function RecModal() {
       <select
         value={draft.cat}
         onChange={(e) => set('cat', e.target.value)}
+        aria-label="Categoria"
         style={{
           width: '100%',
           padding: '12px 16px',

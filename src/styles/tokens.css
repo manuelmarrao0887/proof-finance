@@ -10,6 +10,7 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 :root{
+  color-scheme: light dark;
   /* ── Finany palette (Proof Finance redesign) ── */
   --bg:#ffffff;
   --surface:#f4f6fa;
@@ -55,7 +56,7 @@
   --font:'Plus Jakarta Sans','Inter',-apple-system,'Helvetica Neue',sans-serif;
   --mono:'Plus Jakarta Sans','Inter',-apple-system,sans-serif;
   /* Radii — rounded Finany look */
-  --r:20px;--r2:16px;--r3:12px;
+  --r:20px;--r2:16px;--r3:12px;--r4:8px;
   /* Shadows — soft, low */
   --shadow:0 1px 3px rgba(10,22,51,0.06),0 1px 2px rgba(10,22,51,0.04);
   --shadow-lg:0 8px 24px rgba(10,22,51,0.10),0 2px 6px rgba(10,22,51,0.05);
@@ -70,6 +71,7 @@
   --ease-ios-fast:cubic-bezier(0.4,0.0,0.2,1);
 }
 html[data-theme="dark"]{
+  color-scheme: dark;
   --bg:#0a1024;
   --surface:#121a33;
   --elevated:#1a2440;

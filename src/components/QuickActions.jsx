@@ -9,10 +9,10 @@ import { useUI } from '../store/ui.jsx';
 import Icon from './Icon.jsx';
 
 const ACTIONS = [
-  { key: 'balanceUpdate', label: 'Saldo', icon: 'balance', color: '#3b6fee' },
-  { key: 'add', label: 'Despesa', icon: 'expense', color: '#f25555' },
-  { key: 'income', label: 'Receita', icon: 'income', color: '#3fc97a' },
-  { key: 'more', label: 'Mais', icon: 'dots', color: '#7b5fe0' },
+  { key: 'balanceUpdate', label: 'Saldo', icon: 'balance', color: 'var(--primary)' },
+  { key: 'add', label: 'Despesa', icon: 'expense', color: 'var(--danger)' },
+  { key: 'income', label: 'Receita', icon: 'income', color: 'var(--success)' },
+  { key: 'more', label: 'Mais', icon: 'dots', color: 'var(--secondary)' },
 ];
 
 export default function QuickActions() {
@@ -32,7 +32,7 @@ export default function QuickActions() {
               width: 54,
               height: 54,
               borderRadius: '50%',
-              background: a.color + '1f', // hex alpha ~12%
+              background: 'color-mix(in srgb, ' + a.color + ' 12%, transparent)', // ~12% tint of the token
               color: a.color,
               display: 'flex',
               alignItems: 'center',

@@ -87,7 +87,7 @@ export default function SettingsSheet() {
       setTestResult({ kind: 'err', label: 'COLA A KEY PRIMEIRO' });
       return;
     }
-    setTestResult({ kind: 'info', label: 'A testar...' });
+    setTestResult({ kind: 'info', label: 'A testar…' });
     fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -247,16 +247,17 @@ export default function SettingsSheet() {
       <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.5 }}>
         API key da Anthropic para o scanner e assistente. Obtem em console.anthropic.com.
       </div>
+      <label htmlFor="ki" className="lb" style={{ display: 'block', marginBottom: 8 }}>Chave API</label>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <input
           id="ki"
           type={keyVisible ? 'text' : 'password'}
           value={keyInput}
           onChange={(e) => setKeyInput(e.target.value)}
-          placeholder="sk-ant-..."
+          placeholder="sk-ant-…"
           style={{ flex: 1, padding: '12px 16px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontFamily: 'var(--mono)', fontSize: 12, boxSizing: 'border-box' }}
         />
-        <button type="button" onClick={() => setKeyVisible((v) => !v)} style={{ padding: '0 14px', border: 'none', background: 'var(--bg3)', color: 'var(--text2)', borderRadius: 'var(--r2)', fontSize: 11, fontWeight: 600 }}>
+        <button type="button" aria-pressed={keyVisible} onClick={() => setKeyVisible((v) => !v)} style={{ minHeight: 44, padding: '0 14px', border: 'none', background: 'var(--bg3)', color: 'var(--text2)', borderRadius: 'var(--r2)', fontSize: 11, fontWeight: 600 }}>
           Ver
         </button>
       </div>

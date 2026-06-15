@@ -135,7 +135,12 @@ function Header({ theme, onToggleTheme, syncStatus }) {
 
 function BottomNav({ tab, onTab, onPlus, onMore }) {
   const slot = (key, label) => (
-    <button type="button" className={'bnav-btn' + (tab === key ? ' on' : '')} onClick={() => onTab(key)}>
+    <button
+      type="button"
+      className={'bnav-btn' + (tab === key ? ' on' : '')}
+      aria-current={tab === key ? 'page' : undefined}
+      onClick={() => onTab(key)}
+    >
       {Icon[key]}
       <span>{label}</span>
     </button>
@@ -149,7 +154,12 @@ function BottomNav({ tab, onTab, onPlus, onMore }) {
         <span className="fab">{Icon.plus}</span>
       </button>
       {slot('goals', 'Metas')}
-      <button type="button" className={'bnav-btn' + (moreTabs.includes(tab) ? ' on' : '')} onClick={onMore}>
+      <button
+        type="button"
+        className={'bnav-btn' + (moreTabs.includes(tab) ? ' on' : '')}
+        aria-current={moreTabs.includes(tab) ? 'page' : undefined}
+        onClick={onMore}
+      >
         {Icon.more}
         <span>Mais</span>
       </button>

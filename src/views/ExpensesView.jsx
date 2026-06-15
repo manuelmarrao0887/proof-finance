@@ -100,6 +100,7 @@ export default function ExpensesView() {
     actions.classifyExpense(id, cat);
   };
   const deleteExp = (id) => {
+    if (typeof confirm === 'function' && !confirm('Remover esta despesa?')) return;
     actions.deleteExpense(id);
   };
 
@@ -134,16 +135,18 @@ export default function ExpensesView() {
           <SearchIcon />
           <input
             id="exSearch"
+            type="search"
+            aria-label="Pesquisar despesas"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Pesquisar..."
+            placeholder="Pesquisar…"
             style={{ width: '100%', padding: '12px 40px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 16, boxSizing: 'border-box' }}
           />
           {q && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fg-subtle)', fontSize: 18, lineHeight: 1, padding: 6 }}
+              style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fg-subtle)', fontSize: 18, lineHeight: 1, padding: 12, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               aria-label="Limpar pesquisa"
             >
               &times;
@@ -214,7 +217,7 @@ export default function ExpensesView() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div className="m" style={{ fontSize: 14, fontWeight: 700 }}>{fm(x.amount)}</div>
-                    <button type="button" onClick={() => openAdd(x.id)} className="icon-btn" style={{ width: 28, height: 28 }} aria-label="Editar despesa">
+                    <button type="button" onClick={() => openAdd(x.id)} className="icon-btn" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Editar despesa">
                       <EditIcon />
                     </button>
                   </div>
@@ -378,9 +381,11 @@ export default function ExpensesView() {
         <SearchIcon />
         <input
           id="exSearch"
+          type="search"
+          aria-label="Pesquisar despesas"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Pesquisar..."
+          placeholder="Pesquisar…"
           style={{ width: '100%', padding: '12px 16px 12px 40px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 16, boxSizing: 'border-box' }}
         />
       </div>
@@ -450,6 +455,7 @@ export default function ExpensesView() {
             key={i}
             type="button"
             className={'ms' + (em === i ? ' on' : '')}
+            aria-current={em === i ? 'true' : undefined}
             onClick={() => actions.setEm(i)}
             style={i < 3 ? { borderRight: '1px solid var(--border)' } : undefined}
           >
@@ -459,6 +465,7 @@ export default function ExpensesView() {
         <button
           type="button"
           className={'ms' + (em === 4 ? ' on' : '')}
+          aria-current={em === 4 ? 'true' : undefined}
           onClick={() => actions.setEm(4)}
           style={{ borderLeft: '1px solid var(--border)' }}
         >
@@ -607,7 +614,8 @@ export default function ExpensesView() {
                             <select
                               value={x.cat}
                               onChange={(e) => changeExpCat(x.id, e.target.value)}
-                              style={{ padding: '2px 6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', borderRadius: 'var(--r2)', fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.05em', appearance: 'none' }}
+                              aria-label={'Categoria de ' + x.desc}
+                              style={{ padding: '8px 6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', borderRadius: 'var(--r2)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', appearance: 'none', minHeight: 40 }}
                             >
                               {cats.map((b) => (
                                 <option key={b.id} value={b.id}>
@@ -615,10 +623,10 @@ export default function ExpensesView() {
                                 </option>
                               ))}
                             </select>
-                            <button type="button" onClick={() => openAdd(x.id)} style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--mono)', fontSize: 9, cursor: 'pointer', fontWeight: 600 }}>
+                            <button type="button" onClick={() => openAdd(x.id)} aria-label="Editar despesa" style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--mono)', fontSize: 11, cursor: 'pointer', fontWeight: 600, padding: '10px 10px', minHeight: 40 }}>
                               Editar
                             </button>
-                            <button type="button" onClick={() => deleteExp(x.id)} style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 9, cursor: 'pointer' }}>
+                            <button type="button" onClick={() => deleteExp(x.id)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 11, cursor: 'pointer', padding: '10px 10px', minHeight: 40 }}>
                               Remover
                             </button>
                           </div>

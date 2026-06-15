@@ -186,23 +186,24 @@ export default function IncomeModal() {
         value={draft.name}
         onChange={(e) => set('name', e.target.value)}
         placeholder="Ex: Salário, Aluguer, Bónus"
+        aria-label="Nome"
         style={{ ...inputStyle, marginBottom: 16 }}
       />
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Valor (EUR)</div>
-          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="1500,00" inputMode="decimal" style={numStyle} />
+          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="1500,00" inputMode="decimal" aria-label="Valor (EUR)" style={numStyle} />
         </div>
         {isRec ? (
           <div style={{ width: 90 }}>
             <div className="lb" style={{ marginBottom: 6 }}>Dia</div>
-            <input value={draft.day} onChange={(e) => set('day', e.target.value)} placeholder="1" inputMode="numeric" style={{ ...numStyle, textAlign: 'center' }} />
+            <input value={draft.day} onChange={(e) => set('day', e.target.value)} placeholder="1" inputMode="numeric" aria-label="Dia" style={{ ...numStyle, textAlign: 'center' }} />
           </div>
         ) : (
           <div style={{ flex: 1 }}>
             <div className="lb" style={{ marginBottom: 6 }}>Data</div>
-            <input type="date" value={draft.date} onChange={(e) => set('date', e.target.value)} style={{ ...numStyle, fontSize: 13, fontWeight: 400 }} />
+            <input type="date" value={draft.date} onChange={(e) => set('date', e.target.value)} aria-label="Data" style={{ ...numStyle, fontSize: 13, fontWeight: 400 }} />
           </div>
         )}
       </div>
@@ -211,6 +212,7 @@ export default function IncomeModal() {
       <select
         value={draft.source}
         onChange={(e) => set('source', e.target.value)}
+        aria-label="Origem"
         style={{
           width: '100%',
           padding: '12px 16px',
@@ -235,6 +237,7 @@ export default function IncomeModal() {
       <select
         value={draft.acct}
         onChange={(e) => set('acct', e.target.value)}
+        aria-label="Conta creditada (opcional)"
         style={{
           width: '100%',
           padding: '12px 16px',
