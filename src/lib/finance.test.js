@@ -181,7 +181,7 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
   };
   const label = 'Wise · Conta a Ordem';
 
-  it('subtracts expenses and adds one-off incomes dated after the reading', () => {
+  it('subtracts expenses and adds one-off incomes dated on/after the reading', () => {
     const state = {
       ...base,
       addedExp: [
@@ -198,7 +198,17 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
     expect(acc.v).toBe(1000 - 50 + 200); // 1150
   });
 
-  it('leaves an account untouched when it has no base reading date', () => {
+  it('counts an expense dated the SAME day as the reading/creation date', () => {
+    const state = {
+      ...base, // Wise account, value 1000, updated '2026.06.01'
+      addedExp: [{ id: 'e1', desc: 'Hoje', amount: 40, cat: 'sup', date: '2026-06-01', acct: label }],
+      incomes: [],
+    };
+    const acc = getAcctsLive(state).find((a) => a.b === 'Wise');
+    expect(acc.v).toBe(960); // same-day expense still moves the balance
+  });
+
+  it('counts every allocated transaction when the account has no base reading date', () => {
     const state = {
       currentUser: { uid: 'u1' },
       customAccts: [{ id: 'x9', bank: 'Novo', type: 'Conta', value: 500, category: 'Liquidez' }], // no `updated`
@@ -206,7 +216,7 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
       incomes: [],
     };
     const acc = getAcctsLive(state).find((a) => a.b === 'Novo');
-    expect(acc.v).toBe(500);
+    expect(acc.v).toBe(450);
   });
 });
 

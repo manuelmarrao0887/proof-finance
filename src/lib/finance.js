@@ -154,19 +154,26 @@ export function getAcctsLive(state) {
   const addedExp = (state && state.addedExp) || [];
   const incomes = (state && state.incomes) || [];
   return ca.map(function (a) {
+    // Base date = the account's last reading / creation date ("YYYY.MM.DD").
+    // Count transactions dated ON or AFTER it (a same-day expense must still
+    // move the balance — accounts get `updated`=today on creation, so strict
+    // ">" would wrongly drop every transaction added the same day). Transactions
+    // strictly BEFORE the base are assumed already reflected in the base value.
+    // With no base date, count every transaction allocated to the account.
     const baseISO = a.updated ? String(a.updated).replace(/\./g, '-') : null;
-    if (!baseISO) return a; // no reading → cannot date-bound → leave as-is
     const label = a.b + ' · ' + a.t;
     let delta = 0;
     addedExp.forEach(function (x) {
-      if (x.acct === label && (x.date || '') > baseISO) delta -= Number(x.amount) || 0;
+      if (x.acct !== label) return;
+      if (baseISO && (x.date || '') < baseISO) return;
+      delta -= Number(x.amount) || 0;
     });
     incomes.forEach(function (i) {
       // Only one-off (dated) incomes move a specific account's balance;
       // recurring incomes are modelled in the cash-flow projection instead.
-      if (i.acct === label && i.recurring === false && (i.date || '') > baseISO) {
-        delta += Number(i.amount) || 0;
-      }
+      if (i.acct !== label || i.recurring !== false) return;
+      if (baseISO && (i.date || '') < baseISO) return;
+      delta += Number(i.amount) || 0;
     });
     return delta ? Object.assign({}, a, { v: a.v + delta }) : a;
   });
