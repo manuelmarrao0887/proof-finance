@@ -191,6 +191,36 @@ export default function SettingsSheet() {
     [actions, state.apiKey, toast]
   );
 
+  /* ── wipeData — apaga TODOS os dados financeiros, mantém API key / tema /
+     categorias. actions.patch dispara o auto-save → limpa também o documento
+     no Firestore (e a cache local). Irreversível, por isso duplo-confirm. ─── */
+  const wipeData = useCallback(() => {
+    if (typeof confirm !== 'function') return;
+    if (
+      !confirm(
+        'Apagar TODOS os dados financeiros? Despesas, receitas, recorrentes, contas, saldos, metas e regras são removidos. As definições (API key, tema, categorias) mantêm-se. Esta ação NÃO pode ser desfeita.'
+      )
+    )
+      return;
+    if (!confirm('Tens mesmo a certeza? Faz "Backup JSON" primeiro se quiseres guardar uma cópia.')) return;
+    actions.patch({
+      addedExp: [],
+      recurring: [],
+      incomes: [],
+      balanceLog: [],
+      customAccts: [],
+      dynAccts: null,
+      dynSnaps: [],
+      goals: [],
+      rules: [],
+      aiHistory: [],
+      aiInsights: null,
+      dismissedSubs: [],
+    });
+    toast('Todos os dados apagados', 'success');
+    close();
+  }, [actions, toast, close]);
+
   if (!isOpen) return null;
 
   const ph = currentUser && currentUser.photoURL;
@@ -362,7 +392,7 @@ export default function SettingsSheet() {
       <button
         type="button"
         onClick={() => document.getElementById('restoreFile').click()}
-        style={{ ...dataBtn, marginBottom: 24 }}
+        style={dataBtn}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -373,6 +403,22 @@ export default function SettingsSheet() {
           Restaurar JSON
         </span>
         <span style={{ color: 'var(--text3)' }}>&rsaquo;</span>
+      </button>
+
+      {/* Apagar todos os dados (irreversivel) — mantem API key, tema e categorias. */}
+      <button
+        type="button"
+        onClick={wipeData}
+        style={{ ...dataBtn, marginBottom: 24, borderColor: 'var(--danger)', color: 'var(--danger)', background: 'transparent' }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 6h18" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+          Apagar todos os dados
+        </span>
+        <span style={{ color: 'var(--danger)' }}>&rsaquo;</span>
       </button>
 
       {/* ── About ── */}
