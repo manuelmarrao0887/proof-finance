@@ -544,8 +544,10 @@ export default function ExpensesView() {
         const ov = r.pct > 100;
         const bc = ov ? 'var(--signal)' : r.pct > 75 ? '#f5a623' : 'var(--text)';
         const op = ov ? '1' : '0.6';
-        // Historical demo transactions (orig 1161).
-        const hTxn = (txn[r.id] && txn[r.id][em]) ? txn[r.id][em] : [];
+        // Historical demo transactions (orig 1161) — ONLY in preview/demo mode.
+        // For an authenticated user these are phantom rows (not their data, can't
+        // be deleted, don't match the real total), so they must never show.
+        const hTxn = preview && txn[r.id] && txn[r.id][em] ? txn[r.id][em] : [];
         // Imported/added expenses in this category (orig 1168) — carry stable id.
         const aTxn = addedExp.filter((x) => x.cat === r.id);
         return (
