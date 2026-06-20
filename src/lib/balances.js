@@ -5,7 +5,7 @@
    The full log lives in the persisted store field `balanceLog`.
    ════════════════════════════════════════════════════════════════════════ */
 
-import { accts, isPreviewMode } from './finance.js';
+import { accts } from './finance.js';
 
 // Stable key per account: template accounts use `${bank}_${type}` (same
 // convention as dynAccts keys); custom accounts use their own id.
@@ -69,17 +69,17 @@ export function parseBalanceResult(res) {
 // Lista unificada de contas selecionaveis: templates (de finance.accts) + custom.
 // Cada item: { acctKey, bank, type, category, custom, id? }
 export function listAccounts(state) {
-  // Demo/template banks only belong to preview mode; an authenticated user must
-  // not see Bankinter/Activobank/Revolut etc. in the account picker.
-  const out = isPreviewMode(state)
-    ? accts.map((a) => ({
-        acctKey: a.b + '_' + a.t,
-        bank: a.b,
-        type: a.t,
-        category: a.c,
-        custom: false,
-      }))
-    : [];
+  // Template banks (Activobank, Bankinter, Revolut, Wise, N26, ...) are real,
+  // selectable quick-picks for EVERY user — a user who actually banks with one
+  // (e.g. Activobank) needs to allocate expenses and balance readings to it.
+  // The demo *values/balances* are gated separately in getAccts(isPreviewMode).
+  const out = accts.map((a) => ({
+    acctKey: a.b + '_' + a.t,
+    bank: a.b,
+    type: a.t,
+    category: a.c,
+    custom: false,
+  }));
   const custom = (state && state.customAccts) || [];
   custom.forEach((a) => {
     out.push({
