@@ -69,6 +69,10 @@ export function parseBalanceResult(res) {
 // Lista unificada de contas selecionaveis: templates (de finance.accts) + custom.
 // Cada item: { acctKey, bank, type, category, custom, id? }
 export function listAccounts(state) {
+  // Template banks (Activobank, Bankinter, Revolut, Wise, N26, ...) are real,
+  // selectable quick-picks for EVERY user — a user who actually banks with one
+  // (e.g. Activobank) needs to allocate expenses and balance readings to it.
+  // The demo *values/balances* are gated separately in getAccts(isPreviewMode).
   const out = accts.map((a) => ({
     acctKey: a.b + '_' + a.t,
     bank: a.b,

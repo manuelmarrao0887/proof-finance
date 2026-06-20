@@ -47,7 +47,7 @@ export default function Hero() {
 
   return (
     <>
-      <div className="hero fadeUp" style={{ margin: '6px 16px 16px' }}>
+      <div className="hero fadeUp" style={{ margin: '6px 20px 16px' }}>
         <div className="rw" style={{ marginBottom: 10, position: 'relative', zIndex: 1 }}>
           <div
             style={{
@@ -120,14 +120,14 @@ export default function Hero() {
             {cats.map((c) => (
               <div
                 key={c}
-                style={{ width: (C.cT[c] / C.tA) * 100 + '%', background: cCol[c] || '#9aa3b5' }}
+                style={{ width: (C.cT[c] / C.tA) * 100 + '%', background: cCol[c] || 'var(--fg-subtle)' }}
               />
             ))}
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 14, marginTop: 10 }}>
             {cats.map((c) => (
               <div key={c} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', background: cCol[c] || '#9aa3b5' }} />
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: cCol[c] || 'var(--fg-subtle)' }} />
                 <span style={{ fontSize: 11, color: 'var(--text2)', fontWeight: 500 }}>
                   {c} {((C.cT[c] / C.tA) * 100).toFixed(0)}%
                 </span>

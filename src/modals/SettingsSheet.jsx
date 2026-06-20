@@ -87,7 +87,7 @@ export default function SettingsSheet() {
       setTestResult({ kind: 'err', label: 'COLA A KEY PRIMEIRO' });
       return;
     }
-    setTestResult({ kind: 'info', label: 'A testar...' });
+    setTestResult({ kind: 'info', label: 'A testar…' });
     fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -191,6 +191,36 @@ export default function SettingsSheet() {
     [actions, state.apiKey, toast]
   );
 
+  /* ── wipeData — apaga TODOS os dados financeiros, mantém API key / tema /
+     categorias. actions.patch dispara o auto-save → limpa também o documento
+     no Firestore (e a cache local). Irreversível, por isso duplo-confirm. ─── */
+  const wipeData = useCallback(() => {
+    if (typeof confirm !== 'function') return;
+    if (
+      !confirm(
+        'Apagar TODOS os dados financeiros? Despesas, receitas, recorrentes, contas, saldos, metas e regras são removidos. As definições (API key, tema, categorias) mantêm-se. Esta ação NÃO pode ser desfeita.'
+      )
+    )
+      return;
+    if (!confirm('Tens mesmo a certeza? Faz "Backup JSON" primeiro se quiseres guardar uma cópia.')) return;
+    actions.patch({
+      addedExp: [],
+      recurring: [],
+      incomes: [],
+      balanceLog: [],
+      customAccts: [],
+      dynAccts: null,
+      dynSnaps: [],
+      goals: [],
+      rules: [],
+      aiHistory: [],
+      aiInsights: null,
+      dismissedSubs: [],
+    });
+    toast('Todos os dados apagados', 'success');
+    close();
+  }, [actions, toast, close]);
+
   if (!isOpen) return null;
 
   const ph = currentUser && currentUser.photoURL;
@@ -247,16 +277,17 @@ export default function SettingsSheet() {
       <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.5 }}>
         API key da Anthropic para o scanner e assistente. Obtem em console.anthropic.com.
       </div>
+      <label htmlFor="ki" className="lb" style={{ display: 'block', marginBottom: 8 }}>Chave API</label>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <input
           id="ki"
           type={keyVisible ? 'text' : 'password'}
           value={keyInput}
           onChange={(e) => setKeyInput(e.target.value)}
-          placeholder="sk-ant-..."
+          placeholder="sk-ant-…"
           style={{ flex: 1, padding: '12px 16px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontFamily: 'var(--mono)', fontSize: 12, boxSizing: 'border-box' }}
         />
-        <button type="button" onClick={() => setKeyVisible((v) => !v)} style={{ padding: '0 14px', border: 'none', background: 'var(--bg3)', color: 'var(--text2)', borderRadius: 'var(--r2)', fontSize: 11, fontWeight: 600 }}>
+        <button type="button" aria-pressed={keyVisible} onClick={() => setKeyVisible((v) => !v)} style={{ minHeight: 44, padding: '0 14px', border: 'none', background: 'var(--bg3)', color: 'var(--text2)', borderRadius: 'var(--r2)', fontSize: 11, fontWeight: 600 }}>
           Ver
         </button>
       </div>
@@ -327,10 +358,10 @@ export default function SettingsSheet() {
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" />
-            <rect x="14" y="3" width="7" height="7" />
-            <rect x="14" y="14" width="7" height="7" />
-            <rect x="3" y="14" width="7" height="7" />
+            <rect x="3" y="3" width="7" height="7" rx="1.8" />
+            <rect x="14" y="3" width="7" height="7" rx="1.8" />
+            <rect x="14" y="14" width="7" height="7" rx="1.8" />
+            <rect x="3" y="14" width="7" height="7" rx="1.8" />
           </svg>
           Gerir categorias
         </span>
@@ -361,7 +392,7 @@ export default function SettingsSheet() {
       <button
         type="button"
         onClick={() => document.getElementById('restoreFile').click()}
-        style={{ ...dataBtn, marginBottom: 24 }}
+        style={dataBtn}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -372,6 +403,22 @@ export default function SettingsSheet() {
           Restaurar JSON
         </span>
         <span style={{ color: 'var(--text3)' }}>&rsaquo;</span>
+      </button>
+
+      {/* Apagar todos os dados (irreversivel) — mantem API key, tema e categorias. */}
+      <button
+        type="button"
+        onClick={wipeData}
+        style={{ ...dataBtn, marginBottom: 24, borderColor: 'var(--danger)', color: 'var(--danger)', background: 'transparent' }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 6h18" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+          Apagar todos os dados
+        </span>
+        <span style={{ color: 'var(--danger)' }}>&rsaquo;</span>
       </button>
 
       {/* ── About ── */}

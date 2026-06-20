@@ -23,6 +23,7 @@ import { applyRules } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
 import { listAccounts } from '../lib/balances.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
+import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 // Fresh draft for a brand-new expense (orig addData default 417 / reset 2364).
 function freshDraft() {
@@ -58,34 +59,57 @@ function draftFromExpense(x) {
 
 export default function AddExpenseSheet() {
   const { isOpen, payload, close } = useModal('add');
-  const { state, actions } = useStore();
+  const { state, actions, currentUser } = useStore();
   const toast = useToast();
 
-  // editIdx comes from the open payload ({editIdx}); null/true = new expense.
-  const editIdx =
-    payload && typeof payload === 'object' && payload.editIdx != null ? payload.editIdx : null;
-  const isEdit = editIdx != null;
+  // editId comes from the open payload ({editId}); null/true = new expense.
+  // (Stable id, not array index, so the right record is edited even if the list
+  // reordered since the sheet was opened.)
+  const editId =
+    payload && typeof payload === 'object' && payload.editId != null ? payload.editId : null;
+  const editExp = editId != null ? (state.addedExp || []).find((x) => x.id === editId) : null;
+  const isEdit = !!editExp;
+  // prefill comes from the open payload ({prefill}); used to materialise a
+  // recurring expense into a dated list item (carries recId).
+  const prefill =
+    payload && typeof payload === 'object' && payload.prefill ? payload.prefill : null;
 
   const [d, setD] = useState(freshDraft);
+  // Inline validation errors keyed by field (desc / amount / total).
+  const [errors, setErrors] = useState({});
 
-  // (Re)seed the draft whenever the sheet opens (new -> fresh; edit -> record).
+  // (Re)seed the draft whenever the sheet opens (edit -> record; prefill -> seed;
+  // otherwise fresh).
   useEffect(() => {
     if (!isOpen) return;
+    setErrors({});
     if (isEdit) {
-      const x = (state.addedExp || [])[editIdx];
-      setD(x ? draftFromExpense(x) : freshDraft());
+      setD(draftFromExpense(editExp));
+    } else if (prefill) {
+      setD({
+        ...freshDraft(),
+        desc: prefill.desc || '',
+        amount: prefill.amount != null ? String(prefill.amount).replace('.', ',') : '',
+        cat: prefill.cat || 'rest',
+        date: prefill.date || new Date().toISOString().slice(0, 10),
+        recId: prefill.recId || null,
+      });
     } else {
       setD(freshDraft());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, editIdx]);
+  }, [isOpen, editId, prefill]);
 
   const cats = useMemo(() => sortedCats(state.bdg), [state.bdg]); // FIX 3
-  const accounts = useMemo(() => listAccounts(state), [state]);
+  const accounts = useMemo(() => listAccounts({ ...state, currentUser }), [state, currentUser]);
 
   if (!isOpen) return null;
 
-  const set = (k, v) => setD((p) => ({ ...p, [k]: v }));
+  const set = (k, v) => {
+    setD((p) => ({ ...p, [k]: v }));
+    // Clear the inline error for the field as the user edits it.
+    setErrors((e) => (e[k] ? { ...e, [k]: undefined } : e));
+  };
 
   // Shared-split derived "your part" (orig 2160-2169).
   const totVal = parseFloat((d.total || '0').toString().replace(',', '.')) || 0;
@@ -109,6 +133,7 @@ export default function AddExpenseSheet() {
       split = parseInt(d.split || '2', 10);
       if (isNaN(split) || split < 2) split = 2;
       if (isNaN(total) || total <= 0) {
+        setErrors({ total: 'Total inválido' });
         toast('Total inválido', 'error');
         return;
       }
@@ -116,18 +141,24 @@ export default function AddExpenseSheet() {
     } else {
       amt = parseFloat((d.amount || '0').toString().replace(',', '.'));
     }
-    if (!desc || isNaN(amt) || amt <= 0) {
+    const fieldErrs = {};
+    if (!desc) fieldErrs.desc = 'Preenche a descrição';
+    if (!d.shared && (isNaN(amt) || amt <= 0)) fieldErrs.amount = 'Preenche o valor';
+    if (Object.keys(fieldErrs).length > 0) {
+      setErrors(fieldErrs);
       toast('Preenche descrição e valor', 'error');
       return;
     }
+    setErrors({});
     // Tags: comma-split -> trimmed, lowercased, kebab; cap 5 (orig 2342).
     const tags = (Array.isArray(d.tags) ? d.tags.join(', ') : d.tags || '')
       .split(',')
       .map((t) => t.trim().toLowerCase().replace(/\s+/g, '-'))
       .filter((t) => t.length > 0)
       .slice(0, 5);
-    // Auto-categorize new expenses via rules (orig 2344-2349); never on edit.
-    if (!isEdit) {
+    // Auto-categorize new expenses via rules (orig 2344-2349); never on edit, and
+    // never when materialising a recurring (keep the recurring's own category).
+    if (!isEdit && !d.recId) {
       const autoCat = applyRules({ ...state }, desc);
       if (autoCat && autoCat !== cat && (state.bdg || []).find((b) => b.id === autoCat)) {
         cat = autoCat;
@@ -135,6 +166,7 @@ export default function AddExpenseSheet() {
     }
     const notes = (d.notes || '').trim();
     const exp = { desc, amount: amt, cat, date };
+    if (d.recId) exp.recId = d.recId;
     if (d.acct) exp.acct = d.acct;
     if (d.shared) {
       exp.shared = true;
@@ -145,8 +177,8 @@ export default function AddExpenseSheet() {
     if (notes) exp.notes = notes;
 
     let msg;
-    if (isEdit && (state.addedExp || [])[editIdx]) {
-      actions.updateExpense(editIdx, exp);
+    if (isEdit) {
+      actions.updateExpense(editId, exp);
       msg = 'Despesa atualizada';
     } else {
       actions.addExpense(exp);
@@ -158,7 +190,7 @@ export default function AddExpenseSheet() {
 
   const remove = () => {
     if (!isEdit) return;
-    actions.deleteExpense(editIdx);
+    actions.deleteExpense(editId);
     close();
     toast('Despesa eliminada', 'success');
   };
@@ -177,50 +209,27 @@ export default function AddExpenseSheet() {
     ...inputStyle,
     fontFamily: 'var(--mono)',
     fontSize: 17,
-    fontWeight: 700,
+    fontWeight: 600,
   };
+  // Inline error helper text (orig had only a toast).
+  const errText = (msg) =>
+    msg ? <div style={{ color: 'var(--signal)', fontSize: 11, marginTop: 4 }}>{msg}</div> : null;
 
   const footer = (
     <>
-      <button
-        type="button"
-        onClick={submit}
-        style={{
-          width: '100%',
-          padding: '14px 0',
-          border: 'none',
-          background: 'var(--primary)',
-          color: 'var(--bg)',
-          fontSize: 14,
-          fontWeight: 500,
-          borderRadius: 999,
-        }}
-      >
-        {isEdit ? 'Guardar alterações' : 'Adicionar despesa'}
-      </button>
+      <PrimaryButton onClick={submit}>
+        {isEdit ? 'Guardar alterações' : d.recId ? 'Registar despesa' : 'Adicionar despesa'}
+      </PrimaryButton>
       {isEdit && (
-        <button
-          type="button"
-          onClick={remove}
-          style={{
-            width: '100%',
-            padding: '10px 0',
-            border: 'none',
-            background: 'transparent',
-            color: 'var(--signal)',
-            fontSize: 12,
-            fontWeight: 600,
-            marginTop: 8,
-          }}
-        >
+        <SecondaryButton onClick={remove} style={{ marginTop: 8 }}>
           Eliminar despesa
-        </button>
+        </SecondaryButton>
       )}
     </>
   );
 
   return (
-    <Sheet open={isOpen} onClose={onClose} title={isEdit ? 'Editar despesa' : 'Nova despesa'} footer={footer}>
+    <Sheet open={isOpen} onClose={onClose} title={isEdit ? 'Editar despesa' : d.recId ? 'Registar recorrente' : 'Nova despesa'} footer={footer}>
       {/* Categoria — grelha de ícones (estilo Finany), alfabética (FIX 3) */}
       <div className="lb" style={{ marginBottom: 8 }}>Categoria</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
@@ -245,7 +254,7 @@ export default function AddExpenseSheet() {
               }}
             >
               <CategoryIcon id={b.id} size={34} />
-              <span style={{ fontSize: 9, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15 }}>
                 {b.nm}
               </span>
             </button>
@@ -259,8 +268,11 @@ export default function AddExpenseSheet() {
         value={d.desc}
         onChange={(e) => set('desc', e.target.value)}
         placeholder="Ex: Pingo Doce"
-        style={{ ...inputStyle, fontSize: 15, marginBottom: 14 }}
+        aria-label="Descrição"
+        style={{ ...inputStyle, fontSize: 15, marginBottom: errors.desc ? 0 : 14 }}
       />
+      {errText(errors.desc)}
+      {errors.desc && <div style={{ height: 14 }} />}
 
       {/* Shared toggle */}
       <div className="rw" style={{ padding: '10px 14px', background: 'var(--bg3)', borderRadius: 'var(--r2)', marginBottom: 14 }}>
@@ -272,6 +284,7 @@ export default function AddExpenseSheet() {
           <input
             type="checkbox"
             checked={d.shared}
+            aria-label="Despesa partilhada"
             onChange={(e) => {
               const on = e.target.checked;
               // Seed total from the single-amount field when turning on (orig 2156).
@@ -316,8 +329,10 @@ export default function AddExpenseSheet() {
                 onChange={(e) => set('total', e.target.value)}
                 placeholder="100,00"
                 inputMode="decimal"
+                aria-label="Total (EUR)"
                 style={{ ...monoBig, fontSize: 15, padding: '11px 14px' }}
               />
+              {errText(errors.total)}
             </div>
             <div style={{ width: 80 }}>
               <div className="lb" style={{ marginBottom: 6 }}>Pessoas</div>
@@ -327,6 +342,7 @@ export default function AddExpenseSheet() {
                 type="number"
                 min="2"
                 max="10"
+                aria-label="Pessoas"
                 style={{ ...monoBig, fontSize: 15, padding: '11px 12px', textAlign: 'center' }}
               />
             </div>
@@ -342,6 +358,7 @@ export default function AddExpenseSheet() {
             type="date"
             value={d.date}
             onChange={(e) => set('date', e.target.value)}
+            aria-label="Data"
             style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 13, marginBottom: 14 }}
           />
         </>
@@ -354,8 +371,10 @@ export default function AddExpenseSheet() {
               onChange={(e) => set('amount', e.target.value)}
               placeholder="0,00"
               inputMode="decimal"
+              aria-label="Valor (EUR)"
               style={monoBig}
             />
+            {errText(errors.amount)}
           </div>
           <div style={{ flex: 1 }}>
             <div className="lb" style={{ marginBottom: 6 }}>Data</div>
@@ -363,6 +382,7 @@ export default function AddExpenseSheet() {
               type="date"
               value={d.date}
               onChange={(e) => set('date', e.target.value)}
+              aria-label="Data"
               style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 13 }}
             />
           </div>
@@ -374,6 +394,7 @@ export default function AddExpenseSheet() {
       <select
         value={d.acct}
         onChange={(e) => set('acct', e.target.value)}
+        aria-label="Conta debitada (opcional)"
         style={{ ...inputStyle, appearance: 'none', marginBottom: 14, fontSize: 14 }}
       >
         <option value="">— sem conta —</option>
@@ -391,6 +412,7 @@ export default function AddExpenseSheet() {
         value={Array.isArray(d.tags) ? d.tags.join(', ') : d.tags || ''}
         onChange={(e) => set('tags', e.target.value)}
         placeholder="Ex: viagem-acores, casa, presente"
+        aria-label="Tags (opcional)"
         style={{ ...inputStyle, fontSize: 13, marginBottom: 14 }}
       />
 
@@ -400,6 +422,7 @@ export default function AddExpenseSheet() {
         value={d.notes || ''}
         onChange={(e) => set('notes', e.target.value)}
         placeholder="Detalhes ou contexto"
+        aria-label="Nota (opcional)"
         rows={2}
         style={{ ...inputStyle, fontSize: 13, marginBottom: 4, resize: 'vertical', fontFamily: 'var(--font)' }}
       />

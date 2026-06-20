@@ -111,6 +111,16 @@ describe('listAccounts', () => {
     expect(rev.custom).toBe(true);
     expect(rev.id).toBe('x1');
   });
+  it('shows template banks AND custom accounts for an authenticated user', () => {
+    const out = listAccounts({
+      currentUser: { uid: 'u1' },
+      customAccts: [{ id: 'x1', bank: 'Wise', type: 'Conta a Ordem', category: 'Liquidez' }],
+    });
+    // Template banks (e.g. Activobank) stay selectable — a real user may bank there.
+    expect(out.find((a) => a.bank === 'Activobank')).toBeTruthy();
+    // ...alongside the user's own custom account.
+    expect(out.find((a) => a.bank === 'Wise' && a.custom)).toBeTruthy();
+  });
 });
 
 describe('BALANCE_PROMPT', () => {

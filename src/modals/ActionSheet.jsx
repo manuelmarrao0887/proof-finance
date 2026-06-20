@@ -16,7 +16,7 @@
      - Nova conta        -> open('acct')
    ════════════════════════════════════════════════════════════════════════ */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useUI, useModal } from '../store/ui.jsx';
 
 const Chevron = (
@@ -28,6 +28,16 @@ const Chevron = (
 export default function ActionSheet() {
   const ui = useUI();
   const { isOpen, close } = useModal('action');
+
+  // Escape-to-close while open (a11y).
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = (ev) => {
+      if (ev.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, close]);
 
   if (!isOpen) return null;
 

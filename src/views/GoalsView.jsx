@@ -166,7 +166,7 @@ export default function GoalsView() {
                   de {fc(g.target)}
                 </div>
                 {monthly != null && (
-                  <div style={{ fontSize: 10, color: 'var(--text2)', marginTop: 6, fontWeight: 600 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6, fontWeight: 600 }}>
                     ~ {fc(monthly)}/mês
                   </div>
                 )}

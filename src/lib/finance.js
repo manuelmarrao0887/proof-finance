@@ -140,6 +140,45 @@ export function getAccts(state) {
   return out;
 }
 
+/* ══ getAcctsLive ══
+   Transaction-adjusted account values for DISPLAY/totals: base reading value
+   ± one-off transactions allocated to the account and dated AFTER the reading.
+   The reading by print already reflects spending up to its own date, so only
+   later transactions move the live balance. Accounts without a base reading
+   date are left untouched (we can't date-bound them → avoid double-counting).
+   Snapshots/history keep using the raw getAccts so the past is never rewritten.
+   Match is by the picker label "banco · tipo" stored on exp.acct / income.acct. */
+export function getAcctsLive(state) {
+  const ca = getAccts(state);
+  if (isPreviewMode(state)) return ca; // demo accounts: no live adjust
+  const addedExp = (state && state.addedExp) || [];
+  const incomes = (state && state.incomes) || [];
+  return ca.map(function (a) {
+    // Base date = the account's last reading / creation date ("YYYY.MM.DD").
+    // Count transactions dated ON or AFTER it (a same-day expense must still
+    // move the balance — accounts get `updated`=today on creation, so strict
+    // ">" would wrongly drop every transaction added the same day). Transactions
+    // strictly BEFORE the base are assumed already reflected in the base value.
+    // With no base date, count every transaction allocated to the account.
+    const baseISO = a.updated ? String(a.updated).replace(/\./g, '-') : null;
+    const label = a.b + ' · ' + a.t;
+    let delta = 0;
+    addedExp.forEach(function (x) {
+      if (x.acct !== label) return;
+      if (baseISO && (x.date || '') < baseISO) return;
+      delta -= Number(x.amount) || 0;
+    });
+    incomes.forEach(function (i) {
+      // Only one-off (dated) incomes move a specific account's balance;
+      // recurring incomes are modelled in the cash-flow projection instead.
+      if (i.acct !== label || i.recurring !== false) return;
+      if (baseISO && (i.date || '') < baseISO) return;
+      delta += Number(i.amount) || 0;
+    });
+    return delta ? Object.assign({}, a, { v: a.v + delta }) : a;
+  });
+}
+
 /* ══ snapshotFromState ══
    Build a patrimonial snapshot {l,liq,poup,inv,div,xP,xT,tC} from the current
    accounts, used to feed the evolution charts (dynSnaps) when a balance is
@@ -168,7 +207,7 @@ export function getAllHist(state) {
 /* ══ COMPUTE (orig 288-300) ══ */
 
 export function compute(state) {
-  const ca = getAccts(state);
+  const ca = getAcctsLive(state); // display totals reflect live (txn-adjusted) balances
   const ah = getAllHist(state);
   const _ln = getLoan(state);
   const g = {};
@@ -217,8 +256,8 @@ export function cashFlowProjection(state, months) {
   const now = new Date();
   const incomes = (state && state.incomes) || [];
   const recurring = (state && state.recurring) || [];
-  // Starting liquid: categoria "Liquidez"
-  const ca = getAccts(state);
+  // Starting liquid: categoria "Liquidez" (live, txn-adjusted)
+  const ca = getAcctsLive(state);
   let liquid = 0;
   ca.forEach(function (a) {
     if (a.c === 'Liquidez') liquid += a.v;
@@ -303,9 +342,10 @@ export function detectSubscriptions(state) {
     if (g.occurrences.length < 2) return;
     // Skip suggestions the user has dismissed ("não e subscrição").
     if (dismissed.indexOf(k) > -1) return;
-    // Check if already in recurring
+    // Check if already in recurring — normalize the recurring name the SAME way
+    // the key was built (lowercase, collapse spaces, cap 40) so long names match.
     const existing = recurring.find(function (r) {
-      return r.name.toLowerCase() === k;
+      return (r.name || '').toLowerCase().trim().replace(/\s+/g, ' ').substring(0, 40) === k;
     });
     if (existing) return;
     const avg = g.totalAmount / g.occurrences.length;
@@ -392,7 +432,7 @@ export function monthlySummary(state) {
   } else {
     // Fallback to hardcoded salary (empty if new user)
     const _sal = getSal(state);
-    inc = em < 3 && _sal[em] ? _sal[em] : _sal[em] || 0;
+    inc = _sal[em] || 0;
   }
   // Sum expenses for the month from byC + addedExp
   let exp = 0;
@@ -409,9 +449,15 @@ export function monthlySummary(state) {
   });
   // Add recurring expenses (monthly fixed) only when there is no demo byC data,
   // to avoid double-counting against the seed series in preview mode.
+  // Skip a recurring expense once it has been materialised into addedExp for this
+  // month (an addedExp carrying its recId) — the list item replaces the auto-sum.
   if (Object.keys(_byCm).length === 0) {
+    var _matRec = {};
+    addedExp.forEach(function (x) {
+      if (x.recId && (x.date || '').slice(0, 7) === _targetYM) _matRec[x.recId] = 1;
+    });
     recurring.forEach(function (r) {
-      exp += r.amount || 0;
+      if (!_matRec[r.id]) exp += r.amount || 0;
     });
   }
   const saved = inc - exp;
@@ -512,8 +558,13 @@ export function chrt(data, color, label, histData, fmFn) {
   };
   const ht = 56;
   if (!data || data.length < 2) return '';
-  const mn = Math.min.apply(null, data) * 0.95,
-    mx = Math.max.apply(null, data) * 1.05,
+  // Additive padding (not multiplicative) so negative series don't invert: a
+  // multiplicative *0.95 on a negative min pushes it UP, plotting off the top.
+  const rawMn = Math.min.apply(null, data),
+    rawMx = Math.max.apply(null, data),
+    pad = (rawMx - rawMn) * 0.05 || Math.abs(rawMx) * 0.05 || 1;
+  const mn = rawMn - pad,
+    mx = rawMx + pad,
     rg = mx - mn || 1,
     w = 100;
   const pts = data

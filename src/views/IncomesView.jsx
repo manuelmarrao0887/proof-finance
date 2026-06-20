@@ -18,12 +18,12 @@ import { isPreviewMode } from '../lib/finance.js';
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 const INCOME_SOURCES = [
-  ['salary', 'Salário', '#3fc97a'],
-  ['freelance', 'Freelance', '#3b6fee'],
-  ['dividend', 'Dividendos', '#7b5fe0'],
-  ['rental', 'Aluguer', '#f5a623'],
-  ['bonus', 'Bónus / Prémio', '#f25555'],
-  ['other', 'Outro', '#9aa3b5'],
+  ['salary', 'Salário', 'var(--success)'],
+  ['freelance', 'Freelance', 'var(--primary)'],
+  ['dividend', 'Dividendos', 'var(--secondary)'],
+  ['rental', 'Aluguer', 'var(--warning)'],
+  ['bonus', 'Bónus / Prémio', 'var(--danger)'],
+  ['other', 'Outro', 'var(--fg-subtle)'],
 ];
 function srcLabel(s) {
   const f = INCOME_SOURCES.find((x) => x[0] === s);
@@ -31,7 +31,7 @@ function srcLabel(s) {
 }
 function srcColor(s) {
   const f = INCOME_SOURCES.find((x) => x[0] === s);
-  return f ? f[2] : '#9aa3b5';
+  return f ? f[2] : 'var(--fg-subtle)';
 }
 
 // YYYY-MM for window index i (0..3 = oldest..current of the 4-month window).
@@ -138,7 +138,7 @@ export default function IncomesView() {
         <div className="rw" style={{ marginBottom: 4 }}>
           <div className="lb">{(isQ ? 'RECEITA Q1' : 'RECEITA ' + (ms[em] || '').toUpperCase())}</div>
         </div>
-        <div className="m" style={{ fontSize: 26, fontWeight: 900, color: 'var(--success)' }}>{fc(monthTotal)}</div>
+        <div className="m" style={{ fontSize: 26, fontWeight: 800, color: 'var(--success)' }}>{fc(monthTotal)}</div>
         <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
           {fc(recTotal)} recorrente{oneTotal > 0 ? ' · +' + fc(oneTotal) + ' pontual' : ''}
         </div>
@@ -179,7 +179,7 @@ export default function IncomesView() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div className="m" style={{ fontSize: 15, fontWeight: 700, color: 'var(--success)' }}>+{fm(i.amount || 0)}</div>
+                  <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)' }}>+{fm(i.amount || 0)}</div>
                   <button
                     type="button"
                     onClick={() => open('income', { id: i.id })}

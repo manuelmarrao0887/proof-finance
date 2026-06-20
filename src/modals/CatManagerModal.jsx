@@ -151,6 +151,7 @@ export default function CatManagerModal() {
               value={draft.nm}
               onChange={(e) => setDraft((p) => ({ ...p, nm: e.target.value }))}
               placeholder="Nome (ex: Viagens)"
+              aria-label="Nome"
               style={inputStyle}
             />
           </div>
@@ -160,6 +161,7 @@ export default function CatManagerModal() {
               onChange={(e) => setDraft((p) => ({ ...p, lm: e.target.value }))}
               placeholder="Limite"
               inputMode="decimal"
+              aria-label="Limite"
               style={{ ...inputStyle, fontFamily: 'var(--mono)', fontWeight: 600, textAlign: 'center' }}
             />
           </div>

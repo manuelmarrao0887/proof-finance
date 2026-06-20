@@ -129,11 +129,16 @@ export function onAuth(cb) {
 export function loadUserDoc(uid) {
   if (!db || !uid) return Promise.resolve(null);
   const ref = doc(db, 'users', uid);
-  // Cache-first: serve from IndexedDB cache when available (0 server reads),
-  // only hit the server on a cache miss. Reduces Firestore read volume.
-  return getDocFromCache(ref)
+  // Server-first: always read the freshest document from Firestore so a stale
+  // local cache can never resurface data the user deleted on another session.
+  // Fall back to the IndexedDB cache only when the network read fails (offline).
+  return getDoc(ref)
     .then((snap) => (snap.exists() ? snap.data() : null))
-    .catch(() => getDoc(ref).then((snap) => (snap.exists() ? snap.data() : null)));
+    .catch(() =>
+      getDocFromCache(ref)
+        .then((snap) => (snap.exists() ? snap.data() : null))
+        .catch(() => null)
+    );
 }
 
 export function saveUserDoc(uid, data) {

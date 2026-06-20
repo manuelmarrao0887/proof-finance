@@ -167,26 +167,26 @@ export default function OverviewView() {
           </div>
           <div className="g3">
             <div style={{ background: 'var(--success-soft)', borderRadius: 14, padding: '12px 14px' }}>
-              <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Receita
               </div>
-              <div className="m" style={{ fontSize: 15, fontWeight: 700, color: 'var(--success)', marginTop: 4 }}>
+              <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)', marginTop: 4 }}>
                 {ms.inc > 0 ? fc(ms.inc) : '—'}
               </div>
             </div>
             <div style={{ background: 'var(--signal-soft)', borderRadius: 14, padding: '12px 14px' }}>
-              <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Despesa
               </div>
-              <div className="m" style={{ fontSize: 15, fontWeight: 700, color: 'var(--signal)', marginTop: 4 }}>
+              <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--signal)', marginTop: 4 }}>
                 {fc(ms.exp)}
               </div>
             </div>
             <div style={{ background: 'var(--blue-soft)', borderRadius: 14, padding: '12px 14px' }}>
-              <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Saldo
               </div>
-              <div className="m" style={{ fontSize: 15, fontWeight: 700, color: ms.saved >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 4 }}>
+              <div className="m" style={{ fontSize: 15, fontWeight: 600, color: ms.saved >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 4 }}>
                 {(ms.saved >= 0 ? '+' : '') + fc(ms.saved)}
               </div>
             </div>
@@ -207,13 +207,13 @@ export default function OverviewView() {
           <div className="g2" style={{ gap: 10, marginBottom: 16 }}>
             <div className="cd" style={{ position: 'relative', overflow: 'hidden' }}>
               <div className="lb" style={{ marginBottom: 6 }}>Ativos</div>
-              <div style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--success)' }}>
+              <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--success)' }}>
                 {fc(C.tA)}
               </div>
             </div>
             <div className="cd" style={{ position: 'relative', overflow: 'hidden' }}>
               <div className="lb" style={{ marginBottom: 6 }}>Dívida</div>
-              <div style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', color: C.loan.out > 0 ? 'var(--danger)' : 'var(--fg-subtle)' }}>
+              <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: C.loan.out > 0 ? 'var(--danger)' : 'var(--fg-subtle)' }}>
                 {fc(C.loan.out)}
               </div>
             </div>
@@ -355,7 +355,7 @@ export default function OverviewView() {
               <div className="chip" style={{ background: efColor, color: '#fff' }}>{efLabel}</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <div className="m" style={{ fontSize: 30, fontWeight: 800, color: efColor, letterSpacing: '-0.02em' }}>
+              <div className="m" style={{ fontSize: 30, fontWeight: 600, color: efColor, letterSpacing: '-0.02em' }}>
                 {ef.months.toFixed(1)}
               </div>
               <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 600 }}>meses cobertos</div>
@@ -367,7 +367,7 @@ export default function OverviewView() {
             <div className="bar" style={{ height: 6, marginTop: 10 }}>
               <div className="bar-fill" style={{ width: efPct + '%', background: efColor }} />
             </div>
-            <div className="rw m" style={{ fontSize: 9, color: 'var(--text3)', marginTop: 4 }}>
+            <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
               <span>0</span>
               <span>3 meses</span>
               <span>6 meses (ideal)</span>
@@ -402,7 +402,7 @@ export default function OverviewView() {
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 90, marginBottom: 10 }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: '100%', background: 'var(--elevated)', borderRadius: '4px 4px 0 0', height: cfStartPct + '%', minHeight: 4 }} />
-                  <div className="m" style={{ fontSize: 9, color: 'var(--fg-subtle)' }}>Hoje</div>
+                  <div className="m" style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>Hoje</div>
                 </div>
                 {cf.rows.map((r, i) => {
                   const pct = (Math.abs(r.balance) / cfMaxAbs) * 100;
@@ -410,7 +410,7 @@ export default function OverviewView() {
                   return (
                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                       <div style={{ width: '100%', background: col, borderRadius: '4px 4px 0 0', height: pct + '%', minHeight: 4 }} />
-                      <div className="m" style={{ fontSize: 9, color: 'var(--fg-subtle)' }}>{r.label.split(' ')[0]}</div>
+                      <div className="m" style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>{r.label.split(' ')[0]}</div>
                     </div>
                   );
                 })}
@@ -424,12 +424,12 @@ export default function OverviewView() {
 
             <div className="rw m" style={{ fontSize: 11, color: 'var(--fg)' }}>
               <span style={{ color: 'var(--fg-muted)' }}>Hoje</span>
-              <span style={{ fontWeight: 500 }}>{fc(cf.startBalance)}</span>
+              <span style={{ fontWeight: 600 }}>{fc(cf.startBalance)}</span>
             </div>
             {cfRowsToShow.map((r, i) => (
               <div key={i} className="rw m" style={{ fontSize: 11, paddingTop: 4 }}>
                 <span style={{ color: 'var(--fg-muted)' }}>{r.label}</span>
-                <span style={{ fontWeight: 500, color: r.balance >= 0 ? 'var(--fg)' : 'var(--danger)' }}>{fc(r.balance)}</span>
+                <span style={{ fontWeight: 600, color: r.balance >= 0 ? 'var(--fg)' : 'var(--danger)' }}>{fc(r.balance)}</span>
               </div>
             ))}
           </div>
@@ -463,7 +463,7 @@ export default function OverviewView() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
-                    <div style={{ width: 8, height: 40, borderRadius: 4, background: cCol[cat] || '#9aa3b5' }} />
+                    <div style={{ width: 8, height: 40, borderRadius: 4, background: cCol[cat] || 'var(--fg-subtle)' }} />
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 600 }}>{cat}</div>
                       <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
@@ -472,7 +472,7 @@ export default function OverviewView() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em' }}>{fc(C.cT[cat])}</span>
+                    <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' }}>{fc(C.cT[cat])}</span>
                     <Chevron open={isX} />
                   </div>
                 </button>
@@ -492,10 +492,10 @@ export default function OverviewView() {
                             ) : null}
                           </div>
                           {a.n && <div style={{ fontSize: 11, color: 'var(--fg-subtle)', marginTop: 1 }}>{a.n}</div>}
-                          {a.updated && <div className="m" style={{ fontSize: 10, color: 'var(--success)', marginTop: 2 }}>Atualizado {a.updated}</div>}
+                          {a.updated && <div className="m" style={{ fontSize: 11, color: 'var(--success)', marginTop: 2 }}>Atualizado {a.updated}</div>}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div className="m" style={{ fontSize: 14, fontWeight: 500 }}>{fm(a.v)}</div>
+                          <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{fm(a.v)}</div>
                           <button
                             type="button"
                             onClick={() => open('balanceHistory', { acctKey: a.custom ? a.id : a.b + '_' + a.t, bank: a.b, type: a.t })}

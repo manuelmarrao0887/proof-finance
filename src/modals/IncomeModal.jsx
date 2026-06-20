@@ -18,6 +18,7 @@ import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
 import { listAccounts } from '../lib/balances.js';
+import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 // INCOME_SOURCES (orig 1541) — copied into this file.
 const INCOME_SOURCES = [
@@ -55,7 +56,7 @@ const numStyle = {
 };
 
 export default function IncomeModal() {
-  const { state, actions } = useStore();
+  const { state, actions, currentUser } = useStore();
   const { isOpen, payload, close } = useModal('income');
   const toast = useToast();
   const [draft, setDraft] = useState(EMPTY);
@@ -100,7 +101,10 @@ export default function IncomeModal() {
       day = parseInt(String(draft.day) || '1');
       if (isNaN(day) || day < 1 || day > 31) day = 1;
     } else {
-      date = draft.date || '';
+      // A one-off with no date would never land in any month bucket (silently
+      // uncounted — happens from the Q1 view where the seed date is empty).
+      // Fall back to today so it always counts somewhere.
+      date = draft.date || new Date().toISOString().slice(0, 10);
     }
     if (!n) {
       toast('Nome obrigatório', 'error');
@@ -131,21 +135,13 @@ export default function IncomeModal() {
 
   const footer = (
     <>
-      <button
-        type="button"
-        onClick={saveIncome}
-        style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
-      >
+      <PrimaryButton onClick={saveIncome}>
         {isEdit ? 'Guardar alterações' : 'Adicionar receita'}
-      </button>
+      </PrimaryButton>
       {isEdit && (
-        <button
-          type="button"
-          onClick={deleteIncome}
-          style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--signal)', fontSize: 12, fontWeight: 600, marginTop: 8 }}
-        >
+        <SecondaryButton onClick={deleteIncome} style={{ marginTop: 8 }}>
           Eliminar
-        </button>
+        </SecondaryButton>
       )}
     </>
   );
@@ -183,23 +179,24 @@ export default function IncomeModal() {
         value={draft.name}
         onChange={(e) => set('name', e.target.value)}
         placeholder="Ex: Salário, Aluguer, Bónus"
+        aria-label="Nome"
         style={{ ...inputStyle, marginBottom: 16 }}
       />
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Valor (EUR)</div>
-          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="1500,00" inputMode="decimal" style={numStyle} />
+          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="1500,00" inputMode="decimal" aria-label="Valor (EUR)" style={numStyle} />
         </div>
         {isRec ? (
           <div style={{ width: 90 }}>
             <div className="lb" style={{ marginBottom: 6 }}>Dia</div>
-            <input value={draft.day} onChange={(e) => set('day', e.target.value)} placeholder="1" inputMode="numeric" style={{ ...numStyle, textAlign: 'center' }} />
+            <input value={draft.day} onChange={(e) => set('day', e.target.value)} placeholder="1" inputMode="numeric" aria-label="Dia" style={{ ...numStyle, textAlign: 'center' }} />
           </div>
         ) : (
           <div style={{ flex: 1 }}>
             <div className="lb" style={{ marginBottom: 6 }}>Data</div>
-            <input type="date" value={draft.date} onChange={(e) => set('date', e.target.value)} style={{ ...numStyle, fontSize: 13, fontWeight: 400 }} />
+            <input type="date" value={draft.date} onChange={(e) => set('date', e.target.value)} aria-label="Data" style={{ ...numStyle, fontSize: 13, fontWeight: 400 }} />
           </div>
         )}
       </div>
@@ -208,6 +205,7 @@ export default function IncomeModal() {
       <select
         value={draft.source}
         onChange={(e) => set('source', e.target.value)}
+        aria-label="Origem"
         style={{
           width: '100%',
           padding: '12px 16px',
@@ -232,6 +230,7 @@ export default function IncomeModal() {
       <select
         value={draft.acct}
         onChange={(e) => set('acct', e.target.value)}
+        aria-label="Conta creditada (opcional)"
         style={{
           width: '100%',
           padding: '12px 16px',
@@ -245,7 +244,7 @@ export default function IncomeModal() {
         }}
       >
         <option value="">— sem conta —</option>
-        {listAccounts(state).map((a) => {
+        {listAccounts({ ...state, currentUser }).map((a) => {
           const label = a.bank + ' · ' + a.type;
           return (
             <option key={a.acctKey} value={label}>{label}</option>

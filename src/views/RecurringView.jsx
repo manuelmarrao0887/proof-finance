@@ -83,7 +83,7 @@ export default function RecurringView() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div className="m" style={{ fontSize: 15, fontWeight: 700 }}>{fm(r.amount)}</div>
+                <div className="m" style={{ fontSize: 15, fontWeight: 600 }}>{fm(r.amount)}</div>
                 <button
                   type="button"
                   onClick={() => open('rec', { id: r.id })}

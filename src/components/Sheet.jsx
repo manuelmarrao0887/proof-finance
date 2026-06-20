@@ -13,12 +13,14 @@
    Props: { open, onClose, title, children, footer }
    ════════════════════════════════════════════════════════════════════════ */
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 
 export default function Sheet({ open, onClose, title, children, footer }) {
   const panelRef = useRef(null);
   const scrollRef = useRef(null);
   const gripRef = useRef(null);
+  const closeBtnRef = useRef(null);
+  const prevFocusRef = useRef(null);
   const drag = useRef({ active: false, startY: 0, curY: 0, pointerId: null });
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -26,6 +28,60 @@ export default function Sheet({ open, onClose, title, children, footer }) {
   const close = useCallback(() => {
     if (typeof onClose === 'function') onClose();
   }, [onClose]);
+
+  // Keyboard a11y: Escape to close + a minimal focus trap (Tab/Shift+Tab cycle).
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (ev) => {
+      if (ev.key === 'Escape') {
+        ev.preventDefault();
+        close();
+        return;
+      }
+      if (ev.key === 'Tab') {
+        const panel = panelRef.current;
+        if (!panel) return;
+        const focusable = Array.from(
+          panel.querySelectorAll(
+            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (ev.shiftKey) {
+          if (document.activeElement === first || !panel.contains(document.activeElement)) {
+            ev.preventDefault();
+            last.focus();
+          }
+        } else if (document.activeElement === last || !panel.contains(document.activeElement)) {
+          ev.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, close]);
+
+  // Move focus into the dialog on open; restore it to the previous element on close.
+  useEffect(() => {
+    if (!open) return undefined;
+    prevFocusRef.current = document.activeElement;
+    const panel = panelRef.current;
+    const target =
+      closeBtnRef.current ||
+      (panel &&
+        panel.querySelector(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )) ||
+      panel;
+    if (target && typeof target.focus === 'function') target.focus();
+    return () => {
+      const prev = prevFocusRef.current;
+      if (prev && typeof prev.focus === 'function') prev.focus();
+    };
+  }, [open]);
 
   const onPointerDown = useCallback((ev) => {
     const panel = panelRef.current;
@@ -111,7 +167,7 @@ export default function Sheet({ open, onClose, title, children, footer }) {
         {title ? (
           <div className="rw" style={{ marginBottom: 12 }}>
             <h2 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em' }}>{title}</h2>
-            <button type="button" className="icon-btn" onClick={close} aria-label="Fechar">
+            <button ref={closeBtnRef} type="button" className="icon-btn" onClick={close} aria-label="Fechar">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />

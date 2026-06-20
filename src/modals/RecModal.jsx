@@ -16,6 +16,7 @@ import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
+import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 const EMPTY = { id: null, name: '', amount: '', day: '', cat: 'sub' };
 
@@ -100,21 +101,13 @@ export default function RecModal() {
 
   const footer = (
     <>
-      <button
-        type="button"
-        onClick={saveRec}
-        style={{ width: '100%', padding: '14px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 14, fontWeight: 500, borderRadius: 999 }}
-      >
+      <PrimaryButton onClick={saveRec}>
         {isEdit ? 'Guardar alterações' : 'Adicionar'}
-      </button>
+      </PrimaryButton>
       {isEdit && (
-        <button
-          type="button"
-          onClick={deleteRec}
-          style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--signal)', fontSize: 12, fontWeight: 600, marginTop: 8 }}
-        >
+        <SecondaryButton onClick={deleteRec} style={{ marginTop: 8 }}>
           Eliminar
-        </button>
+        </SecondaryButton>
       )}
     </>
   );
@@ -126,17 +119,18 @@ export default function RecModal() {
         value={draft.name}
         onChange={(e) => set('name', e.target.value)}
         placeholder="Ex: Netflix"
+        aria-label="Nome"
         style={{ ...inputStyle, marginBottom: 16 }}
       />
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Valor</div>
-          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="9,99" inputMode="decimal" style={numStyle} />
+          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="9,99" inputMode="decimal" aria-label="Valor" style={numStyle} />
         </div>
         <div style={{ width: 90 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Dia</div>
-          <input value={draft.day} onChange={(e) => set('day', e.target.value)} placeholder="1" inputMode="numeric" style={{ ...numStyle, textAlign: 'center' }} />
+          <input value={draft.day} onChange={(e) => set('day', e.target.value)} placeholder="1" inputMode="numeric" aria-label="Dia" style={{ ...numStyle, textAlign: 'center' }} />
         </div>
       </div>
 
@@ -144,6 +138,7 @@ export default function RecModal() {
       <select
         value={draft.cat}
         onChange={(e) => set('cat', e.target.value)}
+        aria-label="Categoria"
         style={{
           width: '100%',
           padding: '12px 16px',

@@ -3,7 +3,7 @@
    with all modals/sheets mounted. Navigation + modal state come from useUI().
    ════════════════════════════════════════════════════════════════════════ */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { hasUnseenNotes } from '../lib/patchNotes.js';
@@ -16,37 +16,43 @@ import Hero from './Hero.jsx';
 import ContextStrip from './ContextStrip.jsx';
 import Onboarding from './Onboarding.jsx';
 
+// Overview is the landing view → eager (no flash). The rest load on demand when
+// their tab is opened (code-splitting: each becomes its own chunk).
 import OverviewView from '../views/OverviewView.jsx';
-import ExpensesView from '../views/ExpensesView.jsx';
-import GoalsView from '../views/GoalsView.jsx';
-import CalendarView from '../views/CalendarView.jsx';
-import IncomesView from '../views/IncomesView.jsx';
-import RecurringView from '../views/RecurringView.jsx';
-import ChartsView from '../views/ChartsView.jsx';
-import LoanView from '../views/LoanView.jsx';
-import AIView from '../views/AIView.jsx';
+const ExpensesView = lazy(() => import('../views/ExpensesView.jsx'));
+const GoalsView = lazy(() => import('../views/GoalsView.jsx'));
+const CalendarView = lazy(() => import('../views/CalendarView.jsx'));
+const IncomesView = lazy(() => import('../views/IncomesView.jsx'));
+const RecurringView = lazy(() => import('../views/RecurringView.jsx'));
+const ChartsView = lazy(() => import('../views/ChartsView.jsx'));
+const LoanView = lazy(() => import('../views/LoanView.jsx'));
+const AIView = lazy(() => import('../views/AIView.jsx'));
 
-import AddExpenseSheet from '../modals/AddExpenseSheet.jsx';
-import ImportStatementSheet from '../modals/ImportStatementSheet.jsx';
-import SettingsSheet from '../modals/SettingsSheet.jsx';
-import GoalModal from '../modals/GoalModal.jsx';
-import RecModal from '../modals/RecModal.jsx';
-import IncomeModal from '../modals/IncomeModal.jsx';
-import CatManagerModal from '../modals/CatManagerModal.jsx';
-import AcctModal from '../modals/AcctModal.jsx';
-import RulesModal from '../modals/RulesModal.jsx';
-import BalanceUpdateSheet from '../modals/BalanceUpdateSheet.jsx';
-import BalanceHistorySheet from '../modals/BalanceHistorySheet.jsx';
-import PatchNotesSheet from '../modals/PatchNotesSheet.jsx';
-import ActionSheet from '../modals/ActionSheet.jsx';
-import MoreMenu from '../modals/MoreMenu.jsx';
+// Modals load on first open (and stay mounted afterwards so the close animation
+// still plays). Keyed by their ui modal name (see MODALS in store/ui.jsx).
+const MODAL_COMPONENTS = {
+  add: lazy(() => import('../modals/AddExpenseSheet.jsx')),
+  stmt: lazy(() => import('../modals/ImportStatementSheet.jsx')),
+  settings: lazy(() => import('../modals/SettingsSheet.jsx')),
+  goal: lazy(() => import('../modals/GoalModal.jsx')),
+  rec: lazy(() => import('../modals/RecModal.jsx')),
+  income: lazy(() => import('../modals/IncomeModal.jsx')),
+  cat: lazy(() => import('../modals/CatManagerModal.jsx')),
+  acct: lazy(() => import('../modals/AcctModal.jsx')),
+  rules: lazy(() => import('../modals/RulesModal.jsx')),
+  action: lazy(() => import('../modals/ActionSheet.jsx')),
+  more: lazy(() => import('../modals/MoreMenu.jsx')),
+  balanceUpdate: lazy(() => import('../modals/BalanceUpdateSheet.jsx')),
+  balanceHistory: lazy(() => import('../modals/BalanceHistorySheet.jsx')),
+  patchNotes: lazy(() => import('../modals/PatchNotesSheet.jsx')),
+};
 
 /* ── Icons (inline SVG, no emoji) ──────────────────────────────────────── */
 const Icon = {
   overview: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="3" width="7" height="9" /><rect x="14" y="3" width="7" height="5" />
-      <rect x="14" y="12" width="7" height="9" /><rect x="3" y="16" width="7" height="5" />
+      <rect x="3" y="3" width="7" height="9" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" />
+      <rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="16" width="7" height="5" rx="2" />
     </svg>
   ),
   expenses: (
@@ -109,6 +115,19 @@ function SyncChip({ status }) {
   );
 }
 
+// Shown while a lazily-loaded view chunk is fetched (usually a few ms).
+function ViewFallback() {
+  return (
+    <div
+      className="empty"
+      style={{ padding: '48px 20px', display: 'flex', justifyContent: 'center' }}
+      aria-live="polite"
+    >
+      <span className="lb" style={{ color: 'var(--fg-subtle)' }}>A carregar…</span>
+    </div>
+  );
+}
+
 function Header({ theme, onToggleTheme, syncStatus }) {
   const isDark =
     theme === 'dark' ||
@@ -135,7 +154,12 @@ function Header({ theme, onToggleTheme, syncStatus }) {
 
 function BottomNav({ tab, onTab, onPlus, onMore }) {
   const slot = (key, label) => (
-    <button type="button" className={'bnav-btn' + (tab === key ? ' on' : '')} onClick={() => onTab(key)}>
+    <button
+      type="button"
+      className={'bnav-btn' + (tab === key ? ' on' : '')}
+      aria-current={tab === key ? 'page' : undefined}
+      onClick={() => onTab(key)}
+    >
       {Icon[key]}
       <span>{label}</span>
     </button>
@@ -149,7 +173,12 @@ function BottomNav({ tab, onTab, onPlus, onMore }) {
         <span className="fab">{Icon.plus}</span>
       </button>
       {slot('goals', 'Metas')}
-      <button type="button" className={'bnav-btn' + (moreTabs.includes(tab) ? ' on' : '')} onClick={onMore}>
+      <button
+        type="button"
+        className={'bnav-btn' + (moreTabs.includes(tab) ? ' on' : '')}
+        aria-current={moreTabs.includes(tab) ? 'page' : undefined}
+        onClick={onMore}
+      >
         {Icon.more}
         <span>Mais</span>
       </button>
@@ -159,7 +188,25 @@ function BottomNav({ tab, onTab, onPlus, onMore }) {
 
 export default function Shell() {
   const { state, actions, syncStatus, currentUser } = useStore();
-  const { tab, goTab, open } = useUI();
+  const { tab, goTab, open, modals: modalState } = useUI();
+
+  // Mount a modal's (lazy) component the first time it opens, then keep it
+  // mounted so its close/exit animation still plays. Set only grows.
+  const [mountedModals, setMountedModals] = useState(() => new Set());
+  useEffect(() => {
+    const openKeys = Object.keys(modalState).filter((k) => modalState[k] != null);
+    if (!openKeys.length) return;
+    setMountedModals((prev) => {
+      let next = prev;
+      openKeys.forEach((k) => {
+        if (!next.has(k)) {
+          if (next === prev) next = new Set(prev);
+          next.add(k);
+        }
+      });
+      return next;
+    });
+  }, [modalState]);
 
   // Auto-open "Novidades" once per session for existing users with unseen notes.
   const patchChecked = useRef(false);
@@ -182,24 +229,16 @@ export default function Shell() {
   const View = VIEWS[tab] || OverviewView;
   const { mode, canToggle } = useDevice();
 
-  // Modals are shared by both layouts.
+  // Modals are shared by both layouts. Only mount those that have been opened;
+  // each lazy chunk loads on first open. Suspense fallback is null (modals are
+  // invisible until their own open transition runs).
   const modals = (
-    <>
-      <AddExpenseSheet />
-      <ImportStatementSheet />
-      <SettingsSheet />
-      <GoalModal />
-      <RecModal />
-      <IncomeModal />
-      <CatManagerModal />
-      <AcctModal />
-      <BalanceUpdateSheet />
-      <BalanceHistorySheet />
-      <PatchNotesSheet />
-      <RulesModal />
-      <ActionSheet />
-      <MoreMenu />
-    </>
+    <Suspense fallback={null}>
+      {[...mountedModals].map((k) => {
+        const C = MODAL_COMPONENTS[k];
+        return C ? <C key={k} /> : null;
+      })}
+    </Suspense>
   );
 
   if (mode === 'desktop') {
@@ -214,13 +253,17 @@ export default function Shell() {
                 <>
                   <Hero />
                   <div className="dgrid">
-                    <View />
+                    <Suspense fallback={<ViewFallback />}>
+                      <View />
+                    </Suspense>
                   </div>
                 </>
               ) : (
                 <div className="dnarrow">
                   <ContextStrip tab={tab} />
-                  <View />
+                  <Suspense fallback={<ViewFallback />}>
+                    <View />
+                  </Suspense>
                 </div>
               )}
             </div>
@@ -241,7 +284,9 @@ export default function Shell() {
       <Onboarding />
 
       <main className="has-bnav scroll-body" style={{ minHeight: '60svh' }}>
-        <View />
+        <Suspense fallback={<ViewFallback />}>
+          <View />
+        </Suspense>
       </main>
 
       <BottomNav tab={tab} onTab={goTab} onPlus={() => open('action')} onMore={() => open('more')} />

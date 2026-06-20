@@ -33,7 +33,7 @@ import { useUI } from '../store/ui.jsx';
 import { fm, normalizeStmtDate } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
-import { applySameBeneficiaryCategory, dedupeAddedExp } from '../lib/dedupe.js';
+import { dedupeAddedExp } from '../lib/dedupe.js';
 import { useToast } from '../components/Toast.jsx';
 import {
   isPreviewMode,
@@ -88,20 +88,20 @@ export default function ExpensesView() {
     return out;
   }, [preview]);
 
-  const openAdd = (editIdx) => ui.open('add', editIdx != null ? { editIdx } : true);
+  const openAdd = (editId) => ui.open('add', editId != null ? { editId } : true);
 
   const toggleTagFilter = (t) =>
     setTagFilter((tf) => (tf.indexOf(t) > -1 ? tf.filter((x) => x !== t) : [...tf, t]));
   const clearTagFilter = () => setTagFilter([]);
 
-  // ── Expanded-row category change — FIX 1 (same beneficiary) ────────────────
-  const changeExpCat = (idx, cat) => {
+  // ── Expanded-row category change — FIX 1 (same beneficiary), by stable id ───
+  const changeExpCat = (id, cat) => {
     // Apply the chosen category to every expense sharing the normalized desc.
-    const next = applySameBeneficiaryCategory(addedExp, idx, cat, 'cat'); // 'cat' key for addedExp
-    actions.setAddedExp(next);
+    actions.classifyExpense(id, cat);
   };
-  const deleteExp = (idx) => {
-    actions.deleteExpense(idx);
+  const deleteExp = (id) => {
+    if (typeof confirm === 'function' && !confirm('Remover esta despesa?')) return;
+    actions.deleteExpense(id);
   };
 
   // ════════════════════════════════════════════════════════════════════════
@@ -135,16 +135,18 @@ export default function ExpensesView() {
           <SearchIcon />
           <input
             id="exSearch"
+            type="search"
+            aria-label="Pesquisar despesas"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Pesquisar..."
+            placeholder="Pesquisar…"
             style={{ width: '100%', padding: '12px 40px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 16, boxSizing: 'border-box' }}
           />
           {q && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fg-subtle)', fontSize: 18, lineHeight: 1, padding: 6 }}
+              style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fg-subtle)', fontSize: 18, lineHeight: 1, padding: 12, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               aria-label="Limpar pesquisa"
             >
               &times;
@@ -167,24 +169,24 @@ export default function ExpensesView() {
         )}
         <div className="rw" style={{ marginBottom: 10, padding: '0 4px' }}>
           <div className="lb">{matches.length + ' resultado' + (matches.length === 1 ? '' : 's')}</div>
-          <div className="m" style={{ fontSize: 13, fontWeight: 500 }}>{fm(tot)}</div>
+          <div className="m" style={{ fontSize: 13, fontWeight: 600 }}>{fm(tot)}</div>
         </div>
         {sorted.length === 0 ? (
           <div className="empty">
             <div style={{ fontSize: 13 }}>{'Sem resultados para "' + searchQuery + '"'}</div>
           </div>
         ) : (
-          sorted.map(({ x, idx }) => {
+          sorted.map(({ x }) => {
             const b = bdg.find((bb) => bb.id === x.cat);
             return (
-              <div key={idx} className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
+              <div key={x.id} className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
                 <div className="rw" style={{ gap: 12 }}>
                   <CategoryIcon id={x.cat} size={40} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>
                       {x.desc}
                       {x.shared && (
-                        <span style={{ fontSize: 9, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 6px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
+                        <span style={{ fontSize: 11, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 5px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
                           /{x.split || 2}
                         </span>
                       )}
@@ -204,7 +206,7 @@ export default function ExpensesView() {
                                 ev.stopPropagation();
                                 toggleTagFilter(t);
                               }}
-                              style={{ fontSize: 10, background: on ? 'var(--fg)' : 'var(--elevated)', color: on ? 'var(--bg)' : 'var(--fg-muted)', padding: '2px 8px', borderRadius: 999, fontWeight: 500, border: '1px solid ' + (on ? 'var(--fg)' : 'var(--border)'), fontFamily: 'var(--mono)', cursor: 'pointer' }}
+                              style={{ fontSize: 11, background: on ? 'var(--fg)' : 'var(--elevated)', color: on ? 'var(--bg)' : 'var(--fg-muted)', padding: '2px 8px', borderRadius: 999, fontWeight: 500, border: '1px solid ' + (on ? 'var(--fg)' : 'var(--border)'), fontFamily: 'var(--mono)', cursor: 'pointer' }}
                             >
                               #{t}
                             </button>
@@ -214,8 +216,8 @@ export default function ExpensesView() {
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div className="m" style={{ fontSize: 14, fontWeight: 700 }}>{fm(x.amount)}</div>
-                    <button type="button" onClick={() => openAdd(idx)} className="icon-btn" style={{ width: 28, height: 28 }} aria-label="Editar despesa">
+                    <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{fm(x.amount)}</div>
+                    <button type="button" onClick={() => openAdd(x.id)} className="icon-btn" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Editar despesa">
                       <EditIcon />
                     </button>
                   </div>
@@ -289,13 +291,13 @@ export default function ExpensesView() {
     const dEnd = new Date(dToday.getFullYear(), dToday.getMonth() + 1, 0).getDate();
     const pct = Math.round((dToday.getDate() / dEnd) * 100);
     partialNote = (
-      <div className="m" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 10 }}>
+      <div className="m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
         {ms[3] + ' parcial · ' + pct + '% do mês'}
       </div>
     );
   } else if (em === 3 && preview) {
     partialNote = (
-      <div className="m" style={{ fontSize: 10, color: 'var(--signal)', marginTop: 10 }}>Abril parcial</div>
+      <div className="m" style={{ fontSize: 11, color: 'var(--signal)', marginTop: 10 }}>Abril parcial</div>
     );
   }
 
@@ -342,6 +344,36 @@ export default function ExpensesView() {
     toast(monthExpCount + ' despesa' + (monthExpCount === 1 ? '' : 's') + ' de ' + selMonthLabel + ' removida' + (monthExpCount === 1 ? '' : 's'), 'success');
   };
 
+  // Recurring expenses pending for the selected month: those not yet materialised
+  // into addedExp (no addedExp carrying their recId this month). Registering one
+  // opens the add sheet pre-filled so the user can set the day it was charged.
+  const recurring = state.recurring || [];
+  let pendingRec = [];
+  if (selMonthKey) {
+    const matRecIds = new Set(
+      addedExp
+        .filter((x) => x.recId && (x.date || '').slice(0, 7) === selMonthKey)
+        .map((x) => x.recId)
+    );
+    pendingRec = recurring.filter((r) => (r.amount || 0) > 0 && !matRecIds.has(r.id));
+  }
+  const daysInSelMonth = selMonthKey
+    ? new Date(Number(selMonthKey.slice(0, 4)), Number(selMonthKey.slice(5, 7)), 0).getDate()
+    : 31;
+  const registerRec = (r) => {
+    if (!selMonthKey) return;
+    const day = Math.min(Math.max(parseInt(r.day, 10) || 1, 1), daysInSelMonth);
+    ui.open('add', {
+      prefill: {
+        desc: r.name,
+        amount: r.amount,
+        cat: r.cat,
+        date: selMonthKey + '-' + String(day).padStart(2, '0'),
+        recId: r.id,
+      },
+    });
+  };
+
   return (
     <div style={{ padding: '0 20px 24px' }}>
       {/* Search bar */}
@@ -349,9 +381,11 @@ export default function ExpensesView() {
         <SearchIcon />
         <input
           id="exSearch"
+          type="search"
+          aria-label="Pesquisar despesas"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Pesquisar..."
+          placeholder="Pesquisar…"
           style={{ width: '100%', padding: '12px 16px 12px 40px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 16, boxSizing: 'border-box' }}
         />
       </div>
@@ -421,6 +455,7 @@ export default function ExpensesView() {
             key={i}
             type="button"
             className={'ms' + (em === i ? ' on' : '')}
+            aria-current={em === i ? 'true' : undefined}
             onClick={() => actions.setEm(i)}
             style={i < 3 ? { borderRight: '1px solid var(--border)' } : undefined}
           >
@@ -430,10 +465,11 @@ export default function ExpensesView() {
         <button
           type="button"
           className={'ms' + (em === 4 ? ' on' : '')}
+          aria-current={em === 4 ? 'true' : undefined}
           onClick={() => actions.setEm(4)}
           style={{ borderLeft: '1px solid var(--border)' }}
         >
-          Q1
+          {preview ? 'Q1' : '3M'}
         </button>
       </div>
 
@@ -441,18 +477,50 @@ export default function ExpensesView() {
       <div className="cd" style={{ marginBottom: 16 }}>
         <div className="rw">
           <div>
-            <div className="lb">{isQ ? 'Despesas Q1' : 'DESPESAS ' + ms[em]}</div>
-            <div className="m" style={{ fontSize: 24, fontWeight: 900, marginTop: 4 }}>{fm(tE)}</div>
+            <div className="lb">{isQ ? (preview ? 'Despesas Q1' : 'Despesas 3M (últimos 3 meses)') : 'DESPESAS ' + ms[em]}</div>
+            <div className="m" style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{fm(tE)}</div>
           </div>
           {!isQ && em < 3 && salP[em] != null && (
             <div style={{ textAlign: 'right' }}>
               <div className="lb">Salário</div>
-              <div className="m" style={{ fontSize: 18, fontWeight: 700, color: 'var(--success)', marginTop: 4 }}>{fm(salP[em])}</div>
+              <div className="m" style={{ fontSize: 18, fontWeight: 600, color: 'var(--success)', marginTop: 4 }}>{fm(salP[em])}</div>
             </div>
           )}
         </div>
         {partialNote}
       </div>
+
+      {/* Recorrentes pendentes do mês selecionado — registar com o dia da cobrança */}
+      {pendingRec.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div className="lb" style={{ marginBottom: 8, padding: '0 4px' }}>
+            Recorrentes de {selMonthLabel} ({pendingRec.length})
+          </div>
+          {pendingRec.map((r) => {
+            const b = bdg.find((bb) => bb.id === r.cat);
+            return (
+              <div key={r.id} className="cd" style={{ marginBottom: 8, padding: '10px 14px' }}>
+                <div className="rw" style={{ gap: 12 }}>
+                  <CategoryIcon id={r.cat} size={36} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                      {(b ? b.nm : '-') + ' · dia ' + (r.day || '?') + ' · ' + fm(r.amount)}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => registerRec(r)}
+                    style={{ padding: '7px 12px', border: '1px solid var(--primary)', background: 'var(--blue-soft)', color: 'var(--primary)', borderRadius: 999, fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    Registar
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Empty state */}
       {rows.length === 0 && (
@@ -476,13 +544,12 @@ export default function ExpensesView() {
         const ov = r.pct > 100;
         const bc = ov ? 'var(--signal)' : r.pct > 75 ? '#f5a623' : 'var(--text)';
         const op = ov ? '1' : '0.6';
-        // Historical demo transactions (orig 1161).
-        const hTxn = (txn[r.id] && txn[r.id][em]) ? txn[r.id][em] : [];
-        // Imported/added expenses in this category (orig 1168) — carry their real index.
-        const aTxn = [];
-        addedExp.forEach((x, idx) => {
-          if (x.cat === r.id) aTxn.push({ x, idx });
-        });
+        // Historical demo transactions (orig 1161) — ONLY in preview/demo mode.
+        // For an authenticated user these are phantom rows (not their data, can't
+        // be deleted, don't match the real total), so they must never show.
+        const hTxn = preview && txn[r.id] && txn[r.id][em] ? txn[r.id][em] : [];
+        // Imported/added expenses in this category (orig 1168) — carry stable id.
+        const aTxn = addedExp.filter((x) => x.cat === r.id);
         return (
           <div key={r.id} style={{ marginBottom: 4 }}>
             <button type="button" className="exp-btn" style={{ alignItems: 'center', gap: 12 }} onClick={() => setXExp(isE ? null : r.id)}>
@@ -499,11 +566,11 @@ export default function ExpensesView() {
                   <div className="bar-fill" style={{ width: Math.min(r.pct, 100) + '%', background: bc, opacity: op }} />
                 </div>
                 <div className="rw" style={{ marginTop: 4 }}>
-                  <span className="m" style={{ fontSize: 10, color: ov ? 'var(--signal)' : 'var(--text3)' }}>{r.pct.toFixed(0)}%</span>
+                  <span className="m" style={{ fontSize: 11, color: ov ? 'var(--signal)' : 'var(--text3)' }}>{r.pct.toFixed(0)}%</span>
                   {ov ? (
-                    <span className="m" style={{ fontSize: 10, color: 'var(--signal)' }}>+{fm(r.val - r.lm)}</span>
+                    <span className="m" style={{ fontSize: 11, color: 'var(--signal)' }}>+{fm(r.val - r.lm)}</span>
                   ) : (
-                    <span className="m" style={{ fontSize: 10, color: 'var(--success)' }}>Resta {fm(r.lm - r.val)}</span>
+                    <span className="m" style={{ fontSize: 11, color: 'var(--success)' }}>Resta {fm(r.lm - r.val)}</span>
                   )}
                 </div>
               </div>
@@ -515,7 +582,7 @@ export default function ExpensesView() {
                 {hTxn.map((t, i) => (
                   <div key={'h' + i} className="rw" style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
                     <span style={{ fontSize: 12, color: 'var(--text2)' }}>{t[0]}</span>
-                    <span className="m" style={{ fontSize: 12, fontWeight: 500 }}>{fm(t[1])}</span>
+                    <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>{fm(t[1])}</span>
                   </div>
                 ))}
 
@@ -523,35 +590,34 @@ export default function ExpensesView() {
                 {aTxn.length > 0 && (
                   <>
                     {hTxn.length > 0 && <div style={{ borderTop: '1px solid var(--border)', margin: '8px 0' }} />}
-                    <div className="lb" style={{ fontSize: 9, marginBottom: 6 }}>Importadas</div>
-                    {aTxn.map((at, i) => {
-                      const x = at.x;
-                      const idx = at.idx;
+                    <div className="lb" style={{ fontSize: 11, marginBottom: 6 }}>Importadas</div>
+                    {aTxn.map((x, i) => {
                       return (
-                        <div key={'a' + idx} style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+                        <div key={'a' + x.id} style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
                           <div className="rw">
                             <span style={{ fontSize: 12, color: 'var(--text)' }}>
                               {x.desc}
                               {x.shared && (
-                                <span style={{ fontSize: 9, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 6px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
+                                <span style={{ fontSize: 11, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 5px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
                                   /{x.split || 2}
                                 </span>
                               )}
                             </span>
-                            <span className="m" style={{ fontSize: 12, fontWeight: 500 }}>
+                            <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>
                               {fm(x.amount)}
                               {x.shared && x.total != null && (
-                                <span style={{ fontSize: 9, color: 'var(--text3)', marginLeft: 4 }}>de {fm(x.total)}</span>
+                                <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>de {fm(x.total)}</span>
                               )}
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                            <span className="m" style={{ fontSize: 9, color: 'var(--text3)' }}>{x.date}</span>
+                            <span className="m" style={{ fontSize: 11, color: 'var(--text3)' }}>{x.date}</span>
                             {/* FIX 3: alphabetical picker · FIX 1 applied in changeExpCat */}
                             <select
                               value={x.cat}
-                              onChange={(e) => changeExpCat(idx, e.target.value)}
-                              style={{ padding: '2px 6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', borderRadius: 'var(--r2)', fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.05em', appearance: 'none' }}
+                              onChange={(e) => changeExpCat(x.id, e.target.value)}
+                              aria-label={'Categoria de ' + x.desc}
+                              style={{ padding: '8px 6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', borderRadius: 'var(--r2)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', appearance: 'none', minHeight: 40 }}
                             >
                               {cats.map((b) => (
                                 <option key={b.id} value={b.id}>
@@ -559,10 +625,10 @@ export default function ExpensesView() {
                                 </option>
                               ))}
                             </select>
-                            <button type="button" onClick={() => openAdd(idx)} style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--mono)', fontSize: 9, cursor: 'pointer', fontWeight: 600 }}>
+                            <button type="button" onClick={() => openAdd(x.id)} aria-label="Editar despesa" style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--mono)', fontSize: 11, cursor: 'pointer', fontWeight: 600, padding: '10px 10px', minHeight: 40 }}>
                               Editar
                             </button>
-                            <button type="button" onClick={() => deleteExp(idx)} style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 9, cursor: 'pointer' }}>
+                            <button type="button" onClick={() => deleteExp(x.id)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 11, cursor: 'pointer', padding: '10px 10px', minHeight: 40 }}>
                               Remover
                             </button>
                           </div>

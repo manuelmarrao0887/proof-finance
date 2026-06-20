@@ -94,6 +94,7 @@ export default function RulesModal() {
           value={pattern}
           onChange={(e) => setPattern(e.target.value)}
           placeholder="Ex: pingo doce, spotify, uber"
+          aria-label="Padrão"
           style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--fg)', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', marginBottom: 8 }}
         />
         <div style={{ display: 'flex', gap: 8 }}>
@@ -101,6 +102,7 @@ export default function RulesModal() {
             id="ruCat"
             value={cat}
             onChange={(e) => setCat(e.target.value)}
+            aria-label="Categoria"
             style={{ flex: 1, padding: '10px 12px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--fg)', borderRadius: 8, fontSize: 14 }}
           >
             {cats.map((b) => (
