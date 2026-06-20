@@ -161,22 +161,36 @@ export function getAcctsLive(state) {
     // strictly BEFORE the base are assumed already reflected in the base value.
     // With no base date, count every transaction allocated to the account.
     const baseISO = a.updated ? String(a.updated).replace(/\./g, '-') : null;
-    const label = a.b + ' · ' + a.t;
+    // Match by NORMALISED label so minor drift never breaks the link:
+    // "Conta à Ordem" vs "Conta a Ordem", stray spaces, casing, etc.
+    const labelNorm = normAcct(a.b + ' · ' + a.t);
     let delta = 0;
     addedExp.forEach(function (x) {
-      if (x.acct !== label) return;
+      if (normAcct(x.acct) !== labelNorm) return;
       if (baseISO && (x.date || '') < baseISO) return;
       delta -= Number(x.amount) || 0;
     });
     incomes.forEach(function (i) {
       // Only one-off (dated) incomes move a specific account's balance;
       // recurring incomes are modelled in the cash-flow projection instead.
-      if (i.acct !== label || i.recurring !== false) return;
+      if (i.recurring !== false || normAcct(i.acct) !== labelNorm) return;
       if (baseISO && (i.date || '') < baseISO) return;
       delta += Number(i.amount) || 0;
     });
     return delta ? Object.assign({}, a, { v: a.v + delta }) : a;
   });
+}
+
+// Normalise an account label for matching: strip accents, lowercase, collapse
+// spaces. Empty string for null/undefined (never matches a real label).
+function normAcct(s) {
+  if (!s) return '';
+  return String(s)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /* ══ snapshotFromState ══

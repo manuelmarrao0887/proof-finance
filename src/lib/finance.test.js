@@ -198,6 +198,20 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
     expect(acc.v).toBe(1000 - 50 + 200); // 1150
   });
 
+  it('subtracts from a TEMPLATE account tracked via dynAccts (real-world case)', () => {
+    const state = {
+      currentUser: { uid: 'u1' },
+      dynAccts: { 'Activobank_Conta a Ordem': { v: 1000, d: '2026.06.13', n: null } },
+      addedExp: [
+        { id: 'e1', desc: 'Compra', amount: 50, cat: 'sup', date: '2026-06-20', acct: 'Activobank · Conta a Ordem' },
+      ],
+      incomes: [],
+    };
+    const acc = getAcctsLive(state).find((a) => a.b === 'Activobank');
+    expect(acc).toBeTruthy();
+    expect(acc.v).toBe(950);
+  });
+
   it('counts an expense dated the SAME day as the reading/creation date', () => {
     const state = {
       ...base, // Wise account, value 1000, updated '2026.06.01'
