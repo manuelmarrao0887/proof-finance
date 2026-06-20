@@ -181,13 +181,13 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
   };
   const label = 'Wise · Conta a Ordem';
 
-  it('subtracts expenses and adds one-off incomes dated on/after the reading', () => {
+  it('MANUAL expenses subtract regardless of date; one-off incomes add; recurring ignored', () => {
     const state = {
       ...base,
       addedExp: [
         { id: 'e1', desc: 'Compra', amount: 50, cat: 'sup', date: '2026-06-10', acct: label },
-        { id: 'e2', desc: 'Antiga', amount: 30, cat: 'sup', date: '2026-05-20', acct: label }, // before base → ignored
-        { id: 'e3', desc: 'Outra conta', amount: 99, cat: 'sup', date: '2026-06-12', acct: 'Banco X · Conta' }, // other acct
+        { id: 'e2', desc: 'Antiga', amount: 30, cat: 'sup', date: '2026-05-20', acct: label }, // before reading → STILL subtracts (manual)
+        { id: 'e3', desc: 'Outra conta', amount: 99, cat: 'sup', date: '2026-06-12', acct: 'Banco X · Conta' }, // other acct → ignored
       ],
       incomes: [
         { id: 'i1', name: 'Extra', amount: 200, recurring: false, date: '2026-06-15', acct: label },
@@ -195,7 +195,20 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
       ],
     };
     const acc = getAcctsLive(state).find((a) => a.b === 'Wise');
-    expect(acc.v).toBe(1000 - 50 + 200); // 1150
+    expect(acc.v).toBe(1000 - 50 - 30 + 200); // 1120
+  });
+
+  it('IMPORTED transactions (extrato/IA) do NOT move the balance', () => {
+    const state = {
+      ...base,
+      addedExp: [
+        { id: 'e1', desc: 'Manual', amount: 50, cat: 'sup', date: '2026-06-10', acct: label },
+        { id: 'e2', desc: 'Do extrato', amount: 200, cat: 'sup', date: '2026-06-11', acct: label, imported: true },
+      ],
+      incomes: [],
+    };
+    const acc = getAcctsLive(state).find((a) => a.b === 'Wise');
+    expect(acc.v).toBe(950); // only the manual 50 subtracts; the imported 200 is ignored
   });
 
   it('subtracts from a TEMPLATE account tracked via dynAccts (real-world case)', () => {
@@ -212,25 +225,15 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
     expect(acc.v).toBe(950);
   });
 
-  it('counts an expense dated the SAME day as the reading/creation date', () => {
-    const state = {
-      ...base, // Wise account, value 1000, updated '2026.06.01'
-      addedExp: [{ id: 'e1', desc: 'Hoje', amount: 40, cat: 'sup', date: '2026-06-01', acct: label }],
-      incomes: [],
-    };
-    const acc = getAcctsLive(state).find((a) => a.b === 'Wise');
-    expect(acc.v).toBe(960); // same-day expense still moves the balance
-  });
-
-  it('counts every allocated transaction when the account has no base reading date', () => {
+  it('matches the account label tolerating accents (Conta à Ordem vs Conta a Ordem)', () => {
     const state = {
       currentUser: { uid: 'u1' },
-      customAccts: [{ id: 'x9', bank: 'Novo', type: 'Conta', value: 500, category: 'Liquidez' }], // no `updated`
-      addedExp: [{ id: 'e1', desc: 'X', amount: 50, cat: 'sup', date: '2026-06-10', acct: 'Novo · Conta' }],
+      dynAccts: { 'Activobank_Conta a Ordem': { v: 1000, d: '2026.06.13', n: null } },
+      addedExp: [{ id: 'e1', desc: 'X', amount: 40, cat: 'sup', date: '2026-06-20', acct: 'Activobank · Conta à Ordem' }],
       incomes: [],
     };
-    const acc = getAcctsLive(state).find((a) => a.b === 'Novo');
-    expect(acc.v).toBe(450);
+    const acc = getAcctsLive(state).find((a) => a.b === 'Activobank');
+    expect(acc.v).toBe(960);
   });
 });
 
