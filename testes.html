@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proof. Finance — Plano de Testes Funcionais</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f4f5f8;
+    --surface: #ffffff;
+    --fg: #0a1633;
+    --muted: #5f6b89;
+    --subtle: #9aa3b5;
+    --border: #e4e7ef;
+    --primary: #3b6fee;
+    --primary-soft: #eaf0fe;
+    --pass: #1f9d57;
+    --pass-soft: #e6f6ee;
+    --fail: #e0443e;
+    --fail-soft: #fdeceb;
+    --na: #8a93a6;
+    --na-soft: #eef0f4;
+    --r: 20px;
+    --r2: 14px;
+    --r3: 10px;
+    --shadow: 0 1px 3px rgba(16, 28, 64, 0.06), 0 8px 24px rgba(16, 28, 64, 0.05);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.5;
+    padding: 0 0 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+
+  /* ── Header (app-style: clean surface, brand top-left) ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 22px 0 20px;
+  }
+  header .wrap { display: flex; flex-direction: column; gap: 4px; }
+  .brand { display: flex; align-items: baseline; gap: 8px; }
+  .brand b { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--fg); }
+  .brand span { font-size: 22px; font-weight: 400; color: var(--muted); letter-spacing: -0.02em; }
+  .brand .tag { margin-left: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--primary); background: var(--primary-soft); padding: 4px 10px; border-radius: 999px; align-self: center; }
+  header p { margin: 6px 0 0; font-size: 14px; color: var(--muted); max-width: 70ch; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; font-size: 12px; }
+  .meta-row .pill { background: var(--bg); border: 1px solid var(--border); color: var(--muted); padding: 5px 12px; border-radius: 999px; }
+  .meta-row .pill code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--fg); }
+
+  /* ── Sticky progress bar ────────────────────────────── */
+  .progress-bar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: saturate(140%) blur(8px);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 22px;
+  }
+  .progress-inner {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 12px 20px; max-width: 1000px; margin: 0 auto;
+  }
+  .counter { font-size: 14px; font-weight: 600; }
+  .counter b { font-variant-numeric: tabular-nums; }
+  .tally { display: flex; gap: 8px; font-size: 12px; }
+  .tally span { padding: 4px 10px; border-radius: 999px; font-weight: 600; }
+  .tally .t-pass { background: var(--pass-soft); color: var(--pass); }
+  .tally .t-fail { background: var(--fail-soft); color: var(--fail); }
+  .tally .t-na { background: var(--na-soft); color: var(--na); }
+  .track { flex: 1; min-width: 140px; height: 8px; background: var(--na-soft); border-radius: 999px; overflow: hidden; }
+  .track > i { display: block; height: 100%; width: 0; background: var(--primary); border-radius: 999px; transition: width 0.25s ease; }
+  .actions { display: flex; gap: 8px; }
+  .btn {
+    border: 1px solid var(--border); background: var(--surface); color: var(--fg);
+    font: inherit; font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 999px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--primary); color: var(--primary); }
+  .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  /* ── Intro / legend ─────────────────────────────────── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 18px 20px; box-shadow: var(--shadow); margin-bottom: 18px;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); }
+  .legend b { color: var(--fg); }
+
+  /* ── Test groups ────────────────────────────────────── */
+  .group { margin-bottom: 26px; }
+  .group > h2 {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 17px; margin: 0 0 12px; padding: 0 2px;
+  }
+  .group > h2 .gid {
+    background: var(--primary-soft); color: var(--primary);
+    font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-variant-numeric: tabular-nums;
+  }
+  .group > h2 .gcount { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--subtle); }
+
+  .test {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2);
+    padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow);
+    border-left: 4px solid var(--border); transition: border-color 0.2s;
+  }
+  .test[data-state="pass"] { border-left-color: var(--pass); }
+  .test[data-state="fail"] { border-left-color: var(--fail); }
+  .test[data-state="na"]   { border-left-color: var(--na); }
+  .test .top { display: flex; align-items: baseline; gap: 10px; }
+  .test .tid { font-size: 12px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .test .title { font-size: 14px; font-weight: 600; }
+  .test .body { margin: 8px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .test .body .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--subtle); font-weight: 700; margin-bottom: 3px; }
+  .test .body .val { font-size: 13px; color: var(--muted); }
+  .test .body .val ol { margin: 0; padding-left: 18px; }
+  .test .body .val li { margin: 2px 0; }
+  .states { display: flex; gap: 6px; margin-top: 12px; }
+  .states label {
+    flex: 1; text-align: center; font-size: 12px; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 999px; padding: 8px 0; cursor: pointer; user-select: none;
+  }
+  .states input { position: absolute; opacity: 0; pointer-events: none; }
+  .states label:hover { border-color: var(--subtle); }
+  .states .s-pass input:checked + span { } /* styled via wrapper below */
+  .states label.on-pass { background: var(--pass-soft); color: var(--pass); border-color: var(--pass); }
+  .states label.on-fail { background: var(--fail-soft); color: var(--fail); border-color: var(--fail); }
+  .states label.on-na   { background: var(--na-soft);   color: var(--na);   border-color: var(--na); }
+  .note {
+    width: 100%; margin-top: 10px; border: 1px solid var(--border); border-radius: var(--r3);
+    padding: 8px 12px; font: inherit; font-size: 13px; resize: vertical; min-height: 0; background: #fbfcfe; color: var(--fg);
+  }
+  .note:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+  .filtered-out { display: none !important; }
+
+  footer { text-align: center; color: var(--subtle); font-size: 12px; margin-top: 30px; }
+
+  @media (max-width: 640px) {
+    .test .body { grid-template-columns: 1fr; }
+    header { border-radius: 0 0 22px 22px; }
+  }
+
+  /* ── Print ──────────────────────────────────────────── */
+  @media print {
+    body { background: #fff; padding: 0; }
+    .progress-bar, .actions, header { box-shadow: none; }
+    header { border-radius: 0; }
+    .progress-bar { position: static; }
+    .btn, .filter-bar { display: none !important; }
+    .test, .card, .group { break-inside: avoid; box-shadow: none; }
+    .states label { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand"><b>Proof.</b><span>Finance</span><span class="tag">Plano de testes</span></div>
+    <p>Lista para validar manualmente que a app está a funcionar. Marca cada caso como <b>Passou</b>, <b>Falhou</b> ou <b>N/A</b>. O estado fica guardado neste navegador.</p>
+    <div class="meta-row">
+      <span class="pill">Versão app: branch <code>react</code></span>
+      <span class="pill">Atualizado: 2026-06-20</span>
+      <span class="pill" id="hdrCount">0 / 0 testados</span>
+    </div>
+  </div>
+</header>
+
+<div class="progress-bar">
+  <div class="progress-inner">
+    <div class="counter"><b id="cTested">0</b> / <b id="cTotal">0</b> testados</div>
+    <div class="tally">
+      <span class="t-pass">✓ <b id="cPass">0</b></span>
+      <span class="t-fail">✕ <b id="cFail">0</b></span>
+      <span class="t-na"><b id="cNa">0</b> N/A</span>
+    </div>
+    <div class="track"><i id="trackFill"></i></div>
+    <div class="actions">
+      <button class="btn" id="btnFilter" type="button">Só por testar</button>
+      <button class="btn" id="btnPrint" type="button">Imprimir / PDF</button>
+      <button class="btn" id="btnReset" type="button">Limpar</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <div class="legend">
+      <div><b>Como usar:</b> percorre cada secção na app real e confirma o resultado esperado.</div>
+      <div><b>✓ Passou</b> = comportamento correto.</div>
+      <div><b>✕ Falhou</b> = escreve o que correu mal na nota.</div>
+      <div><b>N/A</b> = não aplicável agora.</div>
+    </div>
+  </div>
+
+  <div id="groups"></div>
+
+  <footer>Proof. Finance · plano de testes funcionais · gerado para validação manual</footer>
+</div>
+
+<script>
+/* ──────────────────────────────────────────────────────────────────────────
+   Test data. Each group { id, title, tests:[{id, title, steps:[], expect}] }.
+   Steps render as an ordered list; single-string steps render as a paragraph.
+   ────────────────────────────────────────────────────────────────────────── */
+const GROUPS = [
+  { id: 'T1', title: 'Arranque & modos', tests: [
+    { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
+    { id: 'T1.2', title: 'Modo autenticado', steps: ['Iniciar sessão com a conta'], expect: 'Mostra os dados do utilizador; sem dados demo. Vista de despesas mostra os últimos 4 meses e botão "3M".' },
+    { id: 'T1.3', title: 'Novo utilizador sem dados', steps: ['Login numa conta sem despesas/contas/metas'], expect: 'Estados vazios com mensagem e CTA (ex.: "Sem despesas neste período" + "toca no +").' },
+  ]},
+  { id: 'T2', title: 'Despesas', tests: [
+    { id: 'T2.1', title: 'Adicionar despesa', steps: ['Tocar no +', 'Escolher categoria, preencher descrição, valor e data', 'Adicionar'], expect: 'Aparece na lista da categoria e soma ao total do mês da data escolhida.' },
+    { id: 'T2.2', title: 'Editar despesa', steps: ['Expandir categoria → "Editar" numa despesa', 'Alterar valor/descrição', 'Guardar'], expect: 'A despesa correta é atualizada (não outra).' },
+    { id: 'T2.3', title: 'Remover despesa', steps: ['"Remover" numa despesa da lista'], expect: 'Pede confirmação ("Remover esta despesa?"). Ao confirmar, desaparece e sai do total.' },
+    { id: 'T2.4', title: 'Despesa partilhada', steps: ['Nova despesa → ativar "Despesa partilhada"', 'Total e nº de pessoas'], expect: 'Mostra "a tua parte" = total ÷ pessoas; é esse valor que entra na lista.' },
+    { id: 'T2.5', title: 'Tags', steps: ['Adicionar despesa com tags (ex.: viagem, casa)'], expect: 'As tags aparecem como chips; tocar num chip filtra as despesas por essa tag.' },
+    { id: 'T2.6', title: 'Mudar categoria na lista', steps: ['Expandir categoria → mudar o seletor de categoria de uma despesa'], expect: 'A categoria muda em TODAS as despesas do mesmo beneficiário (mesma descrição).' },
+    { id: 'T2.7', title: 'Pesquisa', steps: ['Escrever no campo "Pesquisar…"'], expect: 'Filtra por descrição, categoria e tags; mostra contagem e total dos resultados.' },
+    { id: 'T2.8', title: 'Editar/apagar após limpar (id estável)', steps: ['Importar/criar várias despesas', 'Usar "Limpar importadas" ou "Remover mês"', 'Editar/apagar uma despesa que ficou'], expect: 'Mexe sempre na despesa certa (a reordenação da lista não troca o alvo).' },
+  ]},
+  { id: 'T3', title: 'Importar extrato', tests: [
+    { id: 'T3.1', title: 'Importar ficheiro', steps: ['Abrir importar extrato', 'Carregar ficheiro Excel/CSV'], expect: 'Lê as transações e mostra a lista para seleção.' },
+    { id: 'T3.2', title: 'Selecionar linhas (teclado)', steps: ['Navegar com Tab até uma linha', 'Ativar a checkbox com Espaço/Enter'], expect: 'A checkbox é focável e operável por teclado (não é um div).' },
+    { id: 'T3.3', title: 'Normalização de datas', steps: ['Importar linhas com datas DD.MM, DD/MM/YYYY ou M.DD (ActivoBank)'], expect: 'Ficam todas em YYYY-MM-DD e caem no mês certo.' },
+    { id: 'T3.4', title: 'Reimportar sem duplicar', steps: ['Importar o mesmo extrato duas vezes'], expect: 'As repetidas não entram (dedupe por descrição+valor+data); a mensagem indica quantas saltou.' },
+    { id: 'T3.5', title: 'Categoria por linha', steps: ['Mudar a categoria de uma linha antes de importar'], expect: 'A despesa importada fica com essa categoria.' },
+  ]},
+  { id: 'T4', title: 'Despesas recorrentes', tests: [
+    { id: 'T4.1', title: 'Criar recorrente', steps: ['Vista "Recorrentes" → adicionar (nome, valor, dia, categoria)'], expect: 'Aparece na lista de recorrentes.' },
+    { id: 'T4.2', title: 'Recorrente no total do mês', steps: ['Ver o total de despesa do mês no Resumo'], expect: 'O total inclui o valor da recorrente.' },
+    { id: 'T4.3', title: 'Pendentes do mês na lista', steps: ['Vista "Despesas" → escolher um mês'], expect: 'Secção "Recorrentes de {mês}" lista as recorrentes ainda não registadas nesse mês, com botão "Registar".' },
+    { id: 'T4.4', title: 'Registar recorrente do mês', steps: ['"Registar" numa recorrente pendente', 'Ajustar o dia da cobrança', 'Gravar'], expect: 'Abre o sheet pré-preenchido (nome, valor, categoria, data no mês); ao gravar aparece na lista de despesas.' },
+    { id: 'T4.5', title: 'Sem duplo-contar', steps: ['Depois de registar a recorrente do mês', 'Verificar o total do mês'], expect: 'O total NÃO aumenta (o item da lista substitui a soma automática da recorrente nesse mês).' },
+    { id: 'T4.6', title: 'Reverter materialização', steps: ['Apagar a despesa materializada'], expect: 'A recorrente volta a aparecer como pendente e volta a contar no total.' },
+  ]},
+  { id: 'T5', title: 'Receitas', tests: [
+    { id: 'T5.1', title: 'Receita recorrente', steps: ['Adicionar receita recorrente (dia do mês)'], expect: 'Conta todos os meses no rendimento.' },
+    { id: 'T5.2', title: 'Receita pontual', steps: ['Adicionar receita pontual com data'], expect: 'Conta apenas no mês dessa data.' },
+    { id: 'T5.3', title: 'Registar recibo do mês', steps: ['Vista "Receitas" por mês → registar recibo do mês'], expect: 'A receita do mês aparece e soma ao rendimento do mês.' },
+    { id: 'T5.4', title: 'Pontual criada na vista Q1', steps: ['Estar na vista Q1/3M', 'Registar receita pontual (sem mexer na data)'], expect: 'Fica com a data de hoje e conta (não fica sem data nem invisível).' },
+  ]},
+  { id: 'T6', title: 'Saldos de contas', tests: [
+    { id: 'T6.1', title: 'Atualizar saldo por print', steps: ['Atualizar saldo → escolher conta → carregar foto → confirmar valor e data'], expect: 'Grava a leitura; o saldo da conta passa a esse valor.' },
+    { id: 'T6.2', title: 'Atualizar manual (sem API key)', steps: ['Sem API key, usar "Introduzir manualmente"'], expect: 'Permite escrever o valor à mão e gravar.' },
+    { id: 'T6.3', title: 'Saldo desce com despesa pontual', steps: ['Conta com leitura numa data', 'Adicionar despesa alocada a essa conta, datada DEPOIS da leitura'], expect: 'O saldo mostrado desce pelo valor da despesa.' },
+    { id: 'T6.4', title: 'Saldo sobe com receita pontual', steps: ['Receita pontual alocada à conta, datada depois da leitura'], expect: 'O saldo mostrado sobe pelo valor da receita.' },
+    { id: 'T6.5', title: 'Transação antes da leitura', steps: ['Despesa alocada à conta datada ANTES da leitura'], expect: 'O saldo NÃO muda (já estava refletido na leitura).' },
+    { id: 'T6.6', title: 'Sem contas demo (autenticado)', steps: ['Autenticado, abrir o seletor "Conta debitada/creditada"'], expect: 'Só aparecem as contas do utilizador; sem bancos demo.' },
+    { id: 'T6.7', title: 'Histórico de saldos', steps: ['Tocar no ícone de histórico de uma conta'], expect: 'Mostra as leituras dessa conta por data.' },
+  ]},
+  { id: 'T7', title: 'Metas · Empréstimo · Calendário · Gráficos', tests: [
+    { id: 'T7.1', title: 'Metas', steps: ['Criar meta (nome, objetivo, atual)'], expect: 'Mostra progresso e sugestão por mês.' },
+    { id: 'T7.2', title: 'Empréstimo', steps: ['Vista Empréstimo'], expect: 'Mostra capital, dívida e pagamento; percentagem paga coerente.' },
+    { id: 'T7.3', title: 'Calendário', steps: ['Vista Calendário num mês com despesas'], expect: 'Os dias com despesas aparecem marcados/somados.' },
+    { id: 'T7.4', title: 'Gráfico com valores negativos', steps: ['Ver evolução com uma série que fica negativa'], expect: 'A linha/pontos ficam dentro do gráfico (o ponto mais baixo não sai pelo topo).' },
+  ]},
+  { id: 'T8', title: 'Resumo & património', tests: [
+    { id: 'T8.1', title: 'Totais com saldo vivo', steps: ['Resumo após alocar despesas/receitas a contas'], expect: 'Património, liquidez e total refletem os saldos vivos (ajustados).' },
+    { id: 'T8.2', title: 'Poupança do mês', steps: ['Ver poupança/taxa do mês'], expect: 'Poupança = rendimento − despesa do mês; taxa coerente.' },
+    { id: 'T8.3', title: 'Rótulo do período agregado', steps: ['Ver o botão do período agregado de despesas'], expect: 'Mostra "Q1" em demo (Jan–Mar) e "3M" autenticado (últimos 3 meses).' },
+  ]},
+  { id: 'T9', title: 'Categorias & regras', tests: [
+    { id: 'T9.1', title: 'Gerir categorias', steps: ['Gestor de categorias → criar/editar limite'], expect: 'A categoria aparece nos seletores (ordem alfabética) e no orçamento.' },
+    { id: 'T9.2', title: 'Regras de auto-categorização', steps: ['Criar regra (padrão → categoria)', 'Adicionar/importar despesa que case com o padrão'], expect: 'A despesa fica com a categoria da regra automaticamente.' },
+  ]},
+  { id: 'T10', title: 'Navegação & tema', tests: [
+    { id: 'T10.1', title: 'Tabs principais', steps: ['Tocar Resumo / Despesas / Metas'], expect: 'Muda de vista; a tab ativa fica destacada.' },
+    { id: 'T10.2', title: 'Menu "Mais"', steps: ['Abrir "Mais"'], expect: 'Dá acesso a Calendário, Receitas, Recorrentes, Gráficos, Empréstimo, AI.' },
+    { id: 'T10.3', title: 'Tema claro/escuro', steps: ['Alternar tema no cabeçalho (claro → escuro → sistema)'], expect: 'Todas as cores seguem o tema (sem zonas presas numa cor fixa).' },
+    { id: 'T10.4', title: 'Carregamento lazy', steps: ['Abrir a vista AI e o importar extrato pela primeira vez'], expect: 'Carregam sem erro (chunks à parte); breve "A carregar…" é aceitável.' },
+  ]},
+  { id: 'T11', title: 'Acessibilidade', tests: [
+    { id: 'T11.1', title: 'Escape fecha sheets', steps: ['Abrir um sheet/modal', 'Carregar Escape'], expect: 'O sheet fecha.' },
+    { id: 'T11.2', title: 'Foco dentro do sheet', steps: ['Abrir um sheet', 'Navegar com Tab/Shift+Tab'], expect: 'O foco cicla dentro do sheet (não foge para o fundo).' },
+    { id: 'T11.3', title: 'Botões ícone com nome', steps: ['Com leitor de ecrã, focar botões só com ícone'], expect: 'São anunciados (têm aria-label, ex.: "Editar despesa", "Fechar").' },
+    { id: 'T11.4', title: 'Alvos de toque', steps: ['Tocar nos botões editar/remover/seletores em telemóvel'], expect: 'Confortáveis de tocar (≥44px); sem toques falhados.' },
+    { id: 'T11.5', title: 'Tab ativa anunciada', steps: ['Com leitor de ecrã, percorrer a navegação inferior'], expect: 'A tab atual é anunciada como selecionada (aria-current).' },
+  ]},
+  { id: 'T12', title: 'Persistência & sync', tests: [
+    { id: 'T12.1', title: 'Recarregar mantém dados', steps: ['Adicionar dados', 'Recarregar a página'], expect: 'Os dados mantêm-se.' },
+    { id: 'T12.2', title: 'Indicador de sync', steps: ['Fazer uma alteração estando autenticado'], expect: 'Mostra "A guardar" e depois "Guardado".' },
+    { id: 'T12.3', title: 'Logout / login', steps: ['Sair e voltar a entrar'], expect: 'Voltam os dados corretos da conta.' },
+  ]},
+];
+
+const STORE_KEY = 'proofFinanceTestPlan.v1';
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) { saved = {}; }
+
+const STATES = [
+  { key: 'pass', label: '✓ Passou', cls: 'on-pass' },
+  { key: 'fail', label: '✕ Falhou', cls: 'on-fail' },
+  { key: 'na',   label: 'N/A',      cls: 'on-na' },
+];
+
+function persist() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch (e) {}
+}
+
+function totalCount() {
+  return GROUPS.reduce((n, g) => n + g.tests.length, 0);
+}
+
+function render() {
+  const root = document.getElementById('groups');
+  root.innerHTML = '';
+  GROUPS.forEach((g) => {
+    const sec = document.createElement('section');
+    sec.className = 'group';
+    sec.dataset.gid = g.id;
+
+    const h = document.createElement('h2');
+    h.innerHTML = '<span class="gid">' + g.id + '</span> ' + g.title +
+      '<span class="gcount" data-gcount="' + g.id + '"></span>';
+    sec.appendChild(h);
+
+    g.tests.forEach((t) => {
+      const cur = (saved[t.id] && saved[t.id].state) || '';
+      const el = document.createElement('article');
+      el.className = 'test';
+      el.dataset.tid = t.id;
+      if (cur) el.dataset.state = cur;
+
+      const stepsHtml = Array.isArray(t.steps)
+        ? '<ol>' + t.steps.map((s) => '<li>' + s + '</li>').join('') + '</ol>'
+        : '<div>' + t.steps + '</div>';
+
+      el.innerHTML =
+        '<div class="top"><span class="tid">' + t.id + '</span><span class="title">' + t.title + '</span></div>' +
+        '<div class="body">' +
+          '<div><div class="lbl">Passos</div><div class="val">' + stepsHtml + '</div></div>' +
+          '<div><div class="lbl">Resultado esperado</div><div class="val">' + t.expect + '</div></div>' +
+        '</div>' +
+        '<div class="states">' +
+          STATES.map((s) =>
+            '<label class="' + (cur === s.key ? s.cls : '') + '" data-state="' + s.key + '">' +
+              '<input type="radio" name="st_' + t.id + '" value="' + s.key + '"' + (cur === s.key ? ' checked' : '') + ' />' +
+              '<span>' + s.label + '</span>' +
+            '</label>'
+          ).join('') +
+        '</div>' +
+        '<textarea class="note" placeholder="Nota / o que falhou (opcional)">' +
+          ((saved[t.id] && saved[t.id].note) ? escapeHtml(saved[t.id].note) : '') +
+        '</textarea>';
+
+      // State radios
+      el.querySelectorAll('.states label').forEach((lab) => {
+        lab.addEventListener('click', (ev) => {
+          const st = lab.dataset.state;
+          const already = (saved[t.id] && saved[t.id].state) === st;
+          if (already) {
+            // toggle off
+            ev.preventDefault();
+            delete (saved[t.id] || {}).state;
+            if (saved[t.id]) saved[t.id].state = '';
+            setTestState(el, t.id, '');
+          } else {
+            setTestState(el, t.id, st);
+          }
+          persist(); updateCounters(); applyFilter();
+        });
+      });
+      // Note
+      el.querySelector('.note').addEventListener('input', (ev) => {
+        saved[t.id] = saved[t.id] || {};
+        saved[t.id].note = ev.target.value;
+        persist();
+      });
+
+      sec.appendChild(el);
+    });
+    root.appendChild(sec);
+  });
+  updateCounters();
+}
+
+function setTestState(el, tid, st) {
+  saved[tid] = saved[tid] || {};
+  saved[tid].state = st;
+  if (st) el.dataset.state = st; else delete el.dataset.state;
+  el.querySelectorAll('.states label').forEach((l) => {
+    l.className = '';
+    if (l.dataset.state === st) {
+      const def = STATES.find((s) => s.key === st);
+      if (def) l.className = def.cls;
+    }
+    const input = l.querySelector('input');
+    input.checked = (l.dataset.state === st);
+  });
+}
+
+function updateCounters() {
+  const total = totalCount();
+  let pass = 0, fail = 0, na = 0;
+  GROUPS.forEach((g) => {
+    let gt = 0;
+    g.tests.forEach((t) => {
+      const s = saved[t.id] && saved[t.id].state;
+      if (s) gt++;
+      if (s === 'pass') pass++; else if (s === 'fail') fail++; else if (s === 'na') na++;
+    });
+    const badge = document.querySelector('[data-gcount="' + g.id + '"]');
+    if (badge) badge.textContent = gt + ' / ' + g.tests.length;
+  });
+  const tested = pass + fail + na;
+  document.getElementById('cTested').textContent = tested;
+  document.getElementById('cTotal').textContent = total;
+  document.getElementById('cPass').textContent = pass;
+  document.getElementById('cFail').textContent = fail;
+  document.getElementById('cNa').textContent = na;
+  document.getElementById('hdrCount').textContent = tested + ' / ' + total + ' testados';
+  document.getElementById('trackFill').style.width = total ? (tested / total * 100) + '%' : '0';
+}
+
+let filterOn = false;
+function applyFilter() {
+  document.querySelectorAll('.test').forEach((el) => {
+    const tid = el.dataset.tid;
+    const done = !!(saved[tid] && saved[tid].state);
+    el.classList.toggle('filtered-out', filterOn && done);
+  });
+  document.querySelectorAll('.group').forEach((g) => {
+    const anyVisible = g.querySelector('.test:not(.filtered-out)');
+    g.classList.toggle('filtered-out', filterOn && !anyVisible);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+document.getElementById('btnReset').addEventListener('click', () => {
+  if (!confirm('Limpar todos os resultados dos testes?')) return;
+  saved = {};
+  persist();
+  render();
+  applyFilter();
+});
+document.getElementById('btnPrint').addEventListener('click', () => window.print());
+document.getElementById('btnFilter').addEventListener('click', (ev) => {
+  filterOn = !filterOn;
+  ev.target.classList.toggle('primary', filterOn);
+  ev.target.textContent = filterOn ? 'Mostrar todos' : 'Só por testar';
+  applyFilter();
+});
+
+render();
+applyFilter();
+</script>
+</body>
+</html>
