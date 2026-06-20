@@ -141,40 +141,35 @@ export function getAccts(state) {
 }
 
 /* ══ getAcctsLive ══
-   Transaction-adjusted account values for DISPLAY/totals: base reading value
-   ± one-off transactions allocated to the account and dated AFTER the reading.
-   The reading by print already reflects spending up to its own date, so only
-   later transactions move the live balance. Accounts without a base reading
-   date are left untouched (we can't date-bound them → avoid double-counting).
+   Transaction-adjusted account values for DISPLAY/totals.
+
+   The adjustment is by SOURCE, not date:
+   - A MANUAL expense/income allocated to an account ALWAYS moves its balance
+     (the user is tracking something the bank balance doesn't yet reflect).
+   - An IMPORTED transaction (extrato / IA, flagged `imported`) NEVER moves it —
+     it already came from the bank, so it is part of the latest reading.
+
    Snapshots/history keep using the raw getAccts so the past is never rewritten.
-   Match is by the picker label "banco · tipo" stored on exp.acct / income.acct. */
+   Match is by the picker label "banco · tipo" stored on exp.acct / income.acct,
+   compared normalised (accents/case/spacing tolerant). */
 export function getAcctsLive(state) {
   const ca = getAccts(state);
   if (isPreviewMode(state)) return ca; // demo accounts: no live adjust
   const addedExp = (state && state.addedExp) || [];
   const incomes = (state && state.incomes) || [];
   return ca.map(function (a) {
-    // Base date = the account's last reading / creation date ("YYYY.MM.DD").
-    // Count transactions dated ON or AFTER it (a same-day expense must still
-    // move the balance — accounts get `updated`=today on creation, so strict
-    // ">" would wrongly drop every transaction added the same day). Transactions
-    // strictly BEFORE the base are assumed already reflected in the base value.
-    // With no base date, count every transaction allocated to the account.
-    const baseISO = a.updated ? String(a.updated).replace(/\./g, '-') : null;
-    // Match by NORMALISED label so minor drift never breaks the link:
-    // "Conta à Ordem" vs "Conta a Ordem", stray spaces, casing, etc.
     const labelNorm = normAcct(a.b + ' · ' + a.t);
     let delta = 0;
     addedExp.forEach(function (x) {
+      if (x.imported) return; // extrato/IA → já refletido na leitura, não desconta
       if (normAcct(x.acct) !== labelNorm) return;
-      if (baseISO && (x.date || '') < baseISO) return;
-      delta -= Number(x.amount) || 0;
+      delta -= Number(x.amount) || 0; // manual → desconta sempre (ignora data)
     });
     incomes.forEach(function (i) {
-      // Only one-off (dated) incomes move a specific account's balance;
+      // Only one-off, manual incomes move a specific account's balance;
       // recurring incomes are modelled in the cash-flow projection instead.
-      if (i.recurring !== false || normAcct(i.acct) !== labelNorm) return;
-      if (baseISO && (i.date || '') < baseISO) return;
+      if (i.imported || i.recurring !== false) return;
+      if (normAcct(i.acct) !== labelNorm) return;
       delta += Number(i.amount) || 0;
     });
     return delta ? Object.assign({}, a, { v: a.v + delta }) : a;

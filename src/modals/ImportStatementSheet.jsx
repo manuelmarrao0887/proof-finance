@@ -173,7 +173,7 @@ export default function ImportStatementSheet() {
     if (!stResult || !stResult.transactions) return;
     const selected = stResult.transactions
       .filter((t) => stSel[t._id])
-      .map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date) }));
+      .map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date), imported: true }));
     // Dedup against existing + normalize dates so re-imports don't duplicate.
     const before = (state.addedExp || []).length;
     const merged = dedupeAddedExp([...(state.addedExp || []), ...selected]);
