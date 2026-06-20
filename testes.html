@@ -145,6 +145,55 @@
 
   footer { text-align: center; color: var(--subtle); font-size: 12px; margin-top: 30px; }
 
+  /* ── Top tabs (Testes / Mapa de dados) ──────────────── */
+  .tabs { display: flex; gap: 6px; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; position: sticky; top: 0; z-index: 11; }
+  .tabs .wrap-tabs { max-width: 1000px; margin: 0 auto; display: flex; gap: 6px; width: 100%; }
+  .tab-btn {
+    border: none; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted);
+    padding: 14px 6px; cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1px;
+  }
+  .tab-btn.on { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
+
+  /* ── Data map ───────────────────────────────────────── */
+  .map-intro { color: var(--muted); font-size: 14px; }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: start; }
+  .flow .layer { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 14px; box-shadow: var(--shadow); }
+  .flow .layer h3 { margin: 0 0 4px; font-size: 13px; }
+  .flow .layer .sub { font-size: 11px; color: var(--subtle); margin-bottom: 10px; }
+  .node { display: block; font-size: 12px; font-weight: 600; padding: 8px 10px; border-radius: var(--r4); margin-bottom: 6px; border: 1px solid var(--border); background: var(--bg); }
+  .node.l1 { border-left: 3px solid var(--primary); }
+  .node.l2 { border-left: 3px solid var(--pass); }
+  .node.l3 { border-left: 3px solid #f5a623; }
+  .node.l4 { border-left: 3px solid var(--secondary, #7b5fe0); }
+  .node code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: var(--muted); font-weight: 500; }
+  .flow-arrows { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 6px 0; color: var(--subtle); }
+  .flow-arrows div { text-align: center; font-size: 18px; }
+  .flow-arrows div:last-child { visibility: hidden; }
+
+  .links { list-style: none; margin: 0; padding: 0; }
+  .links li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; padding: 10px 0; border-top: 1px solid var(--border); font-size: 13px; }
+  .links li:first-child { border-top: none; }
+  .links .lk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 600; background: var(--primary-soft); color: var(--primary); padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .links .arrow { color: var(--subtle); font-weight: 700; }
+  .links .desc { color: var(--muted); flex: 1; min-width: 180px; }
+
+  .ent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .ent { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 14px 16px; box-shadow: var(--shadow); }
+  .ent h4 { margin: 0 0 2px; font-size: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .ent .ent-sub { font-size: 11px; color: var(--subtle); margin-bottom: 10px; }
+  .ent .fields { display: flex; flex-wrap: wrap; gap: 5px; }
+  .ent .f { font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); border: 1px solid var(--border); padding: 2px 7px; border-radius: 999px; color: var(--fg); }
+  .ent .f.fk { background: var(--primary-soft); border-color: transparent; color: var(--primary); font-weight: 600; }
+  .ent .links-to { margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .ent .links-to b { color: var(--fg); }
+  .section-title { font-size: 16px; margin: 26px 0 12px; }
+
+  @media (max-width: 760px) {
+    .flow, .flow-arrows { grid-template-columns: 1fr; }
+    .flow-arrows { display: none; }
+  }
+
   @media (max-width: 640px) {
     .test .body { grid-template-columns: 1fr; }
     header { border-radius: 0 0 22px 22px; }
@@ -175,7 +224,14 @@
   </div>
 </header>
 
-<div class="progress-bar">
+<div class="tabs">
+  <div class="wrap-tabs">
+    <button class="tab-btn on" id="tabTests" type="button">Plano de testes</button>
+    <button class="tab-btn" id="tabData" type="button">Mapa de dados</button>
+  </div>
+</div>
+
+<div class="progress-bar" id="progressBar">
   <div class="progress-inner">
     <div class="counter"><b id="cTested">0</b> / <b id="cTotal">0</b> testados</div>
     <div class="tally">
@@ -192,7 +248,7 @@
   </div>
 </div>
 
-<div class="wrap">
+<div class="wrap" id="testsWrap">
   <div class="card">
     <div class="legend">
       <div><b>Como usar:</b> percorre cada secção na app real e confirma o resultado esperado.</div>
@@ -205,6 +261,23 @@
   <div id="groups"></div>
 
   <footer>Proof. Finance · plano de testes funcionais · gerado para validação manual</footer>
+</div>
+
+<div class="wrap" id="dataWrap" style="display:none">
+  <div class="card">
+    <p class="map-intro" style="margin:0">Como os dados se ligam na plataforma. As <b>Entradas</b> (ações do utilizador) escrevem nos <b>Dados guardados</b> (documento Firestore <code>users/{uid}</code>). As <b>Derivações</b> (funções puras) combinam esses dados e alimentam os <b>Ecrãs</b>. Setas mostram o sentido do fluxo; o painel <b>Ligações-chave</b> detalha as referências entre entidades (ex.: uma despesa aponta para a sua categoria e conta).</p>
+  </div>
+
+  <div class="flow" id="flow"></div>
+  <div class="flow-arrows"><div>↓</div><div>↓</div><div>↓</div><div>↓</div></div>
+
+  <h2 class="section-title">Ligações-chave</h2>
+  <div class="card"><ul class="links" id="links"></ul></div>
+
+  <h2 class="section-title">Entidades guardadas</h2>
+  <div class="ent-grid" id="entities"></div>
+
+  <footer>Proof. Finance · mapa de ligação de dados · <code>users/{uid}</code> (Firestore) + estado derivado em runtime</footer>
 </div>
 
 <script>
@@ -456,6 +529,141 @@ document.getElementById('btnFilter').addEventListener('click', (ev) => {
 
 render();
 applyFilter();
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Data map — how data connects across the platform.
+   ────────────────────────────────────────────────────────────────────────── */
+const LAYERS = [
+  { cls: 'l1', title: '1 · Entradas', sub: 'Ações do utilizador (modais)', nodes: [
+    ['Nova / editar despesa', 'AddExpenseSheet'],
+    ['Importar extrato', 'ImportStatementSheet'],
+    ['Recorrente', 'RecModal'],
+    ['Receita', 'IncomeModal'],
+    ['Atualizar saldo (print)', 'BalanceUpdateSheet'],
+    ['Conta própria', 'AcctModal'],
+    ['Categoria / Regra / Meta', 'Cat·Rules·GoalModal'],
+  ]},
+  { cls: 'l2', title: '2 · Dados guardados', sub: 'Firestore users/{uid}', nodes: [
+    ['Despesas', 'addedExp[]'],
+    ['Recorrentes', 'recurring[]'],
+    ['Receitas', 'incomes[]'],
+    ['Leituras de saldo', 'balanceLog[]'],
+    ['Contas próprias', 'customAccts[]'],
+    ['Saldos contas-modelo', 'dynAccts{}'],
+    ['Snapshots património', 'dynSnaps[]'],
+    ['Categorias', 'bdg[]'],
+    ['Regras · Metas', 'rules[] · goals[]'],
+  ]},
+  { cls: 'l3', title: '3 · Derivações', sub: 'Funções puras (lib/)', nodes: [
+    ['Auto-categorizar', 'applyRules()'],
+    ['Resumo do mês', 'monthlySummary()'],
+    ['Saldos base', 'getAccts()'],
+    ['Saldos vivos', 'getAcctsLive()'],
+    ['Totais / património', 'compute()'],
+    ['Snapshot património', 'snapshotFromState()'],
+    ['Projeção tesouraria', 'cashFlowProjection()'],
+    ['Subscrições / saúde', 'detectSubscriptions() · healthScore()'],
+  ]},
+  { cls: 'l4', title: '4 · Ecrãs', sub: 'Views', nodes: [
+    ['Resumo + Contas', 'OverviewView'],
+    ['Despesas', 'ExpensesView'],
+    ['Receitas', 'IncomesView'],
+    ['Recorrentes', 'RecurringView'],
+    ['Calendário', 'CalendarView'],
+    ['Gráficos', 'ChartsView'],
+    ['Metas · Empréstimo', 'GoalsView · LoanView'],
+    ['AI', 'AIView'],
+  ]},
+];
+
+const LINKS = [
+  ['addedExp.cat → bdg.id', 'Cada despesa aponta para a sua categoria/orçamento.'],
+  ['addedExp.acct → conta', 'Despesa alocada a uma conta (label "banco · tipo") → entra no saldo vivo.'],
+  ['addedExp.recId → recurring.id', 'Despesa materializada a partir de uma recorrente (evita duplo-contar no mês).'],
+  ['incomes.acct → conta', 'Receita pontual alocada a uma conta → entra no saldo vivo.'],
+  ['recurring ⇒ addedExp', '"Registar" cria a despesa do mês a partir da recorrente.'],
+  ['rules.pattern ⇒ addedExp.cat', 'applyRules() define a categoria ao adicionar/importar.'],
+  ['balanceLog ⇒ dynAccts / customAccts.value', 'A leitura por print atualiza o saldo base da conta.'],
+  ['getAcctsLive = getAccts − despesas + receitas', 'Saldo vivo = leitura base ± transações alocadas (datadas on/after a leitura).'],
+  ['getAcctsLive ⇒ compute ⇒ Resumo/Contas', 'Património, liquidez e totais usam o saldo vivo (não o histórico).'],
+  ['getAccts ⇒ snapshotFromState ⇒ dynSnaps', 'Cada atualização de saldo grava um ponto histórico para os Gráficos.'],
+  ['addedExp + recurring + incomes ⇒ monthlySummary', 'Receita, despesa, poupança e taxa do mês no Resumo.'],
+  ['addedExp(acct) ⇒ detectSubscriptions', 'Deteta gastos repetidos e sugere recorrentes (compara com recurring).'],
+];
+
+const ENTITIES = [
+  { name: 'addedExp[]', sub: 'Despesa individual', fields: ['id', 'desc', ['cat→bdg'], 'amount', 'date', ['acct→conta'], ['recId→recurring'], 'shared', 'total', 'split', 'tags[]', 'notes'], to: 'bdg · conta · recurring' },
+  { name: 'recurring[]', sub: 'Despesa recorrente', fields: ['id', 'name', 'amount', 'day', ['cat→bdg']], to: 'bdg · materializa → addedExp' },
+  { name: 'incomes[]', sub: 'Receita', fields: ['id', 'name', 'amount', 'source', 'recurring', 'day', 'date', ['acct→conta']], to: 'conta (saldo vivo)' },
+  { name: 'balanceLog[]', sub: 'Leitura de saldo (print)', fields: ['id', ['acctKey→conta'], 'bank', 'type', 'value', 'date', 'createdAt'], to: 'atualiza dynAccts / customAccts.value' },
+  { name: 'customAccts[]', sub: 'Conta própria do utilizador', fields: ['id', 'bank', 'type', 'value', 'category', 'currency', 'note', 'updated', 'createdAt'], to: 'getAccts → getAcctsLive → compute' },
+  { name: 'dynAccts{}', sub: 'Override de saldo em contas-modelo', fields: ['chave', '{ v, d, n }'], to: 'getAccts' },
+  { name: 'dynSnaps[]', sub: 'Snapshot patrimonial por data', fields: ['l (data)', 'liq', 'poup', 'inv', 'div'], to: 'ChartsView (evolução)' },
+  { name: 'bdg[]', sub: 'Categoria / orçamento', fields: ['id', 'nm', 'lm (limite)'], to: 'usada por addedExp, recurring, rules' },
+  { name: 'rules[]', sub: 'Regra de auto-categorização', fields: ['pattern', ['cat→bdg']], to: 'applyRules → addedExp.cat' },
+  { name: 'goals[]', sub: 'Meta de poupança', fields: ['id', 'name', 'target', 'current', 'date'], to: 'GoalsView' },
+];
+
+function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+function renderFlow() {
+  const root = document.getElementById('flow');
+  LAYERS.forEach((L) => {
+    const card = el('div', 'layer');
+    card.appendChild(el('h3', null, L.title));
+    card.appendChild(el('div', 'sub', L.sub));
+    L.nodes.forEach(([label, code]) => {
+      card.appendChild(el('span', 'node ' + L.cls, label + '<br><code>' + code + '</code>'));
+    });
+    root.appendChild(card);
+  });
+}
+
+function renderLinks() {
+  const root = document.getElementById('links');
+  LINKS.forEach(([lk, desc]) => {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="lk">' + escapeHtml(lk) + '</span><span class="desc">' + desc + '</span>';
+    root.appendChild(li);
+  });
+}
+
+function renderEntities() {
+  const root = document.getElementById('entities');
+  ENTITIES.forEach((e) => {
+    const card = el('div', 'ent');
+    card.appendChild(el('h4', null, e.name));
+    card.appendChild(el('div', 'ent-sub', e.sub));
+    const fields = el('div', 'fields');
+    e.fields.forEach((f) => {
+      const isFk = Array.isArray(f);
+      const txt = isFk ? f[0] : f;
+      fields.appendChild(el('span', 'f' + (isFk ? ' fk' : ''), escapeHtml(txt)));
+    });
+    card.appendChild(fields);
+    card.appendChild(el('div', 'links-to', '<b>Liga a:</b> ' + e.to));
+    root.appendChild(card);
+  });
+}
+renderFlow(); renderLinks(); renderEntities();
+
+/* ── Tab switching ──────────────────────────────────────────────────────── */
+const tabTests = document.getElementById('tabTests');
+const tabData = document.getElementById('tabData');
+const progressBar = document.getElementById('progressBar');
+const testsWrap = document.getElementById('testsWrap');
+const dataWrap = document.getElementById('dataWrap');
+function showTab(which) {
+  const tests = which === 'tests';
+  tabTests.classList.toggle('on', tests);
+  tabData.classList.toggle('on', !tests);
+  progressBar.style.display = tests ? '' : 'none';
+  testsWrap.style.display = tests ? '' : 'none';
+  dataWrap.style.display = tests ? 'none' : '';
+  window.scrollTo(0, 0);
+}
+tabTests.addEventListener('click', () => showTab('tests'));
+tabData.addEventListener('click', () => showTab('data'));
 </script>
 </body>
 </html>
