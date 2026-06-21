@@ -18,7 +18,7 @@ import { getAcctsLive } from '../lib/finance.js';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 const ACCT_CATEGORIES = ['Liquidez', 'Poupanca', 'Investimentos', 'Cripto', 'Imobiliario', 'Outros'];
-const ACCT_TYPES = ['Conta a Ordem', 'Poupanca', 'Corretagem', 'P2P Lending', 'Rend. Fixo', 'Crypto Wallet', 'Imobiliario', 'Outros'];
+const ACCT_TYPES = ['Conta a Ordem', 'Poupanca', 'Corretagem', 'Planos de Investimento', 'P2P Lending', 'Rend. Fixo', 'Crypto Wallet', 'Imobiliario', 'Outros'];
 const CURRENCIES = ['EUR', 'USD', 'GBP', 'BRL', 'CHF'];
 
 const EMPTY = { id: null, bank: '', type: 'Conta a Ordem', category: 'Liquidez', value: '', currency: 'EUR', note: '' };
