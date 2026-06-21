@@ -46,6 +46,7 @@ const MODAL_COMPONENTS = {
   balanceHistory: lazy(() => import('../modals/BalanceHistorySheet.jsx')),
   patchNotes: lazy(() => import('../modals/PatchNotesSheet.jsx')),
   lock: lazy(() => import('../modals/BalanceLockSheet.jsx')),
+  housing: lazy(() => import('../modals/HousingModal.jsx')),
 };
 
 /* ── Icons (inline SVG, no emoji) ──────────────────────────────────────── */
