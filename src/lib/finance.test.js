@@ -211,6 +211,19 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
     expect(acc.v).toBe(950); // only the manual 50 subtracts; the imported 200 is ignored
   });
 
+  it('does NOT subtract a SETTLED manual expense (rebaselined into a reading)', () => {
+    const state = {
+      ...base,
+      addedExp: [
+        { id: 'e1', desc: 'Nova', amount: 30, cat: 'sup', date: '2026-06-10', acct: label },
+        { id: 'e2', desc: 'Saldada', amount: 50, cat: 'sup', date: '2026-06-09', acct: label, settled: true },
+      ],
+      incomes: [],
+    };
+    const acc = getAcctsLive(state).find((a) => a.b === 'Wise');
+    expect(acc.v).toBe(970); // only the unsettled 30 subtracts
+  });
+
   it('subtracts from a TEMPLATE account tracked via dynAccts (real-world case)', () => {
     const state = {
       currentUser: { uid: 'u1' },

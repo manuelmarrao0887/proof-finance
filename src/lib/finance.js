@@ -161,14 +161,14 @@ export function getAcctsLive(state) {
     const labelNorm = normAcct(a.b + ' · ' + a.t);
     let delta = 0;
     addedExp.forEach(function (x) {
-      if (x.imported) return; // extrato/IA → já refletido na leitura, não desconta
+      if (x.imported || x.settled) return; // imported (extrato/IA) or already settled into a reading → não desconta
       if (normAcct(x.acct) !== labelNorm) return;
       delta -= Number(x.amount) || 0; // manual → desconta sempre (ignora data)
     });
     incomes.forEach(function (i) {
-      // Only one-off, manual incomes move a specific account's balance;
+      // Only one-off, manual, unsettled incomes move a specific account's balance;
       // recurring incomes are modelled in the cash-flow projection instead.
-      if (i.imported || i.recurring !== false) return;
+      if (i.imported || i.settled || i.recurring !== false) return;
       if (normAcct(i.acct) !== labelNorm) return;
       delta += Number(i.amount) || 0;
     });
@@ -178,7 +178,7 @@ export function getAcctsLive(state) {
 
 // Normalise an account label for matching: strip accents, lowercase, collapse
 // spaces. Empty string for null/undefined (never matches a real label).
-function normAcct(s) {
+export function normAcct(s) {
   if (!s) return '';
   return String(s)
     .normalize('NFD')
@@ -562,8 +562,17 @@ export function chrt(data, color, label, histData, fmFn) {
         Number(v).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' EUR'
       );
     };
+  // Escape ALL HTML-significant chars (incl. quotes) so a user/AI-supplied label
+  // or colour can never break out of text OR an attribute in the built SVG.
   const e = function (s) {
-    return s == null ? '' : String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    return s == null
+      ? ''
+      : String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
   };
   const ht = 56;
   if (!data || data.length < 2) return '';
@@ -585,6 +594,7 @@ export function chrt(data, color, label, histData, fmFn) {
   const df = data[data.length - 1] - data[0],
     pc = data[0] > 0 ? ((df / data[0]) * 100).toFixed(1) : '0';
   const dc = df >= 0 ? 'var(--success)' : 'var(--signal)';
+  const ec = e(color); // colour goes into SVG attributes → must be escaped too
   const id = 'g' + label.replace(/[^a-zA-Z]/g, '');
   const labels = histData || [];
   let o = '<div style="margin-bottom:16px">';
@@ -592,16 +602,16 @@ export function chrt(data, color, label, histData, fmFn) {
   o += '<div><span class="m" style="font-size:13px;font-weight:500">' + fm(data[data.length - 1]) + '</span>';
   o += '<span class="m" style="font-size:11px;color:' + dc + ';margin-left:8px">' + (df >= 0 ? '+' : '') + pc + '%</span></div></div>';
   o += '<svg viewBox="0 0 ' + w + ' ' + ht + '" style="width:100%;height:' + ht + 'px;display:block">';
-  o += '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + color + '" stop-opacity="0.15"/><stop offset="100%" stop-color="' + color + '" stop-opacity="0"/></linearGradient></defs>';
+  o += '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + ec + '" stop-opacity="0.15"/><stop offset="100%" stop-color="' + ec + '" stop-opacity="0"/></linearGradient></defs>';
   o += '<polygon points="' + ar + '" fill="url(#' + id + ')"/>';
-  o += '<polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="1.5"/>';
+  o += '<polyline points="' + pts + '" fill="none" stroke="' + ec + '" stroke-width="1.5"/>';
   data.forEach(function (v, i) {
-    o += '<circle cx="' + ((i / (data.length - 1)) * w).toFixed(1) + '" cy="' + (ht - ((v - mn) / rg) * ht).toFixed(1) + '" r="2.5" fill="' + color + '" stroke="var(--bg2)" stroke-width="1"/>';
+    o += '<circle cx="' + ((i / (data.length - 1)) * w).toFixed(1) + '" cy="' + (ht - ((v - mn) / rg) * ht).toFixed(1) + '" r="2.5" fill="' + ec + '" stroke="var(--bg2)" stroke-width="1"/>';
   });
   o += '</svg>';
   o += '<div style="display:flex;justify-content:space-between;margin-top:4px">';
   labels.forEach(function (x) {
-    o += '<span class="m" style="font-size:9px;color:var(--text3)">' + x.l + '</span>';
+    o += '<span class="m" style="font-size:9px;color:var(--text3)">' + e(x.l) + '</span>';
   });
   o += '</div></div>';
   return o;

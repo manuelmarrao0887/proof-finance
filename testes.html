@@ -193,6 +193,27 @@
   .ent .links-to b { color: var(--fg); }
   .section-title { font-size: 16px; margin: 26px 0 12px; }
 
+  /* ── Security report ────────────────────────────────── */
+  .sec-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .sec-summary .s { padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; border: 1px solid var(--border); background: var(--surface); }
+  .sec-summary .s b { font-variant-numeric: tabular-nums; }
+  .sev-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; }
+  .sev-crit  { background: #fdeceb; color: #b3261e; }
+  .sev-high  { background: #fdeceb; color: #e0443e; }
+  .sev-med   { background: #fff4e5; color: #b26a00; }
+  .sev-low   { background: var(--na-soft); color: var(--na); }
+  .sev-fixed { background: var(--pass-soft); color: var(--pass); }
+  .sev-rec   { background: var(--primary-soft); color: var(--primary); }
+  .finding { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); border-left: 4px solid var(--border); }
+  .finding[data-sev="crit"], .finding[data-sev="high"] { border-left-color: var(--fail); }
+  .finding[data-sev="med"] { border-left-color: #f5a623; }
+  .finding[data-sev="low"] { border-left-color: var(--na); }
+  .finding .fhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .finding .ftitle { font-size: 14px; font-weight: 700; }
+  .finding .floc { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: var(--muted); }
+  .finding .frow { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .finding .frow b { color: var(--fg); }
+
   @media (max-width: 760px) {
     .flow, .flow-arrows { grid-template-columns: 1fr; }
     .flow-arrows { display: none; }
@@ -234,6 +255,7 @@
   <div class="wrap-tabs">
     <button class="tab-btn on" id="tabTests" type="button">Plano de testes</button>
     <button class="tab-btn" id="tabData" type="button">Mapa de dados</button>
+    <button class="tab-btn" id="tabSec" type="button">Segurança</button>
   </div>
 </div>
 
@@ -286,6 +308,25 @@
   <footer>Proof. Finance · mapa de ligação de dados · <code>users/{uid}</code> (Firestore) + estado derivado em runtime</footer>
 </div>
 
+<div class="wrap" id="secWrap" style="display:none">
+  <div class="card">
+    <p class="map-intro" style="margin:0">Relatório de segurança — auditoria ao código (Firebase, chaves, XSS, dependências). Cada item: gravidade, onde, risco e correção. <b id="secDate">Auditado: 2026-06-21</b>. Estado: <span class="sev-pill sev-fixed">Corrigido</span> = já resolvido neste código; <span class="sev-pill sev-rec">Recomendação</span> = precisa de decisão/ação tua.</p>
+  </div>
+
+  <div class="sec-summary" id="secSummary"></div>
+
+  <h2 class="section-title">Resultados</h2>
+  <div id="secFindings"></div>
+
+  <h2 class="section-title">Bem feito</h2>
+  <div class="card"><ul class="links" id="secGood"></ul></div>
+
+  <h2 class="section-title">Ações prioritárias</h2>
+  <div class="card"><ol id="secActions" style="margin:0;padding-left:20px;font-size:13px;line-height:1.7"></ol></div>
+
+  <footer>Proof. Finance · relatório de segurança · auditoria estática ao código-fonte</footer>
+</div>
+
 <script>
 /* ──────────────────────────────────────────────────────────────────────────
    Test data. Each group { id, title, tests:[{id, title, steps:[], expect}] }.
@@ -328,14 +369,22 @@ const GROUPS = [
     { id: 'T5.3', title: 'Registar recibo do mês', steps: ['Vista "Receitas" por mês → registar recibo do mês'], expect: 'A receita do mês aparece e soma ao rendimento do mês.' },
     { id: 'T5.4', title: 'Pontual criada na vista Q1', steps: ['Estar na vista Q1/3M', 'Registar receita pontual (sem mexer na data)'], expect: 'Fica com a data de hoje e conta (não fica sem data nem invisível).' },
   ]},
-  { id: 'T6', title: 'Saldos de contas', tests: [
+  { id: 'T6', title: 'Saldos de contas (modelo por origem)', tests: [
     { id: 'T6.1', title: 'Atualizar saldo por print', steps: ['Atualizar saldo → escolher conta → carregar foto → confirmar valor e data'], expect: 'Grava a leitura; o saldo da conta passa a esse valor.' },
     { id: 'T6.2', title: 'Atualizar manual (sem API key)', steps: ['Sem API key, usar "Introduzir manualmente"'], expect: 'Permite escrever o valor à mão e gravar.' },
-    { id: 'T6.3', title: 'Saldo desce com despesa pontual', steps: ['Conta com leitura numa data', 'Adicionar despesa alocada a essa conta, datada DEPOIS da leitura'], expect: 'O saldo mostrado desce pelo valor da despesa.' },
-    { id: 'T6.4', title: 'Saldo sobe com receita pontual', steps: ['Receita pontual alocada à conta, datada depois da leitura'], expect: 'O saldo mostrado sobe pelo valor da receita.' },
-    { id: 'T6.5', title: 'Transação antes da leitura', steps: ['Despesa alocada à conta datada ANTES da leitura'], expect: 'O saldo NÃO muda (já estava refletido na leitura).' },
-    { id: 'T6.6', title: 'Sem contas demo (autenticado)', steps: ['Autenticado, abrir o seletor "Conta debitada/creditada"'], expect: 'Só aparecem as contas do utilizador; sem bancos demo.' },
-    { id: 'T6.7', title: 'Histórico de saldos', steps: ['Tocar no ícone de histórico de uma conta'], expect: 'Mostra as leituras dessa conta por data.' },
+    { id: 'T6.3', title: 'Despesa MANUAL desconta (ignora data)', steps: ['Nova despesa → escolher Conta debitada = a conta', 'Gravar (qualquer data)'], expect: 'O saldo da conta no Resumo desce pelo valor, independentemente da data.' },
+    { id: 'T6.4', title: 'Receita manual soma', steps: ['Receita pontual → Conta creditada = a conta'], expect: 'O saldo da conta sobe pelo valor.' },
+    { id: 'T6.5', title: 'Importada (extrato/IA) NÃO desconta', steps: ['Importar extrato e alocar (ou já com conta)'], expect: 'O saldo NÃO muda — vem do banco, já está na leitura.' },
+    { id: 'T6.6', title: 'Editar conta mostra saldo VIVO', steps: ['Conta com despesas manuais → tocar Editar conta'], expect: 'O campo Saldo mostra o valor atual (igual ao Resumo), não a última leitura.' },
+    { id: 'T6.7', title: 'Gravar saldo salda as manuais', steps: ['Editar conta → gravar o saldo (ou nova leitura por print)'], expect: 'As despesas manuais até aí ficam saldadas (param de descontar); Editar e Resumo ficam iguais. Despesas novas voltam a descontar.' },
+    { id: 'T6.8', title: 'Histórico de saldos', steps: ['Tocar no ícone de histórico de uma conta'], expect: 'Mostra as leituras dessa conta por data.' },
+    { id: 'T6.9', title: 'Contas-template selecionáveis', steps: ['Autenticado, abrir seletor "Conta debitada"'], expect: 'Aparecem os bancos-template (Activobank, etc.) + as contas próprias.' },
+  ]},
+  { id: 'T13', title: 'Gestão de contas', tests: [
+    { id: 'T13.1', title: 'Criar conta própria', steps: ['Adicionar conta (banco, tipo, categoria, saldo)'], expect: 'Aparece na lista de Liquidez/categoria.' },
+    { id: 'T13.2', title: 'Editar conta própria', steps: ['Tocar no lápis numa conta própria'], expect: 'Abre com os dados; gravar atualiza.' },
+    { id: 'T13.3', title: 'Remover conta própria', steps: ['Tocar no caixote (vermelho) numa conta própria → confirmar'], expect: 'A conta e as suas leituras de saldo são removidas.' },
+    { id: 'T13.4', title: 'Remover conta-template duplicada', steps: ['Conta-template ativada por leitura (ex.: Activobank) → caixote → confirmar'], expect: 'Remove o override e as leituras; resolve duplicados.' },
   ]},
   { id: 'T7', title: 'Metas · Empréstimo · Calendário · Gráficos', tests: [
     { id: 'T7.1', title: 'Metas', steps: ['Criar meta (nome, objetivo, atual)'], expect: 'Mostra progresso e sugestão por mês.' },
@@ -643,23 +692,126 @@ function renderEntities() {
 }
 renderFlow(); renderLinks(); renderEntities();
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Security report — findings from a static audit of the source code.
+   sev: crit|high|med|low. status: 'fixed' (already resolved here) | 'rec'.
+   ────────────────────────────────────────────────────────────────────────── */
+const SECURITY = [
+  { sev: 'crit', status: 'rec', title: 'API key da Anthropic guardada em texto simples', loc: 'store.jsx (PERSISTED_KEYS) · firebase/client.js saveUserDoc',
+    risk: 'A key (sk-ant-…, secreta e faturável) é gravada no documento Firestore, na cache IndexedDB de cada dispositivo, e em cada Backup JSON. Quem tiver acesso ao doc, ao dispositivo ou a um backup obtém uma key utilizável à tua conta.',
+    fix: 'Não persistir a key (manter só em sessão/memória), OU chamar a IA via um backend (Cloud Function) que guarde a key no servidor, tirando-a do browser.' },
+  { sev: 'crit', status: 'rec', title: 'Key enviada do browser direto para a Anthropic', loc: 'lib/ai.js · SettingsSheet.jsx · AIView.jsx',
+    risk: 'Usa anthropic-dangerous-direct-browser-access. Qualquer XSS na app consegue ler state.apiKey e exfiltrá-la; também fica visível em devtools/screenshots.',
+    fix: 'Mover as chamadas de IA para um proxy no servidor. Se ficar no browser, tratar a key como comprometível por XSS e minimizar a superfície de XSS (ver abaixo).' },
+  { sev: 'high', status: 'fixed', title: 'XSS via valores da IA nos cartões de ação', loc: 'views/AIView.jsx actionLabel → info.val (dangerouslySetInnerHTML)',
+    risk: 'a.cat / a.source vinham da IA sem escape e iam para innerHTML. Um extrato/recibo manipulado podia fazer a IA emitir <img onerror=…> e executar script na app autenticada (roubo da key + dados).',
+    fix: 'Corrigido: esc() aplicado a a.cat e a.source antes de irem para info.val.' },
+  { sev: 'high', status: 'fixed', title: 'Escape incompleto no gráfico SVG (chrt)', loc: 'lib/finance.js chrt() e()',
+    risk: 'e() só escapava & e < (não > " \'), e color / labels x.l iam crus para o SVG. Qualquer texto de utilizador/IA num label ou cor permitiria breakout de atributo.',
+    fix: 'Corrigido: e() escapa &<>"\' e é aplicado a label, color e x.l.' },
+  { sev: 'med', status: 'rec', title: 'Dependência xlsx 0.18.5 com vulnerabilidades', loc: 'package.json',
+    risk: 'xlsx@0.18.5 tem prototype pollution (CVE-2023-30533) e ReDoS conhecidos, e processa uploads não confiáveis (extratos/recibos). A correção não está no npm.',
+    fix: 'Migrar para o pacote no CDN da SheetJS (xlsx-0.20.x) ou outro parser mantido; fixar a versão.' },
+  { sev: 'med', status: 'rec', title: 'Mensagens de erro do Firebase mostradas tal e qual', loc: 'components/Login.jsx',
+    risk: 'err.message mostrado verbatim pode revelar internals do Firebase e permitir enumeração de contas pela diferença de mensagem.',
+    fix: 'Mapear para mensagens genéricas ("Credenciais inválidas").' },
+  { sev: 'med', status: 'rec', title: 'Gate de acesso só do lado do cliente', loc: 'components/Gate.jsx',
+    risk: 'A passphrase é validada no browser (hash SHA-256 no bundle, flag em sessionStorage). É contornável e o hash é brute-forçável. Só trava visitantes casuais.',
+    fix: 'Aceitável como deterrente. A fronteira real é o login Firebase (esse está correto). Não confiar no Gate para nada sensível.' },
+  { sev: 'low', status: 'rec', title: 'Regras Firestore sem validação de campos', loc: 'firestore.rules',
+    risk: 'As regras (user-scoped, default-deny) estão corretas, mas não validam forma/tamanho do payload — um utilizador pode escrever campos arbitrários no SEU doc (só self-DoS/quota).',
+    fix: 'Opcional: validar tipos/tamanho no rules. Impacto baixo.' },
+  { sev: 'low', status: 'rec', title: 'Config Firebase exposta no bundle', loc: 'firebase/client.js',
+    risk: 'A apiKey do Firebase é um identificador público (não secreto). O acesso é governado pelas regras Firestore (sólidas).',
+    fix: 'Sem ação. Garantir Authorized domains + App Check no console Firebase.' },
+];
+
+const SEC_GOOD = [
+  'Regras Firestore user-scoped, default-deny, sem acesso cruzado nem regra de teste expirável.',
+  'Gate de HTTPS / file:// bloqueia contextos inseguros (Firebase/IA desligados em file://).',
+  'renderMD escapa o texto da IA ANTES dos transforms de markdown → caminho de análise da IA é seguro.',
+  'Password mínima de 6 chars validada no registo E na UI de login.',
+  '.gitignore exclui PDFs/Print Screens/logs; sem key Anthropic no histórico git.',
+  'Input da key é password com toggle de revelar; dist/ não está commitado.',
+];
+
+const SEC_ACTIONS = [
+  'Revogar/rodar a API key que apareceu em screenshot (feito) e considerar deixar de a persistir no Firestore/backups.',
+  'Corrigido — escape dos valores da IA no AIView (info.val).',
+  'Corrigido — endurecer e() do chrt e aplicar a todos os valores interpolados.',
+  'Substituir/fixar o xlsx para fora do 0.18.5 vulnerável (processa uploads).',
+  'Genericizar mensagens de erro de auth; ativar App Check + Authorized domains no Firebase.',
+];
+
+const SEV_META = { crit: ['Crítico', 'sev-crit'], high: ['Alto', 'sev-high'], med: ['Médio', 'sev-med'], low: ['Baixo', 'sev-low'] };
+
+function renderSecurity() {
+  // summary counts
+  const counts = { crit: 0, high: 0, med: 0, low: 0, fixed: 0, rec: 0 };
+  SECURITY.forEach((f) => { counts[f.sev]++; counts[f.status === 'fixed' ? 'fixed' : 'rec']++; });
+  const sum = document.getElementById('secSummary');
+  sum.innerHTML =
+    '<span class="s"><span class="sev-pill sev-crit">' + counts.crit + ' Crít</span></span>' +
+    '<span class="s"><span class="sev-pill sev-high">' + counts.high + ' Alto</span></span>' +
+    '<span class="s"><span class="sev-pill sev-med">' + counts.med + ' Médio</span></span>' +
+    '<span class="s"><span class="sev-pill sev-low">' + counts.low + ' Baixo</span></span>' +
+    '<span class="s"><span class="sev-pill sev-fixed">' + counts.fixed + ' corrigidos</span></span>' +
+    '<span class="s"><span class="sev-pill sev-rec">' + counts.rec + ' recomendações</span></span>';
+
+  const root = document.getElementById('secFindings');
+  SECURITY.forEach((f) => {
+    const meta = SEV_META[f.sev];
+    const statusPill = f.status === 'fixed'
+      ? '<span class="sev-pill sev-fixed">Corrigido</span>'
+      : '<span class="sev-pill sev-rec">Recomendação</span>';
+    const el = document.createElement('div');
+    el.className = 'finding';
+    el.dataset.sev = f.sev;
+    el.innerHTML =
+      '<div class="fhead"><span class="sev-pill ' + meta[1] + '">' + meta[0] + '</span>' + statusPill +
+        '<span class="ftitle">' + escapeHtml(f.title) + '</span></div>' +
+      '<div class="floc" style="margin-top:6px">' + escapeHtml(f.loc) + '</div>' +
+      '<div class="frow"><b>Risco:</b> ' + escapeHtml(f.risk) + '</div>' +
+      '<div class="frow"><b>Correção:</b> ' + escapeHtml(f.fix) + '</div>';
+    root.appendChild(el);
+  });
+
+  const good = document.getElementById('secGood');
+  SEC_GOOD.forEach((g) => {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="desc">✓ ' + escapeHtml(g) + '</span>';
+    good.appendChild(li);
+  });
+  const acts = document.getElementById('secActions');
+  SEC_ACTIONS.forEach((a) => {
+    const li = document.createElement('li');
+    li.textContent = a;
+    acts.appendChild(li);
+  });
+}
+renderSecurity();
+
 /* ── Tab switching ──────────────────────────────────────────────────────── */
 const tabTests = document.getElementById('tabTests');
 const tabData = document.getElementById('tabData');
+const tabSec = document.getElementById('tabSec');
 const progressBar = document.getElementById('progressBar');
 const testsWrap = document.getElementById('testsWrap');
 const dataWrap = document.getElementById('dataWrap');
+const secWrap = document.getElementById('secWrap');
 function showTab(which) {
-  const tests = which === 'tests';
-  tabTests.classList.toggle('on', tests);
-  tabData.classList.toggle('on', !tests);
-  progressBar.style.display = tests ? '' : 'none';
-  testsWrap.style.display = tests ? '' : 'none';
-  dataWrap.style.display = tests ? 'none' : '';
+  tabTests.classList.toggle('on', which === 'tests');
+  tabData.classList.toggle('on', which === 'data');
+  tabSec.classList.toggle('on', which === 'sec');
+  progressBar.style.display = which === 'tests' ? '' : 'none';
+  testsWrap.style.display = which === 'tests' ? '' : 'none';
+  dataWrap.style.display = which === 'data' ? '' : 'none';
+  secWrap.style.display = which === 'sec' ? '' : 'none';
   window.scrollTo(0, 0);
 }
 tabTests.addEventListener('click', () => showTab('tests'));
 tabData.addEventListener('click', () => showTab('data'));
+tabSec.addEventListener('click', () => showTab('sec'));
 </script>
 </body>
 </html>

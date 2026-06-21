@@ -128,7 +128,8 @@ function actionLabel(a) {
     return {
       icon: 'expense',
       lbl: a.desc || '',
-      val: '-' + fm(Math.abs(a.amount || 0)) + ' &middot; ' + (a.cat || 'out'),
+      // a.cat is AI-controlled and val is rendered via dangerouslySetInnerHTML → escape it.
+      val: '-' + fm(Math.abs(a.amount || 0)) + ' &middot; ' + esc(a.cat || 'out'),
       tab: 'Despesas',
       color: 'var(--signal)',
     };
@@ -136,7 +137,8 @@ function actionLabel(a) {
     return {
       icon: 'income',
       lbl: a.name || '',
-      val: '+' + fm(a.amount || 0) + ' &middot; ' + (a.source || 'other'),
+      // a.source is AI-controlled and val is rendered via dangerouslySetInnerHTML → escape it.
+      val: '+' + fm(a.amount || 0) + ' &middot; ' + esc(a.source || 'other'),
       tab: 'Receitas',
       color: 'var(--success)',
     };

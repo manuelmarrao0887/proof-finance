@@ -28,7 +28,7 @@ import React, {
   useState,
 } from 'react';
 import { loadUserDoc, saveUserDoc } from '../firebase/client.js';
-import { bdgDefault, snapshotFromState } from '../lib/finance.js';
+import { bdgDefault, snapshotFromState, normAcct } from '../lib/finance.js';
 import { uid } from '../lib/format.js';
 import { applySameBeneficiaryCategory } from '../lib/dedupe.js';
 
@@ -431,7 +431,44 @@ export function StoreProvider({ children }) {
       addCustomAcct: (a) => setField('customAccts', [...(getState().customAccts || []), a]),
       updateCustomAcct: (id, a) =>
         setField('customAccts', (getState().customAccts || []).map((x) => (x.id === id ? { ...x, ...a } : x))),
-      deleteCustomAcct: (id) => setField('customAccts', (getState().customAccts || []).filter((x) => x.id !== id)),
+      // Delete a custom account AND purge its balance readings (acctKey === id).
+      deleteCustomAcct: (id) => {
+        const st = getState();
+        setField('customAccts', (st.customAccts || []).filter((x) => x.id !== id));
+        setField('balanceLog', (st.balanceLog || []).filter((r) => r.acctKey !== id));
+      },
+      // Settle all manual, unsettled transactions allocated to an account label
+      // ("banco · tipo"). Called when the user sets a fresh balance (edit/reading)
+      // so those expenses/incomes stop re-adjusting the new base going forward.
+      settleAccount: (label) => {
+        const st = getState();
+        const ln = normAcct(label);
+        const exp = st.addedExp || [];
+        if (exp.some((x) => !x.imported && !x.settled && normAcct(x.acct) === ln)) {
+          setField(
+            'addedExp',
+            exp.map((x) => (!x.imported && !x.settled && normAcct(x.acct) === ln ? { ...x, settled: true } : x))
+          );
+        }
+        const inc = st.incomes || [];
+        if (inc.some((i) => !i.imported && !i.settled && i.recurring === false && normAcct(i.acct) === ln)) {
+          setField(
+            'incomes',
+            inc.map((i) =>
+              !i.imported && !i.settled && i.recurring === false && normAcct(i.acct) === ln ? { ...i, settled: true } : i
+            )
+          );
+        }
+      },
+      // Remove a TEMPLATE account that was activated via a balance reading: drop
+      // its dynAccts override AND its balance readings (acctKey === "bank_type").
+      removeDynAcct: (key) => {
+        const st = getState();
+        const dyn = st.dynAccts ? { ...st.dynAccts } : {};
+        delete dyn[key];
+        setField('dynAccts', dyn);
+        setField('balanceLog', (st.balanceLog || []).filter((r) => r.acctKey !== key));
+      },
 
       // rules
       setRules: (rules) => setField('rules', rules),
