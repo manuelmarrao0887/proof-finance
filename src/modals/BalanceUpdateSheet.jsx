@@ -95,6 +95,9 @@ export default function BalanceUpdateSheet() {
       return;
     }
     actions.addBalanceReading({ account, value: v, date });
+    // The reading is the bank's truth → settle manual transactions allocated to
+    // this account so they don't subtract again from the new base.
+    actions.settleAccount(account.bank + ' · ' + account.type);
     toast('Saldo de ' + account.bank + ' atualizado', 'success');
     reset();
     close();

@@ -14,6 +14,7 @@ import { useStore } from '../store/store.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
+import { getAcctsLive } from '../lib/finance.js';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 const ACCT_CATEGORIES = ['Liquidez', 'Poupanca', 'Investimentos', 'Cripto', 'Imobiliario', 'Outros'];
@@ -23,7 +24,7 @@ const CURRENCIES = ['EUR', 'USD', 'GBP', 'BRL', 'CHF'];
 const EMPTY = { id: null, bank: '', type: 'Conta a Ordem', category: 'Liquidez', value: '', currency: 'EUR', note: '' };
 
 export default function AcctModal() {
-  const { state, actions } = useStore();
+  const { state, actions, currentUser } = useStore();
   const { isOpen, payload, close } = useModal('acct');
   const toast = useToast();
 
@@ -37,12 +38,16 @@ export default function AcctModal() {
     if (id) {
       const a = (state.customAccts || []).find((x) => x.id === id);
       if (a) {
+        // Show the LIVE balance (base − manual expenses already counted), so the
+        // edit field matches what the Resumo shows. Saving rebaselines to it.
+        const live = getAcctsLive({ ...state, currentUser }).find((x) => x.id === id);
+        const shown = live ? live.v : a.value || 0;
         setDraft({
           id: a.id,
           bank: a.bank || '',
           type: a.type || 'Conta a Ordem',
           category: a.category || 'Liquidez',
-          value: String(a.value || 0).replace('.', ','),
+          value: String(shown).replace('.', ','),
           currency: a.currency || 'EUR',
           note: a.note || '',
         });
@@ -70,6 +75,10 @@ export default function AcctModal() {
     if (isNaN(val)) val = 0;
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
     if (draft.id) {
+      // Saving a balance = a fresh reading: settle the manual expenses already
+      // baked into `val` (the shown live value) so they don't subtract again.
+      const orig = (state.customAccts || []).find((x) => x.id === draft.id);
+      if (orig) actions.settleAccount(orig.bank + ' · ' + orig.type);
       actions.updateCustomAcct(draft.id, { bank, type, category: cat, value: val, currency: cur, note, updated: today });
     } else {
       actions.addCustomAcct({ id: uid(), bank, type, category: cat, value: val, currency: cur, note, updated: today, createdAt: Date.now() });

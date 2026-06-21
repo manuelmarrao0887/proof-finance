@@ -161,14 +161,14 @@ export function getAcctsLive(state) {
     const labelNorm = normAcct(a.b + ' · ' + a.t);
     let delta = 0;
     addedExp.forEach(function (x) {
-      if (x.imported) return; // extrato/IA → já refletido na leitura, não desconta
+      if (x.imported || x.settled) return; // imported (extrato/IA) or already settled into a reading → não desconta
       if (normAcct(x.acct) !== labelNorm) return;
       delta -= Number(x.amount) || 0; // manual → desconta sempre (ignora data)
     });
     incomes.forEach(function (i) {
-      // Only one-off, manual incomes move a specific account's balance;
+      // Only one-off, manual, unsettled incomes move a specific account's balance;
       // recurring incomes are modelled in the cash-flow projection instead.
-      if (i.imported || i.recurring !== false) return;
+      if (i.imported || i.settled || i.recurring !== false) return;
       if (normAcct(i.acct) !== labelNorm) return;
       delta += Number(i.amount) || 0;
     });
@@ -178,7 +178,7 @@ export function getAcctsLive(state) {
 
 // Normalise an account label for matching: strip accents, lowercase, collapse
 // spaces. Empty string for null/undefined (never matches a real label).
-function normAcct(s) {
+export function normAcct(s) {
   if (!s) return '';
   return String(s)
     .normalize('NFD')
