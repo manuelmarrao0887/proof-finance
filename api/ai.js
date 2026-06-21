@@ -3,46 +3,62 @@
 // A API key da Anthropic vive SÓ aqui (env ANTHROPIC_API_KEY), nunca no browser.
 // Cada pedido tem de trazer um ID-token Firebase válido (Authorization: Bearer
 // <token>), verificado com firebase-admin (env FIREBASE_SERVICE_ACCOUNT = JSON
-// da service account). Sem token válido → 401, sem chamar a Anthropic.
-//
-// Body esperado: { content, system, model, max_tokens } — `content` são os
-// blocos de conteúdo da mensagem do utilizador (texto / imagem / documento).
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+// da service account). Tudo é apanhado em try/catch e devolvido como JSON, para
+// nunca rebentar com FUNCTION_INVOCATION_FAILED.
 
-function firebaseAuth() {
-  if (!getApps().length) {
-    const raw = process.env.FIREBASE_SERVICE_ACCOUNT || '{}';
-    // Aceita JSON direto ou base64 do JSON.
-    const json = raw.trim().startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8');
-    initializeApp({ credential: cert(JSON.parse(json)) });
+let _auth = null;
+async function getFirebaseAuth() {
+  if (_auth) return _auth;
+  // Import dinâmico: se firebase-admin falhar a carregar, devolvemos erro JSON
+  // em vez de a função inteira rebentar no load.
+  const { initializeApp, getApps, cert } = await import('firebase-admin/app');
+  const { getAuth } = await import('firebase-admin/auth');
+  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT || '').trim();
+  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT nao configurada');
+  const json = raw.startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8');
+  const svc = JSON.parse(json);
+  if (!getApps().length) initializeApp({ credential: cert(svc) });
+  _auth = getAuth();
+  return _auth;
+}
+
+function readBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch (e) {
+      return {};
+    }
   }
-  return getAuth();
+  return {};
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  // 1) Autenticação: verificar o ID-token Firebase.
   try {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    // 1) Autenticação.
     const authz = req.headers.authorization || '';
     const token = authz.startsWith('Bearer ') ? authz.slice(7) : '';
-    if (!token) return res.status(401).json({ error: 'Sem token' });
-    await firebaseAuth().verifyIdToken(token);
-  } catch (e) {
-    return res.status(401).json({ error: 'Auth falhou: ' + (e && e.message ? e.message : 'token invalido') });
-  }
+    if (!token) return res.status(401).json({ error: 'Sem token de sessao' });
+    try {
+      const auth = await getFirebaseAuth();
+      await auth.verifyIdToken(token);
+    } catch (e) {
+      return res.status(401).json({ error: 'Auth falhou: ' + (e && e.message ? e.message : 'token invalido') });
+    }
 
-  // 2) Proxy para a Anthropic com a key do servidor.
-  try {
-    const { content, system, model, max_tokens } = req.body || {};
-    if (!content) return res.status(400).json({ error: 'Sem content' });
-    // Limpa aspas/espaços que às vezes ficam colados no valor da env var.
+    // 2) Key da Anthropic (limpa aspas/espacos).
     let apiKey = (process.env.ANTHROPIC_API_KEY || '').trim();
     if ((apiKey.startsWith('"') && apiKey.endsWith('"')) || (apiKey.startsWith("'") && apiKey.endsWith("'"))) {
       apiKey = apiKey.slice(1, -1).trim();
     }
     if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY nao configurada' });
+
+    // 3) Proxy.
+    const { content, system, model, max_tokens } = readBody(req);
+    if (!content) return res.status(400).json({ error: 'Sem content' });
 
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -62,6 +78,6 @@ export default async function handler(req, res) {
     const data = await r.json();
     return res.status(r.status).json(data);
   } catch (e) {
-    return res.status(502).json({ error: 'Erro a contactar a IA: ' + (e && e.message ? e.message : 'erro') });
+    return res.status(500).json({ error: 'Falha na funcao: ' + (e && e.message ? e.message : 'erro') });
   }
 }
