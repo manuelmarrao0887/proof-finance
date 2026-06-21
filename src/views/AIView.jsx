@@ -20,6 +20,7 @@ import Icon from '../components/Icon.jsx';
 import { fm, fc, uid, normalizeStmtDate } from '../lib/format.js';
 import {
   callAI,
+  callAIRaw,
   AI_IMPORT_PROMPT,
   readFileB64,
   resizeImg,
@@ -293,30 +294,9 @@ export default function AIView() {
       'CONTEXTO (dados atuais do utilizador):\n' +
       JSON.stringify(ctx).substring(0, 15000);
 
-    // Chat uses the bespoke endpoint shape (model haiku, max_tokens 4000) — the
-    // command is the plain user content; sysPrompt carries the instructions.
-    fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 4000,
-        system: sysPrompt,
-        messages: [{ role: 'user', content: cmd }],
-      }),
-    })
-      .then((r) => {
-        if (!r.ok)
-          return r.text().then((b) => {
-            throw new Error('API ' + r.status + ': ' + b.substring(0, 100));
-          });
-        return r.json();
-      })
+    // Chat via /api/ai (key no servidor): o comando é o conteúdo do utilizador;
+    // sysPrompt leva as instruções. Devolve o JSON cru da Anthropic.
+    callAIRaw(cmd, sysPrompt, 'claude-haiku-4-5', 4000)
       .then((d) => {
         const txt = (d.content || [])
           .filter((i) => i.type === 'text')
@@ -456,8 +436,8 @@ export default function AIView() {
   const aiImportFile = useCallback(
     (file) => {
       if (!file) return;
-      if (!apiKey) {
-        toast('Configura API key nas Definições', 'error');
+      if (!currentUser) {
+        toast('Inicia sessão para usar a IA', 'error');
         return;
       }
       if (file.size > 20 * 1024 * 1024) {
@@ -680,22 +660,14 @@ export default function AIView() {
   /* ── Render ─────────────────────────────────────────────────────────────── */
   const wrap = { padding: '0 20px calc(40px + var(--safe-bottom))' };
 
-  // 1) API key missing.
-  if (!apiKey) {
+  // 1) Sessão necessária (a IA corre no servidor; precisa de login).
+  if (!currentUser) {
     return (
       <div className="fadeUp" style={wrap}>
         <div className="cd" style={{ padding: 18, marginBottom: 16, borderLeft: '3px solid var(--signal)' }}>
-          <div className="lb" style={{ color: 'var(--signal)', marginBottom: 4 }}>API key necessária</div>
+          <div className="lb" style={{ color: 'var(--signal)', marginBottom: 4 }}>Sessão necessária</div>
           <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>
-            Configura a key da Anthropic nas{' '}
-            <button
-              type="button"
-              onClick={() => ui.open('settings')}
-              style={{ background: 'none', border: 'none', color: 'var(--blue)', font: 'inherit', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
-            >
-              Definições
-            </button>{' '}
-            para usar o assistente e o importador.
+            Inicia sessão para usar o assistente e o importador.
           </div>
         </div>
       </div>

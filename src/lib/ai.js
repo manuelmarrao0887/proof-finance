@@ -77,6 +77,31 @@ export const JSON_SYSTEM = 'Responde APENAS JSON puro. Sem markdown, sem backtic
    NOTE: the original appended the task prompt as a text block to `content`.
    Callers should do the same (push {type:'text', text: STMT_PROMPT} etc.) so
    the model receives the instructions. */
+// callAIRaw — como callAI mas devolve o JSON CRU da Anthropic (Promise), sem
+// fazer parsing. Usado por quem precisa de processar a resposta à sua maneira
+// (ex.: o chat do assistente). Vai sempre por /api/ai com o ID-token.
+export function callAIRaw(content, system, model, maxTokens) {
+  return getIdToken().then(function (token) {
+    if (!token) throw new Error('Precisas de iniciar sessao para usar a IA.');
+    return fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({
+        content: content,
+        system: system || JSON_SYSTEM,
+        model: model || MODEL,
+        max_tokens: maxTokens || 4000,
+      }),
+    }).then(function (r) {
+      if (!r.ok)
+        return r.text().then(function (b) {
+          throw new Error('API ' + r.status + ': ' + b.substring(0, 150));
+        });
+      return r.json();
+    });
+  });
+}
+
 export function callAI(content, system, _apiKey, onResult) {
   const cb = typeof onResult === 'function' ? onResult : () => {};
   // Transport: the key lives on the server. We POST to the Vercel function
