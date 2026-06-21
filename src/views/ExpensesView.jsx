@@ -33,6 +33,7 @@ import { useUI } from '../store/ui.jsx';
 import { fm, normalizeStmtDate } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import { dedupeAddedExp } from '../lib/dedupe.js';
+import { monthEffectiveLimits } from '../lib/budget.js';
 import { useToast } from '../components/Toast.jsx';
 import {
   isPreviewMode,
@@ -255,12 +256,23 @@ export default function ExpensesView() {
     });
   }
 
+  // Orçamento com rollover: limite efetivo = base + sobra/falta transitada.
+  const rolloverOn = !!state.rolloverOn;
+  let selYm = null;
+  if (!preview && em >= 0 && em <= 3) {
+    const nowR = new Date();
+    const ddR = new Date(nowR.getFullYear(), nowR.getMonth() - (3 - em), 1);
+    selYm = ddR.getFullYear() + '-' + String(ddR.getMonth() + 1).padStart(2, '0');
+  }
+  const effLims = rolloverOn && selYm ? monthEffectiveLimits(addedExp, bdg, selYm, true) : null;
+
   const rows = [];
   bdg.forEach((b) => {
     const vs = eByC[b.id] || [0, 0, 0, 0];
     const val = isQ ? vs[0] + vs[1] + vs[2] : vs[em];
-    const lm = isQ ? b.lm * 3 : b.lm;
-    if (val > 0) rows.push({ id: b.id, nm: b.nm, val, lm, pct: lm > 0 ? (val / lm) * 100 : 0, vs });
+    const base = isQ ? b.lm * 3 : b.lm;
+    const eff = effLims && !isQ && effLims[b.id] ? effLims[b.id].eff : base;
+    if (val > 0) rows.push({ id: b.id, nm: b.nm, val, lm: eff, carried: eff - base, pct: eff > 0 ? (val / eff) * 100 : 0, vs });
   });
   // By-value ordering for the budget summary (orig 1103). Rows carry stable
   // `id` keys (FIX 2) so React reconciles them in place instead of rebuilding.
@@ -531,6 +543,22 @@ export default function ExpensesView() {
         </div>
       )}
 
+      {/* Rollover do orçamento (só em meses, autenticado) */}
+      {!preview && !isQ && rows.length > 0 && (
+        <button
+          type="button"
+          onClick={() => actions.setRolloverOn(!rolloverOn)}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 14px', marginBottom: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 12, cursor: 'pointer' }}
+          aria-pressed={rolloverOn}
+        >
+          <span style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Rollover do orçamento</span>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>O que sobra/falta transita para o mês seguinte</span>
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: rolloverOn ? 'var(--success)' : 'var(--text3)' }}>{rolloverOn ? 'ON' : 'OFF'}</span>
+        </button>
+      )}
+
       {/* Category rows (FIX 2 — stable `r.id` keys) */}
       {rows.map((r) => {
         const isE = xExp === r.id;
@@ -549,7 +577,14 @@ export default function ExpensesView() {
               <CategoryIcon id={r.id} size={40} />
               <div style={{ flex: 1 }}>
                 <div className="rw">
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{r.nm}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {r.nm}
+                    {r.carried ? (
+                      <span style={{ fontSize: 9, fontWeight: 700, color: r.carried > 0 ? 'var(--success)' : 'var(--signal)', background: r.carried > 0 ? 'var(--success-soft)' : 'var(--signal-soft)', padding: '1px 6px', borderRadius: 999 }}>
+                        {(r.carried > 0 ? '+' : '') + fm(r.carried)} transitado
+                      </span>
+                    ) : null}
+                  </span>
                   <div>
                     <span className="m" style={{ fontSize: 13, fontWeight: 600 }}>{fm(r.val)}</span>
                     <span className="m" style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>/ {fm(r.lm)}</span>

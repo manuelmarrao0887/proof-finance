@@ -206,6 +206,15 @@ export function snapshotFromState(state, label) {
   return { l: label, liq: liq, poup: poup, inv: inv, div: loan.out || 0, xP: 0, xT: 0, tC: 0 };
 }
 
+// Série mensal de património a partir dos snapshots: {label, assets, debt, net}.
+export function netWorthSeries(state) {
+  const snaps = getAllHist(state);
+  return (snaps || []).map(function (s) {
+    const assets = (s.liq || 0) + (s.poup || 0) + (s.inv || 0);
+    return { label: s.l, assets: assets, debt: s.div || 0, net: assets - (s.div || 0) };
+  });
+}
+
 export function getAllHist(state) {
   const dynSnaps = (state && state.dynSnaps) || [];
   if (isPreviewMode(state)) return hist.concat(dynSnaps);

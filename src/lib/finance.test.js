@@ -10,6 +10,7 @@ import {
   detectSubscriptions,
   chrt,
   getAcctsLive,
+  netWorthSeries,
 } from './finance.js';
 
 // A date `daysAgo` days before now, as YYYY-MM-DD (for time-window tests).
@@ -247,6 +248,21 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
     };
     const acc = getAcctsLive(state).find((a) => a.b === 'Activobank');
     expect(acc.v).toBe(960);
+  });
+});
+
+describe('netWorthSeries', () => {
+  it('net = ativos − dívida por snapshot', () => {
+    const state = {
+      currentUser: { uid: 'u1' },
+      dynSnaps: [
+        { l: 'mai', liq: 100, poup: 50, inv: 200, div: 80 },
+        { l: 'jun', liq: 120, poup: 50, inv: 230, div: 70 },
+      ],
+    };
+    const s = netWorthSeries(state);
+    expect(s[0]).toEqual({ label: 'mai', assets: 350, debt: 80, net: 270 });
+    expect(s[1].net).toBe(400 - 70);
   });
 });
 

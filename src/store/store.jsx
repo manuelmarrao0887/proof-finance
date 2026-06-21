@@ -87,6 +87,7 @@ export function initialPersisted() {
     faceIdCred: null, // id (base64) da credencial WebAuthn (FaceID), ou null
     balancesHidden: false, // saldos ocultos? (default visível)
     housing: null, // crédito à habitação atual { valorAquisicao, valorEmprestimo, ... }
+    rolloverOn: false, // orçamento: sobra/falta transita para o mês seguinte
   };
 }
 
@@ -122,6 +123,7 @@ export const PERSISTED_KEYS = [
   'faceIdCred',
   'balancesHidden',
   'housing',
+  'rolloverOn',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -150,6 +152,7 @@ export function buildPersistPayload(state) {
     faceIdCred: state.faceIdCred || null,
     balancesHidden: !!state.balancesHidden,
     housing: state.housing || null,
+    rolloverOn: !!state.rolloverOn,
   };
 }
 
@@ -183,6 +186,7 @@ export function hydrateFromDoc(d) {
     faceIdCred: typeof d.faceIdCred === 'string' ? d.faceIdCred : null,
     balancesHidden: !!d.balancesHidden,
     housing: d.housing && typeof d.housing === 'object' ? d.housing : null,
+    rolloverOn: !!d.rolloverOn,
   };
 }
 
@@ -350,6 +354,7 @@ export function StoreProvider({ children }) {
       setFaceIdCred: (c) => setField('faceIdCred', c || null),
       setBalancesHidden: (b) => setField('balancesHidden', !!b),
       setHousing: (h) => setField('housing', h || null),
+      setRolloverOn: (b) => setField('rolloverOn', !!b),
       dismissSub: (key) => setField('dismissedSubs', [...(getState().dismissedSubs || []), key]),
       setAiHistory: (aiHistory) => setField('aiHistory', aiHistory),
       pushAiHistory: (entry) =>
