@@ -121,6 +121,14 @@ describe('listAccounts', () => {
     // ...alongside the user's own custom account.
     expect(out.find((a) => a.bank === 'Wise' && a.custom)).toBeTruthy();
   });
+  it('de-duplicates a custom account that shadows a template bank (by normalised label)', () => {
+    const out = listAccounts({
+      currentUser: { uid: 'u1' },
+      customAccts: [{ id: 'c1', bank: 'ActivoBank', type: 'Conta a Ordem', category: 'Liquidez' }],
+    });
+    const activobanks = out.filter((a) => a.bank.toLowerCase() === 'activobank' && a.type === 'Conta a Ordem');
+    expect(activobanks.length).toBe(1); // custom + template collapse to one
+  });
 });
 
 describe('BALANCE_PROMPT', () => {
