@@ -85,10 +85,15 @@ export function listAccounts(state) {
     if (custom) item.id = id;
     out.push(item);
   };
-  if (!isPreviewMode(state)) {
-    getAccts(state).forEach((a) => add(a.b, a.t, a.c, !!a.custom, a.id));
+  if (isPreviewMode(state)) {
+    // Demo mode: the template banks are the only accounts to pick from.
+    accts.forEach((a) => add(a.b, a.t, a.c, false));
+    return out;
   }
+  // Authenticated: show ONLY the user's real accounts (custom + any template
+  // that has a balance reading), matching the Resumo — no unused template-bank
+  // clutter. New accounts are added via "Adicionar conta".
+  getAccts(state).forEach((a) => add(a.b, a.t, a.c, !!a.custom, a.id));
   (state && state.customAccts ? state.customAccts : []).forEach((a) => add(a.bank, a.type, a.category, true, a.id));
-  accts.forEach((a) => add(a.b, a.t, a.c, false));
   return out;
 }

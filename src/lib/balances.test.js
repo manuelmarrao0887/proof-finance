@@ -104,22 +104,32 @@ describe('listAccounts', () => {
     expect(acti.acctKey).toBe('Activobank_Conta a Ordem');
     expect(acti.custom).toBe(false);
   });
-  it('appends custom accounts keyed by id', () => {
-    const out = listAccounts({ customAccts: [{ id: 'x1', bank: 'Wise', type: 'Conta a Ordem', category: 'Liquidez' }] });
+  it('lists a custom account keyed by id (authenticated)', () => {
+    const out = listAccounts({ currentUser: { uid: 'u1' }, customAccts: [{ id: 'x1', bank: 'Wise', type: 'Conta a Ordem', category: 'Liquidez' }] });
     const rev = out.find((a) => a.bank === 'Wise');
     expect(rev.acctKey).toBe('x1');
     expect(rev.custom).toBe(true);
     expect(rev.id).toBe('x1');
   });
-  it('shows template banks AND custom accounts for an authenticated user', () => {
+  it('authenticated picker shows ONLY the user real accounts, no unused template banks', () => {
     const out = listAccounts({
       currentUser: { uid: 'u1' },
       customAccts: [{ id: 'x1', bank: 'Wise', type: 'Conta a Ordem', category: 'Liquidez' }],
     });
-    // Template banks (e.g. Activobank) stay selectable — a real user may bank there.
-    expect(out.find((a) => a.bank === 'Activobank')).toBeTruthy();
-    // ...alongside the user's own custom account.
+    // The user's own account is there...
     expect(out.find((a) => a.bank === 'Wise' && a.custom)).toBeTruthy();
+    // ...but unused template banks (no reading) are NOT (Moey, Goparity, Activobank...).
+    expect(out.find((a) => a.bank === 'Activobank')).toBeFalsy();
+    expect(out.find((a) => a.bank === 'Goparity')).toBeFalsy();
+    expect(out.find((a) => a.bank === 'Moey')).toBeFalsy();
+  });
+  it('authenticated picker DOES include a template that has a balance reading (dynAccts)', () => {
+    const out = listAccounts({
+      currentUser: { uid: 'u1' },
+      dynAccts: { 'Activobank_Conta a Ordem': { v: 100, d: '2026.06.20', n: null } },
+      customAccts: [],
+    });
+    expect(out.find((a) => a.bank === 'Activobank' && !a.custom)).toBeTruthy();
   });
   it('de-duplicates a custom account that shadows a template bank (by normalised label)', () => {
     const out = listAccounts({
