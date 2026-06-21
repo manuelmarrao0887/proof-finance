@@ -31,7 +31,6 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { fm, normalizeStmtDate } from '../lib/format.js';
-import { sortedCats } from '../lib/categories.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import { dedupeAddedExp } from '../lib/dedupe.js';
 import { useToast } from '../components/Toast.jsx';
@@ -74,7 +73,6 @@ export default function ExpensesView() {
 
   const addedExp = state.addedExp || [];
   const bdg = state.bdg || [];
-  const cats = useMemo(() => sortedCats(bdg), [bdg]); // FIX 3
 
   // Month labels (orig 1007-1020): preview = Jan-Abr; auth = last 4 ending now.
   const ms = useMemo(() => {
@@ -94,11 +92,6 @@ export default function ExpensesView() {
     setTagFilter((tf) => (tf.indexOf(t) > -1 ? tf.filter((x) => x !== t) : [...tf, t]));
   const clearTagFilter = () => setTagFilter([]);
 
-  // ── Expanded-row category change — FIX 1 (same beneficiary), by stable id ───
-  const changeExpCat = (id, cat) => {
-    // Apply the chosen category to every expense sharing the normalized desc.
-    actions.classifyExpense(id, cat);
-  };
   const deleteExp = (id) => {
     if (typeof confirm === 'function' && !confirm('Remover esta despesa?')) return;
     actions.deleteExpense(id);
@@ -610,25 +603,13 @@ export default function ExpensesView() {
                               )}
                             </span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                            <span className="m" style={{ fontSize: 11, color: 'var(--text3)' }}>{x.date}</span>
-                            {/* FIX 3: alphabetical picker · FIX 1 applied in changeExpCat */}
-                            <select
-                              value={x.cat}
-                              onChange={(e) => changeExpCat(x.id, e.target.value)}
-                              aria-label={'Categoria de ' + x.desc}
-                              style={{ padding: '8px 6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', borderRadius: 'var(--r2)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', appearance: 'none', minHeight: 40 }}
-                            >
-                              {cats.map((b) => (
-                                <option key={b.id} value={b.id}>
-                                  {b.nm}
-                                </option>
-                              ))}
-                            </select>
-                            <button type="button" onClick={() => openAdd(x.id)} aria-label="Editar despesa" style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--mono)', fontSize: 11, cursor: 'pointer', fontWeight: 600, padding: '10px 10px', minHeight: 40 }}>
-                              Editar
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                            <span className="m" style={{ fontSize: 11, color: 'var(--text3)', flex: 1 }}>{x.date}</span>
+                            {/* Categoria muda-se via Editar (sheet) — sem seletor por linha. */}
+                            <button type="button" onClick={() => openAdd(x.id)} className="icon-btn" style={{ width: 36, height: 36 }} aria-label="Editar despesa">
+                              <EditIcon />
                             </button>
-                            <button type="button" onClick={() => deleteExp(x.id)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 11, cursor: 'pointer', padding: '10px 10px', minHeight: 40 }}>
+                            <button type="button" onClick={() => deleteExp(x.id)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 11, cursor: 'pointer', padding: '8px 10px', minHeight: 36 }}>
                               Remover
                             </button>
                           </div>
