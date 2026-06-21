@@ -431,7 +431,21 @@ export function StoreProvider({ children }) {
       addCustomAcct: (a) => setField('customAccts', [...(getState().customAccts || []), a]),
       updateCustomAcct: (id, a) =>
         setField('customAccts', (getState().customAccts || []).map((x) => (x.id === id ? { ...x, ...a } : x))),
-      deleteCustomAcct: (id) => setField('customAccts', (getState().customAccts || []).filter((x) => x.id !== id)),
+      // Delete a custom account AND purge its balance readings (acctKey === id).
+      deleteCustomAcct: (id) => {
+        const st = getState();
+        setField('customAccts', (st.customAccts || []).filter((x) => x.id !== id));
+        setField('balanceLog', (st.balanceLog || []).filter((r) => r.acctKey !== id));
+      },
+      // Remove a TEMPLATE account that was activated via a balance reading: drop
+      // its dynAccts override AND its balance readings (acctKey === "bank_type").
+      removeDynAcct: (key) => {
+        const st = getState();
+        const dyn = st.dynAccts ? { ...st.dynAccts } : {};
+        delete dyn[key];
+        setField('dynAccts', dyn);
+        setField('balanceLog', (st.balanceLog || []).filter((r) => r.acctKey !== key));
+      },
 
       // rules
       setRules: (rules) => setField('rules', rules),
