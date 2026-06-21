@@ -88,6 +88,7 @@ export function initialPersisted() {
     balancesHidden: false, // saldos ocultos? (default visível)
     housing: null, // crédito à habitação atual { valorAquisicao, valorEmprestimo, ... }
     rolloverOn: false, // orçamento: sobra/falta transita para o mês seguinte
+    positions: [], // posições de investimento { id, broker, asset, qty, avgPrice, currentPrice }
   };
 }
 
@@ -124,6 +125,7 @@ export const PERSISTED_KEYS = [
   'balancesHidden',
   'housing',
   'rolloverOn',
+  'positions',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -153,6 +155,7 @@ export function buildPersistPayload(state) {
     balancesHidden: !!state.balancesHidden,
     housing: state.housing || null,
     rolloverOn: !!state.rolloverOn,
+    positions: state.positions || [],
   };
 }
 
@@ -187,6 +190,7 @@ export function hydrateFromDoc(d) {
     balancesHidden: !!d.balancesHidden,
     housing: d.housing && typeof d.housing === 'object' ? d.housing : null,
     rolloverOn: !!d.rolloverOn,
+    positions: Array.isArray(d.positions) ? d.positions : [],
   };
 }
 
@@ -355,6 +359,11 @@ export function StoreProvider({ children }) {
       setBalancesHidden: (b) => setField('balancesHidden', !!b),
       setHousing: (h) => setField('housing', h || null),
       setRolloverOn: (b) => setField('rolloverOn', !!b),
+      // posições de investimento
+      addPosition: (p) => setField('positions', [...(getState().positions || []), p]),
+      updatePosition: (id, p) =>
+        setField('positions', (getState().positions || []).map((x) => (x.id === id ? { ...x, ...p } : x))),
+      deletePosition: (id) => setField('positions', (getState().positions || []).filter((x) => x.id !== id)),
       dismissSub: (key) => setField('dismissedSubs', [...(getState().dismissedSubs || []), key]),
       setAiHistory: (aiHistory) => setField('aiHistory', aiHistory),
       pushAiHistory: (entry) =>

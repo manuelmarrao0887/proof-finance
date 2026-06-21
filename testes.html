@@ -475,6 +475,18 @@ const GROUPS = [
     { id: 'T17.3', title: 'Falta transita', steps: ['Mês em que ultrapassaste o limite'], expect: 'Mês seguinte com limite reduzido; badge "−X transitado".' },
     { id: 'T17.4', title: 'Alerta ultrapassado', steps: ['Categoria acima do limite efetivo'], expect: 'Barra/percentagem a vermelho e "+X" acima do limite.' },
   ]},
+  { id: 'T21', title: 'Metas com auto-alocação', tests: [
+    { id: 'T21.1', title: 'Reservar por mês', steps: ['Editar/criar meta → preencher "Reservar/mês"'], expect: 'Guarda; o cartão mostra "X/mês · conclui MM/AAAA (N meses)".' },
+    { id: 'T21.2', title: 'Sem reserva → sugestão pelo prazo', steps: ['Meta com data alvo mas sem reservar/mês'], expect: 'Mostra "Sugestão: ~X/mês para o prazo".' },
+    { id: 'T21.3', title: 'Meta atingida', steps: ['Atual ≥ objetivo'], expect: 'Não mostra ETA (restante 0).' },
+  ]},
+  { id: 'T22', title: 'Investimentos detalhados', tests: [
+    { id: 'T22.1', title: 'Adicionar posição', steps: ['Mais → Investimentos → "+ Posição"', 'Ativo, quantidade, preço médio, preço atual'], expect: 'Aparece na carteira com valor = qty × preço atual.' },
+    { id: 'T22.2', title: 'P&L por posição', steps: ['Ver a posição'], expect: 'Mostra P&L em € e % (verde ganho / vermelho perda) e qty @ médio → atual.' },
+    { id: 'T22.3', title: 'Total e alocação', steps: ['Ver topo + barras'], expect: 'Valor total + P&L total; cada posição com % da carteira (barra).' },
+    { id: 'T22.4', title: 'Editar/remover', steps: ['Tocar numa posição → alterar/Remover'], expect: 'Atualiza/remove.' },
+    { id: 'T22.5', title: 'Ocultar saldos', steps: ['Ocultar saldos no Resumo → abrir Investimentos'], expect: 'Valores ••••; P&L escondido.' },
+  ]},
   { id: 'T14', title: 'Responsivo & iPhone (PWA)', tests: [
     { id: 'T14.1', title: 'Sem scroll horizontal', steps: ['iPhone Safari → percorrer Resumo, Despesas, Receitas, Gráficos'], expect: 'Nenhum ecrã faz scroll lateral; conteúdo cabe na largura.' },
     { id: 'T14.2', title: 'Notch não tapa o topo', steps: ['Em iPhone com notch/Dynamic Island, abrir a app'], expect: 'O cabeçalho "Proof. Finance" fica abaixo do notch (não cortado).' },
