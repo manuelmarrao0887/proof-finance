@@ -16,6 +16,7 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fc } from '../lib/format.js';
+import { monthsToTarget, etaDate, ymLabel } from '../lib/goals.js';
 
 const QUICK_ADD = [10, 50, 100, 500];
 
@@ -165,11 +166,15 @@ export default function GoalsView() {
                 <div className="m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
                   de {fc(g.target)}
                 </div>
-                {monthly != null && (
-                  <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6, fontWeight: 600 }}>
-                    ~ {fc(monthly)}/mês
+                {g.monthly > 0 && rem > 0 ? (
+                  <div style={{ fontSize: 11, color: c, marginTop: 6, fontWeight: 700 }}>
+                    {fc(g.monthly)}/mês · conclui {ymLabel(etaDate(rem, g.monthly))} ({monthsToTarget(rem, g.monthly)} {monthsToTarget(rem, g.monthly) === 1 ? 'mês' : 'meses'})
                   </div>
-                )}
+                ) : monthly != null ? (
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6, fontWeight: 600 }}>
+                    Sugestão: ~ {fc(monthly)}/mês para o prazo
+                  </div>
+                ) : null}
               </div>
             </div>
 
