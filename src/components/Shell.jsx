@@ -27,6 +27,7 @@ const RecurringView = lazy(() => import('../views/RecurringView.jsx'));
 const ChartsView = lazy(() => import('../views/ChartsView.jsx'));
 const LoanView = lazy(() => import('../views/LoanView.jsx'));
 const AIView = lazy(() => import('../views/AIView.jsx'));
+const ReportView = lazy(() => import('../views/ReportView.jsx'));
 
 // Modals load on first open (and stay mounted afterwards so the close animation
 // still plays). Keyed by their ui modal name (see MODALS in store/ui.jsx).
@@ -103,6 +104,7 @@ const VIEWS = {
   charts: ChartsView,
   loan: LoanView,
   ai: AIView,
+  report: ReportView,
 };
 
 function SyncChip({ status }) {
@@ -166,7 +168,7 @@ function BottomNav({ tab, onTab, onPlus, onMore }) {
       <span>{label}</span>
     </button>
   );
-  const moreTabs = ['cal', 'income', 'rec', 'charts', 'loan', 'ai'];
+  const moreTabs = ['cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report'];
   return (
     <nav className="bnav">
       {slot('overview', 'Resumo')}

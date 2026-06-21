@@ -434,6 +434,22 @@ const GROUPS = [
     { id: 'T19.6', title: 'Simulador taxa de esforço', steps: ['Preencher rendimento do agregado no simulador'], expect: 'Mostra a taxa de esforço da nova prestação.' },
     { id: 'T19.7', title: 'Saldos ocultos', steps: ['Ocultar saldos no Resumo', 'Abrir Crédito'], expect: 'Os valores da "minha casa" ficam ••••; o simulador (hipotético) continua visível.' },
   ]},
+  { id: 'T20', title: 'Património (net worth)', tests: [
+    { id: 'T20.1', title: 'Cartão de património', steps: ['Gráficos (≥2 leituras de saldo em datas diferentes)'], expect: 'Topo mostra "Património" com valor atual, variação desde o início e sparkline.' },
+    { id: 'T20.2', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos no Resumo → abrir Gráficos'], expect: 'O património aparece •••• e sem o gráfico de valores.' },
+  ]},
+  { id: 'T16', title: 'Relatórios do mês', tests: [
+    { id: 'T16.1', title: 'Abrir relatórios', steps: ['Mais → Relatórios'], expect: 'Seletor dos últimos 6 meses + despesa total do mês.' },
+    { id: 'T16.2', title: 'Top categorias + variação', steps: ['Mês com despesas'], expect: 'Lista por categoria (barra) com % de variação vs mês anterior (▲/▼).' },
+    { id: 'T16.3', title: 'Maiores despesas', steps: ['Ver a secção'], expect: 'Top 5 despesas individuais do mês, maior primeiro.' },
+    { id: 'T16.4', title: 'Mês vazio', steps: ['Escolher um mês sem despesas'], expect: 'Estado vazio "Sem despesas neste mês".' },
+  ]},
+  { id: 'T17', title: 'Orçamento com rollover', tests: [
+    { id: 'T17.1', title: 'Ligar rollover', steps: ['Despesas → botão "Rollover do orçamento" → ON'], expect: 'Fica ON e persiste.' },
+    { id: 'T17.2', title: 'Sobra transita', steps: ['Mês com sobra numa categoria', 'Ver o mês seguinte'], expect: 'Limite efetivo do mês seguinte = base + sobra; badge "+X transitado".' },
+    { id: 'T17.3', title: 'Falta transita', steps: ['Mês em que ultrapassaste o limite'], expect: 'Mês seguinte com limite reduzido; badge "−X transitado".' },
+    { id: 'T17.4', title: 'Alerta ultrapassado', steps: ['Categoria acima do limite efetivo'], expect: 'Barra/percentagem a vermelho e "+X" acima do limite.' },
+  ]},
   { id: 'T14', title: 'Responsivo & iPhone (PWA)', tests: [
     { id: 'T14.1', title: 'Sem scroll horizontal', steps: ['iPhone Safari → percorrer Resumo, Despesas, Receitas, Gráficos'], expect: 'Nenhum ecrã faz scroll lateral; conteúdo cabe na largura.' },
     { id: 'T14.2', title: 'Notch não tapa o topo', steps: ['Em iPhone com notch/Dynamic Island, abrir a app'], expect: 'O cabeçalho "Proof. Finance" fica abaixo do notch (não cortado).' },

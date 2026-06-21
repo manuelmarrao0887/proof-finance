@@ -9,8 +9,8 @@
 
 import React from 'react';
 import { useStore } from '../store/store.jsx';
-import { getAllHist, chrt } from '../lib/finance.js';
-import { fm } from '../lib/format.js';
+import { getAllHist, chrt, netWorthSeries } from '../lib/finance.js';
+import { fm, fc } from '../lib/format.js';
 
 export default function ChartsView() {
   const { state, currentUser } = useStore();
@@ -55,8 +55,29 @@ export default function ChartsView() {
     chrt(ah.map((x) => x.xT), 'var(--warning)', 'XTB Transações', ah, fm) +
     chrt(ah.map((x) => x.tC), 'var(--secondary)', 'TR Corretagem', ah, fm);
 
+  // Património (net worth) timeline — valor atual + variação desde o início.
+  const nws = netWorthSeries(s);
+  const curNet = nws.length ? nws[nws.length - 1].net : 0;
+  const firstNet = nws.length ? nws[0].net : 0;
+  const delta = curNet - firstNet;
+  const hidden = !!state.balancesHidden;
+
   return (
     <div style={{ padding: '0 20px 40px' }}>
+      <div className="cd" style={{ marginBottom: 12 }}>
+        <div className="lb" style={{ marginBottom: 8 }}>Património</div>
+        <div className="m" style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em' }}>
+          {hidden ? '••••' : fc(curNet)}
+        </div>
+        {!hidden && (
+          <div className="m" style={{ fontSize: 12, fontWeight: 600, marginTop: 4, color: delta >= 0 ? 'var(--success)' : 'var(--signal)' }}>
+            {(delta >= 0 ? '+' : '') + fc(delta)} desde o início
+          </div>
+        )}
+        {!hidden && (
+          <div style={{ marginTop: 12 }} dangerouslySetInnerHTML={{ __html: chrt(nws.map((p) => p.net), 'var(--primary)', 'Património líquido', nws, fm) }} />
+        )}
+      </div>
       <div className="cd" style={{ marginBottom: 12 }}>
         <div className="lb" style={{ marginBottom: 16 }}>
           Evolução patrimonial
