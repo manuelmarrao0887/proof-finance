@@ -141,16 +141,16 @@ export default function BalanceUpdateSheet() {
       {/* Step 1b: upload (only after an account is chosen) */}
       {account && step === 'pick' && (
         <>
-          {!state.apiKey && (
+          {!currentUser && (
             <div style={{ borderLeft: '3px solid var(--signal)', padding: 12, marginBottom: 14 }}>
-              <div className="lb" style={{ color: 'var(--signal)' }}>Sem API key — usa "Introduzir manualmente"</div>
+              <div className="lb" style={{ color: 'var(--signal)' }}>Inicia sessão para ler por foto — ou usa "Introduzir manualmente"</div>
             </div>
           )}
           <input id="buCam" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={(e) => scan(e.target)} />
           <input id="buFile" type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => scan(e.target)} />
           <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-            <button type="button" disabled={!state.apiKey} onClick={() => document.getElementById('buCam').click()} style={{ flex: 1, padding: 14, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', borderRadius: 'var(--r2)', fontSize: 12, fontWeight: 600 }}>Câmara</button>
-            <button type="button" disabled={!state.apiKey} onClick={() => document.getElementById('buFile').click()} style={{ flex: 1, padding: 14, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', borderRadius: 'var(--r2)', fontSize: 12, fontWeight: 600 }}>Ficheiro</button>
+            <button type="button" disabled={!currentUser} onClick={() => document.getElementById('buCam').click()} style={{ flex: 1, padding: 14, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', borderRadius: 'var(--r2)', fontSize: 12, fontWeight: 600 }}>Câmara</button>
+            <button type="button" disabled={!currentUser} onClick={() => document.getElementById('buFile').click()} style={{ flex: 1, padding: 14, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', borderRadius: 'var(--r2)', fontSize: 12, fontWeight: 600 }}>Ficheiro</button>
           </div>
           <button type="button" onClick={() => { setValue(''); setStep('confirm'); }} style={{ width: '100%', padding: '10px 0', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text2)', borderRadius: 'var(--r2)', fontSize: 12, fontWeight: 600 }}>Introduzir manualmente</button>
         </>

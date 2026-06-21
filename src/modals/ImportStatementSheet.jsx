@@ -49,7 +49,7 @@ function prepResult(res) {
 
 export default function ImportStatementSheet() {
   const { isOpen, close } = useModal('stmt');
-  const { state, actions } = useStore();
+  const { state, actions, currentUser } = useStore();
   const toast = useToast();
 
   const [stScanning, setStScanning] = useState(false);
@@ -190,14 +190,12 @@ export default function ImportStatementSheet() {
 
   if (!isOpen) return null;
 
-  const apiKey = state.apiKey;
-
   // ── Render ─────────────────────────────────────────────────────────────────
   let body;
-  if (!apiKey) {
+  if (!currentUser) {
     body = (
       <div style={{ borderLeft: '3px solid var(--signal)', padding: 12, marginBottom: 16 }}>
-        <div className="lb" style={{ color: 'var(--signal)' }}>API KEY NECESSÁRIA — ABRE Definições</div>
+        <div className="lb" style={{ color: 'var(--signal)' }}>Inicia sessão para usar o importador</div>
       </div>
     );
   } else {
