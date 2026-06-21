@@ -34,6 +34,7 @@ import {
   cCol,
 } from '../lib/finance.js';
 import { fm, fc, uid } from '../lib/format.js';
+import { upcomingRecurring } from '../lib/reminders.js';
 
 const MONTHS_LONG = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -183,10 +184,31 @@ export default function OverviewView() {
     else actions.setBalancesHidden(true);
   };
 
+  // Recorrentes a vencer nos próximos 5 dias (lembrete na app).
+  const upcoming = !newU ? upcomingRecurring(state.recurring, 5, undefined, state.addedExp) : [];
+
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
       {/* ── Quick actions (Finany-style) ── */}
       <QuickActions />
+
+      {/* ── Recorrentes a vencer em breve (lembrete na app) ── */}
+      {!newU && upcoming.length > 0 && (
+        <div className="cd" style={{ marginBottom: 16, padding: '14px 16px', borderLeft: '3px solid var(--warning)' }}>
+          <div className="lb" style={{ marginBottom: 8, color: 'var(--warning)' }}>A vencer em breve</div>
+          {upcoming.slice(0, 4).map((u) => (
+            <div key={u.rec.id} className="rw" style={{ padding: '6px 0' }}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{u.rec.name}</span>
+              <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                <span className="m" style={{ fontSize: 13, fontWeight: 600 }}>{fm(u.rec.amount)}</span>
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {u.daysLeft === 0 ? 'hoje' : u.daysLeft === 1 ? 'amanhã' : 'em ' + u.daysLeft + ' dias'}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Liquidez (por conta) + Investimentos — topo, protegido por PIN/FaceID ── */}
       {!newU && (liquidez > 0 || investimentos > 0) && (

@@ -454,6 +454,11 @@ const GROUPS = [
     { id: 'T19.6', title: 'Simulador taxa de esforço', steps: ['Preencher rendimento do agregado no simulador'], expect: 'Mostra a taxa de esforço da nova prestação.' },
     { id: 'T19.7', title: 'Saldos ocultos', steps: ['Ocultar saldos no Resumo', 'Abrir Crédito'], expect: 'Os valores da "minha casa" ficam ••••; o simulador (hipotético) continua visível.' },
   ]},
+  { id: 'T18', title: 'Lembretes de recorrentes', tests: [
+    { id: 'T18.1', title: 'Banner no Resumo', steps: ['Ter recorrentes com dia nos próximos 5 dias', 'Abrir Resumo'], expect: 'Cartão "A vencer em breve" lista as recorrentes com valor e "em X dias / amanhã / hoje".' },
+    { id: 'T18.2', title: 'Exclui já registadas', steps: ['Registar a recorrente do mês (materializar)'], expect: 'Essa deixa de aparecer no banner.' },
+    { id: 'T18.3', title: 'Sem recorrentes a vencer', steps: ['Nenhuma nos próximos 5 dias'], expect: 'O banner não aparece.' },
+  ]},
   { id: 'T20', title: 'Património (net worth)', tests: [
     { id: 'T20.1', title: 'Cartão de património', steps: ['Gráficos (≥2 leituras de saldo em datas diferentes)'], expect: 'Topo mostra "Património" com valor atual, variação desde o início e sparkline.' },
     { id: 'T20.2', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos no Resumo → abrir Gráficos'], expect: 'O património aparece •••• e sem o gráfico de valores.' },
