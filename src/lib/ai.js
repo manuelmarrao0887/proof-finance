@@ -8,8 +8,8 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 import * as XLSX from 'xlsx';
+import { getIdToken } from '../firebase/client.js';
 
-const API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-haiku-4-5';
 
 /* ── Prompt constants (orig 2024-2059, verbatim) ────────────────────────── */
@@ -77,36 +77,37 @@ export const JSON_SYSTEM = 'Responde APENAS JSON puro. Sem markdown, sem backtic
    NOTE: the original appended the task prompt as a text block to `content`.
    Callers should do the same (push {type:'text', text: STMT_PROMPT} etc.) so
    the model receives the instructions. */
-export function callAI(content, system, apiKey, onResult) {
+export function callAI(content, system, _apiKey, onResult) {
   const cb = typeof onResult === 'function' ? onResult : () => {};
-  if (!apiKey) {
-    cb({ error: 'API key nao configurada. Abre Definicoes.' });
-    return;
-  }
-  const msgs = [{ role: 'user', content: content }];
-  fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-beta': 'pdfs-2024-09-25',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 16000,
-      system: system || JSON_SYSTEM,
-      messages: msgs,
-    }),
-  })
-    .then(function (r) {
-      if (!r.ok)
-        return r.text().then(function (body) {
-          throw new Error('API ' + r.status + ': ' + body.substring(0, 200));
-        });
-      return r.json();
+  // Transport: the key lives on the server. We POST to the Vercel function
+  // /api/ai with the user's Firebase ID-token; the function verifies it and
+  // proxies to the Anthropic Messages API. Response shape is unchanged, so the
+  // parsing below stays identical.
+  getIdToken().then(function (token) {
+    if (!token) {
+      cb({ error: 'Precisas de iniciar sessao para usar a IA.' });
+      return;
+    }
+    fetch('/api/ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+      },
+      body: JSON.stringify({
+        content: content,
+        system: system || JSON_SYSTEM,
+        model: MODEL,
+        max_tokens: 16000,
+      }),
     })
+      .then(function (r) {
+        if (!r.ok)
+          return r.text().then(function (body) {
+            throw new Error('API ' + r.status + ': ' + body.substring(0, 200));
+          });
+        return r.json();
+      })
     .then(function (d) {
       const txt = (d.content || [])
         .filter(function (i) {
@@ -148,12 +149,13 @@ export function callAI(content, system, apiKey, onResult) {
         }
       }
     })
-    .catch(function (err) {
-      let msg = err.message || 'Erro desconhecido';
-      if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') > -1 || msg.indexOf('CORS') > -1)
-        msg = 'Erro de rede/CORS. Testa a partir de HTTPS (GitHub Pages), nao de file://.';
-      cb({ error: msg });
-    });
+      .catch(function (err) {
+        let msg = err.message || 'Erro desconhecido';
+        if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') > -1)
+          msg = 'Erro de rede ao contactar a IA. Tenta novamente.';
+        cb({ error: msg });
+      });
+  });
 }
 
 /* ── File helpers (orig 1944-1972, verbatim) ─────────────────────────────── */

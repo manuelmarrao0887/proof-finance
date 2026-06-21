@@ -115,6 +115,14 @@ export function signOutUser() {
   return signOut(auth);
 }
 
+// Current user's Firebase ID-token (or null). Sent to /api/ai so the serverless
+// proxy can verify the request before calling the Anthropic API with its key.
+export function getIdToken() {
+  const u = auth && auth.currentUser;
+  if (!u) return Promise.resolve(null);
+  return u.getIdToken().catch(() => null);
+}
+
 export function onAuth(cb) {
   if (!auth) {
     // No auth (file:// or init failure): report "no user" once, async.
