@@ -55,6 +55,19 @@ const TrashIcon = () => (
   </svg>
 );
 
+const EyeIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+const EyeOffIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+    <path d="M1 1l22 22" />
+  </svg>
+);
+
 const Chevron = ({ open }) => (
   <svg
     width="16"
@@ -160,31 +173,66 @@ export default function OverviewView() {
   // ver a liquidez, não o detalhe de ativos).
   const liquidez = (C.cT['Liquidez'] || 0) + (C.cT['Poupanca'] || 0);
   const investimentos = (C.cT['Investimentos'] || 0) + (C.cT['Cripto'] || 0);
+  const liqAccounts = (C.grp['Liquidez'] || []).concat(C.grp['Poupanca'] || []);
+
+  // Saldos protegidos: ocultar é livre; mostrar pede PIN/FaceID (modal 'lock').
+  const hidden = !!state.balancesHidden;
+  const mv = (v) => (hidden ? '••••' : fc(v));
+  const toggleHide = () => {
+    if (hidden) open('lock');
+    else actions.setBalancesHidden(true);
+  };
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
       {/* ── Quick actions (Finany-style) ── */}
       <QuickActions />
 
-      {/* ── Liquidez em destaque + Investimentos (topo, sempre visível) ── */}
+      {/* ── Liquidez (por conta) + Investimentos — topo, protegido por PIN/FaceID ── */}
       {!newU && (liquidez > 0 || investimentos > 0) && (
         <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-          <div className="lb" style={{ marginBottom: 12 }}>Disponível</div>
+          <div className="rw" style={{ marginBottom: 12 }}>
+            <div className="lb">Disponível</div>
+            <button
+              type="button"
+              onClick={toggleHide}
+              className="icon-btn"
+              style={{ width: 34, height: 34 }}
+              aria-label={hidden ? 'Mostrar saldos (PIN/FaceID)' : 'Ocultar saldos'}
+            >
+              {hidden ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
             <span className="m" style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1 }}>
-              {fc(liquidez)}
+              {mv(liquidez)}
             </span>
             <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginBottom: 4 }}>liquidez</span>
           </div>
-          <div className="rw" style={{ marginTop: 14, gap: 10 }}>
-            <div style={{ flex: 1, background: 'var(--blue-soft)', borderRadius: 14, padding: '10px 14px' }}>
-              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Liquidez</div>
-              <div className="m" style={{ fontSize: 16, fontWeight: 600, marginTop: 3 }}>{fc(liquidez)}</div>
+
+          {/* Detalhe por conta de liquidez */}
+          {liqAccounts.length > 0 && (
+            <div style={{ marginTop: 14 }}>
+              {liqAccounts.map((a, i) => (
+                <div
+                  key={(a.id || a.b + '_' + a.t) + '_' + i}
+                  className="rw"
+                  style={{ padding: '9px 0', borderTop: i > 0 ? '1px solid var(--border)' : '1px solid var(--border)' }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 500, minWidth: 0 }}>
+                    {a.b}
+                    <span style={{ color: 'var(--text3)', fontWeight: 400 }}> · {a.t}</span>
+                  </span>
+                  <span className="m" style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{mv(a.v)}</span>
+                </div>
+              ))}
             </div>
-            <div style={{ flex: 1, background: 'var(--elevated)', borderRadius: 14, padding: '10px 14px' }}>
-              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Investimentos</div>
-              <div className="m" style={{ fontSize: 16, fontWeight: 600, marginTop: 3, color: 'var(--secondary)' }}>{fc(investimentos)}</div>
-            </div>
+          )}
+
+          {/* Investimentos (resumido) */}
+          <div className="rw" style={{ marginTop: 14, background: 'var(--elevated)', borderRadius: 14, padding: '10px 14px' }}>
+            <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Investimentos</span>
+            <span className="m" style={{ fontSize: 16, fontWeight: 600, color: 'var(--secondary)' }}>{mv(investimentos)}</span>
           </div>
         </div>
       )}
@@ -243,7 +291,7 @@ export default function OverviewView() {
             <div className="cd" style={{ position: 'relative', overflow: 'hidden' }}>
               <div className="lb" style={{ marginBottom: 6 }}>Ativos</div>
               <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--success)' }}>
-                {fc(C.tA)}
+                {mv(C.tA)}
               </div>
             </div>
             <div className="cd" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -507,7 +555,7 @@ export default function OverviewView() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' }}>{fc(C.cT[cat])}</span>
+                    <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' }}>{mv(C.cT[cat])}</span>
                     <Chevron open={isX} />
                   </div>
                 </button>
@@ -530,7 +578,7 @@ export default function OverviewView() {
                           {a.updated && <div className="m" style={{ fontSize: 11, color: 'var(--success)', marginTop: 2 }}>Atualizado {a.updated}</div>}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{fm(a.v)}</div>
+                          <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{hidden ? '••••' : fm(a.v)}</div>
                           <button
                             type="button"
                             onClick={() => open('balanceHistory', { acctKey: a.custom ? a.id : a.b + '_' + a.t, bank: a.b, type: a.t })}

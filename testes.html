@@ -397,7 +397,11 @@ const GROUPS = [
     { id: 'T8.1', title: 'Totais com saldo vivo', steps: ['Resumo após alocar despesas/receitas a contas'], expect: 'Património, liquidez e total refletem os saldos vivos (ajustados).' },
     { id: 'T8.2', title: 'Poupança do mês', steps: ['Ver poupança/taxa do mês'], expect: 'Poupança = rendimento − despesa do mês; taxa coerente.' },
     { id: 'T8.3', title: 'Rótulo do período agregado', steps: ['Ver o botão do período agregado de despesas'], expect: 'Mostra "Q1" em demo (Jan–Mar) e "3M" autenticado (últimos 3 meses).' },
-    { id: 'T8.4', title: 'Liquidez em destaque no topo', steps: ['Abrir Resumo'], expect: 'Logo abaixo das quick actions aparece o cartão "Disponível" com a liquidez (Liquidez+Poupança) em grande e os tiles Liquidez/Investimentos. Acordeão de contas mantém-se em baixo.' },
+    { id: 'T8.4', title: 'Liquidez por conta no topo', steps: ['Abrir Resumo'], expect: 'Cartão "Disponível" com a liquidez total em grande + lista de cada conta de liquidez (banco · tipo · valor) e o total de Investimentos.' },
+    { id: 'T8.5', title: 'Ocultar saldos (livre)', steps: ['Tocar no ícone de olho no cartão "Disponível"'], expect: 'Todos os saldos (cartão, ativos, contas) passam a •••• sem pedir nada.' },
+    { id: 'T8.6', title: 'Definir PIN (1ª vez)', steps: ['Com saldos ocultos, tocar no olho para mostrar', 'Definir um PIN de 4 dígitos + confirmar'], expect: 'Pede para definir o PIN; ao confirmar, mostra os saldos.' },
+    { id: 'T8.7', title: 'Mostrar com PIN', steps: ['Ocultar', 'Tocar para mostrar', 'Introduzir o PIN'], expect: 'PIN certo → mostra; PIN errado → erro e não mostra.' },
+    { id: 'T8.8', title: 'Mostrar com FaceID', steps: ['No sheet de desbloqueio, "Ativar FaceID"', 'Da próxima vez, "Usar FaceID"'], expect: 'Em iPhone (PWA/HTTPS) pede FaceID; ao passar, mostra os saldos. Se não suportado, só PIN.' },
   ]},
   { id: 'T9', title: 'Categorias & regras', tests: [
     { id: 'T9.1', title: 'Gerir categorias', steps: ['Gestor de categorias → criar/editar limite'], expect: 'A categoria aparece nos seletores (ordem alfabética) e no orçamento.' },

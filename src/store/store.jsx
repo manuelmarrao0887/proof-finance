@@ -83,6 +83,9 @@ export function initialPersisted() {
     aiInsights: null,
     lastSeenPatchVersion: 0,
     dismissedSubs: [],
+    pinHash: null, // SHA-256 do PIN de 4 dígitos (proteção dos saldos), ou null
+    faceIdCred: null, // id (base64) da credencial WebAuthn (FaceID), ou null
+    balancesHidden: false, // saldos ocultos? (default visível)
   };
 }
 
@@ -114,6 +117,9 @@ export const PERSISTED_KEYS = [
   'aiInsights',
   'lastSeenPatchVersion',
   'dismissedSubs',
+  'pinHash',
+  'faceIdCred',
+  'balancesHidden',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -138,6 +144,9 @@ export function buildPersistPayload(state) {
     aiInsights: state.aiInsights || null,
     lastSeenPatchVersion: Number(state.lastSeenPatchVersion) || 0,
     dismissedSubs: state.dismissedSubs || [],
+    pinHash: state.pinHash || null,
+    faceIdCred: state.faceIdCred || null,
+    balancesHidden: !!state.balancesHidden,
   };
 }
 
@@ -167,6 +176,9 @@ export function hydrateFromDoc(d) {
     aiInsights: d.aiInsights || null,
     lastSeenPatchVersion: Number(d.lastSeenPatchVersion) || 0,
     dismissedSubs: Array.isArray(d.dismissedSubs) ? d.dismissedSubs : [],
+    pinHash: typeof d.pinHash === 'string' ? d.pinHash : null,
+    faceIdCred: typeof d.faceIdCred === 'string' ? d.faceIdCred : null,
+    balancesHidden: !!d.balancesHidden,
   };
 }
 
@@ -329,6 +341,10 @@ export function StoreProvider({ children }) {
       setFxRates: (fxRates) => setField('fxRates', fxRates),
       setAiInsights: (aiInsights) => setField('aiInsights', aiInsights),
       setLastSeenPatchVersion: (v) => setField('lastSeenPatchVersion', Number(v) || 0),
+      // Balance lock (saldos protegidos por PIN/FaceID)
+      setPinHash: (h) => setField('pinHash', h || null),
+      setFaceIdCred: (c) => setField('faceIdCred', c || null),
+      setBalancesHidden: (b) => setField('balancesHidden', !!b),
       dismissSub: (key) => setField('dismissedSubs', [...(getState().dismissedSubs || []), key]),
       setAiHistory: (aiHistory) => setField('aiHistory', aiHistory),
       pushAiHistory: (entry) =>

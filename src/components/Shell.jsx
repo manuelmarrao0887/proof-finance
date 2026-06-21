@@ -45,6 +45,7 @@ const MODAL_COMPONENTS = {
   balanceUpdate: lazy(() => import('../modals/BalanceUpdateSheet.jsx')),
   balanceHistory: lazy(() => import('../modals/BalanceHistorySheet.jsx')),
   patchNotes: lazy(() => import('../modals/PatchNotesSheet.jsx')),
+  lock: lazy(() => import('../modals/BalanceLockSheet.jsx')),
 };
 
 /* ── Icons (inline SVG, no emoji) ──────────────────────────────────────── */
