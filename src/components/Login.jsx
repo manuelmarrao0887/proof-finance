@@ -1,73 +1,26 @@
 /* ════════════════════════════════════════════════════════════════════════
-   Login screen — React port of rLogin (orig 2785-2810) + auth handlers
-   (orig doLogin/doRegister/doGoogleLogin 2821-2842). Eclipse-styled.
-   Errors surface via toast (and an inline message). Uses firebase helpers.
+   Login screen — apenas Google. Sem palavra-passe inicial nem email/password.
    ════════════════════════════════════════════════════════════════════════ */
 
 import React, { useState, useCallback } from 'react';
-import { signInEmail, registerEmail, signInGoogle } from '../firebase/client.js';
+import { signInGoogle } from '../firebase/client.js';
 import { useToast } from './Toast.jsx';
 
 export default function Login() {
   const toast = useToast();
-  const [email, setEmail] = useState('');
-  const [pwd, setPwd] = useState('');
   const [info, setInfo] = useState(null); // {msg, error}
   const [busy, setBusy] = useState(false);
-
-  const fail = useCallback(
-    (msg) => {
-      setInfo({ msg, error: true });
-      toast(msg, 'error');
-      setBusy(false);
-    },
-    [toast]
-  );
-
-  const doLogin = useCallback(
-    (e) => {
-      if (e) e.preventDefault();
-      if (!email || !pwd) {
-        fail('Preenche email e password.');
-        return;
-      }
-      setInfo({ msg: 'A autenticar...', error: false });
-      setBusy(true);
-      signInEmail(email, pwd).catch((err) => fail((err && err.message) || 'Falha no login'));
-    },
-    [email, pwd, fail]
-  );
-
-  const doRegister = useCallback(() => {
-    if (!email || !pwd) {
-      fail('Preenche email e password.');
-      return;
-    }
-    if (pwd.length < 6) {
-      fail('Password tem de ter pelo menos 6 caracteres.');
-      return;
-    }
-    setInfo({ msg: 'A criar conta...', error: false });
-    setBusy(true);
-    registerEmail(email, pwd).catch((err) => fail((err && err.message) || 'Falha no registo'));
-  }, [email, pwd, fail]);
 
   const doGoogleLogin = useCallback(() => {
     setInfo({ msg: 'A autenticar com Google...', error: false });
     setBusy(true);
-    signInGoogle().catch((err) => fail((err && err.message) || 'Falha no login Google'));
-  }, [fail]);
-
-  const inputStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    border: '1px solid var(--border)',
-    background: 'var(--elevated)',
-    color: 'var(--fg)',
-    borderRadius: 8,
-    fontSize: 16,
-    boxSizing: 'border-box',
-  };
+    signInGoogle().catch((err) => {
+      const msg = (err && err.message) || 'Falha no login Google';
+      setInfo({ msg, error: true });
+      toast(msg, 'error');
+      setBusy(false);
+    });
+  }, [toast]);
 
   return (
     <div
@@ -104,7 +57,7 @@ export default function Login() {
             Proof. Finance
           </h1>
           <div style={{ fontSize: 14, color: 'var(--fg-muted)', marginTop: 10, lineHeight: 1.5 }}>
-            As tuas financas, num so lugar.
+            As tuas finanças, num só lugar.
           </div>
         </div>
 
@@ -119,14 +72,14 @@ export default function Login() {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 10,
-              padding: '12px 0',
+              padding: '14px 0',
               border: '1px solid var(--border)',
               background: 'transparent',
               color: 'var(--fg)',
-              fontSize: 14,
-              fontWeight: 500,
+              fontSize: 15,
+              fontWeight: 600,
               borderRadius: 999,
-              marginBottom: 20,
+              cursor: 'pointer',
             }}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -138,94 +91,25 @@ export default function Login() {
             Entrar com Google
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            <span className="lb">ou</span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          </div>
-
-          <form onSubmit={doLogin} autoComplete="on">
-            <label htmlFor="le" className="lb" style={{ display: 'block', marginBottom: 6 }}>
-              Email
-            </label>
-            <input
-              id="le"
-              name="email"
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              placeholder="mail@exemplo.pt"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ ...inputStyle, marginBottom: 14 }}
-            />
-            <label htmlFor="lp" className="lb" style={{ display: 'block', marginBottom: 6 }}>
-              Password
-            </label>
-            <input
-              id="lp"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              value={pwd}
-              onChange={(e) => setPwd(e.target.value)}
-              style={{ ...inputStyle, marginBottom: 18 }}
-            />
-            {info ? (
-              <div
-                id="lerr"
-                role="status"
-                aria-live="polite"
-                style={
-                  info.error
-                    ? { borderLeft: '3px solid var(--signal)', padding: 10, marginBottom: 16 }
-                    : { marginBottom: 16 }
-                }
-              >
-                <div className="lb" style={info.error ? { color: 'var(--signal)' } : undefined}>
-                  {info.msg}
-                </div>
+          {info ? (
+            <div
+              role="status"
+              aria-live="polite"
+              style={
+                info.error
+                  ? { borderLeft: '3px solid var(--signal)', padding: 10, marginTop: 16 }
+                  : { marginTop: 16, textAlign: 'center' }
+              }
+            >
+              <div className="lb" style={info.error ? { color: 'var(--signal)' } : undefined}>
+                {info.msg}
               </div>
-            ) : null}
-            <button
-              type="submit"
-              disabled={busy}
-              style={{
-                width: '100%',
-                padding: '14px 0',
-                border: 'none',
-                background: 'var(--primary)',
-                color: 'var(--bg)',
-                fontSize: 14,
-                fontWeight: 500,
-                borderRadius: 999,
-                marginBottom: 8,
-              }}
-            >
-              Entrar
-            </button>
-            <button
-              type="button"
-              onClick={doRegister}
-              disabled={busy}
-              style={{
-                width: '100%',
-                padding: '10px 0',
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--text2)',
-                fontSize: 13,
-                fontWeight: 600,
-              }}
-            >
-              Criar conta nova
-            </button>
-          </form>
+            </div>
+          ) : null}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 24, fontSize: 11, color: 'var(--text3)', letterSpacing: '0.04em' }}>
-          PROOF · FINANCE
+        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--fg-subtle)', marginTop: 18 }}>
+          Ao entrar concordas com o tratamento dos teus dados financeiros nesta conta.
         </div>
       </div>
     </div>
