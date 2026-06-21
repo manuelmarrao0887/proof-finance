@@ -156,10 +156,38 @@ export default function OverviewView() {
   const ratePct = Math.min(Math.max(ms.rate, 0), 100);
   const cats = Object.keys(C.grp);
 
+  // Liquidez (disponível) vs Investimentos — destaque no topo (o utilizador quer
+  // ver a liquidez, não o detalhe de ativos).
+  const liquidez = (C.cT['Liquidez'] || 0) + (C.cT['Poupanca'] || 0);
+  const investimentos = (C.cT['Investimentos'] || 0) + (C.cT['Cripto'] || 0);
+
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
       {/* ── Quick actions (Finany-style) ── */}
       <QuickActions />
+
+      {/* ── Liquidez em destaque + Investimentos (topo, sempre visível) ── */}
+      {!newU && (liquidez > 0 || investimentos > 0) && (
+        <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
+          <div className="lb" style={{ marginBottom: 12 }}>Disponível</div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+            <span className="m" style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1 }}>
+              {fc(liquidez)}
+            </span>
+            <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginBottom: 4 }}>liquidez</span>
+          </div>
+          <div className="rw" style={{ marginTop: 14, gap: 10 }}>
+            <div style={{ flex: 1, background: 'var(--blue-soft)', borderRadius: 14, padding: '10px 14px' }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Liquidez</div>
+              <div className="m" style={{ fontSize: 16, fontWeight: 600, marginTop: 3 }}>{fc(liquidez)}</div>
+            </div>
+            <div style={{ flex: 1, background: 'var(--elevated)', borderRadius: 14, padding: '10px 14px' }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Investimentos</div>
+              <div className="m" style={{ fontSize: 16, fontWeight: 600, marginTop: 3, color: 'var(--secondary)' }}>{fc(investimentos)}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Monthly summary card ── */}
       {(!newU || (state.addedExp || []).length > 0 || (state.incomes || []).length > 0) && (
