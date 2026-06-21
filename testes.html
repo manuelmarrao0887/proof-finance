@@ -385,6 +385,7 @@ const GROUPS = [
     { id: 'T13.2', title: 'Editar conta própria', steps: ['Tocar no lápis numa conta própria'], expect: 'Abre com os dados; gravar atualiza.' },
     { id: 'T13.3', title: 'Remover conta própria', steps: ['Tocar no caixote (vermelho) numa conta própria → confirmar'], expect: 'A conta e as suas leituras de saldo são removidas.' },
     { id: 'T13.4', title: 'Remover conta-template duplicada', steps: ['Conta-template ativada por leitura (ex.: Activobank) → caixote → confirmar'], expect: 'Remove o override e as leituras; resolve duplicados.' },
+    { id: 'T13.5', title: 'Seletor de conta sem duplicados', steps: ['Atualizar saldo → abrir o seletor de conta'], expect: 'Cada conta aparece uma só vez (custom que coincide com template não duplica); igual ao Resumo.' },
   ]},
   { id: 'T7', title: 'Metas · Empréstimo · Calendário · Gráficos', tests: [
     { id: 'T7.1', title: 'Metas', steps: ['Criar meta (nome, objetivo, atual)'], expect: 'Mostra progresso e sugestão por mês.' },

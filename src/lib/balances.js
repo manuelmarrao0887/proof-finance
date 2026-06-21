@@ -5,7 +5,7 @@
    The full log lives in the persisted store field `balanceLog`.
    ════════════════════════════════════════════════════════════════════════ */
 
-import { accts } from './finance.js';
+import { accts, getAccts, isPreviewMode, normAcct } from './finance.js';
 
 // Stable key per account: template accounts use `${bank}_${type}` (same
 // convention as dynAccts keys); custom accounts use their own id.
@@ -69,27 +69,26 @@ export function parseBalanceResult(res) {
 // Lista unificada de contas selecionaveis: templates (de finance.accts) + custom.
 // Cada item: { acctKey, bank, type, category, custom, id? }
 export function listAccounts(state) {
-  // Template banks (Activobank, Bankinter, Revolut, Wise, N26, ...) are real,
-  // selectable quick-picks for EVERY user — a user who actually banks with one
-  // (e.g. Activobank) needs to allocate expenses and balance readings to it.
-  // The demo *values/balances* are gated separately in getAccts(isPreviewMode).
-  const out = accts.map((a) => ({
-    acctKey: a.b + '_' + a.t,
-    bank: a.b,
-    type: a.t,
-    category: a.c,
-    custom: false,
-  }));
-  const custom = (state && state.customAccts) || [];
-  custom.forEach((a) => {
-    out.push({
-      acctKey: a.id,
-      bank: a.bank,
-      type: a.type,
-      category: a.category || 'Liquidez',
-      custom: true,
-      id: a.id,
-    });
-  });
+  // De-duplicated by normalised "banco · tipo" so the picker matches the Resumo
+  // and never shows the same account twice (e.g. a custom "ActivoBank" plus the
+  // "Activobank" template). Order: the user's REAL accounts first (custom +
+  // template-with-data via getAccts), then their custom accounts, then the
+  // remaining template banks for first-time selection.
+  const seen = new Set();
+  const out = [];
+  const add = (bank, type, category, custom, id) => {
+    if (!bank) return;
+    const key = normAcct(bank + ' · ' + type);
+    if (seen.has(key)) return;
+    seen.add(key);
+    const item = { acctKey: custom ? id : bank + '_' + type, bank, type, category: category || 'Liquidez', custom: !!custom };
+    if (custom) item.id = id;
+    out.push(item);
+  };
+  if (!isPreviewMode(state)) {
+    getAccts(state).forEach((a) => add(a.b, a.t, a.c, !!a.custom, a.id));
+  }
+  (state && state.customAccts ? state.customAccts : []).forEach((a) => add(a.bank, a.type, a.category, true, a.id));
+  accts.forEach((a) => add(a.b, a.t, a.c, false));
   return out;
 }
