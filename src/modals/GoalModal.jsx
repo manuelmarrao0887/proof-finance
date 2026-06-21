@@ -20,7 +20,7 @@ import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 const COLORS = ['#3b6fee', '#3fc97a', '#f5a623', '#7b5fe0', '#f25555', '#12b3a6'];
 
-const EMPTY = { id: null, name: '', target: '', current: '', deadline: '', color: '#3b6fee' };
+const EMPTY = { id: null, name: '', target: '', current: '', deadline: '', monthly: '', color: '#3b6fee' };
 
 const inputStyle = {
   width: '100%',
@@ -64,6 +64,7 @@ export default function GoalModal() {
           target: String(g.target),
           current: String(g.current),
           deadline: g.deadline || '',
+          monthly: g.monthly ? String(g.monthly) : '',
           color: g.color || '#3b6fee',
         });
         return;
@@ -81,6 +82,8 @@ export default function GoalModal() {
     const t = parseFloat((String(draft.target) || '0').replace(',', '.'));
     let c = parseFloat((String(draft.current) || '0').replace(',', '.'));
     const d = draft.deadline;
+    let mo = parseFloat((String(draft.monthly) || '0').replace(',', '.'));
+    if (isNaN(mo) || mo < 0) mo = 0;
     if (!n) {
       toast('Nome obrigatório', 'error');
       return;
@@ -91,9 +94,9 @@ export default function GoalModal() {
     }
     if (isNaN(c) || c < 0) c = 0;
     if (draft.id) {
-      actions.updateGoal(draft.id, { name: n, target: t, current: c, deadline: d, color: draft.color });
+      actions.updateGoal(draft.id, { name: n, target: t, current: c, deadline: d, monthly: mo, color: draft.color });
     } else {
-      actions.addGoal({ id: uid(), name: n, target: t, current: c, deadline: d, color: draft.color || '#3b6fee', createdAt: Date.now() });
+      actions.addGoal({ id: uid(), name: n, target: t, current: c, deadline: d, monthly: mo, color: draft.color || '#3b6fee', createdAt: Date.now() });
     }
     close();
     toast(draft.id ? 'Meta atualizada' : 'Meta criada', 'success');
@@ -143,14 +146,22 @@ export default function GoalModal() {
         </div>
       </div>
 
-      <div className="lb" style={{ marginBottom: 6 }}>Data alvo (opcional)</div>
-      <input
-        type="date"
-        value={draft.deadline}
-        onChange={(e) => set('deadline', e.target.value)}
-        aria-label="Data alvo (opcional)"
-        style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 14, marginBottom: 16 }}
-      />
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        <div style={{ flex: 1 }}>
+          <div className="lb" style={{ marginBottom: 6 }}>Data alvo (opcional)</div>
+          <input
+            type="date"
+            value={draft.deadline}
+            onChange={(e) => set('deadline', e.target.value)}
+            aria-label="Data alvo (opcional)"
+            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 14 }}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div className="lb" style={{ marginBottom: 6 }}>Reservar/mês (opcional)</div>
+          <input value={draft.monthly} onChange={(e) => set('monthly', e.target.value)} placeholder="200" inputMode="decimal" aria-label="Reservar por mês" style={numStyle} />
+        </div>
+      </div>
 
       <div className="lb" style={{ marginBottom: 8 }}>Cor</div>
       <div style={{ display: 'flex', gap: 10, marginBottom: 4 }}>
