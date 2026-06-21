@@ -37,13 +37,18 @@ export default async function handler(req, res) {
   try {
     const { content, system, model, max_tokens } = req.body || {};
     if (!content) return res.status(400).json({ error: 'Sem content' });
-    if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY nao configurada' });
+    // Limpa aspas/espaços que às vezes ficam colados no valor da env var.
+    let apiKey = (process.env.ANTHROPIC_API_KEY || '').trim();
+    if ((apiKey.startsWith('"') && apiKey.endsWith('"')) || (apiKey.startsWith("'") && apiKey.endsWith("'"))) {
+      apiKey = apiKey.slice(1, -1).trim();
+    }
+    if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY nao configurada' });
 
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
         'anthropic-beta': 'pdfs-2024-09-25',
       },
