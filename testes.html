@@ -425,6 +425,15 @@ const GROUPS = [
     { id: 'T12.2', title: 'Indicador de sync', steps: ['Fazer uma alteração estando autenticado'], expect: 'Mostra "A guardar" e depois "Guardado".' },
     { id: 'T12.3', title: 'Logout / login', steps: ['Sair e voltar a entrar'], expect: 'Voltam os dados corretos da conta.' },
   ]},
+  { id: 'T19', title: 'Crédito à habitação', tests: [
+    { id: 'T19.1', title: 'Registar crédito', steps: ['Crédito → "Adicionar crédito habitação"', 'Preencher aquisição, empréstimo, impostos, data, juro, prazo, prestação, rendimento do agregado', 'Guardar'], expect: 'Aparece o cartão "A minha casa" com os valores. Capitais próprios = aquisição − empréstimo (auto, editável).' },
+    { id: 'T19.2', title: 'Taxa de esforço', steps: ['Ver o cartão com prestação e rendimento'], expect: 'Mostra prestação ÷ rendimento em % com cor (saudável <35%, alta 35-50%, crítica ≥50%).' },
+    { id: 'T19.3', title: 'Editar / remover', steps: ['Tocar no lápis → alterar → Guardar; ou Remover'], expect: 'Atualiza/limpa os dados.' },
+    { id: 'T19.4', title: 'Simulador prestação', steps: ['Simulador → preço, entrada, taxa, prazo'], expect: 'Calcula prestação mensal (amortização francesa), montante a financiar, total de juros e custo total.' },
+    { id: 'T19.5', title: 'Simulador impostos + à cabeça', steps: ['Preencher o preço'], expect: 'Mostra IMT+IS estimados e "necessário à cabeça" = entrada + impostos.' },
+    { id: 'T19.6', title: 'Simulador taxa de esforço', steps: ['Preencher rendimento do agregado no simulador'], expect: 'Mostra a taxa de esforço da nova prestação.' },
+    { id: 'T19.7', title: 'Saldos ocultos', steps: ['Ocultar saldos no Resumo', 'Abrir Crédito'], expect: 'Os valores da "minha casa" ficam ••••; o simulador (hipotético) continua visível.' },
+  ]},
   { id: 'T14', title: 'Responsivo & iPhone (PWA)', tests: [
     { id: 'T14.1', title: 'Sem scroll horizontal', steps: ['iPhone Safari → percorrer Resumo, Despesas, Receitas, Gráficos'], expect: 'Nenhum ecrã faz scroll lateral; conteúdo cabe na largura.' },
     { id: 'T14.2', title: 'Notch não tapa o topo', steps: ['Em iPhone com notch/Dynamic Island, abrir a app'], expect: 'O cabeçalho "Proof. Finance" fica abaixo do notch (não cortado).' },

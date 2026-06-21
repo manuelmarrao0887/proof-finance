@@ -23,6 +23,7 @@ export const MODALS = [
   'balanceHistory', // historico de saldos de uma conta
   'patchNotes',     // novidades / changelog
   'lock',           // desbloquear saldos (PIN / FaceID) + definir PIN
+  'housing',        // editar credito a habitacao
 ]
 
 const VALID_TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai']

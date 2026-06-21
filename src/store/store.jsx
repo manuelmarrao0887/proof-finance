@@ -86,6 +86,7 @@ export function initialPersisted() {
     pinHash: null, // SHA-256 do PIN de 4 dígitos (proteção dos saldos), ou null
     faceIdCred: null, // id (base64) da credencial WebAuthn (FaceID), ou null
     balancesHidden: false, // saldos ocultos? (default visível)
+    housing: null, // crédito à habitação atual { valorAquisicao, valorEmprestimo, ... }
   };
 }
 
@@ -120,6 +121,7 @@ export const PERSISTED_KEYS = [
   'pinHash',
   'faceIdCred',
   'balancesHidden',
+  'housing',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -147,6 +149,7 @@ export function buildPersistPayload(state) {
     pinHash: state.pinHash || null,
     faceIdCred: state.faceIdCred || null,
     balancesHidden: !!state.balancesHidden,
+    housing: state.housing || null,
   };
 }
 
@@ -179,6 +182,7 @@ export function hydrateFromDoc(d) {
     pinHash: typeof d.pinHash === 'string' ? d.pinHash : null,
     faceIdCred: typeof d.faceIdCred === 'string' ? d.faceIdCred : null,
     balancesHidden: !!d.balancesHidden,
+    housing: d.housing && typeof d.housing === 'object' ? d.housing : null,
   };
 }
 
@@ -345,6 +349,7 @@ export function StoreProvider({ children }) {
       setPinHash: (h) => setField('pinHash', h || null),
       setFaceIdCred: (c) => setField('faceIdCred', c || null),
       setBalancesHidden: (b) => setField('balancesHidden', !!b),
+      setHousing: (h) => setField('housing', h || null),
       dismissSub: (key) => setField('dismissedSubs', [...(getState().dismissedSubs || []), key]),
       setAiHistory: (aiHistory) => setField('aiHistory', aiHistory),
       pushAiHistory: (entry) =>
