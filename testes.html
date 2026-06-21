@@ -421,6 +421,19 @@ const GROUPS = [
     { id: 'T12.2', title: 'Indicador de sync', steps: ['Fazer uma alteração estando autenticado'], expect: 'Mostra "A guardar" e depois "Guardado".' },
     { id: 'T12.3', title: 'Logout / login', steps: ['Sair e voltar a entrar'], expect: 'Voltam os dados corretos da conta.' },
   ]},
+  { id: 'T14', title: 'Responsivo & iPhone (PWA)', tests: [
+    { id: 'T14.1', title: 'Sem scroll horizontal', steps: ['iPhone Safari → percorrer Resumo, Despesas, Receitas, Gráficos'], expect: 'Nenhum ecrã faz scroll lateral; conteúdo cabe na largura.' },
+    { id: 'T14.2', title: 'Notch não tapa o topo', steps: ['Em iPhone com notch/Dynamic Island, abrir a app'], expect: 'O cabeçalho "Proof. Finance" fica abaixo do notch (não cortado).' },
+    { id: 'T14.3', title: 'Barra inferior acima do home indicator', steps: ['Ver a navegação inferior'], expect: 'A nav e o botão + ficam acima da barra de gesto (home indicator), sem sobreposição.' },
+    { id: 'T14.4', title: 'Adicionar ao ecrã principal', steps: ['Safari → Partilhar → "Adicionar ao ecrã principal"', 'Abrir pelo ícone'], expect: 'Abre em ecrã inteiro (sem barra do Safari), modo standalone; o nome é "Finanças".' },
+    { id: 'T14.5', title: 'Ícone no ecrã principal', steps: ['Ver o ícone criado no ecrã principal'], expect: 'Mostra o logótipo (P em gradiente azul→roxo), não um ícone genérico/branco.' },
+    { id: 'T14.6', title: 'Teclado não tapa o input', steps: ['Tocar num campo no fundo (ex.: nota numa despesa)'], expect: 'O campo sobe acima do teclado (viewport encolhe), continua visível.' },
+    { id: 'T14.7', title: 'Inputs não dão auto-zoom', steps: ['Tocar num input de texto/valor'], expect: 'O Safari NÃO faz zoom automático (fontes de input ≥16px).' },
+    { id: 'T14.8', title: 'Alvos de toque confortáveis', steps: ['Tocar nos botões da nav, editar/remover, seletores'], expect: 'Fáceis de acertar (≥44px); sem toques falhados.' },
+    { id: 'T14.9', title: 'Tema segue o sistema', steps: ['Mudar iPhone para modo escuro/claro'], expect: 'A app e a cor da status bar acompanham (theme-color claro/escuro).' },
+    { id: 'T14.10', title: 'Sheets respeitam a safe area', steps: ['Abrir um sheet (nova despesa) num iPhone com home indicator'], expect: 'O botão de ação e o fundo do sheet ficam acima do home indicator.' },
+    { id: 'T14.11', title: 'Landscape legível', steps: ['Rodar o iPhone para horizontal'], expect: 'Layout continua legível e operável; sem conteúdo cortado pelos cantos/notch.' },
+  ]},
 ];
 
 const STORE_KEY = 'proofFinanceTestPlan.v1';

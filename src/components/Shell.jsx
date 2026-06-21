@@ -133,7 +133,7 @@ function Header({ theme, onToggleTheme, syncStatus }) {
     theme === 'dark' ||
     (theme === 'system' && document.documentElement.getAttribute('data-theme') === 'dark');
   return (
-    <header className="app-header" style={{ padding: '8px 20px 16px' }}>
+    <header className="app-header" style={{ padding: 'calc(8px + var(--safe-top)) 20px 16px' }}>
       <div className="rw">
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
           <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Proof.</span>
