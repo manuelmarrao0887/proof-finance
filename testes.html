@@ -335,7 +335,7 @@
 const GROUPS = [
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
-    { id: 'T1.2', title: 'Modo autenticado', steps: ['Iniciar sessão com a conta'], expect: 'Mostra os dados do utilizador; sem dados demo. Vista de despesas mostra os últimos 4 meses e botão "3M".' },
+    { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },
     { id: 'T1.3', title: 'Novo utilizador sem dados', steps: ['Login numa conta sem despesas/contas/metas'], expect: 'Estados vazios com mensagem e CTA (ex.: "Sem despesas neste período" + "toca no +").' },
   ]},
   { id: 'T2', title: 'Despesas', tests: [
@@ -730,9 +730,9 @@ const SECURITY = [
   { sev: 'med', status: 'rec', title: 'Mensagens de erro do Firebase mostradas tal e qual', loc: 'components/Login.jsx',
     risk: 'err.message mostrado verbatim pode revelar internals do Firebase e permitir enumeração de contas pela diferença de mensagem.',
     fix: 'Mapear para mensagens genéricas ("Credenciais inválidas").' },
-  { sev: 'med', status: 'rec', title: 'Gate de acesso só do lado do cliente', loc: 'components/Gate.jsx',
-    risk: 'A passphrase é validada no browser (hash SHA-256 no bundle, flag em sessionStorage). É contornável e o hash é brute-forçável. Só trava visitantes casuais.',
-    fix: 'Aceitável como deterrente. A fronteira real é o login Firebase (esse está correto). Não confiar no Gate para nada sensível.' },
+  { sev: 'med', status: 'fixed', title: 'Gate de palavra-passe client-side removido', loc: 'components/Gate.jsx (removido)',
+    risk: 'Existia uma passphrase validada no browser (contornável). Foi removida; a app é independente do Proof Studio.',
+    fix: 'Corrigido: sem palavra-passe inicial. A fronteira de acesso é o login Google (Firebase Auth).' },
   { sev: 'low', status: 'rec', title: 'Regras Firestore sem validação de campos', loc: 'firestore.rules',
     risk: 'As regras (user-scoped, default-deny) estão corretas, mas não validam forma/tamanho do payload — um utilizador pode escrever campos arbitrários no SEU doc (só self-DoS/quota).',
     fix: 'Opcional: validar tipos/tamanho no rules. Impacto baixo.' },
