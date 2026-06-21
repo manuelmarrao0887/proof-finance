@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-PT" class="locked">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,6 +8,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
+  /* Gate de acesso: conteúdo escondido até confirmar sessão Firebase. */
+  html.locked body > *:not(#gate) { display: none !important; }
+  #gate { display: none; }
+  html.locked #gate { display: flex; }
+  #gate {
+    position: fixed; inset: 0; z-index: 99999;
+    flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    background: #0a1024; color: #eef2fb; text-align: center; padding: 24px;
+    font-family: "Plus Jakarta Sans", -apple-system, sans-serif;
+  }
+  #gate .lk { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg,#3b6fee,#7b5fe0); display: flex; align-items: center; justify-content: center; }
+  #gate h1 { font-size: 20px; font-weight: 700; margin: 8px 0 0; }
+  #gate p { font-size: 14px; opacity: 0.8; max-width: 32ch; margin: 0; }
   :root {
     --bg: #f4f5f8;
     --surface: #ffffff;
@@ -239,6 +252,13 @@
 </style>
 </head>
 <body>
+<div id="gate">
+  <div class="lk">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+  </div>
+  <h1>Acesso restrito</h1>
+  <p>Esta página de testes só está disponível com sessão iniciada. Inicia sessão na app Proof. Finance (mesmo navegador) e recarrega.</p>
+</div>
 <header>
   <div class="wrap">
     <div class="brand"><b>Proof.</b><span>Finance</span><span class="tag">Plano de testes</span></div>
@@ -433,6 +453,11 @@ const GROUPS = [
     { id: 'T19.5', title: 'Simulador impostos + à cabeça', steps: ['Preencher o preço'], expect: 'Mostra IMT+IS estimados e "necessário à cabeça" = entrada + impostos.' },
     { id: 'T19.6', title: 'Simulador taxa de esforço', steps: ['Preencher rendimento do agregado no simulador'], expect: 'Mostra a taxa de esforço da nova prestação.' },
     { id: 'T19.7', title: 'Saldos ocultos', steps: ['Ocultar saldos no Resumo', 'Abrir Crédito'], expect: 'Os valores da "minha casa" ficam ••••; o simulador (hipotético) continua visível.' },
+  ]},
+  { id: 'T18', title: 'Lembretes de recorrentes', tests: [
+    { id: 'T18.1', title: 'Banner no Resumo', steps: ['Ter recorrentes com dia nos próximos 5 dias', 'Abrir Resumo'], expect: 'Cartão "A vencer em breve" lista as recorrentes com valor e "em X dias / amanhã / hoje".' },
+    { id: 'T18.2', title: 'Exclui já registadas', steps: ['Registar a recorrente do mês (materializar)'], expect: 'Essa deixa de aparecer no banner.' },
+    { id: 'T18.3', title: 'Sem recorrentes a vencer', steps: ['Nenhuma nos próximos 5 dias'], expect: 'O banner não aparece.' },
   ]},
   { id: 'T20', title: 'Património (net worth)', tests: [
     { id: 'T20.1', title: 'Cartão de património', steps: ['Gráficos (≥2 leituras de saldo em datas diferentes)'], expect: 'Topo mostra "Património" com valor atual, variação desde o início e sparkline.' },
@@ -856,6 +881,32 @@ function showTab(which) {
 tabTests.addEventListener('click', () => showTab('tests'));
 tabData.addEventListener('click', () => showTab('data'));
 tabSec.addEventListener('click', () => showTab('sec'));
+</script>
+
+<!-- Gate de login (Firebase Auth, mesmo projeto da app). Conteúdo só aparece
+     com sessão iniciada no mesmo navegador. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+(function () {
+  try {
+    firebase.initializeApp({
+      apiKey: 'AIzaSyDemHPODFA07zSIA31O8qQ2mjB_4mLzvJg',
+      authDomain: 'personal-finance-9c979.firebaseapp.com',
+      projectId: 'personal-finance-9c979',
+      storageBucket: 'personal-finance-9c979.firebasestorage.app',
+      messagingSenderId: '439427628821',
+      appId: '1:439427628821:web:08f756917777856ca2731c',
+    });
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
+    firebase.auth().onAuthStateChanged(function (user) {
+      if (user) document.documentElement.classList.remove('locked');
+      else document.documentElement.classList.add('locked');
+    });
+  } catch (e) {
+    document.documentElement.classList.add('locked'); // sem Firebase → fica bloqueado
+  }
+})();
 </script>
 </body>
 </html>
