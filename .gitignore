@@ -5,3 +5,6 @@ dist/
 # Ficheiros pessoais / sensiveis (extratos bancarios, referencias) — nunca commitar
 *.pdf
 Print Screens/
+
+# Dados pessoais (extratos bancarios) — nunca commitar
+BD/

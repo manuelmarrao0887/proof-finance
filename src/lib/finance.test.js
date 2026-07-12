@@ -88,8 +88,9 @@ describe('monthlySummary (authenticated → deterministic)', () => {
       ],
       recurring: [{ id: 'r1', name: 'Netflix', amount: 10 }],
       addedExp: [
-        { desc: 'Pingo Doce', amount: 40, cat: 'sup', date: '2026-06-01' },
-        { desc: 'Galp', amount: 60, cat: 'cmb', date: '2026-06-02' },
+        // Datas no MÊS ATUAL (robusto à passagem de mês).
+        { desc: 'Pingo Doce', amount: 40, cat: 'sup', date: new Date().toISOString().slice(0, 7) + '-05' },
+        { desc: 'Galp', amount: 60, cat: 'cmb', date: new Date().toISOString().slice(0, 7) + '-06' },
       ],
     };
     const s = monthlySummary(state);
