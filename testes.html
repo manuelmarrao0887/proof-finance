@@ -375,6 +375,7 @@ const GROUPS = [
     { id: 'T3.4', title: 'Reimportar sem duplicar', steps: ['Importar o mesmo extrato duas vezes'], expect: 'As repetidas não entram (dedupe por descrição+valor+data); a mensagem indica quantas saltou.' },
     { id: 'T3.5', title: 'Categoria por linha', steps: ['Mudar a categoria de uma linha antes de importar'], expect: 'A despesa importada fica com essa categoria.' },
     { id: 'T3.6', title: 'Excel do banco sem IA (ActivoBank)', steps: ['Importar o Excel de movimentos ActivoBank (Data Lanc./Descrição/Valor/Saldo)'], expect: 'Parseia SEM IA: só débitos ficam selecionados; transferências (TRF/MB WAY) desmarcadas; datas DD/MM/AAAA → ISO; valores US (1,036.54) corretos; descrições limpas.' },
+    { id: 'T3.7', title: 'Deteta duplicados + pergunta', steps: ['Importar um Excel com despesas que já existem na app'], expect: 'As já existentes ficam marcadas "DUPLICADO" e desmarcadas; aviso no topo; se importares com duplicados selecionados, pede confirmação.' },
   ]},
   { id: 'T4', title: 'Despesas recorrentes', tests: [
     { id: 'T4.1', title: 'Criar recorrente', steps: ['Vista "Recorrentes" → adicionar (nome, valor, dia, categoria)'], expect: 'Aparece na lista de recorrentes.' },
