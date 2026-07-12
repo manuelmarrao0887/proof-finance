@@ -18,7 +18,7 @@ import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { fm } from '../lib/format.js';
+import { fm, todayISO } from '../lib/format.js';
 import { applyRules } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
 import { listAccounts } from '../lib/balances.js';
@@ -31,7 +31,7 @@ function freshDraft() {
     desc: '',
     amount: '',
     cat: 'rest',
-    date: new Date().toISOString().slice(0, 10),
+    date: todayISO(),
     acct: '',
     shared: false,
     total: '',
@@ -47,7 +47,7 @@ function draftFromExpense(x) {
     desc: x.desc || '',
     amount: String(x.amount || '').replace('.', ','),
     cat: x.cat || 'rest',
-    date: x.date || new Date().toISOString().slice(0, 10),
+    date: x.date || todayISO(),
     acct: x.acct || '',
     shared: !!x.shared,
     total: x.shared && x.total != null ? String(x.total).replace('.', ',') : '',
@@ -91,7 +91,7 @@ export default function AddExpenseSheet() {
         desc: prefill.desc || '',
         amount: prefill.amount != null ? String(prefill.amount).replace('.', ',') : '',
         cat: prefill.cat || 'rest',
-        date: prefill.date || new Date().toISOString().slice(0, 10),
+        date: prefill.date || todayISO(),
         recId: prefill.recId || null,
       });
     } else {

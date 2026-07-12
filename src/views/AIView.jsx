@@ -17,7 +17,7 @@ import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useUI } from '../store/ui.jsx';
 import Icon from '../components/Icon.jsx';
-import { fm, fc, uid, normalizeStmtDate } from '../lib/format.js';
+import { fm, fc, uid, normalizeStmtDate, todayISO } from '../lib/format.js';
 import {
   callAI,
   callAIRaw,
@@ -182,7 +182,7 @@ function buildAIContextLocal(state, currentUser) {
   const C = compute(s);
   const byCData = getByC(s);
   const loanData = getLoan(s);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const monthNames = ['Jan', 'Fev', 'Mar', 'Abr'];
   const ctx = {
     today: today,
@@ -344,7 +344,7 @@ export default function AIView() {
                 const key = a.account_bank + '_' + a.account_type;
                 dyn[key] = {
                   v: Number(a.value) || 0,
-                  d: new Date().toISOString().slice(0, 10).replace(/-/g, '.'),
+                  d: todayISO().replace(/-/g, '.'),
                   n: a.note || null,
                 };
                 dynTouched = true;
@@ -548,7 +548,7 @@ export default function AIView() {
     let incs = [...(st.incomes || [])];
     let gls = [...(st.goals || [])];
     let recs = [...(st.recurring || [])];
-    const todayD = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+    const todayD = todayISO().replace(/-/g, '.');
     actList.forEach((a, i) => {
       if (!aiImportSel[i]) return;
       try {

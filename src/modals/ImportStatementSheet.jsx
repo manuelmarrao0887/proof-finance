@@ -35,18 +35,27 @@ import {
 } from '../lib/ai.js';
 import { applyRules } from '../lib/finance.js';
 import { parseBankStatement } from '../lib/importBank.js';
+import { listAccounts } from '../lib/balances.js';
 
 // Tag each parsed transaction with a stable id + default selection, marcando
 // duplicados (já existentes em addedExp) via expenseKey. Auto-seleciona só os
-// débitos que NÃO são transferências e NÃO são duplicados.
-function prepResult(res, existingKeys) {
+// débitos que NÃO são transferências e NÃO são duplicados. As linhas detetadas
+// como transferência (TRF) nascem com _type='transfer' e contas De/Para pré-
+// preenchidas (o utilizador ajusta) — as restantes ficam como despesa.
+function prepResult(res, existingKeys, acctLabels) {
   if (!res || !res.transactions) return { result: res, sel: {} };
   const sel = {};
+  const L = acctLabels || [];
   const transactions = res.transactions.map((t) => {
     const _id = uid();
     const isDup = existingKeys ? existingKeys.has(expenseKey({ desc: t.desc, amount: Math.abs(t.amount), date: t.date })) : false;
     if (t.amount < 0 && !t.isTransfer && !isDup) sel[_id] = true;
-    return { ...t, _id, isDup };
+    const _type = t.isTransfer ? 'transfer' : 'expense';
+    // Débito → o extrato é a conta de ORIGEM; crédito → é o DESTINO.
+    const deb = t.amount < 0;
+    const _from = deb ? (L[0] || '') : (L[1] || L[0] || '');
+    const _to = deb ? (L[1] || L[0] || '') : (L[0] || '');
+    return { ...t, _id, isDup, _type, _from, _to };
   });
   return { result: { ...res, transactions }, sel };
 }
@@ -61,6 +70,10 @@ export default function ImportStatementSheet() {
   const [stSel, setStSel] = useState({}); // { _id: true }
 
   const cats = useMemo(() => sortedCats(state.bdg), [state.bdg]); // FIX 3
+  const acctLabels = useMemo(
+    () => listAccounts({ ...state, currentUser }).map((a) => a.bank + ' · ' + a.type),
+    [state, currentUser]
+  );
 
   const resetState = useCallback(() => {
     setStScanning(false);
@@ -94,7 +107,7 @@ export default function ImportStatementSheet() {
       const existingKeys = new Set((state.addedExp || []).map(expenseKey));
       const onRes = (res) => {
         setStScanning(false);
-        const { result, sel } = prepResult(res, existingKeys);
+        const { result, sel } = prepResult(res, existingKeys, acctLabels);
         setStResult(result);
         setStSel(sel);
       };
@@ -125,7 +138,7 @@ export default function ImportStatementSheet() {
                 isTransfer: t.isTransfer,
               })),
             };
-            const { result, sel } = prepResult(bankResult, existingKeys);
+            const { result, sel } = prepResult(bankResult, existingKeys, acctLabels);
             setStScanning(false);
             setStResult(result);
             setStSel(sel);
@@ -167,8 +180,26 @@ export default function ImportStatementSheet() {
       // Allow re-selecting the same file.
       el.value = '';
     },
-    [state, currentUser]
+    [state, currentUser, acctLabels]
   );
+
+  // Alternar tipo de uma linha (despesa ↔ transferência), keyed por índice.
+  const setRowType = useCallback((i, type) => {
+    setStResult((prev) => {
+      if (!prev || !prev.transactions || !prev.transactions[i]) return prev;
+      const next = prev.transactions.map((t, j) => (j === i ? { ...t, _type: type } : t));
+      return { ...prev, transactions: next };
+    });
+  }, []);
+
+  // Definir conta De/Para de uma linha de transferência.
+  const setRowAcct = useCallback((i, side, val) => {
+    setStResult((prev) => {
+      if (!prev || !prev.transactions || !prev.transactions[i]) return prev;
+      const next = prev.transactions.map((t, j) => (j === i ? { ...t, [side === 'from' ? '_from' : '_to']: val } : t));
+      return { ...prev, transactions: next };
+    });
+  }, []);
 
   // ── Toggle selection (orig toggleStSel 2312) — keyed by stable _id (FIX 2) ──
   const toggleStSel = useCallback((id) => {
@@ -206,23 +237,65 @@ export default function ImportStatementSheet() {
       toast('Nada selecionado', 'error');
       return;
     }
-    // Duplicados selecionados (já existem em addedExp) → pergunta antes.
-    const dupSel = selRows.filter((t) => t.isDup).length;
+    // Separa linhas: transferências entre contas vs despesas normais.
+    const trfRows = selRows.filter((t) => t._type === 'transfer');
+    const expRows = selRows.filter((t) => t._type !== 'transfer');
+
+    // Valida transferências (contas escolhidas, diferentes).
+    for (const t of trfRows) {
+      if (!t._from || !t._to) {
+        toast('Escolhe as contas De/Para nas transferências', 'error');
+        return;
+      }
+      if (t._from === t._to) {
+        toast('Transferência com contas iguais: ' + (t.desc || ''), 'error');
+        return;
+      }
+    }
+
+    // Duplicados selecionados (só despesas têm deteção por expenseKey).
+    const dupSel = expRows.filter((t) => t.isDup).length;
     if (dupSel > 0 && typeof confirm === 'function') {
       if (!confirm(dupSel + ' das selecionadas já existem (duplicadas). Importar na mesma?')) return;
     }
-    const selected = selRows.map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date), imported: true }));
-    // Dedup against existing + normalize dates so re-imports don't duplicate.
-    const before = (state.addedExp || []).length;
-    const merged = dedupeAddedExp([...(state.addedExp || []), ...selected]);
-    const added = merged.length - before;
-    const skipped = selected.length - added;
-    actions.setAddedExp(merged);
+
+    // ── Despesas ──
+    let added = 0;
+    let skipped = 0;
+    if (expRows.length) {
+      const selected = expRows.map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date), imported: true }));
+      const before = (state.addedExp || []).length;
+      const merged = dedupeAddedExp([...(state.addedExp || []), ...selected]);
+      added = merged.length - before;
+      skipped = selected.length - added;
+      actions.setAddedExp(merged);
+    }
+
+    // ── Transferências ── o lado do extrato já está no saldo lido → fica saldado
+    // (settledFrom em débito, settledTo em crédito); só a outra conta é ajustada.
+    trfRows.forEach((t) => {
+      const deb = t.amount < 0;
+      actions.addTransfer({
+        id: uid(),
+        from: t._from,
+        to: t._to,
+        amount: Math.abs(t.amount),
+        date: normalizeStmtDate(t.date),
+        note: (t.desc || '').trim(),
+        settledFrom: deb,
+        settledTo: !deb,
+        imported: true,
+        createdAt: Date.now(),
+      });
+    });
+
     resetState();
     close();
-    const msg =
-      added + ' transa' + (added === 1 ? 'ção' : 'ções') + ' importada' + (added === 1 ? '' : 's') +
-      (skipped > 0 ? ' · ' + skipped + ' duplicada' + (skipped === 1 ? '' : 's') + ' ignorada' + (skipped === 1 ? '' : 's') : '');
+    const parts = [];
+    if (added > 0 || expRows.length) parts.push(added + ' despesa' + (added === 1 ? '' : 's'));
+    if (trfRows.length) parts.push(trfRows.length + ' transferência' + (trfRows.length === 1 ? '' : 's'));
+    let msg = parts.join(' · ') + ' importada' + (added + trfRows.length === 1 ? '' : 's');
+    if (skipped > 0) msg += ' · ' + skipped + ' duplicada' + (skipped === 1 ? '' : 's') + ' ignorada' + (skipped === 1 ? '' : 's');
     toast(msg, 'success');
   }, [stResult, stSel, actions, state.addedExp, resetState, close, toast]);
 
@@ -376,33 +449,70 @@ export default function ImportStatementSheet() {
                         </div>
                       </div>
                     </div>
-                    {/* Row 2: date + category selector (FIX 3 — alphabetical) */}
+                    {/* Row 2: date + tipo (despesa/transferência) */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, paddingLeft: 28 }}>
                       <span className="m" style={{ fontSize: 10, color: 'var(--text3)' }}>{t.date || ''}</span>
                       <select
-                        value={t.category || ''}
-                        onChange={(e) => changeStCat(i, e.target.value)}
-                        aria-label={'Categoria de ' + (t.desc || 'transação')}
-                        style={{
-                          flex: 1,
-                          padding: '4px 8px',
-                          border: '1px solid ' + (warn ? 'var(--signal)' : 'var(--border)'),
-                          background: warn ? 'rgba(229,57,53,0.05)' : 'var(--bg)',
-                          color: 'var(--text)',
-                          fontFamily: 'var(--mono)',
-                          fontSize: 11,
-                          letterSpacing: '0.05em',
-                          appearance: 'none',
-                        }}
+                        value={t._type}
+                        onChange={(e) => setRowType(i, e.target.value)}
+                        aria-label={'Tipo de ' + (t.desc || 'transação')}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', appearance: 'none' }}
                       >
-                        {cats.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.nm}
-                          </option>
-                        ))}
+                        <option value="expense">Despesa</option>
+                        <option value="transfer">Transferência</option>
                       </select>
-                      {warn && <span className="m" style={{ fontSize: 9, color: 'var(--signal)' }}>Verificar</span>}
+                      {t._type !== 'transfer' && (
+                        <>
+                          <select
+                            value={t.category || ''}
+                            onChange={(e) => changeStCat(i, e.target.value)}
+                            aria-label={'Categoria de ' + (t.desc || 'transação')}
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              border: '1px solid ' + (warn ? 'var(--signal)' : 'var(--border)'),
+                              background: warn ? 'rgba(229,57,53,0.05)' : 'var(--bg)',
+                              color: 'var(--text)',
+                              fontFamily: 'var(--mono)',
+                              fontSize: 11,
+                              letterSpacing: '0.05em',
+                              appearance: 'none',
+                            }}
+                          >
+                            {cats.map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {b.nm}
+                              </option>
+                            ))}
+                          </select>
+                          {warn && <span className="m" style={{ fontSize: 9, color: 'var(--signal)' }}>Verificar</span>}
+                        </>
+                      )}
                     </div>
+                    {/* Row 3 (transferência): contas De → Para */}
+                    {t._type === 'transfer' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, paddingLeft: 28 }}>
+                        <select
+                          value={t._from}
+                          onChange={(e) => setRowAcct(i, 'from', e.target.value)}
+                          aria-label={'Conta de origem de ' + (t.desc || 'transação')}
+                          style={{ flex: 1, minWidth: 0, padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 11, appearance: 'none' }}
+                        >
+                          <option value="">De…</option>
+                          {acctLabels.map((l) => <option key={'f' + l} value={l}>{l}</option>)}
+                        </select>
+                        <span style={{ color: 'var(--text3)', fontSize: 12 }}>→</span>
+                        <select
+                          value={t._to}
+                          onChange={(e) => setRowAcct(i, 'to', e.target.value)}
+                          aria-label={'Conta de destino de ' + (t.desc || 'transação')}
+                          style={{ flex: 1, minWidth: 0, padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 11, appearance: 'none' }}
+                        >
+                          <option value="">Para…</option>
+                          {acctLabels.map((l) => <option key={'t' + l} value={l}>{l}</option>)}
+                        </select>
+                      </div>
+                    )}
                   </div>
                 );
               })}

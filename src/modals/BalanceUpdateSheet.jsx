@@ -10,7 +10,7 @@ import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { fm } from '../lib/format.js';
+import { fm, todayISO } from '../lib/format.js';
 import { callAI, resizeImg } from '../lib/ai.js';
 import {
   listAccounts,
@@ -20,10 +20,6 @@ import {
   BALANCE_PROMPT,
 } from '../lib/balances.js';
 import { PrimaryButton } from '../components/Buttons.jsx';
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export default function BalanceUpdateSheet() {
   const { isOpen, close } = useModal('balanceUpdate');

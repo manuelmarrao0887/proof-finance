@@ -13,7 +13,7 @@ import Sheet from '../components/Sheet.jsx';
 import { useStore } from '../store/store.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { uid } from '../lib/format.js';
+import { uid, todayISO } from '../lib/format.js';
 import { getAcctsLive } from '../lib/finance.js';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
@@ -73,7 +73,7 @@ export default function AcctModal() {
       return;
     }
     if (isNaN(val)) val = 0;
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+    const today = todayISO().replace(/-/g, '.');
     if (draft.id) {
       // Saving a balance = a fresh reading: settle the manual expenses already
       // baked into `val` (the shown live value) so they don't subtract again.

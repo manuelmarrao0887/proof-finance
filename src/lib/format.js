@@ -33,6 +33,21 @@ export function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
+// todayISO() -> 'YYYY-MM-DD' na data LOCAL (não UTC). Usar SEMPRE para o valor
+// por defeito de campos de data. `new Date().toISOString()` dá UTC: em Portugal
+// no verão (UTC+1) uma despesa criada entre 00:00–01:00 recuava um dia — e no
+// dia 1 recuava para o mês anterior (despesa de julho ficava com data de junho).
+export function todayISO(d) {
+  const t = d || new Date();
+  return (
+    t.getFullYear() +
+    '-' +
+    String(t.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(t.getDate()).padStart(2, '0')
+  );
+}
+
 // normalizeStmtDate(d) -> 'YYYY-MM-DD'. Bank statements often give 'DD.MM' (no
 // year) or 'DD/MM/YYYY'; the budget buckets expect ISO 'YYYY-MM-DD'. Convert so
 // imported transactions land in the right month. Unknown formats pass through.

@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeStmtDate } from './format.js';
+import { normalizeStmtDate, todayISO } from './format.js';
+
+describe('todayISO (data LOCAL, sem UTC shift)', () => {
+  it('usa componentes locais — 1 de julho 00:30 local NÃO recua para junho', () => {
+    // Instante que em UTC seria 30 de junho 23:30, mas local é 1 de julho 00:30.
+    const d = new Date(2026, 6, 1, 0, 30, 0); // mês 6 = julho (local)
+    expect(todayISO(d)).toBe('2026-07-01');
+  });
+  it('formata com zero-padding', () => {
+    expect(todayISO(new Date(2026, 0, 5))).toBe('2026-01-05');
+  });
+});
 
 describe('normalizeStmtDate', () => {
   it('keeps ISO YYYY-MM-DD', () => {

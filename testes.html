@@ -367,6 +367,7 @@ const GROUPS = [
     { id: 'T2.6', title: 'Mudar categoria na lista', steps: ['Expandir categoria → mudar o seletor de categoria de uma despesa'], expect: 'A categoria muda em TODAS as despesas do mesmo beneficiário (mesma descrição).' },
     { id: 'T2.7', title: 'Pesquisa', steps: ['Escrever no campo "Pesquisar…"'], expect: 'Filtra por descrição, categoria e tags; mostra contagem e total dos resultados.' },
     { id: 'T2.8', title: 'Editar/apagar após limpar (id estável)', steps: ['Importar/criar várias despesas', 'Usar "Limpar importadas" ou "Remover mês"', 'Editar/apagar uma despesa que ficou'], expect: 'Mexe sempre na despesa certa (a reordenação da lista não troca o alvo).' },
+    { id: 'T2.9', title: 'Data por defeito = hoje LOCAL (não UTC)', steps: ['Nova despesa (sem mudar a data) — sobretudo à noite/madrugada no dia 1 do mês'], expect: 'A data já vem no dia de HOJE local. Não recua para o dia/mês anterior (bug antigo: despesa de julho ficava com data de junho por causa do fuso UTC).' },
   ]},
   { id: 'T3', title: 'Importar extrato', tests: [
     { id: 'T3.1', title: 'Importar ficheiro', steps: ['Abrir importar extrato', 'Carregar ficheiro Excel/CSV'], expect: 'Lê as transações e mostra a lista para seleção.' },
@@ -376,6 +377,8 @@ const GROUPS = [
     { id: 'T3.5', title: 'Categoria por linha', steps: ['Mudar a categoria de uma linha antes de importar'], expect: 'A despesa importada fica com essa categoria.' },
     { id: 'T3.6', title: 'Excel do banco sem IA (ActivoBank)', steps: ['Importar o Excel de movimentos ActivoBank (Data Lanc./Descrição/Valor/Saldo)'], expect: 'Parseia SEM IA: só débitos ficam selecionados; transferências (TRF/MB WAY) desmarcadas; datas DD/MM/AAAA → ISO; valores US (1,036.54) corretos; descrições limpas.' },
     { id: 'T3.7', title: 'Deteta duplicados + pergunta', steps: ['Importar um Excel com despesas que já existem na app'], expect: 'As já existentes ficam marcadas "DUPLICADO" e desmarcadas; aviso no topo; se importares com duplicados selecionados, pede confirmação.' },
+    { id: 'T3.8', title: 'Marcar linha como transferência (De→Para)', steps: ['Importar Excel', 'Numa linha, mudar o tipo de "Despesa" para "Transferência"', 'Escolher conta De e Para', 'Importar'], expect: 'A linha entra como transferência (não despesa): não aparece nas Despesas; aparece em Mais → Transferências; ajusta o saldo da OUTRA conta (o lado do extrato já está no saldo lido, não duplica).' },
+    { id: 'T3.9', title: 'Transferência auto-detetada (TRF)', steps: ['Importar Excel com movimentos TRF/MB WAY'], expect: 'Nascem já com tipo "Transferência" e contas De/Para pré-preenchidas (débito → extrato = origem); é só ajustar as contas e selecionar.' },
   ]},
   { id: 'T4', title: 'Despesas recorrentes', tests: [
     { id: 'T4.1', title: 'Criar recorrente', steps: ['Vista "Recorrentes" → adicionar (nome, valor, dia, categoria)'], expect: 'Aparece na lista de recorrentes.' },
