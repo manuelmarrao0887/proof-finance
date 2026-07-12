@@ -89,6 +89,7 @@ export function initialPersisted() {
     housing: null, // crédito à habitação atual { valorAquisicao, valorEmprestimo, ... }
     rolloverOn: false, // orçamento: sobra/falta transita para o mês seguinte
     positions: [], // posições de investimento { id, broker, asset, qty, avgPrice, currentPrice }
+    transfers: [], // transferências entre contas { id, from, to, amount, date, note, settledFrom, settledTo }
   };
 }
 
@@ -126,6 +127,7 @@ export const PERSISTED_KEYS = [
   'housing',
   'rolloverOn',
   'positions',
+  'transfers',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -156,6 +158,7 @@ export function buildPersistPayload(state) {
     housing: state.housing || null,
     rolloverOn: !!state.rolloverOn,
     positions: state.positions || [],
+    transfers: state.transfers || [],
   };
 }
 
@@ -191,6 +194,7 @@ export function hydrateFromDoc(d) {
     housing: d.housing && typeof d.housing === 'object' ? d.housing : null,
     rolloverOn: !!d.rolloverOn,
     positions: Array.isArray(d.positions) ? d.positions : [],
+    transfers: Array.isArray(d.transfers) ? d.transfers : [],
   };
 }
 
@@ -364,6 +368,9 @@ export function StoreProvider({ children }) {
       updatePosition: (id, p) =>
         setField('positions', (getState().positions || []).map((x) => (x.id === id ? { ...x, ...p } : x))),
       deletePosition: (id) => setField('positions', (getState().positions || []).filter((x) => x.id !== id)),
+      // transferências entre contas
+      addTransfer: (t) => setField('transfers', [...(getState().transfers || []), t]),
+      deleteTransfer: (id) => setField('transfers', (getState().transfers || []).filter((x) => x.id !== id)),
       dismissSub: (key) => setField('dismissedSubs', [...(getState().dismissedSubs || []), key]),
       setAiHistory: (aiHistory) => setField('aiHistory', aiHistory),
       pushAiHistory: (entry) =>
@@ -492,6 +499,19 @@ export function StoreProvider({ children }) {
             inc.map((i) =>
               !i.imported && !i.settled && i.recurring === false && normAcct(i.acct) === ln ? { ...i, settled: true } : i
             )
+          );
+        }
+        // Saldar o lado da transferência que toca nesta conta (per-side).
+        const trs = st.transfers || [];
+        if (trs.some((t) => (!t.settledFrom && normAcct(t.from) === ln) || (!t.settledTo && normAcct(t.to) === ln))) {
+          setField(
+            'transfers',
+            trs.map((t) => {
+              let n = t;
+              if (!t.settledFrom && normAcct(t.from) === ln) n = { ...n, settledFrom: true };
+              if (!t.settledTo && normAcct(t.to) === ln) n = { ...n, settledTo: true };
+              return n;
+            })
           );
         }
       },
