@@ -8,7 +8,7 @@ import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { uid } from '../lib/format.js';
+import { uid, todayISO } from '../lib/format.js';
 import { listAccounts } from '../lib/balances.js';
 import { PrimaryButton } from '../components/Buttons.jsx';
 
@@ -24,7 +24,7 @@ export default function TransferModal() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState('');
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function TransferModal() {
       setFrom(labels[0] || '');
       setTo(labels[1] || labels[0] || '');
       setAmount('');
-      setDate(new Date().toISOString().slice(0, 10));
+      setDate(todayISO());
       setNote('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

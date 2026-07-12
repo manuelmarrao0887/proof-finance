@@ -16,7 +16,7 @@ import Sheet from '../components/Sheet.jsx';
 import { useStore } from '../store/store.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { uid } from '../lib/format.js';
+import { uid, todayISO } from '../lib/format.js';
 import { listAccounts } from '../lib/balances.js';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
@@ -104,7 +104,7 @@ export default function IncomeModal() {
       // A one-off with no date would never land in any month bucket (silently
       // uncounted — happens from the Q1 view where the seed date is empty).
       // Fall back to today so it always counts somewhere.
-      date = draft.date || new Date().toISOString().slice(0, 10);
+      date = draft.date || todayISO();
     }
     if (!n) {
       toast('Nome obrigatório', 'error');
