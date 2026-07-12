@@ -31,7 +31,10 @@ import {
   resizeImg,
   readFileB64,
   parseExcel,
+  readExcelRows,
 } from '../lib/ai.js';
+import { applyRules } from '../lib/finance.js';
+import { parseBankStatement } from '../lib/importBank.js';
 
 // Tag each parsed transaction with a stable id + default debit selection.
 // FIX 2: the stable `_id` is what keeps the React list from re-mounting/jumping
@@ -108,18 +111,50 @@ export default function ImportStatementSheet() {
           );
         });
       } else if (isXLS) {
-        parseExcel(f).then((csv) => {
-          if (!csv) {
+        // Excel: tenta parser DETERMINÍSTICO (sem IA) primeiro.
+        readExcelRows(f).then((rows) => {
+          const parsed = rows ? parseBankStatement(rows) : { header: false, txns: [] };
+          if (parsed.header && parsed.txns.length) {
+            const bankResult = {
+              bank: 'Extrato',
+              transactions: parsed.txns.map((t) => ({
+                desc: t.desc,
+                amount: t.amount, // negativo = débito → auto-selecionado
+                category: applyRules({ ...state, currentUser }, t.raw) || 'out',
+                date: t.date,
+                isTransfer: t.isTransfer,
+              })),
+            };
+            const { result } = prepResult(bankResult);
+            // Auto-selecionar débitos que NÃO sejam transferências.
+            const sel = {};
+            result.transactions.forEach((t) => {
+              if (t.amount < 0 && !t.isTransfer) sel[t._id] = true;
+            });
             setStScanning(false);
-            setStResult({ error: 'Erro ao ler ficheiro.' });
+            setStResult(result);
+            setStSel(sel);
             return;
           }
-          callAI(
-            [{ type: 'text', text: 'Dados do extrato bancário:\n\n' + csv + '\n\n' + STMT_PROMPT }],
-            undefined,
-            apiKey,
-            onRes
-          );
+          // Formato não reconhecido → IA (precisa de sessão; em standby).
+          if (!currentUser) {
+            setStScanning(false);
+            setStResult({ error: 'Formato de Excel não reconhecido.' });
+            return;
+          }
+          parseExcel(f).then((csv) => {
+            if (!csv) {
+              setStScanning(false);
+              setStResult({ error: 'Erro ao ler ficheiro.' });
+              return;
+            }
+            callAI(
+              [{ type: 'text', text: 'Dados do extrato bancário:\n\n' + csv + '\n\n' + STMT_PROMPT }],
+              undefined,
+              null,
+              onRes
+            );
+          });
         });
       } else {
         resizeImg(f, 1600).then((b64) => {
@@ -137,7 +172,7 @@ export default function ImportStatementSheet() {
       // Allow re-selecting the same file.
       el.value = '';
     },
-    [state.apiKey]
+    [state, currentUser]
   );
 
   // ── Toggle selection (orig toggleStSel 2312) — keyed by stable _id (FIX 2) ──

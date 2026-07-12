@@ -237,6 +237,23 @@ export function parseExcel(file) {
   });
 }
 
+// Lê a 1ª folha como matriz (array de arrays) para parsing determinístico.
+export function readExcelRows(file) {
+  return new Promise(function (resolve) {
+    const rd = new FileReader();
+    rd.onload = function (ev) {
+      try {
+        const wb = XLSX.read(ev.target.result, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        resolve(XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' }));
+      } catch (e) {
+        resolve(null);
+      }
+    };
+    rd.readAsArrayBuffer(file);
+  });
+}
+
 /* ── buildAIContext (stub — orig 2554; to be filled in a later stage) ──────
    Will snapshot compute()/accounts/incomes/recurring/goals/bdg/addedExp/byC/
    history into a context object for the chat sysPrompt. Returns a minimal
