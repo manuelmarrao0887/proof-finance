@@ -24,7 +24,7 @@ import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fm, uid, normalizeStmtDate } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
-import { applySameBeneficiaryCategory, normalizeDesc, dedupeAddedExp } from '../lib/dedupe.js';
+import { applySameBeneficiaryCategory, normalizeDesc, dedupeAddedExp, expenseKey } from '../lib/dedupe.js';
 import {
   callAI,
   STMT_PROMPT,
@@ -36,16 +36,17 @@ import {
 import { applyRules } from '../lib/finance.js';
 import { parseBankStatement } from '../lib/importBank.js';
 
-// Tag each parsed transaction with a stable id + default debit selection.
-// FIX 2: the stable `_id` is what keeps the React list from re-mounting/jumping
-// when a category changes; selection is held by _id, not array index.
-function prepResult(res) {
+// Tag each parsed transaction with a stable id + default selection, marcando
+// duplicados (já existentes em addedExp) via expenseKey. Auto-seleciona só os
+// débitos que NÃO são transferências e NÃO são duplicados.
+function prepResult(res, existingKeys) {
   if (!res || !res.transactions) return { result: res, sel: {} };
   const sel = {};
   const transactions = res.transactions.map((t) => {
     const _id = uid();
-    if (t.amount < 0) sel[_id] = true; // debits auto-selected (orig 2289/2298/2306)
-    return { ...t, _id };
+    const isDup = existingKeys ? existingKeys.has(expenseKey({ desc: t.desc, amount: Math.abs(t.amount), date: t.date })) : false;
+    if (t.amount < 0 && !t.isTransfer && !isDup) sel[_id] = true;
+    return { ...t, _id, isDup };
   });
   return { result: { ...res, transactions }, sel };
 }
@@ -89,12 +90,11 @@ export default function ImportStatementSheet() {
       setStResult(null);
       setStSel({});
       const apiKey = state.apiKey;
-      // The original appended STMT_PROMPT as the task; here we push it as a text
-      // block onto the content array (per STORE_API §4) and let callAI use the
-      // default JSON system prompt.
+      // Chaves das despesas já existentes → deteta duplicados no preview.
+      const existingKeys = new Set((state.addedExp || []).map(expenseKey));
       const onRes = (res) => {
         setStScanning(false);
-        const { result, sel } = prepResult(res);
+        const { result, sel } = prepResult(res, existingKeys);
         setStResult(result);
         setStSel(sel);
       };
@@ -125,12 +125,7 @@ export default function ImportStatementSheet() {
                 isTransfer: t.isTransfer,
               })),
             };
-            const { result } = prepResult(bankResult);
-            // Auto-selecionar débitos que NÃO sejam transferências.
-            const sel = {};
-            result.transactions.forEach((t) => {
-              if (t.amount < 0 && !t.isTransfer) sel[t._id] = true;
-            });
+            const { result, sel } = prepResult(bankResult, existingKeys);
             setStScanning(false);
             setStResult(result);
             setStSel(sel);
@@ -206,9 +201,17 @@ export default function ImportStatementSheet() {
   // ── Commit (orig doImportStmt 2315-2326) ───────────────────────────────────
   const doImportStmt = useCallback(() => {
     if (!stResult || !stResult.transactions) return;
-    const selected = stResult.transactions
-      .filter((t) => stSel[t._id])
-      .map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date), imported: true }));
+    const selRows = stResult.transactions.filter((t) => stSel[t._id]);
+    if (selRows.length === 0) {
+      toast('Nada selecionado', 'error');
+      return;
+    }
+    // Duplicados selecionados (já existem em addedExp) → pergunta antes.
+    const dupSel = selRows.filter((t) => t.isDup).length;
+    if (dupSel > 0 && typeof confirm === 'function') {
+      if (!confirm(dupSel + ' das selecionadas já existem (duplicadas). Importar na mesma?')) return;
+    }
+    const selected = selRows.map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date), imported: true }));
     // Dedup against existing + normalize dates so re-imports don't duplicate.
     const before = (state.addedExp || []).length;
     const merged = dedupeAddedExp([...(state.addedExp || []), ...selected]);
@@ -286,6 +289,13 @@ export default function ImportStatementSheet() {
             <div className="rw" style={{ marginBottom: 12 }}>
               <div className="lb">{(stResult.bank || 'EXTRATO') + ' — ' + stResult.transactions.length + ' transações'}</div>
             </div>
+            {stResult.transactions.some((t) => t.isDup) && (
+              <div style={{ borderLeft: '3px solid var(--warning)', background: 'var(--orange-soft)', padding: '8px 12px', borderRadius: 8, marginBottom: 12 }}>
+                <div className="lb" style={{ color: 'var(--warning)' }}>
+                  {stResult.transactions.filter((t) => t.isDup).length} já existem (duplicadas) — desmarcadas. Confirma antes de importar.
+                </div>
+              </div>
+            )}
             <div style={{ maxHeight: '50vh', overflow: 'auto', marginBottom: 16 }}>
               {/* FIX 2: iterate in original array order with a stable _id key; never sort. */}
               {stResult.transactions.map((t, i) => {
@@ -351,8 +361,14 @@ export default function ImportStatementSheet() {
                       </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div className="rw">
-                          <span style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%' }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%', display: 'flex', alignItems: 'center', gap: 5 }}>
                             {t.desc}
+                            {t.isDup && (
+                              <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--warning)', background: 'var(--orange-soft)', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }}>DUPLICADO</span>
+                            )}
+                            {t.isTransfer && !t.isDup && (
+                              <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--text3)', background: 'var(--elevated)', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }}>TRF</span>
+                            )}
                           </span>
                           <span className="m" style={{ fontSize: 12, fontWeight: 600, color: isD ? 'var(--text)' : 'var(--success)' }}>
                             {(isD ? '-' : '+') + fm(Math.abs(t.amount))}
