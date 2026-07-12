@@ -489,6 +489,14 @@ const GROUPS = [
     { id: 'T22.4', title: 'Editar/remover', steps: ['Tocar numa posição → alterar/Remover'], expect: 'Atualiza/remove.' },
     { id: 'T22.5', title: 'Ocultar saldos', steps: ['Ocultar saldos no Resumo → abrir Investimentos'], expect: 'Valores ••••; P&L escondido.' },
   ]},
+  { id: 'T23', title: 'Transferências entre contas', tests: [
+    { id: 'T23.1', title: 'Registar transferência', steps: ['Tocar no + → "Transferência entre contas"', 'Escolher conta de origem e destino (diferentes), valor, data', 'Registar transferência'], expect: 'Toast "Transferência registada". Saldo da origem desce, saldo do destino sobe pelo mesmo valor; património total NÃO muda.' },
+    { id: 'T23.2', title: 'Contas iguais bloqueadas', steps: ['Escolher a mesma conta em origem e destino → Registar'], expect: 'Erro "As contas têm de ser diferentes"; não regista.' },
+    { id: 'T23.3', title: 'Valor inválido', steps: ['Valor 0 ou vazio → Registar'], expect: 'Erro "Valor inválido".' },
+    { id: 'T23.4', title: 'Não conta como despesa/receita', steps: ['Registar transferência', 'Ver Despesas e Receitas do mês'], expect: 'A transferência NÃO aparece na lista de despesas nem de receitas; só ajusta saldos.' },
+    { id: 'T23.5', title: 'Lista e remover', steps: ['Mais → Transferências', 'Ver a transferência', '"Remover"'], expect: 'Aparece origem→destino, valor e data. Ao remover (com confirmação) os saldos das contas voltam ao anterior.' },
+    { id: 'T23.6', title: 'Ocultar saldos', steps: ['Ocultar saldos no Resumo → Mais → Transferências'], expect: 'Os valores das transferências aparecem ••••.' },
+  ]},
   { id: 'T14', title: 'Responsivo & iPhone (PWA)', tests: [
     { id: 'T14.1', title: 'Sem scroll horizontal', steps: ['iPhone Safari → percorrer Resumo, Despesas, Receitas, Gráficos'], expect: 'Nenhum ecrã faz scroll lateral; conteúdo cabe na largura.' },
     { id: 'T14.2', title: 'Notch não tapa o topo', steps: ['Em iPhone com notch/Dynamic Island, abrir a app'], expect: 'O cabeçalho "Proof. Finance" fica abaixo do notch (não cortado).' },

@@ -157,6 +157,7 @@ export function getAcctsLive(state) {
   if (isPreviewMode(state)) return ca; // demo accounts: no live adjust
   const addedExp = (state && state.addedExp) || [];
   const incomes = (state && state.incomes) || [];
+  const transfers = (state && state.transfers) || [];
   return ca.map(function (a) {
     const labelNorm = normAcct(a.b + ' · ' + a.t);
     let delta = 0;
@@ -171,6 +172,13 @@ export function getAcctsLive(state) {
       if (i.imported || i.settled || i.recurring !== false) return;
       if (normAcct(i.acct) !== labelNorm) return;
       delta += Number(i.amount) || 0;
+    });
+    // Transferências entre contas: saem de `from` (−), entram em `to` (+). Cada
+    // lado tem o seu settle (fica "saldado" quando a respetiva conta é lida).
+    transfers.forEach(function (tr) {
+      const amt = Number(tr.amount) || 0;
+      if (!tr.settledFrom && normAcct(tr.from) === labelNorm) delta -= amt;
+      if (!tr.settledTo && normAcct(tr.to) === labelNorm) delta += amt;
     });
     return delta ? Object.assign({}, a, { v: a.v + delta }) : a;
   });

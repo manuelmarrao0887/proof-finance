@@ -29,6 +29,7 @@ const LoanView = lazy(() => import('../views/LoanView.jsx'));
 const AIView = lazy(() => import('../views/AIView.jsx'));
 const ReportView = lazy(() => import('../views/ReportView.jsx'));
 const InvestmentsView = lazy(() => import('../views/InvestmentsView.jsx'));
+const TransfersView = lazy(() => import('../views/TransfersView.jsx'));
 
 // Modals load on first open (and stay mounted afterwards so the close animation
 // still plays). Keyed by their ui modal name (see MODALS in store/ui.jsx).
@@ -50,6 +51,7 @@ const MODAL_COMPONENTS = {
   lock: lazy(() => import('../modals/BalanceLockSheet.jsx')),
   housing: lazy(() => import('../modals/HousingModal.jsx')),
   position: lazy(() => import('../modals/PositionModal.jsx')),
+  transfer: lazy(() => import('../modals/TransferModal.jsx')),
 };
 
 /* ── Icons (inline SVG, no emoji) ──────────────────────────────────────── */
@@ -108,6 +110,7 @@ const VIEWS = {
   ai: AIView,
   report: ReportView,
   invest: InvestmentsView,
+  transfers: TransfersView,
 };
 
 function SyncChip({ status }) {
@@ -171,7 +174,7 @@ function BottomNav({ tab, onTab, onPlus, onMore }) {
       <span>{label}</span>
     </button>
   );
-  const moreTabs = ['cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest'];
+  const moreTabs = ['cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers'];
   return (
     <nav className="bnav">
       {slot('overview', 'Resumo')}

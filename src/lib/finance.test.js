@@ -250,6 +250,26 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
     const acc = getAcctsLive(state).find((a) => a.b === 'Activobank');
     expect(acc.v).toBe(960);
   });
+
+  it('TRANSFER moves money between accounts: from −, to +; total unchanged; settled sides ignored', () => {
+    const state = {
+      currentUser: { uid: 'u1' },
+      customAccts: [
+        { id: 'a', bank: 'Wise', type: 'Conta a Ordem', value: 1000, updated: '2026.06.01', category: 'Liquidez' },
+        { id: 'b', bank: 'Revolut', type: 'Conta a Ordem', value: 200, updated: '2026.06.01', category: 'Liquidez' },
+      ],
+      addedExp: [],
+      incomes: [],
+      transfers: [
+        { id: 't1', from: 'Wise · Conta a Ordem', to: 'Revolut · Conta a Ordem', amount: 300, date: '2026-06-10' },
+        { id: 't2', from: 'Wise · Conta a Ordem', to: 'Revolut · Conta a Ordem', amount: 100, date: '2026-06-11', settledFrom: true }, // origem já saldada → não desconta de novo; destino ainda soma
+      ],
+    };
+    const wise = getAcctsLive(state).find((a) => a.b === 'Wise');
+    const rev = getAcctsLive(state).find((a) => a.b === 'Revolut');
+    expect(wise.v).toBe(1000 - 300); // t2.from settled → só t1 desconta
+    expect(rev.v).toBe(200 + 300 + 100); // ambos os lados de destino somam
+  });
 });
 
 describe('netWorthSeries', () => {

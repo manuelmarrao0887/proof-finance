@@ -25,9 +25,10 @@ export const MODALS = [
   'lock',           // desbloquear saldos (PIN / FaceID) + definir PIN
   'housing',        // editar credito a habitacao
   'position',       // adicionar/editar posicao de investimento
+  'transfer',       // transferencia entre contas
 ]
 
-const VALID_TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest']
+const VALID_TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers']
 function initialTab() {
   if (typeof location === 'undefined') return 'overview'
   const t = new URLSearchParams(location.search).get('tab')

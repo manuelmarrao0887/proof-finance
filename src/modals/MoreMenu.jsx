@@ -25,6 +25,7 @@ const ITEMS = [
   { id: 'charts', title: 'Gráficos', sub: 'Evolução patrimonial', svg: <><polyline points="3 17 9 11 13 15 21 7" /><polyline points="14 7 21 7 21 14" /></> },
   { id: 'report', title: 'Relatórios', sub: 'Insights do mês por categoria', svg: <><path d="M9 17v-6M13 17v-2M17 17v-4" /><rect x="3" y="3" width="18" height="18" rx="2" /></> },
   { id: 'invest', title: 'Investimentos', sub: 'Posições, P&L e alocação', svg: <><line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" /></> },
+  { id: 'transfers', title: 'Transferências', sub: 'Mover dinheiro entre contas', svg: <><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></> },
   { id: 'loan', title: 'Crédito', sub: 'Habitação e dividas', svg: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> },
   { id: 'ai', title: 'Assistente IA', sub: 'Chat e importacao inteligente', svg: <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z" /> },
 ];
