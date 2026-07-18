@@ -37,7 +37,7 @@ const RULES = [
   // Ginásio
   ['gym', ['vivagym', 'fitness hut', 'holmes place', 'studio bongard', 'bongard', 'ginasio', 'ginásio', 'gym']],
   // Combustível
-  ['cmb', ['est servico', 'estacao servico', 'combu', 'repsol', 'galp', 'bp ', 'cepsa', 'prio', 'a.s.oeiras', 'pulsacao veloz', 'gasolina']],
+  ['cmb', ['est servico', 'estacao servico', 'combu', 'repsol', 'galp', 'bp ', 'cepsa', 'prio', 'a.s.oeiras', 'pulsacao veloz', 'gasolina', 'e016 portimao']],
   // Carro (manutenção, peças, tracking, parques, portagens)
   ['car', ['cartrack', 'norauto', 'feu vert', 'midas', 'autodoc', 'bmw', 'audi', 'mercedes', 'peugeot', 'renault', 'citroen', 'parque', 'parques tejo', 'via verde', 'brisa', 'portagem', 'estacionamento', 'ipark', 'empark']],
   // Negócio (ferramentas/serviços profissionais)
@@ -60,7 +60,7 @@ const RULES = [
     'o as do pao', 'le caffe', 'galeria de nata', 'alvarinho', 'artfood', 'peneiras', 'mel e canela',
     'churrasqueira', 'refugio notas', 'manteigaria', 'trigo aldeia', 'o barracao', 'moinhos d outono',
     'browers', 'rocketbar', 'portugalia', 'quiosque', 'sogenave', 'delta 7370', 'res caf',
-    'benjamin carnaxide', ' bk', 'burger king',
+    'benjamin carnaxide', ' bk', 'burger king', 'r.c.sanches', 'sanches ii', 'bolt',
   ]],
   // Compras (mobiliário, desporto, roupa, eletrónica, casa)
   ['comp', ['ikea', 'decathlon', 'zippy', 'primark', 'jysk', 'leroy merlin', 'leroymerlin', 'bricolage', 'staples', 'iservices', 'rituals', 'prozis', 'casa inglesa', 'worten', 'mediamarkt', 'aki', 'maxmat', 'sport zone', 'nike', 'adidas', 'h&m', 'zara', 'bershka', 'pull', 'kidstore']],
