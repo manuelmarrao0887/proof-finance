@@ -63,6 +63,15 @@ export function defaultBdg() {
   return bdgDefault.map((b) => ({ id: b.id, nm: b.nm, lm: b.lm }));
 }
 
+/* Junta ao bdg do utilizador as categorias default cujo id ainda não existe
+   (para propagar categorias novas como "Compras" a quem já tinha dados). Mantém
+   as do utilizador (nomes/limites que personalizou) e anexa as em falta. */
+export function mergeMissingCats(userBdg, defaults) {
+  const have = new Set((userBdg || []).map((b) => b.id));
+  const missing = (defaults || []).filter((b) => !have.has(b.id));
+  return missing.length ? [...userBdg, ...missing.map((b) => ({ id: b.id, nm: b.nm, lm: b.lm }))] : userBdg;
+}
+
 export function initialPersisted() {
   return {
     apiKey: '',
@@ -178,8 +187,9 @@ export function hydrateFromDoc(d) {
     goals: Array.isArray(d.goals) ? d.goals : [],
     recurring: Array.isArray(d.recurring) ? d.recurring : [],
     incomes: Array.isArray(d.incomes) ? d.incomes : [],
-    // bdg only replaced if saved array is non-empty (orig 553), else defaults.
-    bdg: Array.isArray(d.bdg) && d.bdg.length > 0 ? d.bdg : base.bdg,
+    // bdg: usa o do utilizador, mas GARANTE que categorias default novas
+    // (ex.: "Compras") aparecem — anexa as que faltam por id. Vazio → defaults.
+    bdg: Array.isArray(d.bdg) && d.bdg.length > 0 ? mergeMissingCats(d.bdg, base.bdg) : base.bdg,
     customAccts: Array.isArray(d.customAccts) ? d.customAccts : [],
     rules: Array.isArray(d.rules) ? d.rules : [],
     forecastMonths: Number(d.forecastMonths) || 3,

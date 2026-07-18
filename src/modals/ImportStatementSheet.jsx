@@ -35,6 +35,7 @@ import {
 } from '../lib/ai.js';
 import { applyRules } from '../lib/finance.js';
 import { parseBankStatement } from '../lib/importBank.js';
+import { guessCategory } from '../lib/categorize.js';
 import { listAccounts } from '../lib/balances.js';
 
 // Tag each parsed transaction with a stable id + default selection, marcando
@@ -133,7 +134,8 @@ export default function ImportStatementSheet() {
               transactions: parsed.txns.map((t) => ({
                 desc: t.desc,
                 amount: t.amount, // negativo = débito → auto-selecionado
-                category: applyRules({ ...state, currentUser }, t.raw) || 'out',
+                // Regras do utilizador primeiro; senão palpite por comerciante; senão Outros.
+                category: applyRules({ ...state, currentUser }, t.raw) || guessCategory(t.desc) || 'out',
                 date: t.date,
                 isTransfer: t.isTransfer,
               })),
