@@ -32,6 +32,12 @@ describe('guessCategory (palpite por comerciante)', () => {
     ['COMPRA 4174 MASQUEPET PORTUGAL', 'ani'],
     ['COMPRA 4174 LEROYMERLIN TORRES V', 'comp'],
     ['COMPRA 4174 WELL S LISBOA', 'sau'],
+    ['TRF MB WAY P/ JOAO GABRIEL FONSECA DELICADO', 'sau'], // psicólogo
+    ['TRF MB WAY P/ CARLA SUSANA OLIVEIRA GARCIA', 'ani'], // creche Pablo
+    ['TRF P/ Nuno Catarino', 'ani'],
+    ['TRF MB WAY P/ FILIPA MOURAO GONCALVES', 'rest'], // amiga
+    ['TRF MB WAY P/ ALBERTO MIGUEL GONCALVES DE SOUSA', 'rest'],
+    ['COMPRA 4174 ASSOCIACAO TEMPO DE MUDAR', 'bern'], // escola do Bernardo
   ];
   cases.forEach(([desc, exp]) => {
     it(desc + ' → ' + exp, () => expect(guessCategory(desc)).toBe(exp));
