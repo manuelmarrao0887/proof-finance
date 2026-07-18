@@ -51,7 +51,7 @@ export const bdgDefault = [
   { id: 'emp', nm: 'Empregada', lm: 360 }, { id: 'seg', nm: 'Seguros', lm: 100 }, { id: 'ani', nm: 'Animais', lm: 105 },
   { id: 'sau', nm: 'Saúde', lm: 40 }, { id: 'tel', nm: 'Telecom', lm: 60 }, { id: 'car', nm: 'Carro', lm: 55 },
   { id: 'sub', nm: 'Subscrições', lm: 50 }, { id: 'gym', nm: 'Ginásio', lm: 36 }, { id: 'cmb', nm: 'Combustível', lm: 90 },
-  { id: 'neg', nm: 'Negócio', lm: 50 }, { id: 'laz', nm: 'Lazer', lm: 100 }, { id: 'trf', nm: 'Transferências', lm: 100 }, { id: 'out', nm: 'Outros', lm: 30 },
+  { id: 'neg', nm: 'Negócio', lm: 50 }, { id: 'laz', nm: 'Lazer', lm: 100 }, { id: 'comp', nm: 'Compras', lm: 100 }, { id: 'trf', nm: 'Transferências', lm: 100 }, { id: 'out', nm: 'Outros', lm: 30 },
 ];
 
 export const byC = {
