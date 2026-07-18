@@ -2,14 +2,17 @@ rules_version = '2';
 
 // Proof. Finance — regras de segurança Firestore.
 //
-// Modelo de dados: a app guarda TODO o estado de cada utilizador num único
-// documento `users/{uid}` (ver src/firebase/client.js → loadUserDoc/saveUserDoc).
-// Não há subcoleções. Cada save é um setDoc(..., { merge: true }) que inclui
-// `updatedAt: serverTimestamp()`.
+// Modelo de dados (SUBCOLEÇÕES, ver src/firebase/data.js):
+//   users/{uid}                  ← definições (theme, fxRates, pin, housing, …)
+//     accounts/{id}              ← contas + cartões
+//     movements/{id}             ← despesas/movimentos
+//     incomes/{id} · balances/{id} · categories/{id} · transfers/{id}
+//     goals/{id} · recurring/{id} · positions/{id} · rules/{id}
 //
-// Regra: um utilizador autenticado só pode ler e escrever o SEU próprio
-// documento (o id do documento tem de ser igual ao uid do token de auth).
-// Tudo o resto é negado por omissão.
+// Regra: um utilizador autenticado só lê/escreve os SEUS dados — o doc raiz E
+// todas as subcoleções. O bloco `match /{sub}/{docId}` é ESSENCIAL: sem ele o
+// `match /users/{uid}` sozinho NÃO cobre subcoleções e a app dá
+// "Missing or insufficient permissions". Tudo o resto é negado por omissão.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -17,6 +20,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth != null
                          && request.auth.uid == userId;
+
+      match /{sub}/{docId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+      }
     }
 
   }

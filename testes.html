@@ -511,6 +511,13 @@ const GROUPS = [
     { id: 'T24.8', title: 'Património reflete dívida', steps: ['Ver Resumo com um cartão com dívida'], expect: 'A dívida do cartão entra em negativo no património (reduz o total).' },
     { id: 'T24.9', title: 'Ocultar saldos', steps: ['Ocultar saldos no Resumo → Mais → Cartões'], expect: 'Dívida, disponível e valores das despesas aparecem ••••.' },
   ]},
+  { id: 'T25', title: 'Firestore — subcoleções + migração', tests: [
+    { id: 'T25.1', title: 'Migração automática no 1.º login', steps: ['Após deploy, iniciar sessão', 'Firebase Console → users/{uid}'], expect: 'Passam a existir subcoleções: accounts, movements, incomes, balances, categories, transfers, goals, recurring, positions, rules. Os arrays antigos saem do doc raiz; ficam só definições (theme, fxRates, pin, housing…).' },
+    { id: 'T25.2', title: 'Nenhum dado perdido', steps: ['Comparar contas, despesas, saldos, categorias, cartões antes/depois'], expect: 'Tudo igual: mesmas contas, movimentos, saldos e categorias. A migração é 1× e idempotente (não duplica se repetir login).' },
+    { id: 'T25.3', title: 'Regras de segurança das subcoleções', steps: ['Publicar firestore.rules atualizado', 'Usar a app normalmente'], expect: 'Sem "Missing or insufficient permissions". Só o dono (request.auth.uid) lê/escreve o doc raiz e as subcoleções.' },
+    { id: 'T25.4', title: 'Escrita incremental (diff)', steps: ['Adicionar/editar/remover uma despesa'], expect: 'Só o documento afetado em movements é escrito/apagado (não reescreve tudo). Chip de sync mostra "guardado".' },
+    { id: 'T25.5', title: 'Offline → volta a sincronizar', steps: ['Ficar offline, registar despesa, voltar online'], expect: 'A despesa aparece ao voltar (cache local do Firestore) e sincroniza para movements.' },
+  ]},
   { id: 'T14', title: 'Responsivo & iPhone (PWA)', tests: [
     { id: 'T14.1', title: 'Sem scroll horizontal', steps: ['iPhone Safari → percorrer Resumo, Despesas, Receitas, Gráficos'], expect: 'Nenhum ecrã faz scroll lateral; conteúdo cabe na largura.' },
     { id: 'T14.2', title: 'Notch não tapa o topo', steps: ['Em iPhone com notch/Dynamic Island, abrir a app'], expect: 'O cabeçalho "Proof. Finance" fica abaixo do notch (não cortado).' },

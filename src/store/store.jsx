@@ -27,7 +27,7 @@ import React, {
   useCallback,
   useState,
 } from 'react';
-import { loadUserDoc, saveUserDoc } from '../firebase/client.js';
+import { loadUserData, syncUserData } from '../firebase/data.js';
 import { bdgDefault, snapshotFromState, normAcct } from '../lib/finance.js';
 import { uid } from '../lib/format.js';
 import { applySameBeneficiaryCategory } from '../lib/dedupe.js';
@@ -234,6 +234,7 @@ export function StoreProvider({ children }) {
   const idleTimer = useRef(null);
   const userRef = useRef(null);
   const skipNextPersist = useRef(false); // suppress auto-save right after load/reset
+  const lastSynced = useRef(null); // último payload sincronizado (diff das subcoleções)
   const stateRef = useRef(state);
   stateRef.current = state;
   userRef.current = currentUser;
@@ -256,8 +257,13 @@ export function StoreProvider({ children }) {
     setSync('saving');
     saveTimer.current = setTimeout(() => {
       const payload = buildPersistPayload(stateRef.current);
-      saveUserDoc(user.uid, payload)
-        .then(() => setSync('saved'))
+      // Diff contra o último estado sincronizado → escreve só o que mudou nas
+      // subcoleções (e apaga o removido). prev=null no 1.º save escreve tudo.
+      syncUserData(user.uid, payload, lastSynced.current)
+        .then(() => {
+          lastSynced.current = payload;
+          setSync('saved');
+        })
         .catch((err) => {
           // eslint-disable-next-line no-console
           console.error('Firestore save falhou', err);
@@ -272,9 +278,12 @@ export function StoreProvider({ children }) {
   const loadUser = useCallback(
     (uid) => {
       if (!uid) return Promise.resolve();
-      return loadUserDoc(uid)
+      return loadUserData(uid)
         .then((d) => {
           const persisted = hydrateFromDoc(d);
+          // Base do diff: se já havia doc, o que ficou nas subcoleções == persisted;
+          // se é novo (d==null), prev=null → primeiro save escreve tudo.
+          lastSynced.current = d ? buildPersistPayload(persisted) : null;
           skipNextPersist.current = true;
           dispatch({ type: 'hydrate', persisted });
           applyTheme(persisted.theme);
@@ -283,6 +292,7 @@ export function StoreProvider({ children }) {
           // eslint-disable-next-line no-console
           console.error('Firestore load falhou', err);
           const persisted = hydrateFromDoc(null);
+          lastSynced.current = null;
           skipNextPersist.current = true;
           dispatch({ type: 'hydrate', persisted });
           applyTheme(persisted.theme);
@@ -294,6 +304,7 @@ export function StoreProvider({ children }) {
   /* Reset all persisted state (orig sign-out path 3191-3193). */
   const resetUser = useCallback(() => {
     skipNextPersist.current = true;
+    lastSynced.current = null;
     dispatch({ type: 'reset' });
     applyTheme('system');
   }, []);
