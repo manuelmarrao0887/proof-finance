@@ -24,6 +24,14 @@ describe('guessCategory (palpite por comerciante)', () => {
     ['COMPRA 4174 DECATHLON AMADORA', 'comp'],
     ['COMPRA 4174 ZIPPY KIDSTORE C COLOMB', 'comp'],
     ['COMPRA 4174 IKEA ALFRAGIDE IKEA FOO', 'rest'], // food court → restauração
+    ['COMPRA 4174 FC R.C.SANCHES II LJ2028-TOR', 'rest'],
+    ['COMPRA 4174 BOLT.EUD2604221836 Tallinn E', 'rest'], // Bolt Food
+    ['COMPRA 4174 E016 Portimao Portimao CONTA', 'cmb'],
+    ['COMPRA 4174 BK29413- LAGOA LAGOA PT CONT', 'rest'], // Burger King
+    ['COMPRA 4174 BMW Portugal, Lda Porto Salv', 'car'],
+    ['COMPRA 4174 MASQUEPET PORTUGAL', 'ani'],
+    ['COMPRA 4174 LEROYMERLIN TORRES V', 'comp'],
+    ['COMPRA 4174 WELL S LISBOA', 'sau'],
   ];
   cases.forEach(([desc, exp]) => {
     it(desc + ' → ' + exp, () => expect(guessCategory(desc)).toBe(exp));
