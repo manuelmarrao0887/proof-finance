@@ -77,8 +77,13 @@ export const cCol = {
   Investimentos: '#7b5fe0',
   Cripto: '#f5a623',
   Imobiliario: '#f25592',
+  'Cartão de crédito': '#e5533d',
   Outros: '#9aa3b5',
 };
+
+// Categoria reservada para cartões de crédito. O "saldo" de um cartão é DÍVIDA:
+// contribui NEGATIVAMENTE para o património. Ver cardUsage / getAcctsLive.
+export const CARD_CAT = 'Cartão de crédito';
 
 /* ══ MODE ACCESSORS (orig 582-610) ══
    In the original isPreviewMode() === !currentUser. Here we read state.currentUser. */
@@ -134,6 +139,7 @@ export function getAccts(state) {
         currency: a.currency || 'EUR',
         custom: true,
         updated: a.updated || null,
+        plafond: a.plafond != null ? Number(a.plafond) || 0 : 0,
       });
     });
   }
@@ -160,6 +166,13 @@ export function getAcctsLive(state) {
   const transfers = (state && state.transfers) || [];
   return ca.map(function (a) {
     const labelNorm = normAcct(a.b + ' · ' + a.t);
+    // Cartão de crédito: o valor exibido é a DÍVIDA em negativo (−used). As
+    // despesas do cartão e os pagamentos entram via cardUsage, não pelo delta
+    // normal (uma despesa no cartão não desconta de nenhuma conta à ordem).
+    if (a.c === CARD_CAT) {
+      const u = cardUsage(state, a.b + ' · ' + a.t);
+      return Object.assign({}, a, { v: u.used ? -u.used : 0, used: u.used, spent: u.spent, paid: u.paid, plafond: a.plafond || 0 });
+    }
     let delta = 0;
     addedExp.forEach(function (x) {
       if (x.imported || x.settled) return; // imported (extrato/IA) or already settled into a reading → não desconta
@@ -182,6 +195,25 @@ export function getAcctsLive(state) {
     });
     return delta ? Object.assign({}, a, { v: a.v + delta }) : a;
   });
+}
+
+/* ══ cardUsage ══
+   Estado da dívida de um cartão de crédito, por label "banco · tipo":
+   - spent: soma de TODAS as despesas alocadas ao cartão (manuais + importadas)
+   - paid:  soma dos pagamentos ao cartão (transferências cujo `to` é o cartão)
+   - used:  dívida em aberto = spent − paid (pode ser <0 se houver pagamento a mais)
+   O plafond disponível = plafond − used (calculado onde há acesso ao plafond). */
+export function cardUsage(state, cardLabel) {
+  const norm = normAcct(cardLabel);
+  let spent = 0;
+  let paid = 0;
+  ((state && state.addedExp) || []).forEach(function (x) {
+    if (normAcct(x.acct) === norm) spent += Number(x.amount) || 0;
+  });
+  ((state && state.transfers) || []).forEach(function (t) {
+    if (normAcct(t.to) === norm) paid += Number(t.amount) || 0;
+  });
+  return { spent: spent, paid: paid, used: spent - paid };
 }
 
 // Normalise an account label for matching: strip accents, lowercase, collapse

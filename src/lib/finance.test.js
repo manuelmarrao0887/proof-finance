@@ -11,6 +11,7 @@ import {
   chrt,
   getAcctsLive,
   netWorthSeries,
+  cardUsage,
 } from './finance.js';
 
 // A date `daysAgo` days before now, as YYYY-MM-DD (for time-window tests).
@@ -269,6 +270,61 @@ describe('getAcctsLive (transaction-adjusted balances)', () => {
     const rev = getAcctsLive(state).find((a) => a.b === 'Revolut');
     expect(wise.v).toBe(1000 - 300); // t2.from settled → só t1 desconta
     expect(rev.v).toBe(200 + 300 + 100); // ambos os lados de destino somam
+  });
+});
+
+describe('cartão de crédito', () => {
+  const base = {
+    currentUser: { uid: 'u1' },
+    customAccts: [
+      { id: 'ch', bank: 'Activobank', type: 'Conta a Ordem', value: 1000, category: 'Liquidez' },
+      { id: 'cc', bank: 'Revolut', type: 'Cartão de Crédito', value: 0, category: 'Cartão de crédito', plafond: 2000 },
+    ],
+  };
+  const cardLabel = 'Revolut · Cartão de Crédito';
+  const chLabel = 'Activobank · Conta a Ordem';
+
+  it('cardUsage: used = despesas − pagamentos', () => {
+    const state = {
+      ...base,
+      addedExp: [
+        { id: 'e1', desc: 'Amazon', amount: 120, cat: 'out', date: '2026-07-02', acct: cardLabel },
+        { id: 'e2', desc: 'Netflix', amount: 30, cat: 'sub', date: '2026-07-05', acct: cardLabel },
+        { id: 'e3', desc: 'Café', amount: 5, cat: 'rest', date: '2026-07-06', acct: chLabel }, // outra conta
+      ],
+      transfers: [{ id: 't1', from: chLabel, to: cardLabel, amount: 50, date: '2026-07-10' }], // pagamento
+    };
+    const u = cardUsage(state, cardLabel);
+    expect(u.spent).toBe(150);
+    expect(u.paid).toBe(50);
+    expect(u.used).toBe(100);
+  });
+
+  it('getAcctsLive: cartão mostra dívida em negativo; despesa do cartão NÃO desconta da conta à ordem', () => {
+    const state = {
+      ...base,
+      addedExp: [{ id: 'e1', desc: 'Amazon', amount: 120, cat: 'out', date: '2026-07-02', acct: cardLabel }],
+      transfers: [{ id: 't1', from: chLabel, to: cardLabel, amount: 20, date: '2026-07-10' }],
+    };
+    const live = getAcctsLive(state);
+    const card = live.find((a) => a.t === 'Cartão de Crédito');
+    const ch = live.find((a) => a.t === 'Conta a Ordem');
+    expect(card.used).toBe(100); // 120 − 20
+    expect(card.v).toBe(-100); // dívida em negativo (reduz património)
+    expect(card.plafond).toBe(2000);
+    // conta à ordem: despesa no CARTÃO não a toca; só o pagamento (−20) desce
+    expect(ch.v).toBe(1000 - 20);
+  });
+
+  it('pagar tudo zera a dívida', () => {
+    const state = {
+      ...base,
+      addedExp: [{ id: 'e1', desc: 'X', amount: 100, cat: 'out', date: '2026-07-02', acct: cardLabel }],
+      transfers: [{ id: 't1', from: chLabel, to: cardLabel, amount: 100, date: '2026-07-10' }],
+    };
+    const card = getAcctsLive(state).find((a) => a.t === 'Cartão de Crédito');
+    expect(card.used).toBe(0);
+    expect(card.v).toBe(0);
   });
 });
 
