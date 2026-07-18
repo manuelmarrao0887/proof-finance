@@ -34,29 +34,31 @@ import {
   readExcelRows,
 } from '../lib/ai.js';
 import { applyRules } from '../lib/finance.js';
-import { parseBankStatement } from '../lib/importBank.js';
+import { parseBankStatement, incomeSource } from '../lib/importBank.js';
 import { guessCategory } from '../lib/categorize.js';
 import { listAccounts } from '../lib/balances.js';
 
-// Tag each parsed transaction with a stable id + default selection, marcando
-// duplicados (já existentes em addedExp) via expenseKey. Auto-seleciona só os
-// débitos que NÃO são transferências e NÃO são duplicados. As linhas detetadas
-// como transferência (TRF) nascem com _type='transfer' e contas De/Para pré-
-// preenchidas (o utilizador ajusta) — as restantes ficam como despesa.
+// Tag each parsed transaction with a stable id + default selection.
+//   - débito (amount<0): despesa (auto-selecionada) OU transferência própria
+//   - crédito (amount>0): receita (auto-selecionada) OU transferência própria
+// Transferências próprias (isTransfer) nascem desmarcadas com contas De/Para
+// pré-preenchidas. Duplicados (já em addedExp) via expenseKey ficam desmarcados.
 function prepResult(res, existingKeys, acctLabels) {
   if (!res || !res.transactions) return { result: res, sel: {} };
   const sel = {};
   const L = acctLabels || [];
   const transactions = res.transactions.map((t) => {
     const _id = uid();
+    const credit = t.amount > 0;
     const isDup = existingKeys ? existingKeys.has(expenseKey({ desc: t.desc, amount: Math.abs(t.amount), date: t.date })) : false;
-    if (t.amount < 0 && !t.isTransfer && !isDup) sel[_id] = true;
-    const _type = t.isTransfer ? 'transfer' : 'expense';
+    const _type = t.isTransfer ? 'transfer' : credit ? 'income' : 'expense';
+    if (_type !== 'transfer' && !isDup) sel[_id] = true; // despesas e receitas auto-selecionadas
+    const _source = incomeSource(t.desc);
     // Débito → o extrato é a conta de ORIGEM; crédito → é o DESTINO.
     const deb = t.amount < 0;
     const _from = deb ? (L[0] || '') : (L[1] || L[0] || '');
     const _to = deb ? (L[1] || L[0] || '') : (L[0] || '');
-    return { ...t, _id, isDup, _type, _from, _to };
+    return { ...t, _id, isDup, _type, _source, _from, _to };
   });
   return { result: { ...res, transactions }, sel };
 }
@@ -203,6 +205,15 @@ export default function ImportStatementSheet() {
     });
   }, []);
 
+  // Definir a fonte de uma receita (salary/other).
+  const setRowSource = useCallback((i, src) => {
+    setStResult((prev) => {
+      if (!prev || !prev.transactions || !prev.transactions[i]) return prev;
+      const next = prev.transactions.map((t, j) => (j === i ? { ...t, _source: src } : t));
+      return { ...prev, transactions: next };
+    });
+  }, []);
+
   // ── Toggle selection (orig toggleStSel 2312) — keyed by stable _id (FIX 2) ──
   const toggleStSel = useCallback((id) => {
     setStSel((s) => {
@@ -239,9 +250,10 @@ export default function ImportStatementSheet() {
       toast('Nada selecionado', 'error');
       return;
     }
-    // Separa linhas: transferências entre contas vs despesas normais.
+    // Separa linhas por tipo: transferência / receita / despesa.
     const trfRows = selRows.filter((t) => t._type === 'transfer');
-    const expRows = selRows.filter((t) => t._type !== 'transfer');
+    const incRows = selRows.filter((t) => t._type === 'income');
+    const expRows = selRows.filter((t) => t._type === 'expense');
 
     // Valida transferências (contas escolhidas, diferentes).
     for (const t of trfRows) {
@@ -273,6 +285,32 @@ export default function ImportStatementSheet() {
       actions.setAddedExp(merged);
     }
 
+    // ── Receitas ── créditos → income one-off importado (não mexe no saldo vivo;
+    // getAcctsLive ignora incomes imported). Dedupe simples por nome|valor|data.
+    let addedInc = 0;
+    if (incRows.length) {
+      const existingInc = new Set((state.incomes || []).map((i) => normalizeDesc(i.name) + '|' + Math.round((i.amount || 0) * 100) + '|' + (i.date || '')));
+      const fresh = [];
+      incRows.forEach((t) => {
+        const k = normalizeDesc(t.desc) + '|' + Math.round(Math.abs(t.amount) * 100) + '|' + normalizeStmtDate(t.date);
+        if (existingInc.has(k)) return;
+        existingInc.add(k);
+        fresh.push({
+          id: uid(),
+          name: t.desc,
+          amount: Math.abs(t.amount),
+          source: t._source || 'other',
+          recurring: false,
+          date: normalizeStmtDate(t.date),
+          acct: '',
+          imported: true,
+          createdAt: Date.now(),
+        });
+      });
+      if (fresh.length) actions.setIncomes([...(state.incomes || []), ...fresh]);
+      addedInc = fresh.length;
+    }
+
     // ── Transferências ── o lado do extrato já está no saldo lido → fica saldado
     // (settledFrom em débito, settledTo em crédito); só a outra conta é ajustada.
     trfRows.forEach((t) => {
@@ -294,12 +332,13 @@ export default function ImportStatementSheet() {
     resetState();
     close();
     const parts = [];
-    if (added > 0 || expRows.length) parts.push(added + ' despesa' + (added === 1 ? '' : 's'));
+    if (expRows.length) parts.push(added + ' despesa' + (added === 1 ? '' : 's'));
+    if (incRows.length) parts.push(addedInc + ' receita' + (addedInc === 1 ? '' : 's'));
     if (trfRows.length) parts.push(trfRows.length + ' transferência' + (trfRows.length === 1 ? '' : 's'));
-    let msg = parts.join(' · ') + ' importada' + (added + trfRows.length === 1 ? '' : 's');
+    let msg = (parts.join(' · ') || '0') + ' importada' + (added + addedInc + trfRows.length === 1 ? '' : 's');
     if (skipped > 0) msg += ' · ' + skipped + ' duplicada' + (skipped === 1 ? '' : 's') + ' ignorada' + (skipped === 1 ? '' : 's');
     toast(msg, 'success');
-  }, [stResult, stSel, actions, state.addedExp, resetState, close, toast]);
+  }, [stResult, stSel, actions, state.addedExp, state.incomes, resetState, close, toast]);
 
   if (!isOpen) return null;
 
@@ -441,8 +480,11 @@ export default function ImportStatementSheet() {
                             {t.isDup && (
                               <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--warning)', background: 'var(--orange-soft)', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }}>DUPLICADO</span>
                             )}
-                            {t.isTransfer && !t.isDup && (
+                            {t._type === 'transfer' && !t.isDup && (
                               <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--text3)', background: 'var(--elevated)', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }}>TRF</span>
+                            )}
+                            {t._type === 'income' && !t.isDup && (
+                              <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--success)', background: 'var(--green-soft, rgba(63,201,122,0.12))', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }}>RECEITA</span>
                             )}
                           </span>
                           <span className="m" style={{ fontSize: 12, fontWeight: 600, color: isD ? 'var(--text)' : 'var(--success)' }}>
@@ -460,10 +502,11 @@ export default function ImportStatementSheet() {
                         aria-label={'Tipo de ' + (t.desc || 'transação')}
                         style={{ padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', appearance: 'none' }}
                       >
-                        <option value="expense">Despesa</option>
+                        {/* Crédito → Receita/Transferência; Débito → Despesa/Transferência */}
+                        {isD ? <option value="expense">Despesa</option> : <option value="income">Receita</option>}
                         <option value="transfer">Transferência</option>
                       </select>
-                      {t._type !== 'transfer' && (
+                      {t._type === 'expense' && (
                         <>
                           <select
                             value={t.category || ''}
@@ -489,6 +532,18 @@ export default function ImportStatementSheet() {
                           </select>
                           {warn && <span className="m" style={{ fontSize: 9, color: 'var(--signal)' }}>Verificar</span>}
                         </>
+                      )}
+                      {t._type === 'income' && (
+                        <select
+                          value={t._source || 'other'}
+                          onChange={(e) => setRowSource(i, e.target.value)}
+                          aria-label={'Fonte da receita ' + (t.desc || '')}
+                          style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', appearance: 'none' }}
+                        >
+                          <option value="salary">Salário</option>
+                          <option value="freelance">Freelance</option>
+                          <option value="other">Outro</option>
+                        </select>
                       )}
                     </div>
                     {/* Row 3 (transferência): contas De → Para */}

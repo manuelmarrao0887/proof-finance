@@ -33,9 +33,25 @@ export function cleanBankDesc(s) {
   return d.slice(0, 40) || String(s || '').trim().slice(0, 40);
 }
 
-// Deteta transferências entre contas próprias / MB WAY (não são despesas de consumo).
+// Deteta transferências entre CONTAS PRÓPRIAS (não é despesa nem receita):
+// - movimentos de/para o próprio titular (nome: Marrão / Manuel José Carrilho)
+// - contas de investimento/poupança próprias (XTB, Trading 212, Trade Republic)
+// NOTA: TRF/MB WAY para OUTRAS pessoas NÃO é transferência (é despesa) e
+// crédito recebido de outros NÃO é transferência (é receita).
 export function isTransferDesc(s) {
-  return /\bTRF\b|TRANSFER|MB\s*WAY|P\/\s*O\b/i.test(String(s || ''));
+  const d = String(s || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+  if (d.includes('marrao')) return true; // apelido único do titular
+  if (d.includes('manuel jose carrilho') || d.includes('manuuel')) return true; // nome completo (+ typo)
+  if (/\bxtb\b/.test(d) || d.includes('trading 212') || d.includes('trading212') || d.includes('trade republic')) return true;
+  return false;
+}
+
+// Receita (crédito) recebida de outros → 'salary' se for o vencimento, senão 'other'.
+export function incomeSource(s) {
+  return /vencimento|salario|salário|ordenado/i.test(String(s || '')) ? 'salary' : 'other';
 }
 
 // Parseia a matriz do Excel. Devolve { header, txns:[{date, desc, raw, amount, isTransfer}] }.
@@ -79,6 +95,22 @@ export function bankExpenseCandidates(parsed, categorize) {
       amount: Math.abs(t.amount),
       date: t.date,
       cat: cat(t.raw) || 'out',
+      imported: true,
+      isTransfer: t.isTransfer,
+    }));
+}
+
+// Candidatos a RECEITA: só créditos (amount > 0). source = salary/other.
+// Transferências próprias (isTransfer) ficam marcadas para o utilizador tratar
+// como transferência (não receita).
+export function bankIncomeCandidates(parsed) {
+  return (parsed.txns || [])
+    .filter((t) => t.amount > 0)
+    .map((t) => ({
+      desc: t.desc,
+      amount: Math.abs(t.amount),
+      date: t.date,
+      source: incomeSource(t.raw),
       imported: true,
       isTransfer: t.isTransfer,
     }));
