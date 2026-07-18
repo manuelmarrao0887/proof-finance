@@ -26,9 +26,10 @@ export const MODALS = [
   'housing',        // editar credito a habitacao
   'position',       // adicionar/editar posicao de investimento
   'transfer',       // transferencia entre contas
+  'cardpay',        // pagar divida de cartao de credito
 ]
 
-const VALID_TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers']
+const VALID_TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards']
 function initialTab() {
   if (typeof location === 'undefined') return 'overview'
   const t = new URLSearchParams(location.search).get('tab')

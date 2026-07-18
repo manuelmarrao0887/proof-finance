@@ -500,6 +500,17 @@ const GROUPS = [
     { id: 'T23.5', title: 'Lista e remover', steps: ['Mais → Transferências', 'Ver a transferência', '"Remover"'], expect: 'Aparece origem→destino, valor e data. Ao remover (com confirmação) os saldos das contas voltam ao anterior.' },
     { id: 'T23.6', title: 'Ocultar saldos', steps: ['Ocultar saldos no Resumo → Mais → Transferências'], expect: 'Os valores das transferências aparecem ••••.' },
   ]},
+  { id: 'T24', title: 'Cartões de crédito', tests: [
+    { id: 'T24.1', title: 'Criar cartão + plafond', steps: ['+ → Nova conta', 'Categoria "Cartão de crédito"', 'Definir Plafond mensal', 'Adicionar'], expect: 'O tipo passa a "Cartão de Crédito"; pede Plafond (não Saldo). Guarda o plafond; dívida inicial 0.' },
+    { id: 'T24.2', title: 'Área de gestão', steps: ['Mais → Cartões de crédito'], expect: 'Mostra cada cartão com Dívida atual, Disponível e barra de plafond (usado / plafond).' },
+    { id: 'T24.3', title: 'Despesa no cartão desconta plafond', steps: ['No cartão → "+ Despesa no cartão"', 'Registar despesa'], expect: 'A dívida sobe, o disponível desce, a barra enche. A despesa aparece no registo do cartão e nas Despesas do mês.' },
+    { id: 'T24.4', title: 'Despesa do cartão NÃO desce conta à ordem', steps: ['Ver saldo da conta à ordem antes/depois de uma despesa no cartão'], expect: 'O saldo da conta à ordem não muda (só muda quando pagas a fatura).' },
+    { id: 'T24.5', title: 'Pagar dívida a partir de conta à ordem', steps: ['No cartão → "Pagar dívida"', 'Escolher conta à ordem, valor (ou "Pagar tudo")', 'Registar pagamento'], expect: 'A dívida do cartão baixa; o saldo da conta à ordem desce pelo mesmo valor. Fica em Mais → Transferências.' },
+    { id: 'T24.6', title: 'Editar plafond', steps: ['No cartão → Editar → mudar Plafond → Guardar'], expect: 'O plafond atualiza; disponível recalcula.' },
+    { id: 'T24.7', title: 'Plafond excedido', steps: ['Gastar mais do que o plafond'], expect: 'Barra a vermelho + aviso "plafond excedido"; disponível negativo.' },
+    { id: 'T24.8', title: 'Património reflete dívida', steps: ['Ver Resumo com um cartão com dívida'], expect: 'A dívida do cartão entra em negativo no património (reduz o total).' },
+    { id: 'T24.9', title: 'Ocultar saldos', steps: ['Ocultar saldos no Resumo → Mais → Cartões'], expect: 'Dívida, disponível e valores das despesas aparecem ••••.' },
+  ]},
   { id: 'T14', title: 'Responsivo & iPhone (PWA)', tests: [
     { id: 'T14.1', title: 'Sem scroll horizontal', steps: ['iPhone Safari → percorrer Resumo, Despesas, Receitas, Gráficos'], expect: 'Nenhum ecrã faz scroll lateral; conteúdo cabe na largura.' },
     { id: 'T14.2', title: 'Notch não tapa o topo', steps: ['Em iPhone com notch/Dynamic Island, abrir a app'], expect: 'O cabeçalho "Proof. Finance" fica abaixo do notch (não cortado).' },

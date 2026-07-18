@@ -13,15 +13,15 @@ import Sheet from '../components/Sheet.jsx';
 import { useStore } from '../store/store.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { uid, todayISO } from '../lib/format.js';
-import { getAcctsLive } from '../lib/finance.js';
+import { uid, todayISO, fm } from '../lib/format.js';
+import { getAcctsLive, cardUsage, CARD_CAT } from '../lib/finance.js';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
-const ACCT_CATEGORIES = ['Liquidez', 'Poupanca', 'Investimentos', 'Cripto', 'Imobiliario', 'Outros'];
-const ACCT_TYPES = ['Conta a Ordem', 'Poupanca', 'Corretagem', 'Planos de Investimento', 'P2P Lending', 'Rend. Fixo', 'Crypto Wallet', 'Imobiliario', 'Outros'];
+const ACCT_CATEGORIES = ['Liquidez', 'Poupanca', 'Investimentos', 'Cripto', 'Imobiliario', CARD_CAT, 'Outros'];
+const ACCT_TYPES = ['Conta a Ordem', 'Poupanca', 'Corretagem', 'Planos de Investimento', 'P2P Lending', 'Rend. Fixo', 'Crypto Wallet', 'Cartão de Crédito', 'Imobiliario', 'Outros'];
 const CURRENCIES = ['EUR', 'USD', 'GBP', 'BRL', 'CHF'];
 
-const EMPTY = { id: null, bank: '', type: 'Conta a Ordem', category: 'Liquidez', value: '', currency: 'EUR', note: '' };
+const EMPTY = { id: null, bank: '', type: 'Conta a Ordem', category: 'Liquidez', value: '', currency: 'EUR', note: '', plafond: '' };
 
 export default function AcctModal() {
   const { state, actions, currentUser } = useStore();
@@ -50,6 +50,7 @@ export default function AcctModal() {
           value: String(shown).replace('.', ','),
           currency: a.currency || 'EUR',
           note: a.note || '',
+          plafond: a.plafond != null ? String(a.plafond).replace('.', ',') : '',
         });
         return;
       }
@@ -59,7 +60,17 @@ export default function AcctModal() {
   }, [isOpen, payload]);
 
   const isEdit = !!draft.id;
-  const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
+  const isCard = draft.category === CARD_CAT;
+  // Ao escolher a categoria "Cartão de crédito" define logo o tipo adequado.
+  const set = (k, v) =>
+    setDraft((d) => {
+      const next = { ...d, [k]: v };
+      if (k === 'category' && v === CARD_CAT && d.type !== 'Cartão de Crédito') next.type = 'Cartão de Crédito';
+      return next;
+    });
+
+  // Dívida atual do cartão (derivada) — mostrada em modo edição.
+  const cardDebt = isEdit && isCard ? cardUsage({ ...state, currentUser }, draft.bank + ' · ' + draft.type).used : 0;
 
   const saveAcct = () => {
     const bank = draft.bank.trim();
@@ -74,6 +85,20 @@ export default function AcctModal() {
     }
     if (isNaN(val)) val = 0;
     const today = todayISO().replace(/-/g, '.');
+    if (cat === CARD_CAT) {
+      // Cartão: o saldo é DÍVIDA derivada (despesas − pagamentos); não se
+      // introduz à mão. Guarda o plafond; value fica 0.
+      let plafond = parseFloat((draft.plafond || '0').replace(',', '.'));
+      if (isNaN(plafond) || plafond < 0) plafond = 0;
+      if (draft.id) {
+        actions.updateCustomAcct(draft.id, { bank, type, category: cat, value: 0, currency: cur, note, plafond, updated: today });
+      } else {
+        actions.addCustomAcct({ id: uid(), bank, type, category: cat, value: 0, currency: cur, note, plafond, updated: today, createdAt: Date.now() });
+      }
+      close();
+      toast(draft.id ? 'Cartão atualizado' : 'Cartão adicionado', 'success');
+      return;
+    }
     if (draft.id) {
       // Saving a balance = a fresh reading: settle the manual expenses already
       // baked into `val` (the shown live value) so they don't subtract again.
@@ -125,14 +150,14 @@ export default function AcctModal() {
         ))}
       </select>
 
-      {/* Value + currency */}
+      {/* Value/Plafond + currency */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
         <div style={{ flex: 1 }}>
-          <label className="lb" style={labelStyle} htmlFor="acVal">Saldo</label>
+          <label className="lb" style={labelStyle} htmlFor="acVal">{isCard ? 'Plafond mensal' : 'Saldo'}</label>
           <input
             id="acVal"
-            value={draft.value}
-            onChange={(e) => set('value', e.target.value)}
+            value={isCard ? draft.plafond : draft.value}
+            onChange={(e) => set(isCard ? 'plafond' : 'value', e.target.value)}
             placeholder="0,00"
             inputMode="decimal"
             style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontFamily: 'var(--mono)', fontSize: 17, fontWeight: 500, boxSizing: 'border-box' }}
@@ -152,6 +177,14 @@ export default function AcctModal() {
           </select>
         </div>
       </div>
+      {isCard && (
+        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: -6, marginBottom: 14, lineHeight: 1.5 }}>
+          O saldo do cartão é a <b>dívida</b> — calculada pelas despesas do cartão menos os pagamentos. Não a introduzes aqui.
+          {isEdit && (
+            <> Dívida atual: <b style={{ color: 'var(--text)' }}>{fm(cardDebt)}</b> · disponível ~{fm(Math.max(0, (parseFloat((draft.plafond || '0').replace(',', '.')) || 0) - cardDebt))}.</>
+          )}
+        </div>
+      )}
 
       {/* Note */}
       <label className="lb" style={labelStyle} htmlFor="acNote">Nota (opcional)</label>

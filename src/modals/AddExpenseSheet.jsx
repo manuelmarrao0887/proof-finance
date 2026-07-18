@@ -92,6 +92,7 @@ export default function AddExpenseSheet() {
         amount: prefill.amount != null ? String(prefill.amount).replace('.', ',') : '',
         cat: prefill.cat || 'rest',
         date: prefill.date || todayISO(),
+        acct: prefill.acct || '',
         recId: prefill.recId || null,
       });
     } else {
