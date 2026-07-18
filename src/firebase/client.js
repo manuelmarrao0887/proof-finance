@@ -68,6 +68,10 @@ if (IS_FILE) {
     _auth = getAuth(_app);
     _db = initializeFirestore(_app, {
       localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      // Firestore rejeita QUALQUER campo com valor `undefined` e aborta o batch
+      // inteiro. Ignorar campos undefined evita que 1 registo mal formado faça
+      // falhar a migração/sync das subcoleções silenciosamente.
+      ignoreUndefinedProperties: true,
     });
   } catch (e) {
     // eslint-disable-next-line no-console

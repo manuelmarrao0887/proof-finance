@@ -58,9 +58,12 @@ const ROOT_KEYS = [
 const SCHEMA_VERSION = 2;
 const BATCH_LIMIT = 450; // < 500 (limite do Firestore), com margem
 
-// Doc id válido a partir do id do registo (Firestore não aceita '/').
+// Doc id válido a partir do id do registo. Firestore não aceita '/', nem id
+// vazio, nem '.'/'..'. Gera um id se em falta/ inválido.
 function docId(id) {
-  return String(id == null ? genId() : id).replace(/\//g, '_');
+  let s = id == null ? '' : String(id).replace(/\//g, '_').trim();
+  if (!s || s === '.' || s === '..') s = genId();
+  return s.slice(0, 1400); // margem para o limite de 1500 bytes
 }
 
 // Igualdade barata para decidir se um registo mudou.
@@ -123,6 +126,8 @@ async function migrate(uid, root) {
   SLICE_KEYS.forEach((key) => { patch[key] = deleteField(); });
   clean.set(doc(db, 'users', uid), patch, { merge: true });
   await clean.commit();
+  // eslint-disable-next-line no-console
+  console.log('[Proof] Migração para subcoleções OK —', upserts.length, 'registos');
 }
 
 /* Lê o doc raiz. server-first; fallback à cache local (offline). */
