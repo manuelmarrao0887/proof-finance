@@ -28,6 +28,7 @@ import {
   getDocs,
   getDocFromCache,
   writeBatch,
+  setDoc,
   serverTimestamp,
   deleteField,
 } from 'firebase/firestore';
@@ -108,26 +109,62 @@ async function commit(uid, upserts, deletes, root) {
   }
 }
 
-/* Migração 1×: copia os arrays embebidos no doc raiz para subcoleções e depois
-   remove-os do doc raiz (já estão nas subcoleções). Marca schemaVersion. */
+/* Migração 1× RESILIENTE + auto-diagnóstica: copia os arrays embebidos no doc
+   raiz para subcoleções. Escreve por lotes; se um lote falhar, tenta registo-a-
+   registo e regista EXATAMENTE qual falha e porquê. Só apaga os arrays antigos
+   do doc raiz + marca schemaVersion se NADA falhou (senão tenta de novo no
+   próximo arranque; os writes são idempotentes por id). */
 async function migrate(uid, root) {
-  const upserts = [];
+  const items = [];
   SLICE_KEYS.forEach((key) => {
     const arr = Array.isArray(root[key]) ? root[key] : [];
     arr.forEach((rec) => {
       const id = rec && rec.id != null ? rec.id : genId();
-      upserts.push({ key, id, data: { ...rec, id } });
+      items.push({ key, id, data: { ...rec, id } });
     });
   });
-  await commit(uid, upserts, [], null);
-  // Limpa os arrays antigos do doc raiz + marca versão (só depois do commit acima).
+
+  let ok = 0;
+  let failed = 0;
+  for (let i = 0; i < items.length; i += BATCH_LIMIT) {
+    const chunk = items.slice(i, i + BATCH_LIMIT);
+    const batch = writeBatch(db);
+    chunk.forEach((it) => batch.set(doc(db, 'users', uid, SUBCOLLECTIONS[it.key], docId(it.id)), it.data));
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await batch.commit();
+      ok += chunk.length;
+    } catch (batchErr) {
+      // Lote falhou → escreve um a um para isolar o(s) registo(s) mau(s).
+      for (const it of chunk) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await setDoc(doc(db, 'users', uid, SUBCOLLECTIONS[it.key], docId(it.id)), it.data);
+          ok += 1;
+        } catch (recErr) {
+          failed += 1;
+          // eslint-disable-next-line no-console
+          console.error('[Proof] Migração: registo falhou →', SUBCOLLECTIONS[it.key] + '/' + docId(it.id), '·', (recErr && recErr.code) || '', (recErr && recErr.message) || recErr, it.data);
+        }
+      }
+    }
+  }
+
+  if (failed > 0) {
+    // eslint-disable-next-line no-console
+    console.warn('[Proof] Migração incompleta: ' + ok + ' OK, ' + failed + ' falharam. Não marco schemaVersion (tenta de novo no próximo login).');
+    return false; // mantém arrays no doc raiz como segurança
+  }
+
+  // Tudo escrito → limpa arrays antigos do doc raiz + marca versão.
   const clean = writeBatch(db);
   const patch = { schemaVersion: SCHEMA_VERSION, migratedAt: serverTimestamp() };
   SLICE_KEYS.forEach((key) => { patch[key] = deleteField(); });
   clean.set(doc(db, 'users', uid), patch, { merge: true });
   await clean.commit();
   // eslint-disable-next-line no-console
-  console.log('[Proof] Migração para subcoleções OK —', upserts.length, 'registos');
+  console.log('[Proof] Migração para subcoleções OK —', ok, 'registos');
+  return true;
 }
 
 /* Lê o doc raiz. server-first; fallback à cache local (offline). */
@@ -154,15 +191,17 @@ export async function loadUserData(uid) {
   if (!root) return null; // novo utilizador → defaults
 
   if (!root.schemaVersion || root.schemaVersion < SCHEMA_VERSION) {
+    let done = false;
     try {
-      await migrate(uid, root);
+      done = await migrate(uid, root);
     } catch (e) {
-      // Migração falhou → devolve os arrays embebidos (ainda intactos) para não
-      // perder nada; tenta migrar de novo no próximo arranque.
       // eslint-disable-next-line no-console
-      console.error('Migração para subcoleções falhou', e);
-      return root;
+      console.error('[Proof] Migração para subcoleções falhou', (e && e.code) || '', e);
+      done = false;
     }
+    // Enquanto a migração não completar, usa os arrays embebidos (dados
+    // completos) — não mostrar subcoleções parciais.
+    if (!done) return root;
   }
 
   const assembled = { ...root };
