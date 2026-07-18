@@ -22,6 +22,11 @@ function norm(s) {
 
 // [id, [palavras-chave]] — ordem do array = prioridade.
 const RULES = [
+  // ── Pessoas / pagamentos específicos (nome → categoria; prioridade máxima) ──
+  ['sau', ['fonseca delicado', 'delicado']], // João Delicado — psicólogo
+  ['ani', ['carla susana', 'oliveira garcia', 'nuno catarino']], // creche do Pablo
+  ['rest', ['filipa mourao', 'alberto miguel goncalves']], // amigos
+  ['bern', ['tempo de mudar']], // Associação Tempo de Mudar — escola do Bernardo
   // Casa
   ['cas', ['trf p/ bankinter', 'condominio', 'condomínio', 'prestacao casa']],
   // Empregada / apoio doméstico
