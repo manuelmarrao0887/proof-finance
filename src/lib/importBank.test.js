@@ -1,14 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import { normBankDate, parseBankAmount, cleanBankDesc, isTransferDesc, parseBankStatement, bankExpenseCandidates } from './importBank.js';
+import { normBankDate, parseBankAmount, cleanBankDesc, isTransferDesc, incomeSource, parseBankStatement, bankExpenseCandidates, bankIncomeCandidates } from './importBank.js';
 
 describe('helpers', () => {
   it('data DD/MM/YYYY → ISO', () => expect(normBankDate('01/07/2026')).toBe('2026-07-01'));
   it('valor US "1,036.54" → 1036.54', () => expect(parseBankAmount('1,036.54')).toBe(1036.54));
   it('valor negativo', () => expect(parseBankAmount('-15.00')).toBe(-15));
   it('limpa descrição de compra', () => expect(cleanBankDesc('COMPRA 4174 PARE E PROVE 2560-232 T CONTACTLESS')).toBe('PARE E PROVE 2560-232'));
-  it('deteta transferência', () => {
+  it('transferência = só contas próprias (nome próprio / investimento)', () => {
     expect(isTransferDesc('TRF P/ Trade Republic')).toBe(true);
+    expect(isTransferDesc('TRF P/ Trading 212')).toBe(true);
+    expect(isTransferDesc('TRF P/ XTB')).toBe(true);
+    expect(isTransferDesc('TRF MB WAY P/ MANUEL MARRAO')).toBe(true);
+    expect(isTransferDesc('TRF. P/O Manuel Jose Carrilho De Sousa Marrao')).toBe(true);
+    // MB WAY para OUTRA pessoa NÃO é transferência (é despesa)
+    expect(isTransferDesc('TRF MB WAY P/ CARLA SUSANA OLIVEIRA')).toBe(false);
+    expect(isTransferDesc('TRF P/ Bankinter')).toBe(false); // prestação casa = despesa
     expect(isTransferDesc('IKEA ALFRAGIDE')).toBe(false);
+  });
+  it('incomeSource: vencimento → salary; resto → other', () => {
+    expect(incomeSource('TRANSFERENCIA - VENCIMENTO')).toBe('salary');
+    expect(incomeSource('TRF MB WAY DE JOAO TAVEIRA')).toBe('other');
   });
 });
 
@@ -36,5 +47,10 @@ describe('parseBankStatement (ActivoBank)', () => {
     expect(exp.length).toBe(3); // exclui o crédito (+689)
     expect(exp.every((e) => e.amount > 0 && e.imported)).toBe(true);
     expect(exp.find((e) => e.desc.includes('Trade Republic')).isTransfer).toBe(true);
+  });
+  it('candidatos a receita = só créditos; próprio (Marrão) = transferência', () => {
+    const inc = bankIncomeCandidates(parseBankStatement(ROWS));
+    expect(inc.length).toBe(1); // +689 MANUEL MARRAO
+    expect(inc[0]).toMatchObject({ amount: 689, imported: true, isTransfer: true, source: 'other' });
   });
 });
