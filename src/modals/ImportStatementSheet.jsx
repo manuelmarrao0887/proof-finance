@@ -24,7 +24,7 @@ import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fm, uid, normalizeStmtDate } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
-import { applySameBeneficiaryCategory, normalizeDesc, dedupeAddedExp, expenseKey } from '../lib/dedupe.js';
+import { applySameBeneficiaryCategory, normalizeDesc, dedupeAddedExp, expenseKey, dayAmountKey } from '../lib/dedupe.js';
 import {
   callAI,
   STMT_PROMPT,
@@ -43,22 +43,30 @@ import { listAccounts } from '../lib/balances.js';
 //   - crédito (amount>0): receita (auto-selecionada) OU transferência própria
 // Transferências próprias (isTransfer) nascem desmarcadas com contas De/Para
 // pré-preenchidas. Duplicados (já em addedExp) via expenseKey ficam desmarcados.
-function prepResult(res, existingKeys, acctLabels) {
+function prepResult(res, dup, acctLabels) {
   if (!res || !res.transactions) return { result: res, sel: {} };
   const sel = {};
   const L = acctLabels || [];
+  const exactSet = (dup && dup.exact) || null;
+  const daySet = (dup && dup.dayAmt) || null;
   const transactions = res.transactions.map((t) => {
     const _id = uid();
     const credit = t.amount > 0;
-    const isDup = existingKeys ? existingKeys.has(expenseKey({ desc: t.desc, amount: Math.abs(t.amount), date: t.date })) : false;
     const _type = t.isTransfer ? 'transfer' : credit ? 'income' : 'expense';
-    if (_type !== 'transfer' && !isDup) sel[_id] = true; // despesas e receitas auto-selecionadas
+    // Duplicados só fazem sentido para DESPESAS (débitos). Receitas/transferências
+    // têm o seu próprio tratamento e não são comparadas com despesas.
+    const probe = { desc: t.desc, amount: Math.abs(t.amount), date: t.date };
+    const exactDup = _type === 'expense' && exactSet ? exactSet.has(expenseKey(probe)) : false;
+    const dayDup = _type === 'expense' && daySet ? daySet.has(dayAmountKey(probe)) : false;
+    const isDup = exactDup || dayDup; // duplicado exato OU mesmo dia+valor → desmarca
+    const _dupKind = exactDup ? 'exact' : dayDup ? 'maybe' : null;
+    if (_type !== 'transfer' && !isDup) sel[_id] = true; // despesas e receitas auto-selecionadas (duplicados NÃO)
     const _source = incomeSource(t.desc);
     // Débito → o extrato é a conta de ORIGEM; crédito → é o DESTINO.
     const deb = t.amount < 0;
     const _from = deb ? (L[0] || '') : (L[1] || L[0] || '');
     const _to = deb ? (L[1] || L[0] || '') : (L[0] || '');
-    return { ...t, _id, isDup, _type, _source, _from, _to };
+    return { ...t, _id, isDup, _dupKind, _type, _source, _from, _to };
   });
   return { result: { ...res, transactions }, sel };
 }
@@ -107,10 +115,12 @@ export default function ImportStatementSheet() {
       setStSel({});
       const apiKey = state.apiKey;
       // Chaves das despesas já existentes → deteta duplicados no preview.
-      const existingKeys = new Set((state.addedExp || []).map(expenseKey));
+      // exact = desc+valor+data; dayAmt = dia+valor (apanha desc diferente).
+      const existing = (state.addedExp || []);
+      const dup = { exact: new Set(existing.map(expenseKey)), dayAmt: new Set(existing.map(dayAmountKey)) };
       const onRes = (res) => {
         setStScanning(false);
-        const { result, sel } = prepResult(res, existingKeys, acctLabels);
+        const { result, sel } = prepResult(res, dup, acctLabels);
         setStResult(result);
         setStSel(sel);
       };
@@ -142,7 +152,7 @@ export default function ImportStatementSheet() {
                 isTransfer: t.isTransfer,
               })),
             };
-            const { result, sel } = prepResult(bankResult, existingKeys, acctLabels);
+            const { result, sel } = prepResult(bankResult, dup, acctLabels);
             setStScanning(false);
             setStResult(result);
             setStSel(sel);
@@ -406,7 +416,7 @@ export default function ImportStatementSheet() {
             {stResult.transactions.some((t) => t.isDup) && (
               <div style={{ borderLeft: '3px solid var(--warning)', background: 'var(--orange-soft)', padding: '8px 12px', borderRadius: 8, marginBottom: 12 }}>
                 <div className="lb" style={{ color: 'var(--warning)' }}>
-                  {stResult.transactions.filter((t) => t.isDup).length} já existem (duplicadas) — desmarcadas. Confirma antes de importar.
+                  {stResult.transactions.filter((t) => t.isDup).length} possíveis duplicados (mesmo dia e valor) — desmarcados. Confirma antes de importar.
                 </div>
               </div>
             )}
@@ -477,8 +487,11 @@ export default function ImportStatementSheet() {
                         <div className="rw">
                           <span style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%', display: 'flex', alignItems: 'center', gap: 5 }}>
                             {t.desc}
-                            {t.isDup && (
+                            {t._dupKind === 'exact' && (
                               <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--warning)', background: 'var(--orange-soft)', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }}>DUPLICADO</span>
+                            )}
+                            {t._dupKind === 'maybe' && (
+                              <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--warning)', background: 'var(--orange-soft)', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }} title="Mesmo dia e valor de uma despesa já existente (descrição diferente)">POSSÍVEL DUP</span>
                             )}
                             {t._type === 'transfer' && !t.isDup && (
                               <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--text3)', background: 'var(--elevated)', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }}>TRF</span>

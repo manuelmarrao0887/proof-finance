@@ -1,5 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeDesc, applySameBeneficiaryCategory, dedupeAddedExp } from './dedupe.js';
+import { normalizeDesc, applySameBeneficiaryCategory, dedupeAddedExp, dayAmountKey, expenseKey } from './dedupe.js';
+
+describe('dayAmountKey (dup por dia+valor, ignora descrição)', () => {
+  it('mesmo dia+valor com descrições diferentes → mesma chave', () => {
+    const a = dayAmountKey({ desc: 'PINGO DOCE', amount: 12.5, date: '2026-06-10' });
+    const b = dayAmountKey({ desc: 'Supermercado manual', amount: 12.5, date: '2026-06-10' });
+    expect(a).toBe(b);
+  });
+  it('valor ou data diferente → chave diferente', () => {
+    const base = dayAmountKey({ desc: 'X', amount: 10, date: '2026-06-10' });
+    expect(dayAmountKey({ desc: 'X', amount: 11, date: '2026-06-10' })).not.toBe(base);
+    expect(dayAmountKey({ desc: 'X', amount: 10, date: '2026-06-11' })).not.toBe(base);
+  });
+  it('expenseKey (exato) distingue descrições; dayAmountKey não', () => {
+    const x = { desc: 'A', amount: 5, date: '2026-06-10' };
+    const y = { desc: 'B', amount: 5, date: '2026-06-10' };
+    expect(expenseKey(x)).not.toBe(expenseKey(y));
+    expect(dayAmountKey(x)).toBe(dayAmountKey(y));
+  });
+});
 
 describe('dedupeAddedExp', () => {
   it('removes exact duplicates', () => {

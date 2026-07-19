@@ -32,6 +32,13 @@ export function expenseKey(x) {
   );
 }
 
+// Chave FRACA para deteção de duplicados no import: só data + cêntimos (ignora
+// a descrição). Apanha o caso em que a mesma despesa foi lançada com um
+// descritivo diferente (manual vs extrato). Usada para desmarcar duplicados.
+export function dayAmountKey(x) {
+  return normalizeStmtDate(x && x.date) + '|' + Math.round((Number(x && x.amount) || 0) * 100);
+}
+
 // Remove duplicate expenses (keep first occurrence) AND normalize each kept
 // entry's date to ISO 'YYYY-MM-DD' so it buckets into the right month.
 export function dedupeAddedExp(list) {
