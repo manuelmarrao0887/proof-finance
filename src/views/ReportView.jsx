@@ -7,6 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { fm, fc } from '../lib/format.js';
 import { categoryTotals, monthTotal, monthComparison, topExpenses, prevMonth } from '../lib/reports.js';
+import { monthsWithData, monthLabelShort } from '../lib/months.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -20,16 +21,12 @@ export default function ReportView() {
     return b ? b.nm : id;
   };
 
-  // últimos 6 meses como opções
-  const months = useMemo(() => {
-    const now = new Date();
-    const out = [];
-    for (let k = 0; k < 6; k++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
-      out.push({ ym: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'), label: MONTH_SHORT[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2) });
-    }
-    return out;
-  }, []);
+  // Todos os meses COM DADOS (mais recente primeiro) — dá acesso ao histórico
+  // importado, em vez de uma janela fixa de 6 meses.
+  const months = useMemo(
+    () => monthsWithData(addedExp).map((k) => ({ ym: k, label: monthLabelShort(k) })),
+    [addedExp]
+  );
   const [ym, setYm] = useState(months[0].ym);
 
   const totals = categoryTotals(addedExp, ym);

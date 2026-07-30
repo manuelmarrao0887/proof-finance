@@ -107,6 +107,7 @@ function initialState() {
   return {
     ...initialPersisted(),
     em: 3, // expense-month index (orig global `em`), needed by monthlySummary
+    mOff: 0, // deslocamento da janela de 4 meses (0 = acaba no mês atual; ver lib/months.js)
   };
 }
 
@@ -553,6 +554,12 @@ export function StoreProvider({ children }) {
 
       // runtime (NOT persisted) — expense-month index used by monthlySummary
       setEm: (em) => setField('em', em),
+      // Desliza a janela de meses (mOff ≤ 0). Ao mudar de janela o mês
+      // selecionado passa a ser o último da nova janela (em=3).
+      setMOff: (mOff) => {
+        setField('mOff', Number(mOff) || 0);
+        setField('em', 3);
+      },
 
       // persistence control
       persistUser,

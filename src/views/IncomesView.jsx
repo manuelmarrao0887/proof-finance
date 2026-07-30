@@ -12,6 +12,8 @@
 import React, { useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
+import { windowLabels, monthKeyAt } from '../lib/months.js';
+import MonthNav from '../components/MonthNav.jsx';
 import { fc, fm } from '../lib/format.js';
 import { isPreviewMode } from '../lib/finance.js';
 
@@ -35,11 +37,7 @@ function srcColor(s) {
 }
 
 // YYYY-MM for window index i (0..3 = oldest..current of the 4-month window).
-function ymForIdx(i) {
-  const now = new Date();
-  const d = new Date(now.getFullYear(), now.getMonth() - (3 - i), 1);
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-}
+
 
 export default function IncomesView() {
   const { state, actions, currentUser } = useStore();
@@ -48,17 +46,13 @@ export default function IncomesView() {
   const preview = isPreviewMode({ ...state, currentUser });
   const em = typeof state.em === 'number' ? state.em : 3;
   const isQ = em === 4;
+  const mOff = Number(state.mOff) || 0;
+  const ymForIdx = (i) => monthKeyAt(i, mOff);
 
   const ms = useMemo(() => {
     if (preview) return ['Jan', 'Fev', 'Mar', 'Abr'];
-    const now = new Date();
-    const out = [];
-    for (let k = 3; k >= 0; k--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
-      out.push(MONTH_SHORT[d.getMonth()]);
-    }
-    return out;
-  }, [preview]);
+    return windowLabels(mOff);
+  }, [preview, mOff]);
 
   // Income for the selected period.
   const qMonths = [0, 1, 2];
@@ -121,7 +115,8 @@ export default function IncomesView() {
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
-      {/* Month bar (shared with Expenses via state.em) */}
+      {/* Navegação de meses + barra (partilhada com Despesas via state.em/mOff) */}
+      {!preview && <MonthNav />}
       <div className="ms-bar">
         {ms.map((m, i) => (
           <button key={m + i} type="button" className={'ms' + (em === i ? ' on' : '')} onClick={() => actions.setEm(i)}>
