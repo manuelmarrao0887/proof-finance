@@ -1,0 +1,140 @@
+import { describe, it, expect } from 'vitest';
+import { dailyAllowance, savingsPulse, buildInsights } from './pulse.js';
+
+// 10 de julho de 2026 (julho tem 31 dias → faltam 22 dias, incluindo hoje).
+const NOW = new Date(2026, 6, 10);
+
+const BASE = {
+  currentUser: { uid: 'u1' },
+  customAccts: [{ id: 'a1', bank: 'Activobank', type: 'Conta a Ordem', value: 4000, category: 'Liquidez' }],
+  bdg: [
+    { id: 'rest', nm: 'Restauração', lm: 250 },
+    { id: 'sup', nm: 'Supermercado', lm: 250 },
+  ],
+  incomes: [{ id: 'i1', name: 'Salário', amount: 2000, recurring: true }],
+  recurring: [
+    { id: 'r1', name: 'Ginásio', amount: 40, day: 20, cat: 'gym' }, // ainda por pagar
+    { id: 'r2', name: 'Netflix', amount: 10, day: 3, cat: 'sub' }, // já passou, não lançada
+  ],
+  addedExp: [
+    { id: 'e1', desc: 'Almoço', amount: 300, cat: 'rest', date: '2026-07-05' },
+    { id: 'e2', desc: 'Compras', amount: 200, cat: 'sup', date: '2026-07-06' },
+  ],
+  transfers: [],
+};
+
+describe('dailyAllowance', () => {
+  it('left = rendimento − gasto − fixas por pagar; perDay divide pelos dias restantes', () => {
+    const r = dailyAllowance(BASE, NOW);
+    expect(r.ready).toBe(true);
+    expect(r.income).toBe(2000);
+    expect(r.spent).toBe(500);
+    expect(r.pendingFixed).toBe(40); // só o Ginásio (dia 20 ≥ 10); Netflix (dia 3) já passou
+    expect(r.left).toBe(1460);
+    expect(r.daysLeft).toBe(22);
+    expect(r.perDay).toBeCloseTo(1460 / 22, 5);
+  });
+
+  it('sem receitas registadas → ready:false', () => {
+    const r = dailyAllowance({ ...BASE, incomes: [] }, NOW);
+    expect(r.ready).toBe(false);
+    expect(r.income).toBe(0);
+  });
+
+  it('fixa já materializada (recId) não é contada duas vezes', () => {
+    const s = {
+      ...BASE,
+      addedExp: [...BASE.addedExp, { id: 'e3', desc: 'Ginásio', amount: 40, cat: 'gym', date: '2026-07-20', recId: 'r1' }],
+    };
+    const r = dailyAllowance(s, NOW);
+    expect(r.pendingFixed).toBe(0); // r1 já lançada
+    expect(r.spent).toBe(540);
+  });
+
+  it('receita one-off de outro mês não conta', () => {
+    const s = { ...BASE, incomes: [{ id: 'i9', name: 'Extra', amount: 500, recurring: false, date: '2026-06-15' }] };
+    expect(dailyAllowance(s, NOW).income).toBe(0);
+  });
+});
+
+describe('savingsPulse', () => {
+  it('taxa de poupança do mês', () => {
+    const r = savingsPulse(BASE, NOW);
+    expect(r.income).toBe(2000);
+    expect(r.spent).toBe(500);
+    expect(r.saved).toBe(1500);
+    expect(r.rate).toBeCloseTo(75, 5);
+  });
+
+  it('colchão = liquidez ÷ média real dos 3 meses anteriores', () => {
+    const s = {
+      ...BASE,
+      addedExp: [
+        ...BASE.addedExp,
+        { id: 'p1', desc: 'x', amount: 1000, cat: 'rest', date: '2026-06-10' },
+        { id: 'p2', desc: 'x', amount: 1000, cat: 'rest', date: '2026-05-10' },
+      ],
+    };
+    const r = savingsPulse(s, NOW);
+    expect(r.avgMonthly).toBe(1000); // média de junho e maio
+    expect(r.safe).toBe(4000);
+    expect(r.months).toBe(4);
+  });
+});
+
+describe('buildInsights', () => {
+  it('deteta categoria muito acima da média histórica', () => {
+    const s = {
+      ...BASE,
+      addedExp: [
+        { id: 'n1', desc: 'agora', amount: 400, cat: 'rest', date: '2026-07-05' },
+        { id: 'h1', desc: 'antes', amount: 100, cat: 'rest', date: '2026-06-05' },
+        { id: 'h2', desc: 'antes', amount: 100, cat: 'rest', date: '2026-05-05' },
+      ],
+    };
+    const ins = buildInsights(s, NOW);
+    const spike = ins.find((i) => i.id.startsWith('spike-'));
+    expect(spike).toBeTruthy();
+    expect(spike.tone).toBe('alert');
+    expect(spike.title).toContain('Restauração');
+  });
+
+  it('deteta categoria acima do limite do orçamento', () => {
+    const ins = buildInsights(BASE, NOW); // rest 300 > lm 250
+    const over = ins.find((i) => i.id === 'over-budget');
+    expect(over).toBeTruthy();
+    expect(over.detail).toContain('Restauração');
+  });
+
+  it('avisa fixas a pagar nos próximos 7 dias', () => {
+    const s = { ...BASE, recurring: [{ id: 'r5', name: 'Renda', amount: 500, day: 14, cat: 'cas' }] };
+    const ins = buildInsights(s, NOW);
+    const due = ins.find((i) => i.id === 'due-soon');
+    expect(due).toBeTruthy();
+    expect(due.detail).toContain('Renda');
+  });
+
+  it('cartão acima do plafond gera alerta', () => {
+    const s = {
+      ...BASE,
+      customAccts: [
+        ...BASE.customAccts,
+        { id: 'cc', bank: 'Revolut', type: 'Cartão de Crédito', value: 0, category: 'Cartão de crédito', plafond: 100 },
+      ],
+      addedExp: [{ id: 'c1', desc: 'X', amount: 150, cat: 'out', date: '2026-07-02', acct: 'Revolut · Cartão de Crédito' }],
+    };
+    const ins = buildInsights(s, NOW);
+    const card = ins.find((i) => i.id.startsWith('card-'));
+    expect(card).toBeTruthy();
+    expect(card.tone).toBe('alert');
+  });
+
+  it('máximo 4 insights, alertas primeiro', () => {
+    const ins = buildInsights(BASE, NOW);
+    expect(ins.length).toBeLessThanOrEqual(4);
+    const tones = ins.map((i) => i.tone);
+    const order = { alert: 0, warn: 1, info: 2, good: 3 };
+    const sorted = [...tones].sort((a, b) => order[a] - order[b]);
+    expect(tones).toEqual(sorted);
+  });
+});
