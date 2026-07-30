@@ -363,6 +363,15 @@ const GROUPS = [
     { id: 'T26.7', title: 'Insights automáticos', steps: ['Ver abaixo do cartão'], expect: 'Até 4 avisos, alertas primeiro: categoria +30% vs média histórica (vermelho), categorias acima do limite (laranja), fixas a pagar em 7 dias (azul), cartão ≥80% do plafond, e "Poupas N%" (verde) quando não há alertas.' },
     { id: 'T26.8', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos no Resumo'], expect: 'Os valores do cartão "Podes gastar" aparecem •••• (percentagens e contagens continuam visíveis).' },
   ]},
+  { id: 'T27', title: 'Navegação de meses (histórico)', tests: [
+    { id: 'T27.1', title: 'Setas ← → nas Despesas', steps: ['Despesas (com histórico importado)', 'Tocar na seta ←'], expect: 'A barra de meses desliza para trás (ex.: Abr-Mai-Jun-Jul → Mar-Abr-Mai-Jun) e mostra o intervalo por extenso. Os totais e a lista passam a ser desses meses.' },
+    { id: 'T27.2', title: 'Limites da navegação', steps: ['Recuar até ao mês mais antigo com dados', 'Tentar recuar mais', 'Avançar até ao mês atual'], expect: 'A seta ← desativa no mês mais antigo com dados; a seta → desativa no mês atual (não navega para o futuro).' },
+    { id: 'T27.3', title: 'Sem histórico → sem setas', steps: ['Utilizador só com dados do mês atual'], expect: 'A navegação não aparece (nada para navegar).' },
+    { id: 'T27.4', title: 'Partilhado com Receitas', steps: ['Deslizar meses nas Despesas', 'Abrir Receitas'], expect: 'As Receitas mostram a mesma janela de meses (estado partilhado).' },
+    { id: 'T27.5', title: 'Orçamento e "Remover mês" seguem a seleção', steps: ['Navegar para um mês antigo e escolhê-lo'], expect: 'Limites/rollover e o botão "Remover mês" atuam sobre o mês selecionado (não sobre o mês atual).' },
+    { id: 'T27.6', title: 'Relatórios listam todos os meses com dados', steps: ['Mais → Relatórios'], expect: 'O seletor mostra TODOS os meses com despesas (ex.: Jan 26 … Jul 26), não apenas os últimos 6.' },
+    { id: 'T27.7', title: 'Resumo continua no mês atual', steps: ['Navegar para meses antigos e voltar ao Resumo'], expect: '"Podes gastar" e os insights continuam a referir-se ao MÊS ATUAL (não são afetados pela navegação).' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },

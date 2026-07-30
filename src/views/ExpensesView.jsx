@@ -34,6 +34,8 @@ import { fm, normalizeStmtDate } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import { dedupeAddedExp } from '../lib/dedupe.js';
 import { monthEffectiveLimits } from '../lib/budget.js';
+import { windowLabels, windowMonthKeys, monthKeyAt } from '../lib/months.js';
+import MonthNav from '../components/MonthNav.jsx';
 import { useToast } from '../components/Toast.jsx';
 import {
   isPreviewMode,
@@ -75,17 +77,14 @@ export default function ExpensesView() {
   const addedExp = state.addedExp || [];
   const bdg = state.bdg || [];
 
-  // Month labels (orig 1007-1020): preview = Jan-Abr; auth = last 4 ending now.
+  // Deslocamento da janela de 4 meses (0 = acaba no mês atual) — ver lib/months.
+  const mOff = Number(state.mOff) || 0;
+
+  // Month labels (orig 1007-1020): preview = Jan-Abr; auth = janela de 4 meses.
   const ms = useMemo(() => {
     if (preview) return ['Jan', 'Fev', 'Mar', 'Abr'];
-    const now = new Date();
-    const out = [];
-    for (let k = 3; k >= 0; k--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
-      out.push(MONTH_SHORT[d.getMonth()]);
-    }
-    return out;
-  }, [preview]);
+    return windowLabels(mOff);
+  }, [preview, mOff]);
 
   const openAdd = (editId) => ui.open('add', editId != null ? { editId } : true);
 
@@ -240,12 +239,7 @@ export default function ExpensesView() {
       eByC[x.cat][3] += x.amount;
     });
   } else {
-    const nowA = new Date();
-    const monthKeys = [];
-    for (let kk = 3; kk >= 0; kk--) {
-      const dd = new Date(nowA.getFullYear(), nowA.getMonth() - kk, 1);
-      monthKeys.push(dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0'));
-    }
+    const monthKeys = windowMonthKeys(mOff);
     addedExp.forEach((x) => {
       if (!x.date) return;
       const ym = x.date.slice(0, 7);
@@ -259,11 +253,7 @@ export default function ExpensesView() {
   // Orçamento com rollover: limite efetivo = base + sobra/falta transitada.
   const rolloverOn = !!state.rolloverOn;
   let selYm = null;
-  if (!preview && em >= 0 && em <= 3) {
-    const nowR = new Date();
-    const ddR = new Date(nowR.getFullYear(), nowR.getMonth() - (3 - em), 1);
-    selYm = ddR.getFullYear() + '-' + String(ddR.getMonth() + 1).padStart(2, '0');
-  }
+  if (!preview && em >= 0 && em <= 3) selYm = monthKeyAt(em, mOff);
   const effLims = rolloverOn && selYm ? monthEffectiveLimits(addedExp, bdg, selYm, true) : null;
 
   const rows = [];
@@ -330,9 +320,7 @@ export default function ExpensesView() {
   let selMonthKey = null;
   let selMonthLabel = '';
   if (!preview && em >= 0 && em <= 3) {
-    const now = new Date();
-    const dd = new Date(now.getFullYear(), now.getMonth() - (3 - em), 1);
-    selMonthKey = dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0');
+    selMonthKey = monthKeyAt(em, mOff);
     selMonthLabel = ms[em];
   }
   const monthExpCount = selMonthKey
@@ -453,7 +441,8 @@ export default function ExpensesView() {
         </div>
       )}
 
-      {/* Month bar */}
+      {/* Navegação de meses (histórico) + barra de meses */}
+      {!preview && <MonthNav />}
       <div className="ms-bar">
         {ms.map((m, i) => (
           <button
