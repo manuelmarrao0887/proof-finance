@@ -35,6 +35,7 @@ import {
 } from '../lib/finance.js';
 import { fm, fc, uid } from '../lib/format.js';
 import { upcomingRecurring } from '../lib/reminders.js';
+import { dailyAllowance, savingsPulse, buildInsights } from '../lib/pulse.js';
 
 const MONTHS_LONG = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -187,10 +188,93 @@ export default function OverviewView() {
   // Recorrentes a vencer nos próximos 5 dias (lembrete na app).
   const upcoming = !newU ? upcomingRecurring(state.recurring, 5, undefined, state.addedExp) : [];
 
+  // ── Pulso do mês: quanto posso gastar/dia, poupança e avisos acionáveis ──
+  const allow = !newU ? dailyAllowance(s) : null;
+  const pulse = !newU ? savingsPulse(s) : null;
+  const insights = !newU ? buildInsights(s) : [];
+  const allowTone = allow && allow.perDay < 0 ? 'var(--signal)' : allow && allow.left < allow.income * 0.15 ? 'var(--warning)' : 'var(--success)';
+  const INS_COLOR = { alert: 'var(--signal)', warn: 'var(--warning)', good: 'var(--success)', info: 'var(--primary)' };
+
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
       {/* ── Quick actions (Finany-style) ── */}
       <QuickActions />
+
+      {/* ── PODES GASTAR — a métrica de decisão do mês ── */}
+      {!newU && allow && (
+        <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
+          {allow.ready ? (
+            <>
+              <div className="rw" style={{ marginBottom: 10 }}>
+                <div className="lb">Podes gastar</div>
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {allow.daysLeft} {allow.daysLeft === 1 ? 'dia' : 'dias'} até fim do mês
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 4 }}>
+                <span className="m" style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1, color: allowTone }}>
+                  {hidden ? '••••' : fm(Math.max(0, allow.perDay))}
+                </span>
+                <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginBottom: 4 }}>/dia</span>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>
+                {allow.left < 0
+                  ? 'Já passaste o rendimento do mês em ' + (hidden ? '••••' : fc(-allow.left)) + '.'
+                  : (hidden ? '••••' : fc(allow.left)) + ' disponíveis' + (allow.pendingFixed > 0 ? ' (fixas por pagar já descontadas)' : '')}
+              </div>
+              {/* Barra: gasto + fixas por pagar vs rendimento */}
+              <div style={{ height: 6, borderRadius: 999, background: 'var(--bg3)', overflow: 'hidden', display: 'flex' }}>
+                <div style={{ width: Math.min(100, (allow.spent / Math.max(1, allow.income)) * 100) + '%', background: 'var(--primary)' }} />
+                <div style={{ width: Math.min(100, (allow.pendingFixed / Math.max(1, allow.income)) * 100) + '%', background: 'var(--warning)', opacity: 0.55 }} />
+              </div>
+              <div className="rw" style={{ marginTop: 10, gap: 12 }}>
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  Gasto {hidden ? '••••' : fc(allow.spent)}
+                  {allow.pendingFixed > 0 && ' · fixas ' + (hidden ? '••••' : fc(allow.pendingFixed))}
+                </span>
+                {pulse && (
+                  <span style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'right' }}>
+                    Poupança <b style={{ color: pulse.rate >= 20 ? 'var(--success)' : 'var(--text2)' }}>{Math.round(pulse.rate)}%</b>
+                    {pulse.months > 0 && ' · colchão ' + pulse.months.toFixed(1) + ' meses'}
+                  </span>
+                )}
+              </div>
+            </>
+          ) : (
+            <div>
+              <div className="lb" style={{ marginBottom: 6 }}>Podes gastar</div>
+              <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>
+                Regista o teu rendimento mensal para saber quanto podes gastar por dia.
+              </div>
+              <button
+                type="button"
+                onClick={() => open('income')}
+                style={{ padding: '8px 16px', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+              >
+                + Adicionar rendimento
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Insights automáticos (gerados localmente, sem IA) ── */}
+      {!newU && insights.length > 0 && (
+        <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {insights.map((ins) => (
+            <div
+              key={ins.id}
+              className="cd"
+              style={{ padding: '12px 14px', borderLeft: '3px solid ' + (INS_COLOR[ins.tone] || 'var(--primary)') }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 700, color: INS_COLOR[ins.tone] || 'var(--text)', marginBottom: 2 }}>
+                {ins.title}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{ins.detail}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Recorrentes a vencer em breve (lembrete na app) ── */}
       {!newU && upcoming.length > 0 && (

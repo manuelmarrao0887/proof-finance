@@ -353,6 +353,16 @@
    Steps render as an ordered list; single-string steps render as a paragraph.
    ────────────────────────────────────────────────────────────────────────── */
 const GROUPS = [
+  { id: 'T26', title: 'Podes gastar & Insights (Resumo)', tests: [
+    { id: 'T26.1', title: 'Cartão "Podes gastar"', steps: ['Abrir Resumo com rendimento e despesas registados'], expect: 'Mostra X€/dia = (rendimento − já gasto − fixas por pagar) ÷ dias que faltam. Indica os dias restantes e o total disponível.' },
+    { id: 'T26.2', title: 'Fixas por pagar já descontadas', steps: ['Ter uma recorrente com dia futuro (ex.: dia 30)'], expect: 'O valor/dia já desconta essa fixa; a barra mostra a parte laranja (fixas) além do gasto (azul).' },
+    { id: 'T26.3', title: 'Recorrente já lançada não conta 2×', steps: ['Registar a despesa da recorrente (via "Registar recorrente")'], expect: 'Deixa de aparecer em "fixas por pagar" (passa a estar no gasto).' },
+    { id: 'T26.4', title: 'Sem rendimento → convite', steps: ['Utilizador sem receitas registadas'], expect: 'Em vez de números, mostra "+ Adicionar rendimento" que abre o modal de receitas.' },
+    { id: 'T26.5', title: 'Passar o rendimento → vermelho', steps: ['Gastar mais do que o rendimento do mês'], expect: 'Valor a vermelho e texto "Já passaste o rendimento do mês em X€".' },
+    { id: 'T26.6', title: 'Taxa de poupança + colchão', steps: ['Ver o rodapé do cartão'], expect: 'Mostra "Poupança N%" (verde se ≥20%) e "colchão X meses" = liquidez+poupança ÷ média real de despesa dos 3 meses anteriores.' },
+    { id: 'T26.7', title: 'Insights automáticos', steps: ['Ver abaixo do cartão'], expect: 'Até 4 avisos, alertas primeiro: categoria +30% vs média histórica (vermelho), categorias acima do limite (laranja), fixas a pagar em 7 dias (azul), cartão ≥80% do plafond, e "Poupas N%" (verde) quando não há alertas.' },
+    { id: 'T26.8', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos no Resumo'], expect: 'Os valores do cartão "Podes gastar" aparecem •••• (percentagens e contagens continuam visíveis).' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },
