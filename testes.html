@@ -456,6 +456,14 @@ const GROUPS = [
     { id: 'T39.5', title: 'Sem histórico não inventa', steps: ['Utilizador com poucas despesas'], expect: 'Nenhum alerta de anomalia (precisa de padrão credível).' },
     { id: 'T39.6', title: 'Só despesas recentes', steps: ['Ter uma despesa estranha com mais de 45 dias'], expect: 'Não alerta (a janela de análise são os últimos 45 dias).' },
   ]},
+  { id: 'T40', title: 'Fecho do mês', tests: [
+    { id: 'T40.1', title: 'Aparece nos primeiros dias', steps: ['Abrir o Resumo entre os dias 1 e 7 do mês'], expect: 'Cartão "Fecho de {mês anterior}" no topo, com o total gasto. Depois do dia 7 desaparece.' },
+    { id: 'T40.2', title: 'Comparação com o hábito', steps: ['Ter 3 meses de histórico antes do mês fechado'], expect: 'Mostra ±N% face à média dos 3 meses anteriores; verde quando gastaste menos, laranja quando gastaste mais.' },
+    { id: 'T40.3', title: 'Poupança do mês fechado', steps: ['Ter rendimento registado'], expect: 'Indica quanto poupaste e a percentagem do rendimento. Sem rendimento não inventa taxa.' },
+    { id: 'T40.4', title: 'Onde foi o dinheiro', steps: ['Ver a última linha'], expect: 'Lista as 3 maiores categorias do mês fechado com os valores.' },
+    { id: 'T40.5', title: 'Mês anterior vazio', steps: ['Não ter despesas no mês anterior'], expect: 'O cartão não aparece.' },
+    { id: 'T40.6', title: 'Viragem do ano', steps: ['Abrir a app a 2 de janeiro'], expect: 'Fecha dezembro do ano anterior corretamente.' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },
