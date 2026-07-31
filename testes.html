@@ -464,6 +464,13 @@ const GROUPS = [
     { id: 'T40.5', title: 'Mês anterior vazio', steps: ['Não ter despesas no mês anterior'], expect: 'O cartão não aparece.' },
     { id: 'T40.6', title: 'Viragem do ano', steps: ['Abrir a app a 2 de janeiro'], expect: 'Fecha dezembro do ano anterior corretamente.' },
   ]},
+  { id: 'T41', title: 'Avisos de carteira (Investimentos)', tests: [
+    { id: 'T41.1', title: 'Concentração numa posição', steps: ['Ter uma posição ≥40% da carteira'], expect: 'Aviso "X é N% da carteira" (laranja ≥40%, vermelho ≥60%). Carteira equilibrada não gera aviso.' },
+    { id: 'T41.2', title: 'Uma só posição', steps: ['Ter apenas uma posição'], expect: 'Aviso a sugerir diversificar.' },
+    { id: 'T41.3', title: 'Tudo na mesma corretora', steps: ['Ter 3+ posições todas no mesmo broker'], expect: 'Aviso informativo sobre risco operacional. Com dois brokers não aparece.' },
+    { id: 'T41.4', title: 'Posições abaixo de −25%', steps: ['Ter uma posição com perda ≥25%'], expect: 'Assinala a pior com a perda não realizada; com várias, indica quantas são.' },
+    { id: 'T41.5', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos → abrir Investimentos'], expect: 'Os avisos não aparecem (revelariam a composição).' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },
