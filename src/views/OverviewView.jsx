@@ -263,24 +263,6 @@ export default function OverviewView() {
         </div>
       )}
 
-      {/* ── Insights automáticos (gerados localmente, sem IA) ── */}
-      {!newU && insights.length > 0 && (
-        <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {insights.map((ins) => (
-            <div
-              key={ins.id}
-              className="cd"
-              style={{ padding: '12px 14px', borderLeft: '3px solid ' + (INS_COLOR[ins.tone] || 'var(--primary)') }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 700, color: INS_COLOR[ins.tone] || 'var(--text)', marginBottom: 2 }}>
-                {ins.title}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{ins.detail}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* ── Plano do mês (envelope budgeting) — aparece quando o salário entra ── */}
       {!newU && plan && plan.salaryIn && plan.income > 0 && (
         <div className="cd" style={{ marginBottom: 16, padding: '16px 18px' }}>
@@ -326,6 +308,24 @@ export default function OverviewView() {
               </button>
             )
           )}
+        </div>
+      )}
+
+      {/* ── Insights automáticos (gerados localmente, sem IA) ── */}
+      {!newU && insights.length > 0 && (
+        <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {insights.map((ins) => (
+            <div
+              key={ins.id}
+              className="cd"
+              style={{ padding: '12px 14px', borderLeft: '3px solid ' + (INS_COLOR[ins.tone] || 'var(--primary)') }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 700, color: INS_COLOR[ins.tone] || 'var(--text)', marginBottom: 2 }}>
+                {ins.title}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{ins.detail}</div>
+            </div>
+          ))}
         </div>
       )}
 
