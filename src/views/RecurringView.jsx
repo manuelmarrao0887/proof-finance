@@ -48,7 +48,16 @@ export default function RecurringView() {
 
   // Explicit display sort: amount descending (kept from the original).
   const sorted = recurring.slice().sort((a, b) => b.amount - a.amount);
+  /* Recorrentes já lançadas como despesa neste mês (carregam recId) — para
+     mostrar o que já está pago e não parecer que falta pagar tudo. */
+  const thisYm = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const paidThisMonth = new Set(
+    (state.addedExp || [])
+      .filter((x) => x.recId && (x.date || '').slice(0, 7) === thisYm)
+      .map((x) => x.recId)
+  );
   const total = sorted.reduce((s, r) => s + r.amount, 0);
+  const pendingTotal = sorted.reduce((s, r) => (paidThisMonth.has(r.id) ? s : s + r.amount), 0);
   const yearly = total * 12;
   const now = new Date();
 
@@ -59,6 +68,9 @@ export default function RecurringView() {
         <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em' }}>{fc(total)}</div>
         <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
           {fc(yearly)} por ano &middot; {recurring.length} {recurring.length === 1 ? 'subscrição' : 'subscrições'}
+          {paidThisMonth.size > 0 && (
+            <> &middot; falta pagar {fc(pendingTotal)} este mês</>
+          )}
         </div>
       </div>
 
@@ -76,10 +88,19 @@ export default function RecurringView() {
           <div key={r.id} className="cd fadeUp" style={{ marginBottom: 10, padding: '14px 18px' }}>
             <div className="rw">
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 600 }}>{r.name}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {r.name}
+                  {paidThisMonth.has(r.id) && (
+                    <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--success)', background: 'var(--success-soft, rgba(63,201,122,0.12))', padding: '1px 6px', borderRadius: 999 }}>
+                      PAGA
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3 }}>
-                  {bI ? bI.nm : '—'} &middot; dia {nextDay} &middot;{' '}
-                  {dleft === 0 ? 'hoje' : dleft === 1 ? 'amanha' : dleft + ' dias'}
+                  {bI ? bI.nm : '—'} &middot; dia {nextDay}
+                  {paidThisMonth.has(r.id)
+                    ? ' · já lançada este mês'
+                    : ' · ' + (dleft === 0 ? 'hoje' : dleft === 1 ? 'amanhã' : 'daqui a ' + dleft + ' dias')}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
