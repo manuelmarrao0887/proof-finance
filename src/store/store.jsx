@@ -554,6 +554,7 @@ export function StoreProvider({ children }) {
       // rules
       setRules: (rules) => setField('rules', rules),
       addRule: (r) => setField('rules', [...(getState().rules || []), r]),
+      updateRule: (id, r) => setField('rules', (getState().rules || []).map((x) => (x.id === id ? { ...x, ...r, id } : x))),
       deleteRule: (id) => setField('rules', (getState().rules || []).filter((x) => x.id !== id)),
 
       // runtime (NOT persisted) — expense-month index used by monthlySummary

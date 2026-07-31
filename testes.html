@@ -415,6 +415,13 @@ const GROUPS = [
     { id: 'T33.2', title: 'Sugere valores iguais', steps: ['Ter 2 cobranças do mesmo valor (ex.: Apple 9,99)'], expect: 'Aparece como subscrição sugerida.' },
     { id: 'T33.3', title: 'Sugere cadência mensal', steps: ['Ter 2 cobranças com ~30 dias de intervalo, valores diferentes (ex.: Vodafone)'], expect: 'Aparece como subscrição sugerida (a cadência conta, mesmo variando o valor).' },
   ]},
+  { id: 'T34', title: 'Regras aprendidas no import', tests: [
+    { id: 'T34.1', title: 'Corrigir categoria cria regra', steps: ['Importar extrato', 'Mudar a categoria de uma linha (ex.: PINGO DOCE → Supermercado)'], expect: 'Toast diz "regra guardada para pingo doce". A regra fica em Definições → Regras.' },
+    { id: 'T34.2', title: 'Próximo import já vem certo', steps: ['Importar outro extrato com o mesmo comerciante'], expect: 'A linha já vem com a categoria corrigida (as regras do utilizador têm prioridade sobre o palpite automático).' },
+    { id: 'T34.3', title: 'Não duplica regras', steps: ['Corrigir a mesma categoria duas vezes'], expect: 'Continua a existir uma única regra para o comerciante.' },
+    { id: 'T34.4', title: 'Mudar de ideias atualiza a regra', steps: ['Corrigir o mesmo comerciante para outra categoria'], expect: 'A regra existente é atualizada (não cria uma segunda em conflito).' },
+    { id: 'T34.5', title: 'Padrão limpo do comerciante', steps: ['Ver a regra criada'], expect: 'O padrão é o nome do comerciante sem prefixos nem códigos (ex.: "COMPRA 4174 PINGO DOCE DUQUE D A LI CONTACTLESS" → "pingo doce").' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },

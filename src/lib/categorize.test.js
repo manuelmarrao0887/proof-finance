@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { guessCategory } from './categorize.js';
+import { guessCategory, rulePatternFor } from './categorize.js';
 
 describe('guessCategory (palpite por comerciante)', () => {
   const cases = [
@@ -46,5 +46,22 @@ describe('guessCategory (palpite por comerciante)', () => {
   it('descrição desconhecida → null', () => {
     expect(guessCategory('QUALQUER COISA ALEATORIA XYZ')).toBeNull();
     expect(guessCategory('')).toBeNull();
+  });
+});
+
+describe('rulePatternFor (aprender regra do import)', () => {
+  const cases = [
+    ['COMPRA 4174 PINGO DOCE DUQUE D A LI CONTACTLESS', 'pingo doce'],
+    ['COMPRA 4174 UBER EATS PENDING AMSTERDAM NL', 'uber eats'],
+    ['DD VODAFONE PORTU 07973636083 PT10100825', 'vodafone portu'],
+    ['COMPRA 4174 CONTINENTE TO VEDRAS TO CONTACTLESS', 'continente to'],
+    ['COMPRA 4174 APPLE.COM BILL ITUNES.COM IE', 'apple.com bill'],
+  ];
+  cases.forEach(([input, expected]) => {
+    it(input.slice(0, 34) + '… → ' + expected, () => expect(rulePatternFor(input)).toBe(expected));
+  });
+  it('descrição vazia → ""', () => {
+    expect(rulePatternFor('')).toBe('');
+    expect(rulePatternFor('COMPRA 4174 9999')).toBe('');
   });
 });
