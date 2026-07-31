@@ -422,6 +422,14 @@ const GROUPS = [
     { id: 'T34.4', title: 'Mudar de ideias atualiza a regra', steps: ['Corrigir o mesmo comerciante para outra categoria'], expect: 'A regra existente é atualizada (não cria uma segunda em conflito).' },
     { id: 'T34.5', title: 'Padrão limpo do comerciante', steps: ['Ver a regra criada'], expect: 'O padrão é o nome do comerciante sem prefixos nem códigos (ex.: "COMPRA 4174 PINGO DOCE DUQUE D A LI CONTACTLESS" → "pingo doce").' },
   ]},
+  { id: 'T35', title: 'Pesquisa com evolução & contexto', tests: [
+    { id: 'T35.1', title: 'Pesquisa cobre todo o histórico', steps: ['Despesas → pesquisar "continente"'], expect: 'Encontra resultados de TODOS os meses (não só do mês selecionado), ordenados do mais recente para o mais antigo.' },
+    { id: 'T35.2', title: 'Evolução e média mensal', steps: ['Pesquisar um comerciante com gastos em vários meses'], expect: 'Ao lado do total aparece um mini-gráfico dos últimos 6 meses e "~X/mês" (média só dos meses com gastos).' },
+    { id: 'T35.3', title: 'Um só mês → sem média', steps: ['Pesquisar algo que só existe num mês'], expect: 'Mostra apenas o total (não inventa média nem gráfico).' },
+    { id: 'T35.4', title: 'Faixa de contexto nas vistas novas', steps: ['Abrir Cartões, Fiscal, Transferências, Investimentos'], expect: 'Cada uma mostra no topo a métrica própria: dívida dos cartões, deduções estimadas, nº de transferências, valor da carteira.' },
+    { id: 'T35.5', title: 'Onboarding orientado ao valor', steps: ['Conta nova, sem dados'], expect: 'Quatro passos: rendimento → importar extrato → contas/cartões → meta. Já não pede a API key da Anthropic.' },
+    { id: 'T35.6', title: 'Meta reforçada pelo plano', steps: ['Reservar para metas no Resumo → abrir Metas'], expect: 'A meta mostra "REFORÇADA ESTE MÊS".' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },
