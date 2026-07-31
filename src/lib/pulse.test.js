@@ -216,3 +216,21 @@ describe('monthForecast', () => {
     expect(monthForecast(BASE, new Date(2026, 6, 2)).ready).toBe(false);
   });
 });
+
+describe('insight de poupança', () => {
+  it('mostra a maior oportunidade quando vale ≥200 €/ano', () => {
+    // 6 meses fechados de restauração muito acima do limite
+    const months = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'];
+    const addedExp = months.flatMap((m, i) =>
+      Array.from({ length: 3 }, (_, j) => ({ id: m + j + i, desc: 'X', cat: 'rest', amount: 100, date: m + '-0' + (j + 1) }))
+    );
+    const ins = buildInsights({ ...BASE, addedExp }, NOW);
+    const sav = ins.find((x) => x.id.startsWith('saving-'));
+    expect(sav).toBeTruthy();
+    expect(sav.title).toContain('Podias poupar');
+  });
+
+  it('não mostra quando não há histórico', () => {
+    expect(buildInsights(BASE, NOW).find((x) => x.id.startsWith('saving-'))).toBeUndefined();
+  });
+});
