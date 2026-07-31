@@ -120,6 +120,22 @@ export default function ExpensesView() {
         return false;
       });
     const tot = matches.reduce((acc, { x }) => acc + x.amount, 0);
+    /* Evolução dos resultados nos últimos 6 meses + média mensal: responde a
+       "quanto gasto neste sítio?" sem obrigar a somar à mão. */
+    const searchKeys = [];
+    for (let k = 5; k >= 0; k--) {
+      const dd = new Date();
+      searchKeys.push(
+        new Date(dd.getFullYear(), dd.getMonth() - k, 1).getFullYear() +
+          '-' +
+          String(new Date(dd.getFullYear(), dd.getMonth() - k, 1).getMonth() + 1).padStart(2, '0')
+      );
+    }
+    const searchSeries = searchKeys.map((k) =>
+      matches.reduce((acc, { x }) => ((x.date || '').slice(0, 7) === k ? acc + (Number(x.amount) || 0) : acc), 0)
+    );
+    const activeMonths = searchSeries.filter((v) => v > 0).length;
+    const searchAvg = activeMonths ? searchSeries.reduce((a, b) => a + b, 0) / activeMonths : 0;
     // Sorted by date desc (orig 1056) — keyed by expense identity so reconciles in place.
     const sorted = [...matches].sort((a, b) => (b.x.date || '').localeCompare(a.x.date || ''));
 
@@ -163,7 +179,15 @@ export default function ExpensesView() {
         )}
         <div className="rw" style={{ marginBottom: 10, padding: '0 4px' }}>
           <div className="lb">{matches.length + ' resultado' + (matches.length === 1 ? '' : 's')}</div>
-          <div className="m" style={{ fontSize: 13, fontWeight: 600 }}>{fm(tot)}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {activeMonths > 1 && (
+              <>
+                <Sparkline values={searchSeries} width={44} height={16} />
+                <span className="m" style={{ fontSize: 10, color: 'var(--text3)' }}>~{fm(searchAvg)}/mês</span>
+              </>
+            )}
+            <div className="m" style={{ fontSize: 13, fontWeight: 600 }}>{fm(tot)}</div>
+          </div>
         </div>
         {sorted.length === 0 ? (
           <div className="empty">
