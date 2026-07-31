@@ -35,7 +35,7 @@ import {
 } from '../lib/finance.js';
 import { fm, fc, uid } from '../lib/format.js';
 import { upcomingRecurring } from '../lib/reminders.js';
-import { dailyAllowance, savingsPulse, buildInsights, monthPlan } from '../lib/pulse.js';
+import { dailyAllowance, savingsPulse, buildInsights, monthPlan, monthForecast } from '../lib/pulse.js';
 
 const MONTHS_LONG = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -193,6 +193,7 @@ export default function OverviewView() {
   const pulse = !newU ? savingsPulse(s) : null;
   const insights = !newU ? buildInsights(s) : [];
   const plan = !newU ? monthPlan(s) : null;
+  const forecast = !newU ? monthForecast(s) : null;
   const applyPlan = () => {
     const total = actions.allocateGoals(plan.monthKey);
     toast(total > 0 ? 'Reservado ' + fm(total) + ' para as metas' : 'Nada a reservar', total > 0 ? 'success' : 'error');
@@ -232,6 +233,27 @@ export default function OverviewView() {
                 <div style={{ width: Math.min(100, (allow.spent / Math.max(1, allow.income)) * 100) + '%', background: 'var(--primary)' }} />
                 <div style={{ width: Math.min(100, (allow.pendingFixed / Math.max(1, allow.income)) * 100) + '%', background: 'var(--warning)', opacity: 0.55 }} />
               </div>
+              {forecast && forecast.ready && (
+                <div
+                  style={{
+                    marginTop: 10,
+                    padding: '8px 10px',
+                    borderRadius: 10,
+                    background: forecast.overBudget ? 'var(--signal-soft, rgba(229,57,53,0.08))' : 'var(--elevated)',
+                    fontSize: 11,
+                    color: forecast.overBudget ? 'var(--signal)' : 'var(--text3)',
+                    lineHeight: 1.45,
+                  }}
+                >
+                  A este ritmo ({hidden ? '••••' : fc(forecast.dailyBurn)}/dia) fechas o mês em{' '}
+                  <b>{hidden ? '••••' : fc(forecast.projectedSpend)}</b>
+                  {forecast.overBudget
+                    ? ' — ' + (hidden ? '••••' : fc(-forecast.projectedEnd)) + ' acima do rendimento.'
+                    : allow.income > 0
+                      ? ', sobrando ' + (hidden ? '••••' : fc(forecast.projectedEnd)) + '.'
+                      : '.'}
+                </div>
+              )}
               <div className="rw" style={{ marginTop: 10, gap: 12 }}>
                 <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                   Gasto {hidden ? '••••' : fc(allow.spent)}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dailyAllowance, savingsPulse, buildInsights, monthPlan } from './pulse.js';
+import { dailyAllowance, savingsPulse, buildInsights, monthPlan, monthForecast } from './pulse.js';
 
 // 10 de julho de 2026 (julho tem 31 dias → faltam 22 dias, incluindo hoje).
 const NOW = new Date(2026, 6, 10);
@@ -175,5 +175,44 @@ describe('monthPlan (envelope budgeting)', () => {
     const p = monthPlan(s, NOW);
     expect(p.goalItems[0].done).toBe(true);
     expect(p.allocatedGoals).toBe(true);
+  });
+});
+
+describe('monthForecast', () => {
+  it('extrapola só a despesa variável e soma as fixas por pagar', () => {
+    // dia 10 de julho (31 dias): 300 variáveis em 10 dias = 30/dia → 930 no mês
+    // + fixas por pagar (Ginásio 40, dia 20)
+    const f = monthForecast(BASE, NOW);
+    expect(f.ready).toBe(true);
+    expect(f.variableSpent).toBe(500);
+    expect(f.dailyBurn).toBeCloseTo(50, 5);
+    expect(f.projectedSpend).toBeCloseTo(50 * 31 + 40, 5);
+  });
+
+  it('não extrapola as fixas já lançadas', () => {
+    const s = {
+      ...BASE,
+      recurring: [{ id: 'r1', name: 'Renda', amount: 350, day: 1 }],
+      addedExp: [
+        { id: 'f', desc: 'Renda', amount: 350, cat: 'cas', date: '2026-07-01', recId: 'r1' },
+        { id: 'v', desc: 'Café', amount: 100, cat: 'rest', date: '2026-07-05' },
+      ],
+    };
+    const f = monthForecast(s, NOW);
+    expect(f.fixedSpent).toBe(350);
+    expect(f.variableSpent).toBe(100);
+    // 100/10 = 10/dia → 310 variáveis + 350 fixas já pagas = 660 (não 1550)
+    expect(f.projectedSpend).toBeCloseTo(310 + 350, 5);
+  });
+
+  it('avisa quando a projeção passa o rendimento', () => {
+    const s = { ...BASE, incomes: [{ id: 'i', name: 'S', amount: 800, recurring: true }] };
+    const f = monthForecast(s, NOW);
+    expect(f.overBudget).toBe(true);
+    expect(f.projectedEnd).toBeLessThan(0);
+  });
+
+  it('nos primeiros dias não projeta (amostra insuficiente)', () => {
+    expect(monthForecast(BASE, new Date(2026, 6, 2)).ready).toBe(false);
   });
 });

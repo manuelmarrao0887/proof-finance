@@ -403,6 +403,13 @@ const GROUPS = [
     { id: 'T31.3', title: 'Conteúdo completo', steps: ['Ver as colunas'], expect: 'Despesas: Data, Descrição, Categoria (nome), Valor, Conta, Origem (manual/importada), Tags, Notas — ordenadas por data. Receitas: Data, Nome, Fonte, Valor, Recorrente, Conta.' },
     { id: 'T31.4', title: 'Sem dados', steps: ['Utilizador novo → Exportar CSV'], expect: 'Mostra "Sem dados para exportar" e não descarrega nada.' },
   ]},
+  { id: 'T32', title: 'Projeção de fim de mês & visão anual', tests: [
+    { id: 'T32.1', title: 'Projeção no cartão "Podes gastar"', steps: ['Resumo, a partir do dia 3 do mês com despesas variáveis'], expect: 'Mostra "A este ritmo (X/dia) fechas o mês em Y" e quanto sobra. Antes do dia 3 (ou sem despesas) não projeta.' },
+    { id: 'T32.2', title: 'Não extrapola despesas fixas', steps: ['Ter uma renda paga no dia 1 e despesas variáveis'], expect: 'A projeção só extrapola a despesa variável; as fixas já pagas entram pelo valor real e as por pagar são somadas uma vez. Uma renda de 350 € paga no dia 1 NÃO vira 10.850 €.' },
+    { id: 'T32.3', title: 'Aviso quando passa o rendimento', steps: ['Ritmo de despesa acima do rendimento'], expect: 'O bloco fica vermelho e diz quanto ficará acima do rendimento.' },
+    { id: 'T32.4', title: 'Visão anual nos Relatórios', steps: ['Mais → Relatórios (com ≥2 meses de dados no ano)'], expect: 'Barras dos 12 meses do ano, total e média mensal. O mês selecionado fica azul, o mais caro vermelho, e indica qual foi.' },
+    { id: 'T32.5', title: 'Média só conta meses com dados', steps: ['Ano com apenas 3 meses preenchidos'], expect: 'A média é do total ÷ 3 (não ÷ 12).' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },
