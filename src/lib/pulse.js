@@ -187,18 +187,7 @@ export function buildInsights(state, now) {
     });
   }
 
-  // 3. Fixas a pagar nos próximos 7 dias.
-  const pend = pendingRecurring(state, d);
-  const soon = pend.items.filter((i) => i.daysLeft <= 7);
-  if (soon.length) {
-    const tot = soon.reduce((s, i) => s + i.amount, 0);
-    out.push({
-      id: 'due-soon',
-      tone: 'info',
-      title: soon.length + (soon.length === 1 ? ' fixa a pagar' : ' fixas a pagar') + ' (7 dias)',
-      detail: soon.map((i) => i.name).slice(0, 3).join(', ') + ' · ' + tot.toFixed(0) + '€.',
-    });
-  }
+  // (As fixas a pagar em breve têm cartão próprio no Resumo — não duplicar aqui.)
 
   // 4. Dívida de cartão de crédito perto/acima do plafond.
   getAcctsLive(state)

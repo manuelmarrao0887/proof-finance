@@ -106,12 +106,9 @@ describe('buildInsights', () => {
     expect(over.detail).toContain('Restauração');
   });
 
-  it('avisa fixas a pagar nos próximos 7 dias', () => {
+  it('NÃO duplica o aviso de fixas a pagar (tem cartão próprio no Resumo)', () => {
     const s = { ...BASE, recurring: [{ id: 'r5', name: 'Renda', amount: 500, day: 14, cat: 'cas' }] };
-    const ins = buildInsights(s, NOW);
-    const due = ins.find((i) => i.id === 'due-soon');
-    expect(due).toBeTruthy();
-    expect(due.detail).toContain('Renda');
+    expect(buildInsights(s, NOW).find((i) => i.id === 'due-soon')).toBeUndefined();
   });
 
   it('cartão acima do plafond gera alerta', () => {
