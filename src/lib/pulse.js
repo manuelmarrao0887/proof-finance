@@ -13,6 +13,7 @@ import { getAcctsLive, cardUsage, CARD_CAT } from './finance.js';
 import { upcomingTaxEvents } from './taxpt.js';
 import { savingsOpportunities } from './savings.js';
 import { findAnomalies } from './anomalies.js';
+import { goalsAtRisk } from './goals.js';
 
 const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 const daysInMonth = (d) => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
@@ -227,6 +228,20 @@ export function buildInsights(state, now) {
       tone: t.daysLeft <= 7 ? 'warn' : 'info',
       title: t.title,
       detail: (t.daysLeft === 0 ? 'É hoje' : t.daysLeft === 1 ? 'É amanhã' : 'Faltam ' + t.daysLeft + ' dias') + ' · ver em Mais → Fiscal.',
+    });
+  }
+
+  // 5a. Meta com prazo que não vai ser cumprido ao ritmo atual.
+  const risky = goalsAtRisk((state && state.goals) || [], d);
+  if (risky.length) {
+    const r = risky[0];
+    out.push({
+      id: 'goalrisk-' + r.id,
+      tone: 'warn',
+      title: r.name + ' não chega ao prazo',
+      detail:
+        'Faltam ' + r.remaining.toFixed(0) + '€ em ' + r.monthsLeft + ' ' +
+        (r.monthsLeft === 1 ? 'mês' : 'meses') + ' — precisas de ' + r.needed.toFixed(0) + '€/mês.',
     });
   }
 
