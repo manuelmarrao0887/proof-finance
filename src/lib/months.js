@@ -100,3 +100,34 @@ export function clampOffset(mOff, state, now) {
   const min = minMonthOffset(state, now);
   return Math.min(0, Math.max(min, Number(mOff) || 0));
 }
+
+/* Série de totais mensais de uma categoria (do mais antigo para o mais recente),
+   terminando no mês `endKey` (default: mês atual). `n` meses (default 6).
+   Usada para as sparklines de tendência por categoria. */
+export function categorySeries(addedExp, cat, n, endKey, now) {
+  const count = n || 6;
+  const end = /^\d{4}-\d{2}$/.test(String(endKey || '')) ? String(endKey) : keyOf(now || new Date());
+  const [ey, em] = end.split('-').map(Number);
+  const keys = [];
+  for (let k = count - 1; k >= 0; k--) keys.push(keyOf(new Date(ey, em - 1 - k, 1)));
+  const totals = keys.map(() => 0);
+  (addedExp || []).forEach((x) => {
+    if (!x || x.cat !== cat) return;
+    const i = keys.indexOf(String(x.date || '').slice(0, 7));
+    if (i >= 0) totals[i] += Number(x.amount) || 0;
+  });
+  return totals;
+}
+
+/* Tendência de uma série: variação % do último mês face à média dos anteriores.
+   Devolve null quando não há base credível (sem histórico ou média ~0). */
+export function seriesTrend(series) {
+  const v = (series || []).map((x) => Number(x) || 0);
+  if (v.length < 3) return null;
+  const cur = v[v.length - 1];
+  const prev = v.slice(0, -1).filter((x) => x > 0);
+  if (prev.length < 2) return null;
+  const avg = prev.reduce((a, b) => a + b, 0) / prev.length;
+  if (avg < 10) return null;
+  return ((cur - avg) / avg) * 100;
+}

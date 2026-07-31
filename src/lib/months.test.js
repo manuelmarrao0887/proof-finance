@@ -8,6 +8,8 @@ import {
   minMonthOffset,
   clampOffset,
   monthsWithData,
+  categorySeries,
+  seriesTrend,
 } from './months.js';
 
 const NOW = new Date(2026, 6, 15); // 15 julho 2026
@@ -94,5 +96,31 @@ describe('monthsWithData', () => {
     const exp = [{ date: 'lixo', amount: 1 }, { date: '2026-06-01', amount: 1 }];
     expect(monthsWithData(exp, NOW)).toEqual(['2026-07', '2026-06']);
     expect(monthsWithData(exp, NOW, 1)).toEqual(['2026-07']);
+  });
+});
+
+describe('categorySeries / seriesTrend', () => {
+  const EXP = [
+    { cat: 'rest', amount: 100, date: '2026-05-03' },
+    { cat: 'rest', amount: 50, date: '2026-05-20' },
+    { cat: 'rest', amount: 200, date: '2026-07-01' },
+    { cat: 'sup', amount: 999, date: '2026-07-01' },
+  ];
+  it('série do mais antigo para o mais recente, terminando no mês dado', () => {
+    expect(categorySeries(EXP, 'rest', 3, '2026-07')).toEqual([150, 0, 200]);
+  });
+  it('ignora outras categorias', () => {
+    expect(categorySeries(EXP, 'sup', 3, '2026-07')).toEqual([0, 0, 999]);
+  });
+  it('categoria sem dados → zeros', () => {
+    expect(categorySeries(EXP, 'gym', 3, '2026-07')).toEqual([0, 0, 0]);
+  });
+  it('seriesTrend: subida face à média', () => {
+    expect(seriesTrend([100, 100, 200])).toBeCloseTo(100, 5);
+  });
+  it('seriesTrend: sem base credível → null', () => {
+    expect(seriesTrend([0, 0, 200])).toBeNull();
+    expect(seriesTrend([200])).toBeNull();
+    expect(seriesTrend([5, 5, 6])).toBeNull(); // média < 10
   });
 });
