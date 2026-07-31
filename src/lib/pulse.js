@@ -242,3 +242,59 @@ export function buildInsights(state, now) {
   const order = { alert: 0, warn: 1, info: 2, good: 3 };
   return out.sort((a, b) => order[a.tone] - order[b.tone]).slice(0, 4);
 }
+
+/* ── monthPlan (envelope budgeting) ──────────────────────────────────────
+   Plano do mês assim que o rendimento entra: quanto está comprometido com
+   despesas fixas, quanto vai para metas, e quanto sobra livre.
+
+   { income, salaryIn, fixedTotal, fixedItems, goalsTotal, goalItems,
+     spent, free, allocatedGoals }
+   - salaryIn: já entrou salário este mês? (receita source 'salary' datada)
+   - goalItems: metas com reserva mensal definida e ainda por concluir
+   - allocatedGoals: se as metas já foram reforçadas este mês (marca lastAlloc) */
+export function monthPlan(state, now) {
+  const d = now || new Date();
+  const key = ym(d);
+  const income = monthIncome(state, d);
+  const spent = monthExpenses(state, d).reduce((s, x) => s + (Number(x.amount) || 0), 0);
+  const pend = pendingRecurring(state, d);
+
+  // Total das fixas do mês (pagas + por pagar), para mostrar o compromisso real.
+  const allRec = ((state && state.recurring) || []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    amount: Number(r.amount) || 0,
+    day: parseInt(r.day, 10) || 1,
+  }));
+  const fixedTotal = allRec.reduce((s, r) => s + r.amount, 0);
+
+  const salaryIn = ((state && state.incomes) || []).some(
+    (i) => i.source === 'salary' && (i.date || '').slice(0, 7) === key
+  );
+
+  const goalItems = ((state && state.goals) || [])
+    .filter((g) => (Number(g.monthly) || 0) > 0 && (Number(g.current) || 0) < (Number(g.target) || 0))
+    .map((g) => ({
+      id: g.id,
+      name: g.name,
+      monthly: Number(g.monthly) || 0,
+      remaining: Math.max(0, (Number(g.target) || 0) - (Number(g.current) || 0)),
+      done: g.lastAlloc === key,
+    }));
+  const goalsTotal = goalItems.reduce((s, g) => s + Math.min(g.monthly, g.remaining), 0);
+  const allocatedGoals = goalItems.length > 0 && goalItems.every((g) => g.done);
+
+  return {
+    monthKey: key,
+    income,
+    salaryIn,
+    spent,
+    fixedTotal,
+    fixedItems: allRec.sort((a, b) => a.day - b.day),
+    pendingFixed: pend.total,
+    goalsTotal,
+    goalItems,
+    allocatedGoals,
+    free: income - fixedTotal - goalsTotal,
+  };
+}

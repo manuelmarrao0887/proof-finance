@@ -561,6 +561,24 @@ export function StoreProvider({ children }) {
       // Desliza a janela de meses (mOff ≤ 0). Ao mudar de janela o mês
       // selecionado passa a ser o último da nova janela (em=3).
       setTaxCfg: (taxCfg) => setField('taxCfg', taxCfg),
+      /* Reforça de uma vez todas as metas com reserva mensal definida:
+         current += min(monthly, o que falta) e marca lastAlloc com o mês, para
+         não reforçar duas vezes no mesmo mês. Devolve o total alocado. */
+      allocateGoals: (monthKey) => {
+        const goals = getState().goals || [];
+        let total = 0;
+        const next = goals.map((g) => {
+          const monthly = Number(g.monthly) || 0;
+          const target = Number(g.target) || 0;
+          const current = Number(g.current) || 0;
+          if (monthly <= 0 || current >= target || g.lastAlloc === monthKey) return g;
+          const add = Math.min(monthly, target - current);
+          total += add;
+          return { ...g, current: current + add, lastAlloc: monthKey };
+        });
+        if (total > 0) setField('goals', next);
+        return total;
+      },
       setMOff: (mOff) => {
         setField('mOff', Number(mOff) || 0);
         setField('em', 3);
