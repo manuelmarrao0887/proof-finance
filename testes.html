@@ -430,6 +430,10 @@ const GROUPS = [
     { id: 'T35.5', title: 'Onboarding orientado ao valor', steps: ['Conta nova, sem dados'], expect: 'Quatro passos: rendimento → importar extrato → contas/cartões → meta. Já não pede a API key da Anthropic.' },
     { id: 'T35.6', title: 'Meta reforçada pelo plano', steps: ['Reservar para metas no Resumo → abrir Metas'], expect: 'A meta mostra "REFORÇADA ESTE MÊS".' },
   ]},
+  { id: 'T36', title: 'Recorrentes — o que já está pago', tests: [
+    { id: 'T36.1', title: 'Marca as já lançadas', steps: ['Registar a despesa de uma recorrente (Despesas → Registar recorrente)', 'Abrir Mais → Recorrentes'], expect: 'Essa recorrente mostra o selo "PAGA" e "já lançada este mês" em vez da contagem de dias.' },
+    { id: 'T36.2', title: 'Quanto falta pagar', steps: ['Ver o cartão do topo'], expect: 'Além do custo mensal e anual, indica "falta pagar X este mês" (só as que ainda não foram lançadas).' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },
