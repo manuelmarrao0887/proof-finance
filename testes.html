@@ -389,6 +389,14 @@ const GROUPS = [
     { id: 'T29.3', title: 'Acompanha a navegação de meses', steps: ['Deslizar para meses anteriores'], expect: 'A sparkline passa a terminar no mês selecionado (mostra os 6 meses até esse).' },
     { id: 'T29.4', title: 'Sem histórico credível → sem número', steps: ['Categoria nova ou com valores residuais (<10 €)'], expect: 'Mostra a linha mas não inventa percentagem de variação.' },
   ]},
+  { id: 'T30', title: 'Plano do mês (envelope budgeting)', tests: [
+    { id: 'T30.1', title: 'Aparece quando o salário entra', steps: ['Registar/importar uma receita com fonte "Salário" no mês'], expect: 'O Resumo mostra o cartão "Plano do mês · salário recebido". Sem salário no mês, não aparece.' },
+    { id: 'T30.2', title: 'Divisão em envelopes', steps: ['Ver a barra e as linhas'], expect: 'Barra com Fixas (laranja), Metas (roxo) e Livre (verde); valores = total das recorrentes, soma das reservas mensais das metas, e o que sobra. Livre negativo aparece a vermelho.' },
+    { id: 'T30.3', title: 'Reservar para metas', steps: ['Tocar em "Reservar X € para as metas"'], expect: 'Cada meta com reserva mensal soma o valor ao seu progresso (limitado ao que falta). Toast confirma o total reservado.' },
+    { id: 'T30.4', title: 'Não reserva duas vezes no mesmo mês', steps: ['Tocar em Reservar; recarregar; ver o cartão'], expect: 'Passa a mostrar "Metas já reforçadas este mês" e o botão desaparece.' },
+    { id: 'T30.5', title: 'Metas sem reserva mensal ficam de fora', steps: ['Ter uma meta sem "Reservar/mês" e outra já concluída'], expect: 'Nenhuma delas entra no envelope Metas nem é reforçada.' },
+    { id: 'T30.6', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos'], expect: 'Os valores do plano aparecem ••••.' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },

@@ -35,7 +35,7 @@ import {
 } from '../lib/finance.js';
 import { fm, fc, uid } from '../lib/format.js';
 import { upcomingRecurring } from '../lib/reminders.js';
-import { dailyAllowance, savingsPulse, buildInsights } from '../lib/pulse.js';
+import { dailyAllowance, savingsPulse, buildInsights, monthPlan } from '../lib/pulse.js';
 
 const MONTHS_LONG = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -192,6 +192,11 @@ export default function OverviewView() {
   const allow = !newU ? dailyAllowance(s) : null;
   const pulse = !newU ? savingsPulse(s) : null;
   const insights = !newU ? buildInsights(s) : [];
+  const plan = !newU ? monthPlan(s) : null;
+  const applyPlan = () => {
+    const total = actions.allocateGoals(plan.monthKey);
+    toast(total > 0 ? 'Reservado ' + fm(total) + ' para as metas' : 'Nada a reservar', total > 0 ? 'success' : 'error');
+  };
   const allowTone = allow && allow.perDay < 0 ? 'var(--signal)' : allow && allow.left < allow.income * 0.15 ? 'var(--warning)' : 'var(--success)';
   const INS_COLOR = { alert: 'var(--signal)', warn: 'var(--warning)', good: 'var(--success)', info: 'var(--primary)' };
 
@@ -273,6 +278,54 @@ export default function OverviewView() {
               <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{ins.detail}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Plano do mês (envelope budgeting) — aparece quando o salário entra ── */}
+      {!newU && plan && plan.salaryIn && plan.income > 0 && (
+        <div className="cd" style={{ marginBottom: 16, padding: '16px 18px' }}>
+          <div className="rw" style={{ marginBottom: 10 }}>
+            <div className="lb">Plano do mês</div>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>salário recebido</span>
+          </div>
+          {/* Barra de envelopes: fixas · metas · livre */}
+          <div style={{ height: 10, borderRadius: 999, overflow: 'hidden', display: 'flex', marginBottom: 10, background: 'var(--bg3)' }}>
+            <div style={{ width: Math.max(0, (plan.fixedTotal / plan.income) * 100) + '%', background: 'var(--warning)' }} />
+            <div style={{ width: Math.max(0, (plan.goalsTotal / plan.income) * 100) + '%', background: 'var(--purple, #7b5fe0)' }} />
+            <div style={{ width: Math.max(0, (Math.max(0, plan.free) / plan.income) * 100) + '%', background: 'var(--success)' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+            {[
+              { c: 'var(--warning)', l: 'Fixas', v: plan.fixedTotal },
+              { c: 'var(--purple, #7b5fe0)', l: 'Metas', v: plan.goalsTotal },
+              { c: 'var(--success)', l: 'Livre', v: plan.free },
+            ].map((row) => (
+              <div key={row.l} className="rw">
+                <span style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 999, background: row.c, display: 'inline-block' }} />
+                  {row.l}
+                </span>
+                <span className="m" style={{ fontSize: 12, fontWeight: 600, color: row.v < 0 ? 'var(--signal)' : 'var(--text)' }}>
+                  {hidden ? '••••' : fm(row.v)}
+                </span>
+              </div>
+            ))}
+          </div>
+          {plan.goalItems.length > 0 && (
+            plan.allocatedGoals ? (
+              <div style={{ fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>
+                Metas já reforçadas este mês.
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={applyPlan}
+                style={{ width: '100%', padding: '11px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Reservar {hidden ? '••••' : fm(plan.goalsTotal)} para as metas
+              </button>
+            )
+          )}
         </div>
       )}
 

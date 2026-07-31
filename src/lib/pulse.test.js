@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dailyAllowance, savingsPulse, buildInsights } from './pulse.js';
+import { dailyAllowance, savingsPulse, buildInsights, monthPlan } from './pulse.js';
 
 // 10 de julho de 2026 (julho tem 31 dias → faltam 22 dias, incluindo hoje).
 const NOW = new Date(2026, 6, 10);
@@ -136,5 +136,47 @@ describe('buildInsights', () => {
     const order = { alert: 0, warn: 1, info: 2, good: 3 };
     const sorted = [...tones].sort((a, b) => order[a] - order[b]);
     expect(tones).toEqual(sorted);
+  });
+});
+
+describe('monthPlan (envelope budgeting)', () => {
+  const S = {
+    ...BASE,
+    incomes: [{ id: 'i1', name: 'Salário', amount: 2000, recurring: false, source: 'salary', date: '2026-07-01' }],
+    goals: [
+      { id: 'g1', name: 'Férias', target: 3000, current: 1000, monthly: 200 },
+      { id: 'g2', name: 'Feita', target: 500, current: 500, monthly: 50 },
+      { id: 'g3', name: 'Sem reserva', target: 900, current: 0 },
+    ],
+  };
+
+  it('deteta entrada de salário no mês', () => {
+    expect(monthPlan(S, NOW).salaryIn).toBe(true);
+    expect(monthPlan({ ...S, incomes: [] }, NOW).salaryIn).toBe(false);
+  });
+
+  it('soma fixas e metas; livre = rendimento − fixas − metas', () => {
+    const p = monthPlan(S, NOW);
+    expect(p.income).toBe(2000);
+    expect(p.fixedTotal).toBe(50); // Ginásio 40 + Netflix 10
+    expect(p.goalsTotal).toBe(200); // só a meta com reserva por concluir
+    expect(p.free).toBe(2000 - 50 - 200);
+  });
+
+  it('só metas com reserva mensal e por concluir', () => {
+    const p = monthPlan(S, NOW);
+    expect(p.goalItems.map((g) => g.id)).toEqual(['g1']);
+  });
+
+  it('limita a reserva ao que falta para a meta', () => {
+    const s = { ...S, goals: [{ id: 'g', name: 'Quase', target: 100, current: 80, monthly: 200 }] };
+    expect(monthPlan(s, NOW).goalsTotal).toBe(20);
+  });
+
+  it('marca metas já reforçadas neste mês', () => {
+    const s = { ...S, goals: [{ id: 'g1', name: 'F', target: 3000, current: 1000, monthly: 200, lastAlloc: '2026-07' }] };
+    const p = monthPlan(s, NOW);
+    expect(p.goalItems[0].done).toBe(true);
+    expect(p.allocatedGoals).toBe(true);
   });
 });
