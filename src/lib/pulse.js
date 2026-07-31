@@ -10,6 +10,7 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 import { getAcctsLive, cardUsage, CARD_CAT } from './finance.js';
+import { upcomingTaxEvents } from './taxpt.js';
 
 const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 const daysInMonth = (d) => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
@@ -215,7 +216,19 @@ export function buildInsights(state, now) {
       }
     });
 
-  // 5. Boa notícia: poupança saudável (só se não houver alertas).
+  // 5. Obrigação fiscal PT a menos de 30 dias (IRS, IMI, IUC, e-Fatura).
+  const tax = upcomingTaxEvents(state && state.taxCfg, d, 30);
+  if (tax.length) {
+    const t = tax[0];
+    out.push({
+      id: 'tax-' + t.id,
+      tone: t.daysLeft <= 7 ? 'warn' : 'info',
+      title: t.title,
+      detail: (t.daysLeft === 0 ? 'É hoje' : t.daysLeft === 1 ? 'É amanhã' : 'Faltam ' + t.daysLeft + ' dias') + ' · ver em Mais → Fiscal.',
+    });
+  }
+
+  // 6. Boa notícia: poupança saudável (só se não houver alertas).
   const sp = savingsPulse(state, d);
   if (!out.some((o) => o.tone === 'alert') && sp.income > 0 && sp.rate >= 20) {
     out.push({

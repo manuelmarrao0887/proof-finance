@@ -99,6 +99,7 @@ export function initialPersisted() {
     rolloverOn: false, // orçamento: sobra/falta transita para o mês seguinte
     positions: [], // posições de investimento { id, broker, asset, qty, avgPrice, currentPrice }
     transfers: [], // transferências entre contas { id, from, to, amount, date, note, settledFrom, settledTo }
+    taxCfg: null, // config fiscal PT { imiAmount, iucMonths:[], irs, couple } ou null
   };
 }
 
@@ -138,6 +139,7 @@ export const PERSISTED_KEYS = [
   'rolloverOn',
   'positions',
   'transfers',
+  'taxCfg',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -169,6 +171,7 @@ export function buildPersistPayload(state) {
     rolloverOn: !!state.rolloverOn,
     positions: state.positions || [],
     transfers: state.transfers || [],
+    taxCfg: state.taxCfg || null,
   };
 }
 
@@ -206,6 +209,7 @@ export function hydrateFromDoc(d) {
     rolloverOn: !!d.rolloverOn,
     positions: Array.isArray(d.positions) ? d.positions : [],
     transfers: Array.isArray(d.transfers) ? d.transfers : [],
+    taxCfg: d.taxCfg && typeof d.taxCfg === 'object' ? d.taxCfg : null,
   };
 }
 
@@ -556,6 +560,7 @@ export function StoreProvider({ children }) {
       setEm: (em) => setField('em', em),
       // Desliza a janela de meses (mOff ≤ 0). Ao mudar de janela o mês
       // selecionado passa a ser o último da nova janela (em=3).
+      setTaxCfg: (taxCfg) => setField('taxCfg', taxCfg),
       setMOff: (mOff) => {
         setField('mOff', Number(mOff) || 0);
         setField('em', 3);
