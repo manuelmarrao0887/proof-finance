@@ -143,6 +143,7 @@ export function buildInsights(state, now) {
       tone: 'alert',
       title: a.kind === 'duplicate' ? 'Possível cobrança repetida' : 'Despesa fora do padrão',
       detail: a.title + ' — ' + a.detail,
+      dismissId: a.id, // permite ao utilizador dizer "está certo"
     });
   });
 

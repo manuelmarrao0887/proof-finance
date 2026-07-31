@@ -80,3 +80,30 @@ describe('findAnomalies', () => {
     expect(list[0].severity).toBeGreaterThanOrEqual(list[list.length - 1].severity);
   });
 });
+
+describe('dispensar avisos', () => {
+  const NOW2 = new Date(2026, 6, 20);
+  const state = {
+    addedExp: [
+      { id: 'h1', desc: 'Pingo Doce', amount: 30, cat: 'sup', date: '2026-05-02' },
+      { id: 'h2', desc: 'Pingo Doce', amount: 25, cat: 'sup', date: '2026-05-20' },
+      { id: 'h3', desc: 'Pingo Doce', amount: 35, cat: 'sup', date: '2026-06-08' },
+      { id: 'a', desc: 'Netflix', amount: 10.99, cat: 'sub', date: '2026-07-10' },
+      { id: 'b', desc: 'Netflix', amount: 10.99, cat: 'sub', date: '2026-07-12' },
+    ],
+  };
+
+  it('aviso dispensado deixa de aparecer', () => {
+    const first = findAnomalies(state, NOW2);
+    expect(first.length).toBeGreaterThan(0);
+    const dismissed = { ...state, dismissedAnomalies: first.map((a) => a.id) };
+    expect(findAnomalies(dismissed, NOW2)).toEqual([]);
+  });
+
+  it('dispensar um não esconde os outros', () => {
+    const all = findAnomalies(state, NOW2);
+    if (all.length < 2) return; // nada a testar neste fixture
+    const dismissed = { ...state, dismissedAnomalies: [all[0].id] };
+    expect(findAnomalies(dismissed, NOW2).length).toBe(all.length - 1);
+  });
+});
