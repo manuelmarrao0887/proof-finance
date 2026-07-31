@@ -471,6 +471,13 @@ const GROUPS = [
     { id: 'T41.4', title: 'Posições abaixo de −25%', steps: ['Ter uma posição com perda ≥25%'], expect: 'Assinala a pior com a perda não realizada; com várias, indica quantas são.' },
     { id: 'T41.5', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos → abrir Investimentos'], expect: 'Os avisos não aparecem (revelariam a composição).' },
   ]},
+  { id: 'T42', title: 'Metas em risco', tests: [
+    { id: 'T42.1', title: 'Aviso quando a reserva não chega', steps: ['Meta com data alvo e reserva mensal insuficiente'], expect: 'Na meta: "Não chega para o prazo: precisas de X/mês (+Y) nos próximos N meses".' },
+    { id: 'T42.2', title: 'Reserva suficiente não alerta', steps: ['Meta cuja reserva cobre o que falta até ao prazo'], expect: 'Sem aviso. Há margem de 5% para não acusar por cêntimos.' },
+    { id: 'T42.3', title: 'Meta sem reserva definida', steps: ['Meta com prazo mas sem "Reservar/mês"'], expect: 'Também é assinalada, indicando o valor mensal necessário.' },
+    { id: 'T42.4', title: 'Sem prazo ou já cumprida', steps: ['Meta sem data alvo; meta com objetivo atingido'], expect: 'Nunca são assinaladas.' },
+    { id: 'T42.5', title: 'Aviso no Resumo', steps: ['Ter uma meta em risco → abrir o Resumo'], expect: 'Insight laranja: "{meta} não chega ao prazo" com o que falta e o valor mensal necessário. Mostra a mais urgente.' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },

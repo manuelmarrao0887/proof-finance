@@ -16,7 +16,7 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fc } from '../lib/format.js';
-import { monthsToTarget, etaDate, ymLabel } from '../lib/goals.js';
+import { monthsToTarget, etaDate, ymLabel, goalsAtRisk } from '../lib/goals.js';
 
 const QUICK_ADD = [10, 50, 100, 500];
 
@@ -25,6 +25,9 @@ export default function GoalsView() {
   const { open } = useUI();
   const toast = useToast();
   const goals = state.goals || [];
+  // Metas cuja reserva mensal não chega para cumprir o prazo.
+  const atRisk = goalsAtRisk(goals);
+  const riskById = Object.fromEntries(atRisk.map((r) => [r.id, r]));
   // Mês corrente 'YYYY-MM' — marca as metas já reforçadas pelo plano do mês.
   const thisMonth = (() => {
     const d = new Date();
@@ -188,6 +191,13 @@ export default function GoalsView() {
                     Sugestão: ~ {fc(monthly)}/mês para o prazo
                   </div>
                 ) : null}
+                {riskById[g.id] && (
+                  <div style={{ fontSize: 11, color: 'var(--warning)', marginTop: 6, fontWeight: 600, lineHeight: 1.4 }}>
+                    Não chega para o prazo: precisas de {fc(riskById[g.id].needed)}/mês
+                    {riskById[g.id].monthly > 0 && ' (+' + fc(riskById[g.id].gap) + ')'} nos próximos{' '}
+                    {riskById[g.id].monthsLeft} {riskById[g.id].monthsLeft === 1 ? 'mês' : 'meses'}.
+                  </div>
+                )}
               </div>
             </div>
 
