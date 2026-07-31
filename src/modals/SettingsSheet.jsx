@@ -12,6 +12,8 @@ import Sheet from '../components/Sheet.jsx';
 import { useStore, useAuth } from '../store/store.jsx';
 import { useUI, useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { expensesToCSV, incomesToCSV, downloadCSV } from '../lib/exportcsv.js';
+import { todayISO } from '../lib/format.js';
 import { signOutUser } from '../firebase/client.js';
 import { applyTheme } from '../store/store.jsx';
 
@@ -153,6 +155,21 @@ export default function SettingsSheet() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast('Backup gerado', 'success');
   }, [currentUser, state, toast]);
+
+  /* ── exportCSV — despesas + receitas em CSV (Excel PT: ; e vírgula decimal),
+     úteis para contabilidade/IRS. Um ficheiro de cada. ───────────────────── */
+  const exportCSV = useCallback(() => {
+    const stamp = todayISO();
+    const exps = state.addedExp || [];
+    const incs = state.incomes || [];
+    if (!exps.length && !incs.length) {
+      toast('Sem dados para exportar', 'error');
+      return;
+    }
+    if (exps.length) downloadCSV('proof-despesas-' + stamp + '.csv', expensesToCSV(exps, state.bdg));
+    if (incs.length) downloadCSV('proof-receitas-' + stamp + '.csv', incomesToCSV(incs));
+    toast('CSV exportado', 'success');
+  }, [state.addedExp, state.incomes, state.bdg, toast]);
 
   /* ── restoreData (orig 1885-1915) — hydrate via actions.patch. ─────────── */
   const restoreData = useCallback(
@@ -375,6 +392,18 @@ export default function SettingsSheet() {
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
           Backup JSON
+        </span>
+        <span style={{ color: 'var(--text3)' }}>&rsaquo;</span>
+      </button>
+      <button type="button" onClick={exportCSV} style={dataBtn}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="8" y1="13" x2="16" y2="13" />
+            <line x1="8" y1="17" x2="13" y2="17" />
+          </svg>
+          Exportar CSV (Excel)
         </span>
         <span style={{ color: 'var(--text3)' }}>&rsaquo;</span>
       </button>
