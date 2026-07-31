@@ -442,6 +442,12 @@ const GROUPS = [
     { id: 'T37.5', title: 'Categoria sem limite', steps: ['Gastar ≥50 €/mês numa categoria sem orçamento definido'], expect: 'Sugere definir um limite e estima a poupança de o pôr 10% abaixo.' },
     { id: 'T37.6', title: 'Sem histórico → não inventa', steps: ['Utilizador novo ou só com o mês atual'], expect: 'O bloco não aparece (o mês corrente é ignorado por estar incompleto).' },
   ]},
+  { id: 'T38', title: 'Filtro por conta/cartão', tests: [
+    { id: 'T38.1', title: 'Seletor aparece com 2+ contas', steps: ['Despesas (com despesas alocadas a contas diferentes)'], expect: 'Seletor "Todas as contas" no topo. Com uma só conta (ou nenhuma) não aparece.' },
+    { id: 'T38.2', title: 'Filtrar por cartão', steps: ['Escolher o cartão de crédito no seletor'], expect: 'Mostra só as despesas desse cartão, com total, evolução e média mensal.' },
+    { id: 'T38.3', title: 'Tolerante a acentos/maiúsculas', steps: ['Ter despesas com "Conta à Ordem" e "Conta a Ordem"'], expect: 'O filtro apanha ambas (comparação normalizada).' },
+    { id: 'T38.4', title: 'Limpar filtro', steps: ['Tocar em "Limpar" ou escolher "Todas as contas"'], expect: 'Volta à vista normal de orçamento por categoria.' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },
