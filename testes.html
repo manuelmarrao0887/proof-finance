@@ -454,6 +454,7 @@ const GROUPS = [
     { id: 'T39.3', title: 'Valor fora do padrão', steps: ['Registar num beneficiário habitual um valor ≥3× a média (e ≥30 € acima)'], expect: 'Alerta "Despesa fora do padrão" com a média habitual e quantas vezes maior é — apanha erros a escrever o valor.' },
     { id: 'T39.4', title: 'Variações normais não alertam', steps: ['Gastar um pouco acima do habitual (ex.: 28 € → 45 €)'], expect: 'Sem alerta (exige ser grande em percentagem E em valor absoluto).' },
     { id: 'T39.5', title: 'Sem histórico não inventa', steps: ['Utilizador com poucas despesas'], expect: 'Nenhum alerta de anomalia (precisa de padrão credível).' },
+    { id: 'T39.7', title: 'Dispensar um aviso', steps: ['Num aviso de despesa suspeita, tocar em "Está certo"'], expect: 'O aviso desaparece e NÃO volta a aparecer (fica guardado). Os outros avisos mantêm-se.' },
     { id: 'T39.6', title: 'Só despesas recentes', steps: ['Ter uma despesa estranha com mais de 45 dias'], expect: 'Não alerta (a janela de análise são os últimos 45 dias).' },
   ]},
   { id: 'T40', title: 'Fecho do mês', tests: [

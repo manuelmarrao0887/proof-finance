@@ -378,8 +378,24 @@ export default function OverviewView() {
               className="cd"
               style={{ padding: '12px 14px', borderLeft: '3px solid ' + (INS_COLOR[ins.tone] || 'var(--primary)') }}
             >
-              <div style={{ fontSize: 13, fontWeight: 700, color: INS_COLOR[ins.tone] || 'var(--text)', marginBottom: 2 }}>
-                {ins.title}
+              <div className="rw" style={{ marginBottom: 2, gap: 8, alignItems: 'flex-start' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: INS_COLOR[ins.tone] || 'var(--text)', minWidth: 0 }}>
+                  {ins.title}
+                </div>
+                {/* Avisos de despesa suspeita podem ser falsos positivos → dispensar. */}
+                {ins.dismissId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      actions.dismissAnomaly(ins.dismissId);
+                      toast('Aviso dispensado', 'success');
+                    }}
+                    aria-label="Está certo, dispensar aviso"
+                    style={{ flexShrink: 0, background: 'none', border: '1px solid var(--border)', color: 'var(--text3)', borderRadius: 999, padding: '2px 9px', fontSize: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    Está certo
+                  </button>
+                )}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{ins.detail}</div>
             </div>

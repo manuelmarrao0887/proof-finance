@@ -100,6 +100,7 @@ export function initialPersisted() {
     positions: [], // posições de investimento { id, broker, asset, qty, avgPrice, currentPrice }
     transfers: [], // transferências entre contas { id, from, to, amount, date, note, settledFrom, settledTo }
     taxCfg: null, // config fiscal PT { imiAmount, iucMonths:[], irs, couple } ou null
+    dismissedAnomalies: [], // ids de avisos de despesa suspeita já confirmados pelo utilizador
   };
 }
 
@@ -140,6 +141,7 @@ export const PERSISTED_KEYS = [
   'positions',
   'transfers',
   'taxCfg',
+  'dismissedAnomalies',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -172,6 +174,7 @@ export function buildPersistPayload(state) {
     positions: state.positions || [],
     transfers: state.transfers || [],
     taxCfg: state.taxCfg || null,
+    dismissedAnomalies: state.dismissedAnomalies || [],
   };
 }
 
@@ -210,6 +213,7 @@ export function hydrateFromDoc(d) {
     positions: Array.isArray(d.positions) ? d.positions : [],
     transfers: Array.isArray(d.transfers) ? d.transfers : [],
     taxCfg: d.taxCfg && typeof d.taxCfg === 'object' ? d.taxCfg : null,
+    dismissedAnomalies: Array.isArray(d.dismissedAnomalies) ? d.dismissedAnomalies : [],
   };
 }
 
@@ -562,6 +566,11 @@ export function StoreProvider({ children }) {
       // Desliza a janela de meses (mOff ≤ 0). Ao mudar de janela o mês
       // selecionado passa a ser o último da nova janela (em=3).
       setTaxCfg: (taxCfg) => setField('taxCfg', taxCfg),
+      dismissAnomaly: (id) => {
+        const cur = getState().dismissedAnomalies || [];
+        if (cur.indexOf(id) > -1) return;
+        setField('dismissedAnomalies', [...cur, id]);
+      },
       /* Reforça de uma vez todas as metas com reserva mensal definida:
          current += min(monthly, o que falta) e marca lastAlloc com o mês, para
          não reforçar duas vezes no mesmo mês. Devolve o total alocado. */

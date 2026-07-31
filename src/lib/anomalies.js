@@ -30,6 +30,8 @@ export function findAnomalies(state, now, opts) {
   const limit = (opts && opts.limit) || 5;
   const all = (state && state.addedExp) || [];
   if (all.length < 5) return [];
+  // Avisos que o utilizador já disse estarem certos não voltam a aparecer.
+  const dismissed = new Set((state && state.dismissedAnomalies) || []);
 
   const cutoff = new Date(d.getFullYear(), d.getMonth(), d.getDate() - days);
   const recent = all.filter((x) => {
@@ -69,7 +71,7 @@ export function findAnomalies(state, now, opts) {
       const gap = daysBetween(a.date, b.date);
       if (gap > 5) continue;
       const id = 'dup-' + (b.id || k + b.date);
-      if (seen.has(id)) continue;
+      if (seen.has(id) || dismissed.has(id)) continue;
       seen.add(id);
       out.push({
         id,
@@ -99,7 +101,7 @@ export function findAnomalies(state, now, opts) {
     const ratio = v / avg;
     if (ratio < 3 || v - avg < 30) return; // tem de ser grande em % E em valor
     const id = 'out-' + (x.id || k + x.date);
-    if (seen.has(id)) return;
+    if (seen.has(id) || dismissed.has(id)) return;
     seen.add(id);
     out.push({
       id,
