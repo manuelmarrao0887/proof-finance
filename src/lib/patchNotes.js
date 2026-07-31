@@ -6,6 +6,20 @@
 
 export const PATCH_NOTES = [
   {
+    version: 6,
+    date: '2026-07-31',
+    title: 'Análise: onde poupar, despesas suspeitas e fecho do mês',
+    items: [
+      'Novo: "Onde podes poupar" nos Relatórios — subscrições, categorias acima do limite, gastos formiga e categorias sem orçamento, com o que valem por ano.',
+      'Novo: deteção de despesas suspeitas — cobranças repetidas e valores muito fora do teu padrão aparecem no topo do Resumo.',
+      'Novo: fecho do mês — nos primeiros dias vês o balanço do mês anterior e como foi face à tua média.',
+      'Novo: aviso quando uma meta não chega ao prazo, com o valor mensal que seria preciso.',
+      'Novo: avisos de risco da carteira (concentração, corretora única, posições muito em baixo).',
+      'Novo: filtrar despesas por conta ou cartão; a pesquisa mostra evolução e média mensal.',
+      'Melhoria: o Resumo ficou mais rápido com muitos movimentos.',
+    ],
+  },
+  {
     version: 5,
     date: '2026-07-31',
     title: 'Fiscal PT, tendências e plano do mês',
