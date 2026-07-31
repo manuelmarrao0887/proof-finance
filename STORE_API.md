@@ -29,13 +29,43 @@ of runtime fields.
   incomes: [],                                 // {id,name,amount,source,recurring,day,date,createdAt}
   bdg: [...16 defaults...],                    // categories {id,nm,lm}; defaults seeded when empty
   customAccts: [],                             // {id,bank,type,category,value,currency,note,updated,createdAt}
-  rules: [],                                   // {id,pattern,cat,createdAt}
+  rules: [],                                   // {id,pattern,cat,createdAt,learned?} (learned = criada ao corrigir no import)
   forecastMonths: 3,                           // cash-flow horizon (1|3|6|12)
   fxRates: { EUR:1, USD:1.08, GBP:0.85, BRL:5.5 },
   aiInsights: null,
+  lastSeenPatchVersion: 0,                     // changelog visto (ver lib/patchNotes)
+  dismissedSubs: [],                           // sugestões de subscrição dispensadas
+  pinHash: null, faceIdCred: null,             // proteção dos saldos (PIN SHA-256 / WebAuthn)
+  balancesHidden: false,
+  housing: null,                               // crédito à habitação
+  rolloverOn: false,                           // orçamento: sobra transita para o mês seguinte
+  positions: [],                               // investimentos {id,broker,asset,qty,avgPrice,currentPrice}
+  transfers: [],                               // entre contas {id,from,to,amount,date,note,settledFrom,settledTo,cardPayment?}
+  taxCfg: null,                                // fiscal PT {imiAmount,iucMonths:[],couple,irs}
 }
 ```
-`PERSISTED_KEYS` (exported) is the canonical list of the 15 persisted field names.
+`PERSISTED_KEYS` (exported) é a lista canónica dos campos persistidos.
+
+### Persistência: SUBCOLEÇÕES (desde 2026-07)
+O doc `users/{uid}` guarda só os **escalares/singletons**; cada slice em array vive
+numa **subcoleção** (ver `src/firebase/data.js`):
+
+| slice | subcoleção | | slice | subcoleção |
+|---|---|---|---|---|
+| `addedExp` | `movements` | | `transfers` | `transfers` |
+| `customAccts` | `accounts` | | `goals` | `goals` |
+| `incomes` | `incomes` | | `recurring` | `recurring` |
+| `balanceLog` | `balances` | | `positions` | `positions` |
+| `bdg` | `categories` | | `rules` | `rules` |
+
+`loadUserData` monta tudo de volta na forma antiga (migração 1× marcada com
+`schemaVersion:2`); `syncUserData`/`computeDiff` escrevem só o que mudou.
+As regras do Firestore **têm de cobrir `match /users/{uid}/{sub}/{docId}`**.
+
+### Contas: categorias especiais
+`customAccts[].category === 'Cartão de crédito'` (`finance.CARD_CAT`) marca um
+cartão: tem `plafond`, o "saldo" é **dívida derivada** (`cardUsage`) e entra
+NEGATIVO no património. Pagar a fatura é um `transfer` conta→cartão.
 
 ### Runtime fields (NOT persisted — live in the store but never written)
 ```js
@@ -202,6 +232,19 @@ customAccts, rules, em, forecastMonths`.
   with `serverTimestamp() updatedAt`.
 
 ---
+
+## 4b. Libs acrescentadas depois do port
+
+| módulo | o que faz |
+|---|---|
+| `lib/months.js` | janela de meses deslizante (`monthKeyAt(em,mOff)`, `windowMonthKeys`, `minMonthOffset`/`clampOffset`), `monthsWithData`, `categorySeries`/`seriesTrend` (sparklines) |
+| `lib/pulse.js` | métricas de decisão do Resumo: `dailyAllowance` (podes gastar/dia), `savingsPulse` (taxa + colchão), `monthForecast` (projeção de fecho — só extrapola despesa variável), `monthPlan` (envelope budgeting), `buildInsights` |
+| `lib/taxpt.js` | calendário fiscal PT (e-Fatura, IRS, IMI por prestações, IUC) + `upcomingTaxEvents` |
+| `lib/irs.js` | `estimateDeductions` — deduções à coleta por regime, com tetos legais e mapa categoria→regime |
+| `lib/categorize.js` | `guessCategory` (comerciante→categoria) e `rulePatternFor` (aprende regra ao corrigir no import) |
+| `lib/importBank.js` | parser determinístico do extrato; `isTransferDesc` = **só contas próprias**; `bankIncomeCandidates` (receitas) |
+| `lib/exportcsv.js` | exportação CSV para Excel PT (`;` + vírgula decimal + BOM) |
+| `lib/budget.js`, `lib/goals.js`, `lib/investments.js`, `lib/reports.js`, `lib/reminders.js`, `lib/mortgage.js`, `lib/lock.js` | orçamento com rollover, metas com reserva mensal, P&L de posições, relatórios (+`yearSummary`), lembretes, crédito habitação, PIN/FaceID |
 
 ## 5. Shared components
 
