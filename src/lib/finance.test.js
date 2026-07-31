@@ -379,3 +379,41 @@ describe('emergencyFund (authenticated)', () => {
     expect(ef.months).toBeCloseTo(6000 / 400, 6);
   });
 });
+
+describe('detectSubscriptions — precisão', () => {
+  it('NÃO sugere gastos irregulares com valores diferentes (ex.: restaurante)', () => {
+    const state = {
+      addedExp: [
+        { desc: 'O Tradicional', amount: 18.45, cat: 'rest', date: recentDate(60) },
+        { desc: 'O Tradicional', amount: 36.7, cat: 'rest', date: recentDate(55) },
+      ],
+      recurring: [],
+      dismissedSubs: [],
+    };
+    expect(detectSubscriptions(state).some((s) => s.desc === 'O Tradicional')).toBe(false);
+  });
+
+  it('sugere quando o valor é praticamente igual', () => {
+    const state = {
+      addedExp: [
+        { desc: 'Apple.com Bill', amount: 9.99, cat: 'sub', date: recentDate(65) },
+        { desc: 'Apple.com Bill', amount: 9.99, cat: 'sub', date: recentDate(12) },
+      ],
+      recurring: [],
+      dismissedSubs: [],
+    };
+    expect(detectSubscriptions(state).some((s) => s.desc === 'Apple.com Bill')).toBe(true);
+  });
+
+  it('sugere quando a cadência é mensal, mesmo variando o valor', () => {
+    const state = {
+      addedExp: [
+        { desc: 'Vodafone', amount: 59.19, cat: 'tel', date: recentDate(60) },
+        { desc: 'Vodafone', amount: 64.2, cat: 'tel', date: recentDate(30) },
+      ],
+      recurring: [],
+      dismissedSubs: [],
+    };
+    expect(detectSubscriptions(state).some((s) => s.desc === 'Vodafone')).toBe(true);
+  });
+});
