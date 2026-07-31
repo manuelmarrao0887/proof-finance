@@ -34,7 +34,8 @@ import { fm, normalizeStmtDate } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import { dedupeAddedExp } from '../lib/dedupe.js';
 import { monthEffectiveLimits } from '../lib/budget.js';
-import { windowLabels, windowMonthKeys, monthKeyAt } from '../lib/months.js';
+import { windowLabels, windowMonthKeys, monthKeyAt, categorySeries, seriesTrend } from '../lib/months.js';
+import Sparkline from '../components/Sparkline.jsx';
 import MonthNav from '../components/MonthNav.jsx';
 import { useToast } from '../components/Toast.jsx';
 import {
@@ -262,7 +263,11 @@ export default function ExpensesView() {
     const val = isQ ? vs[0] + vs[1] + vs[2] : vs[em];
     const base = isQ ? b.lm * 3 : b.lm;
     const eff = effLims && !isQ && effLims[b.id] ? effLims[b.id].eff : base;
-    if (val > 0) rows.push({ id: b.id, nm: b.nm, val, lm: eff, carried: eff - base, pct: eff > 0 ? (val / eff) * 100 : 0, vs });
+    if (val > 0) {
+      // Tendência de 6 meses até ao mês selecionado (sparkline + variação).
+      const series = preview || isQ ? null : categorySeries(addedExp, b.id, 6, monthKeyAt(em, mOff));
+      rows.push({ id: b.id, nm: b.nm, val, lm: eff, carried: eff - base, pct: eff > 0 ? (val / eff) * 100 : 0, vs, series, trend: series ? seriesTrend(series) : null });
+    }
   });
   // By-value ordering for the budget summary (orig 1103). Rows carry stable
   // `id` keys (FIX 2) so React reconciles them in place instead of rebuilding.
@@ -583,7 +588,19 @@ export default function ExpensesView() {
                   <div className="bar-fill" style={{ width: Math.min(r.pct, 100) + '%', background: bc, opacity: op }} />
                 </div>
                 <div className="rw" style={{ marginTop: 4 }}>
-                  <span className="m" style={{ fontSize: 11, color: ov ? 'var(--signal)' : 'var(--text3)' }}>{r.pct.toFixed(0)}%</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="m" style={{ fontSize: 11, color: ov ? 'var(--signal)' : 'var(--text3)' }}>{r.pct.toFixed(0)}%</span>
+                    {r.series && (
+                      <>
+                        <Sparkline values={r.series} color={r.trend > 25 ? 'var(--signal)' : r.trend < -25 ? 'var(--success)' : 'var(--text3)'} />
+                        {r.trend != null && Math.abs(r.trend) >= 25 && (
+                          <span className="m" style={{ fontSize: 10, fontWeight: 700, color: r.trend > 0 ? 'var(--signal)' : 'var(--success)' }}>
+                            {(r.trend > 0 ? '+' : '') + Math.round(r.trend)}%
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </span>
                   {ov ? (
                     <span className="m" style={{ fontSize: 11, color: 'var(--signal)' }}>+{fm(r.val - r.lm)}</span>
                   ) : (

@@ -383,6 +383,12 @@ const GROUPS = [
     { id: 'T28.8', title: 'Aviso no Resumo', steps: ['Estar a menos de 30 dias de uma obrigação fiscal'], expect: 'Aparece nos insights do Resumo (laranja se ≤7 dias) com os dias em falta.' },
     { id: 'T28.9', title: 'Aviso de que é estimativa', steps: ['Ver o rodapé da vista'], expect: 'Diz claramente que é estimativa indicativa e não aconselhamento fiscal; só contam faturas com NIF comunicadas à AT.' },
   ]},
+  { id: 'T29', title: 'Tendência por categoria (sparklines)', tests: [
+    { id: 'T29.1', title: 'Mini-gráfico em cada categoria', steps: ['Despesas (com ≥2 meses de histórico)'], expect: 'Cada categoria mostra um mini-gráfico de 6 meses ao lado da percentagem, terminando no mês selecionado.' },
+    { id: 'T29.2', title: 'Variação destacada', steps: ['Categoria com o mês muito acima/abaixo da média'], expect: 'Mostra +N% a vermelho (subida ≥25%) ou −N% a verde (descida ≥25%); variações pequenas não mostram número.' },
+    { id: 'T29.3', title: 'Acompanha a navegação de meses', steps: ['Deslizar para meses anteriores'], expect: 'A sparkline passa a terminar no mês selecionado (mostra os 6 meses até esse).' },
+    { id: 'T29.4', title: 'Sem histórico credível → sem número', steps: ['Categoria nova ou com valores residuais (<10 €)'], expect: 'Mostra a linha mas não inventa percentagem de variação.' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },
