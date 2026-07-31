@@ -126,9 +126,9 @@ describe('buildInsights', () => {
     expect(card.tone).toBe('alert');
   });
 
-  it('máximo 4 insights, alertas primeiro', () => {
+  it('máximo 3 insights, alertas primeiro', () => {
     const ins = buildInsights(BASE, NOW);
-    expect(ins.length).toBeLessThanOrEqual(4);
+    expect(ins.length).toBeLessThanOrEqual(3);
     const tones = ins.map((i) => i.tone);
     const order = { alert: 0, warn: 1, info: 2, good: 3 };
     const sorted = [...tones].sort((a, b) => order[a] - order[b]);
