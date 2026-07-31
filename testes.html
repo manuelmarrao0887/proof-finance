@@ -448,6 +448,14 @@ const GROUPS = [
     { id: 'T38.3', title: 'Tolerante a acentos/maiúsculas', steps: ['Ter despesas com "Conta à Ordem" e "Conta a Ordem"'], expect: 'O filtro apanha ambas (comparação normalizada).' },
     { id: 'T38.4', title: 'Limpar filtro', steps: ['Tocar em "Limpar" ou escolher "Todas as contas"'], expect: 'Volta à vista normal de orçamento por categoria.' },
   ]},
+  { id: 'T39', title: 'Despesas suspeitas (anomalias)', tests: [
+    { id: 'T39.1', title: 'Cobrança repetida', steps: ['Ter a mesma despesa (mesmo beneficiário e valor) com ≤5 dias de intervalo'], expect: 'Alerta no topo do Resumo: "Possível cobrança repetida", com as duas datas e o valor.' },
+    { id: 'T39.2', title: 'Mensalidade normal NÃO é acusada', steps: ['Ter a mesma subscrição cobrada com ~30 dias de intervalo'], expect: 'Não gera alerta (é cadência normal).' },
+    { id: 'T39.3', title: 'Valor fora do padrão', steps: ['Registar num beneficiário habitual um valor ≥3× a média (e ≥30 € acima)'], expect: 'Alerta "Despesa fora do padrão" com a média habitual e quantas vezes maior é — apanha erros a escrever o valor.' },
+    { id: 'T39.4', title: 'Variações normais não alertam', steps: ['Gastar um pouco acima do habitual (ex.: 28 € → 45 €)'], expect: 'Sem alerta (exige ser grande em percentagem E em valor absoluto).' },
+    { id: 'T39.5', title: 'Sem histórico não inventa', steps: ['Utilizador com poucas despesas'], expect: 'Nenhum alerta de anomalia (precisa de padrão credível).' },
+    { id: 'T39.6', title: 'Só despesas recentes', steps: ['Ter uma despesa estranha com mais de 45 dias'], expect: 'Não alerta (a janela de análise são os últimos 45 dias).' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },

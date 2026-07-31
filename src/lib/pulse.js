@@ -11,6 +11,8 @@
 
 import { getAcctsLive, cardUsage, CARD_CAT } from './finance.js';
 import { upcomingTaxEvents } from './taxpt.js';
+import { savingsOpportunities } from './savings.js';
+import { findAnomalies } from './anomalies.js';
 
 const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 const daysInMonth = (d) => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
@@ -132,6 +134,17 @@ export function buildInsights(state, now) {
     return b ? b.nm : id;
   };
 
+  // 0. Despesas suspeitas (cobrança repetida / valor fora do padrão): é o que
+  //    pode estar mesmo a custar dinheiro por engano → topo da lista.
+  findAnomalies(state, d, { limit: 2 }).forEach((a) => {
+    out.push({
+      id: 'anom-' + a.id,
+      tone: 'alert',
+      title: a.kind === 'duplicate' ? 'Possível cobrança repetida' : 'Despesa fora do padrão',
+      detail: a.title + ' — ' + a.detail,
+    });
+  });
+
   // 1. Categoria muito acima da média dos 3 meses anteriores.
   const byCatNow = {};
   exps.forEach((x) => {
@@ -214,6 +227,17 @@ export function buildInsights(state, now) {
       tone: t.daysLeft <= 7 ? 'warn' : 'info',
       title: t.title,
       detail: (t.daysLeft === 0 ? 'É hoje' : t.daysLeft === 1 ? 'É amanhã' : 'Faltam ' + t.daysLeft + ' dias') + ' · ver em Mais → Fiscal.',
+    });
+  }
+
+  // 5b. Maior oportunidade de poupança (só se for material: >200 EUR/ano).
+  const opps = savingsOpportunities(state, d);
+  if (opps.length && opps[0].yearly >= 200) {
+    out.push({
+      id: 'saving-' + opps[0].id,
+      tone: 'info',
+      title: 'Podias poupar ' + opps[0].yearly.toFixed(0) + '€/ano',
+      detail: opps[0].title + ' · ver em Mais → Relatórios.',
     });
   }
 
