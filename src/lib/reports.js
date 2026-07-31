@@ -55,3 +55,33 @@ export function prevMonth(ym) {
   const d = new Date(y, m - 2, 1);
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 }
+
+/* Totais mensais de um ano civil (12 valores, janeiro→dezembro).
+   Meses sem despesas ficam a 0. */
+export function yearMonthlyTotals(addedExp, year) {
+  const y = String(year);
+  const out = new Array(12).fill(0);
+  (addedExp || []).forEach((x) => {
+    const d = String((x && x.date) || '');
+    if (d.slice(0, 4) !== y) return;
+    const m = parseInt(d.slice(5, 7), 10);
+    if (m >= 1 && m <= 12) out[m - 1] += Number(x.amount) || 0;
+  });
+  return out;
+}
+
+/* Resumo do ano: total, média dos meses COM despesas, e o mês mais caro.
+   { total, avg, maxMonth (0-11 ou -1), max, monthsWithData } */
+export function yearSummary(addedExp, year) {
+  const t = yearMonthlyTotals(addedExp, year);
+  const active = t.filter((v) => v > 0);
+  const max = active.length ? Math.max.apply(null, t) : 0;
+  return {
+    totals: t,
+    total: t.reduce((a, b) => a + b, 0),
+    avg: active.length ? active.reduce((a, b) => a + b, 0) / active.length : 0,
+    max,
+    maxMonth: max > 0 ? t.indexOf(max) : -1,
+    monthsWithData: active.length,
+  };
+}

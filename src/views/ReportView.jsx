@@ -6,8 +6,8 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { fm, fc } from '../lib/format.js';
-import { categoryTotals, monthTotal, monthComparison, topExpenses, prevMonth } from '../lib/reports.js';
-import { monthsWithData, monthLabelShort } from '../lib/months.js';
+import { categoryTotals, monthTotal, monthComparison, topExpenses, prevMonth, yearSummary } from '../lib/reports.js';
+import { monthsWithData, monthLabelShort, MONTH_SHORT as MS } from '../lib/months.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -33,6 +33,10 @@ export default function ReportView() {
   const total = monthTotal(addedExp, ym);
   const comp = monthComparison(addedExp, ym, prevMonth(ym));
   const top = topExpenses(addedExp, ym, 5);
+  // Visão anual do ano do mês selecionado.
+  const yearNum = ym.slice(0, 4);
+  const ySum = useMemo(() => yearSummary(addedExp, yearNum), [addedExp, yearNum]);
+  const curMonthIdx = Number(ym.slice(5, 7)) - 1;
   const maxCat = comp.length ? Math.max.apply(null, comp.map((c) => c.cur)) : 0;
 
   return (
@@ -57,6 +61,49 @@ export default function ReportView() {
         <div className="lb">Despesa total</div>
         <div className="m" style={{ fontSize: 28, fontWeight: 800, marginTop: 4 }}>{fc(total)}</div>
       </div>
+
+      {/* Visão anual — barras por mês do ano selecionado */}
+      {ySum.monthsWithData > 1 && (
+        <div className="cd" style={{ marginBottom: 16 }}>
+          <div className="rw" style={{ marginBottom: 12 }}>
+            <div className="lb">Ano {yearNum}</div>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+              {fc(ySum.total)} · média {fc(ySum.avg)}/mês
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 72 }}>
+            {ySum.totals.map((v, i) => {
+              const h = ySum.max > 0 ? Math.max(2, (v / ySum.max) * 100) : 2;
+              const isCur = i === curMonthIdx;
+              const isMax = i === ySum.maxMonth;
+              return (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <div
+                    title={MS[i] + ': ' + fc(v)}
+                    style={{
+                      width: '100%',
+                      height: h + '%',
+                      borderRadius: 3,
+                      background: isCur ? 'var(--primary)' : isMax ? 'var(--signal)' : 'var(--bg3)',
+                      opacity: v > 0 ? 1 : 0.45,
+                      transition: 'height .3s',
+                    }}
+                  />
+                  <span style={{ fontSize: 8, color: isCur ? 'var(--primary)' : 'var(--text3)', fontWeight: isCur ? 700 : 400 }}>
+                    {MS[i].slice(0, 1)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {ySum.maxMonth >= 0 && (
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 8 }}>
+              Mês mais caro: {MS[ySum.maxMonth]} ({fc(ySum.max)})
+              {curMonthIdx === ySum.maxMonth ? ' — é este.' : ''}
+            </div>
+          )}
+        </div>
+      )}
 
       {total === 0 ? (
         <div className="empty" style={{ padding: '40px 20px' }}>

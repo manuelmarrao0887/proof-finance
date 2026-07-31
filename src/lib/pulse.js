@@ -287,3 +287,46 @@ export function monthPlan(state, now) {
     free: income - fixedTotal - goalsTotal,
   };
 }
+
+/* ── monthForecast ───────────────────────────────────────────────────────
+   Projeção do fecho do mês ao ritmo atual de despesa variável.
+
+   Só extrapola a despesa VARIÁVEL (exclui as fixas já lançadas, que não são
+   proporcionais aos dias) e soma depois as fixas que ainda faltam pagar —
+   extrapolar uma renda de 350 EUR paga no dia 1 daria uma projeção absurda.
+
+   { ready, elapsed, daysInMonth, variableSpent, dailyBurn, projectedSpend,
+     projectedEnd, overBudget } */
+export function monthForecast(state, now) {
+  const d = now || new Date();
+  const total = daysInMonth(d);
+  const elapsed = d.getDate();
+  const exps = monthExpenses(state, d);
+  const recIds = new Set(((state && state.recurring) || []).map((r) => r.id));
+
+  let variableSpent = 0;
+  let fixedSpent = 0;
+  exps.forEach((x) => {
+    const amt = Number(x.amount) || 0;
+    if (x.recId && recIds.has(x.recId)) fixedSpent += amt;
+    else variableSpent += amt;
+  });
+
+  const pend = pendingRecurring(state, d);
+  const dailyBurn = elapsed > 0 ? variableSpent / elapsed : 0;
+  const projectedVariable = dailyBurn * total;
+  const projectedSpend = projectedVariable + fixedSpent + pend.total;
+  const income = monthIncome(state, d);
+
+  return {
+    ready: elapsed >= 3 && variableSpent > 0, // poucos dias → projeção sem valor
+    elapsed,
+    daysInMonth: total,
+    variableSpent,
+    fixedSpent,
+    dailyBurn,
+    projectedSpend,
+    projectedEnd: income - projectedSpend,
+    overBudget: income > 0 && projectedSpend > income,
+  };
+}
