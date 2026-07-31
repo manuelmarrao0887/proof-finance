@@ -267,8 +267,11 @@ export function buildInsights(state, now) {
     });
   }
 
+  /* Três chegam: nos primeiros dias do mês o Resumo já mostra o fecho do mês
+     anterior e o plano do mês, e mais avisos deixam de ser lidos. Os detalhes
+     de cada tema estão na vista respetiva. */
   const order = { alert: 0, warn: 1, info: 2, good: 3 };
-  return out.sort((a, b) => order[a.tone] - order[b.tone]).slice(0, 4);
+  return out.sort((a, b) => order[a.tone] - order[b.tone]).slice(0, 3);
 }
 
 /* ── monthPlan (envelope budgeting) ──────────────────────────────────────

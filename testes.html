@@ -360,7 +360,7 @@ const GROUPS = [
     { id: 'T26.4', title: 'Sem rendimento → convite', steps: ['Utilizador sem receitas registadas'], expect: 'Em vez de números, mostra "+ Adicionar rendimento" que abre o modal de receitas.' },
     { id: 'T26.5', title: 'Passar o rendimento → vermelho', steps: ['Gastar mais do que o rendimento do mês'], expect: 'Valor a vermelho e texto "Já passaste o rendimento do mês em X€".' },
     { id: 'T26.6', title: 'Taxa de poupança + colchão', steps: ['Ver o rodapé do cartão'], expect: 'Mostra "Poupança N%" (verde se ≥20%) e "colchão X meses" = liquidez+poupança ÷ média real de despesa dos 3 meses anteriores.' },
-    { id: 'T26.7', title: 'Insights automáticos', steps: ['Ver abaixo do cartão'], expect: 'Até 4 avisos, alertas primeiro: categoria +30% vs média histórica (vermelho), categorias acima do limite (laranja), fixas a pagar em 7 dias (azul), cartão ≥80% do plafond, e "Poupas N%" (verde) quando não há alertas.' },
+    { id: 'T26.7', title: 'Insights automáticos', steps: ['Ver abaixo do cartão'], expect: 'Até 3 avisos, alertas primeiro: categoria +30% vs média histórica (vermelho), categorias acima do limite (laranja), fixas a pagar em 7 dias (azul), cartão ≥80% do plafond, e "Poupas N%" (verde) quando não há alertas.' },
     { id: 'T26.8', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos no Resumo'], expect: 'Os valores do cartão "Podes gastar" aparecem •••• (percentagens e contagens continuam visíveis).' },
   ]},
   { id: 'T27', title: 'Navegação de meses (histórico)', tests: [
