@@ -12,7 +12,8 @@
 import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
-import { compute, monthlySummary, isNewUser } from '../lib/finance.js';
+import { compute, monthlySummary, isNewUser, getAcctsLive, CARD_CAT } from '../lib/finance.js';
+import { estimateDeductions } from '../lib/irs.js';
 import { fc } from '../lib/format.js';
 
 export default function ContextStrip({ tab: tabProp }) {
@@ -55,7 +56,34 @@ export default function ContextStrip({ tab: tabProp }) {
     label = 'Património liquido';
     val = fc(C.nW);
     col = C.nW >= 0 ? 'var(--success)' : 'var(--signal)';
-  } else if (tab === 'cal' || tab === 'charts' || tab === 'rec' || tab === 'ai') {
+  } else if (tab === 'cards') {
+    // Dívida total dos cartões de crédito (soma do que está por pagar).
+    let debt = 0;
+    getAcctsLive(s).forEach((a) => {
+      if (a.c === CARD_CAT) debt += a.used || 0;
+    });
+    label = 'Dívida dos cartões';
+    val = fc(debt);
+    col = debt > 0 ? 'var(--signal)' : 'var(--success)';
+  } else if (tab === 'tax') {
+    const ded = estimateDeductions(state.addedExp, new Date().getFullYear());
+    label = 'Deduções estimadas';
+    val = fc(ded.total);
+    col = 'var(--success)';
+  } else if (tab === 'transfers') {
+    const n = (state.transfers || []).length;
+    label = 'Transferências registadas';
+    val = String(n);
+    col = 'var(--text)';
+  } else if (tab === 'invest') {
+    let inv = 0;
+    getAcctsLive(s).forEach((a) => {
+      if (a.c === 'Investimentos' || a.c === 'Cripto') inv += a.v;
+    });
+    label = 'Carteira de investimentos';
+    val = fc(inv);
+    col = 'var(--text)';
+  } else if (tab === 'cal' || tab === 'charts' || tab === 'rec' || tab === 'ai' || tab === 'report') {
     label = 'Património liquido';
     val = fc(C.nW);
     col = 'var(--text)';
