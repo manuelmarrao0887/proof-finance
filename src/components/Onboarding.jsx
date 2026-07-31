@@ -21,22 +21,30 @@ export default function Onboarding() {
 
   if (!isNewUser(s)) return null;
 
+  /* Ordem pensada para o utilizador chegar depressa ao que a app tem de melhor:
+     sem rendimento registado o cartão "Podes gastar" não funciona, por isso é o
+     primeiro passo; a seguir trazer as despesas (o import faz o trabalho todo). */
   const steps = [
     {
       n: '01',
-      label: 'Adiciona a primeira despesa ou receita',
-      onClick: () => open('action'),
+      label: 'Regista o teu rendimento mensal',
+      onClick: () => open('income'),
     },
     {
       n: '02',
-      label: 'Cria uma meta de poupança',
-      // orig seeded goalDraft then opened the goal modal.
-      onClick: () => open('goal', { name: '', target: '', current: '0', deadline: '', color: '#3b6fee' }),
+      label: 'Importa o extrato do banco (Excel ou CSV)',
+      onClick: () => open('stmt'),
     },
     {
       n: '03',
-      label: 'Liga a tua API key da Anthropic',
-      onClick: () => open('settings'),
+      label: 'Adiciona as tuas contas e cartões',
+      onClick: () => open('acct'),
+    },
+    {
+      n: '04',
+      label: 'Cria uma meta de poupança',
+      // orig seeded goalDraft then opened the goal modal.
+      onClick: () => open('goal', { name: '', target: '', current: '0', deadline: '', color: '#3b6fee' }),
     },
   ];
 
@@ -44,10 +52,10 @@ export default function Onboarding() {
     <div style={{ padding: '0 20px 16px' }}>
       <div className="cd" style={{ padding: 22 }}>
         <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.015em', marginBottom: 6 }}>
-          Comeca em tres passos
+          Começa em quatro passos
         </div>
         <div style={{ fontSize: 13, color: 'var(--fg-muted)', lineHeight: 1.55, marginBottom: 18 }}>
-          Importa um extrato, regista uma despesa ou liga a tua IA. Tu defines o ritmo.
+          Com o rendimento e o extrato, a app diz-te quanto podes gastar por dia e classifica as despesas sozinha. Tu defines o ritmo.
         </div>
         {steps.map((st, i) => (
           <button
