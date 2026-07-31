@@ -83,3 +83,28 @@ export function guessCategory(desc) {
   }
   return null;
 }
+
+/* ── Aprendizagem: padrão de regra a partir de um descritivo do banco ──────
+   Extrai o "nome do comerciante" utilizável como padrão de regra permanente:
+   tira o prefixo de compra, códigos, cidades/códigos-postais e o sufixo
+   contactless, e fica com as primeiras palavras significativas.
+
+   'COMPRA 4174 PINGO DOCE DUQUE D A LI CONTACTLESS' → 'pingo doce'
+   Devolve '' quando não sobra nada de aproveitável. */
+export function rulePatternFor(desc) {
+  let d = norm(desc);
+  if (!d) return '';
+  d = d
+    .replace(/^compra\s+\d+\s*/, '')
+    .replace(/^(dd|ele|trf|mbw|pagserv|lev atm)\s+/, '')
+    .replace(/\s*contactless\s*$/, '')
+    .replace(/\b\d{4}-\d{3}\b/g, '') // código postal PT
+    .replace(/\b\d{4,}\b/g, '') // números de contrato/cartão
+    .replace(/\s+/g, ' ')
+    .trim();
+  const words = d.split(' ').filter((w) => w.length > 1);
+  if (!words.length) return '';
+  // 2 primeiras palavras chegam para identificar o comerciante sem apanhar
+  // a localização ("pingo doce", "apple.com bill", "uber eats").
+  return words.slice(0, 2).join(' ');
+}

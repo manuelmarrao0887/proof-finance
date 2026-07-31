@@ -35,7 +35,7 @@ import {
 } from '../lib/ai.js';
 import { applyRules } from '../lib/finance.js';
 import { parseBankStatement, incomeSource } from '../lib/importBank.js';
-import { guessCategory } from '../lib/categorize.js';
+import { guessCategory, rulePatternFor } from '../lib/categorize.js';
 import { listAccounts } from '../lib/balances.js';
 
 // Tag each parsed transaction with a stable id + default selection.
@@ -145,6 +145,7 @@ export default function ImportStatementSheet() {
               bank: 'Extrato',
               transactions: parsed.txns.map((t) => ({
                 desc: t.desc,
+                raw: t.raw, // descritivo original do banco → base das regras aprendidas
                 amount: t.amount, // negativo = débito → auto-selecionado
                 // Regras do utilizador primeiro; senão palpite por comerciante; senão Outros.
                 category: applyRules({ ...state, currentUser }, t.raw) || guessCategory(t.desc) || 'out',
@@ -241,15 +242,37 @@ export default function ImportStatementSheet() {
         if (!prev || !prev.transactions || !prev.transactions[i]) return prev;
         // FIX 1: apply the chosen category to EVERY row sharing the normalized
         // beneficiary description — not just this one row.
+        const row = prev.transactions[i];
         const next = applySameBeneficiaryCategory(prev.transactions, i, cat, 'category');
-        const key = normalizeDesc(prev.transactions[i].desc);
+        const key = normalizeDesc(row.desc);
         const affected = prev.transactions.filter((t) => normalizeDesc(t.desc) === key).length;
-        if (affected > 1) toast('Aplicado a ' + affected + ' linhas do mesmo beneficiario', 'success');
+
+        /* APRENDER: corrigir a categoria é um sinal claro de intenção → guarda
+           uma regra permanente para o comerciante, para os próximos extratos
+           virem já certos. Não duplica regras nem contraria uma existente. */
+        let learned = false;
+        const pattern = rulePatternFor(row.raw || row.desc);
+        if (pattern) {
+          const rules = state.rules || [];
+          const existing = rules.find((r) => (r.pattern || '').toLowerCase() === pattern);
+          if (!existing) {
+            actions.addRule({ id: uid(), pattern, cat, createdAt: Date.now(), learned: true });
+            learned = true;
+          } else if (existing.cat !== cat) {
+            actions.updateRule(existing.id, { ...existing, cat });
+            learned = true;
+          }
+        }
+
+        const parts = [];
+        if (affected > 1) parts.push('Aplicado a ' + affected + ' linhas do mesmo beneficiário');
+        if (learned) parts.push('regra guardada para "' + pattern + '"');
+        if (parts.length) toast(parts.join(' · '), 'success');
         // NOTE (FIX 2): we map in place — original order is preserved, no sort.
         return { ...prev, transactions: next };
       });
     },
-    [toast]
+    [toast, state.rules, actions]
   );
 
   // ── Commit (orig doImportStmt 2315-2326) ───────────────────────────────────
