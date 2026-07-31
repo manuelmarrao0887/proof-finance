@@ -44,6 +44,7 @@ import {
   getByC,
   getSal,
   txn,
+  normAcct,
 } from '../lib/finance.js';
 
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -68,6 +69,7 @@ export default function ExpensesView() {
   const s = useMemo(() => ({ ...state, currentUser }), [state, currentUser]);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [acctFilter, setAcctFilter] = useState(''); // '' = todas as contas
   const [tagFilter, setTagFilter] = useState([]);
   const [xExp, setXExp] = useState(null); // expanded budget-category id
 
@@ -103,11 +105,17 @@ export default function ExpensesView() {
   // ════════════════════════════════════════════════════════════════════════
   const q = (searchQuery || '').toLowerCase().trim();
   const hasTagFilter = tagFilter && tagFilter.length > 0;
+  // Contas/cartões que têm mesmo despesas — evita um seletor cheio de opções vazias.
+  const acctsWithExp = Array.from(
+    new Set(addedExp.map((x) => (x.acct || '').trim()).filter(Boolean))
+  ).sort();
+  const hasAcctFilter = !!acctFilter;
 
-  if (q || hasTagFilter) {
+  if (q || hasTagFilter || hasAcctFilter) {
     const matches = addedExp
       .map((x, idx) => ({ x, idx }))
       .filter(({ x }) => {
+        if (hasAcctFilter && normAcct(x.acct) !== normAcct(acctFilter)) return false;
         if (hasTagFilter) {
           if (!x.tags || !tagFilter.every((t) => x.tags.indexOf(t) > -1)) return false;
         }
@@ -175,6 +183,31 @@ export default function ExpensesView() {
                 #{t} &times;
               </button>
             ))}
+          </div>
+        )}
+        {/* Filtro por conta/cartão — "quanto saiu deste cartão?" */}
+        {acctsWithExp.length > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '0 4px' }}>
+            <select
+              value={acctFilter}
+              onChange={(e) => setAcctFilter(e.target.value)}
+              aria-label="Filtrar por conta"
+              style={{ flex: 1, minWidth: 0, padding: '8px 10px', border: '1px solid ' + (hasAcctFilter ? 'var(--primary)' : 'var(--border)'), background: 'var(--surface)', color: 'var(--text)', borderRadius: 8, fontSize: 12 }}
+            >
+              <option value="">Todas as contas</option>
+              {acctsWithExp.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+            {hasAcctFilter && (
+              <button
+                type="button"
+                onClick={() => setAcctFilter('')}
+                style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', borderRadius: 999, padding: '5px 10px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                Limpar
+              </button>
+            )}
           </div>
         )}
         <div className="rw" style={{ marginBottom: 10, padding: '0 4px' }}>
@@ -467,6 +500,23 @@ export default function ExpensesView() {
               Limpar
             </button>
           )}
+        </div>
+      )}
+
+      {/* Filtro por conta (entra no modo de pesquisa filtrada) */}
+      {!preview && acctsWithExp.length > 1 && (
+        <div style={{ marginBottom: 10 }}>
+          <select
+            value={acctFilter}
+            onChange={(e) => setAcctFilter(e.target.value)}
+            aria-label="Filtrar despesas por conta"
+            style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 8, fontSize: 12 }}
+          >
+            <option value="">Todas as contas</option>
+            {acctsWithExp.map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
         </div>
       )}
 
