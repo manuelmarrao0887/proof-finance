@@ -7,7 +7,7 @@ import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { fm, fc } from '../lib/format.js';
-import { totalValue, totalPL, totalPLPct, withAllocation } from '../lib/investments.js';
+import { totalValue, totalPL, totalPLPct, withAllocation, portfolioWarnings } from '../lib/investments.js';
 
 export default function InvestmentsView() {
   const { state } = useStore();
@@ -20,6 +20,9 @@ export default function InvestmentsView() {
   const tpl = totalPL(positions);
   const tplPct = totalPLPct(positions);
   const rows = withAllocation(positions);
+  // Riscos visíveis na composição (concentração, corretora única, quedas fortes).
+  const warnings = portfolioWarnings(positions);
+  const WTONE = { alert: 'var(--signal)', warn: 'var(--warning)', info: 'var(--primary)' };
   const plColor = tpl >= 0 ? 'var(--success)' : 'var(--signal)';
 
   return (
@@ -37,6 +40,18 @@ export default function InvestmentsView() {
           </div>
         )}
       </div>
+
+      {/* Avisos de carteira */}
+      {warnings.length > 0 && !hidden && (
+        <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {warnings.map((w) => (
+            <div key={w.id} className="cd" style={{ padding: '11px 13px', borderLeft: '3px solid ' + WTONE[w.tone] }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: WTONE[w.tone], marginBottom: 2 }}>{w.title}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{w.detail}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {positions.length === 0 ? (
         <div className="empty" style={{ padding: '40px 20px' }}>
