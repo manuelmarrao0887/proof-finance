@@ -434,6 +434,14 @@ const GROUPS = [
     { id: 'T36.1', title: 'Marca as já lançadas', steps: ['Registar a despesa de uma recorrente (Despesas → Registar recorrente)', 'Abrir Mais → Recorrentes'], expect: 'Essa recorrente mostra o selo "PAGA" e "já lançada este mês" em vez da contagem de dias.' },
     { id: 'T36.2', title: 'Quanto falta pagar', steps: ['Ver o cartão do topo'], expect: 'Além do custo mensal e anual, indica "falta pagar X este mês" (só as que ainda não foram lançadas).' },
   ]},
+  { id: 'T37', title: 'Onde podes poupar (Relatórios)', tests: [
+    { id: 'T37.1', title: 'Aparece com histórico suficiente', steps: ['Mais → Relatórios (com ≥3 meses fechados de dados)'], expect: 'Bloco "Onde podes poupar" com o total "até X€/ano" e até 5 sugestões ordenadas por impacto.' },
+    { id: 'T37.2', title: 'Custo anual das subscrições', steps: ['Ter recorrentes registadas'], expect: 'Mostra o custo anual total, quantas são e qual a maior, com chips das 4 maiores.' },
+    { id: 'T37.3', title: 'Categoria consistentemente acima do limite', steps: ['Ter uma categoria acima do limite na maioria dos meses'], expect: 'Sugere voltar ao limite e quantifica a poupança anual (excesso médio × 12). Um único mês mau NÃO gera sugestão.' },
+    { id: 'T37.4', title: 'Gastos formiga', steps: ['Ter muitas compras pequenas no mesmo sítio (≥8, média ≤15 €)'], expect: 'Mostra o nº de compras, a média por compra e o total; sugere cortar metade. Compras grandes não entram nesta regra.' },
+    { id: 'T37.5', title: 'Categoria sem limite', steps: ['Gastar ≥50 €/mês numa categoria sem orçamento definido'], expect: 'Sugere definir um limite e estima a poupança de o pôr 10% abaixo.' },
+    { id: 'T37.6', title: 'Sem histórico → não inventa', steps: ['Utilizador novo ou só com o mês atual'], expect: 'O bloco não aparece (o mês corrente é ignorado por estar incompleto).' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },

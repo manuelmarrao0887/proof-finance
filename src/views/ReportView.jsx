@@ -8,6 +8,7 @@ import { useStore } from '../store/store.jsx';
 import { fm, fc } from '../lib/format.js';
 import { categoryTotals, monthTotal, monthComparison, topExpenses, prevMonth, yearSummary } from '../lib/reports.js';
 import { monthsWithData, monthLabelShort, MONTH_SHORT as MS } from '../lib/months.js';
+import { savingsOpportunities, totalSavings } from '../lib/savings.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -37,6 +38,9 @@ export default function ReportView() {
   const yearNum = ym.slice(0, 4);
   const ySum = useMemo(() => yearSummary(addedExp, yearNum), [addedExp, yearNum]);
   const curMonthIdx = Number(ym.slice(5, 7)) - 1;
+  // Oportunidades de poupança (6 meses fechados) — independentes do mês escolhido.
+  const opps = useMemo(() => savingsOpportunities(state), [state]);
+  const oppTotal = totalSavings(opps);
   const maxCat = comp.length ? Math.max.apply(null, comp.map((c) => c.cur)) : 0;
 
   return (
@@ -61,6 +65,41 @@ export default function ReportView() {
         <div className="lb">Despesa total</div>
         <div className="m" style={{ fontSize: 28, fontWeight: 800, marginTop: 4 }}>{fc(total)}</div>
       </div>
+
+      {/* Onde posso poupar — oportunidades concretas com impacto anual */}
+      {opps.length > 0 && (
+        <div className="cd" style={{ marginBottom: 16, padding: 16 }}>
+          <div className="rw" style={{ marginBottom: 4 }}>
+            <div className="lb">Onde podes poupar</div>
+            <span className="m" style={{ fontSize: 13, fontWeight: 800, color: 'var(--success)' }}>
+              até {fc(oppTotal)}/ano
+            </span>
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 12 }}>
+            Com base nos últimos 6 meses fechados. São estimativas — decides tu o que faz sentido.
+          </div>
+          {opps.map((o) => (
+            <div key={o.id} style={{ padding: '10px 0', borderTop: '1px solid var(--border)' }}>
+              <div className="rw" style={{ marginBottom: 2, gap: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, minWidth: 0 }}>{o.title}</span>
+                <span className="m" style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)', whiteSpace: 'nowrap' }}>
+                  {fc(o.yearly)}/ano
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{o.detail}</div>
+              {o.evidence && o.evidence.length > 0 && o.kind === 'subscriptions' && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                  {o.evidence.map((e) => (
+                    <span key={e.name} className="m" style={{ fontSize: 9, color: 'var(--text3)', background: 'var(--elevated)', padding: '2px 7px', borderRadius: 999 }}>
+                      {e.name} {fm(e.amount)}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Visão anual — barras por mês do ano selecionado */}
       {ySum.monthsWithData > 1 && (
