@@ -25,6 +25,11 @@ export default function GoalsView() {
   const { open } = useUI();
   const toast = useToast();
   const goals = state.goals || [];
+  // Mês corrente 'YYYY-MM' — marca as metas já reforçadas pelo plano do mês.
+  const thisMonth = (() => {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  })();
 
   function addToGoal(id, amt) {
     const g = goals.find((x) => x.id === id);
@@ -167,8 +172,16 @@ export default function GoalsView() {
                   de {fc(g.target)}
                 </div>
                 {g.monthly > 0 && rem > 0 ? (
-                  <div style={{ fontSize: 11, color: c, marginTop: 6, fontWeight: 700 }}>
-                    {fc(g.monthly)}/mês · conclui {ymLabel(etaDate(rem, g.monthly))} ({monthsToTarget(rem, g.monthly)} {monthsToTarget(rem, g.monthly) === 1 ? 'mês' : 'meses'})
+                  <div style={{ fontSize: 11, color: c, marginTop: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span>
+                      {fc(g.monthly)}/mês · conclui {ymLabel(etaDate(rem, g.monthly))} ({monthsToTarget(rem, g.monthly)} {monthsToTarget(rem, g.monthly) === 1 ? 'mês' : 'meses'})
+                    </span>
+                    {/* Reforçada pelo "Plano do mês" (envelope budgeting) no Resumo. */}
+                    {g.lastAlloc === thisMonth && (
+                      <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--success)', background: 'var(--success-soft, rgba(63,201,122,0.12))', padding: '1px 6px', borderRadius: 999 }}>
+                        REFORÇADA ESTE MÊS
+                      </span>
+                    )}
                   </div>
                 ) : monthly != null ? (
                   <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6, fontWeight: 600 }}>

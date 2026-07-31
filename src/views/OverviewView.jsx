@@ -17,7 +17,7 @@
    All finance calls receive { ...state, currentUser }.
    ════════════════════════════════════════════════════════════════════════ */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import Icon from '../components/Icon.jsx';
@@ -92,10 +92,13 @@ export default function OverviewView() {
   const toast = useToast();
   const [xCat, setXCat] = useState(null); // expanded account category (orig global xCat)
 
-  const s = { ...state, currentUser };
-  const C = compute(s);
-  const ms = monthlySummary(s);
-  const newU = isNewUser(s);
+  /* Todos os cálculos do Resumo dependem só de (state, currentUser). Sem memo
+     corriam de novo a cada render — com centenas de despesas nota-se ao abrir
+     modais ou ao mudar de tema. */
+  const s = useMemo(() => ({ ...state, currentUser }), [state, currentUser]);
+  const C = useMemo(() => compute(s), [s]);
+  const ms = useMemo(() => monthlySummary(s), [s]);
+  const newU = useMemo(() => isNewUser(s), [s]);
   const curMonth = MONTHS_LONG[new Date().getMonth()];
 
   const addSub = (sub) => {
@@ -118,9 +121,9 @@ export default function OverviewView() {
   };
 
   // ── Health score (only when not new) ──────────────────────────────────
-  const hs = !newU ? healthScore(s) : null;
+  const hs = useMemo(() => (!newU ? healthScore(s) : null), [s, newU]);
   const hsCol = hs ? (hs.score >= 70 ? 'var(--success)' : hs.score >= 50 ? 'var(--warning)' : 'var(--danger)') : '';
-  const subs = !newU ? detectSubscriptions(s) : [];
+  const subs = useMemo(() => (!newU ? detectSubscriptions(s) : []), [s, newU]);
 
   // ── Emergency fund + cash flow (only when not new) ─────────────────────
   let ef = null;
@@ -186,14 +189,17 @@ export default function OverviewView() {
   };
 
   // Recorrentes a vencer nos próximos 5 dias (lembrete na app).
-  const upcoming = !newU ? upcomingRecurring(state.recurring, 5, undefined, state.addedExp) : [];
+  const upcoming = useMemo(
+    () => (!newU ? upcomingRecurring(state.recurring, 5, undefined, state.addedExp) : []),
+    [state.recurring, state.addedExp, newU]
+  );
 
   // ── Pulso do mês: quanto posso gastar/dia, poupança e avisos acionáveis ──
-  const allow = !newU ? dailyAllowance(s) : null;
-  const pulse = !newU ? savingsPulse(s) : null;
-  const insights = !newU ? buildInsights(s) : [];
-  const plan = !newU ? monthPlan(s) : null;
-  const forecast = !newU ? monthForecast(s) : null;
+  const allow = useMemo(() => (!newU ? dailyAllowance(s) : null), [s, newU]);
+  const pulse = useMemo(() => (!newU ? savingsPulse(s) : null), [s, newU]);
+  const insights = useMemo(() => (!newU ? buildInsights(s) : []), [s, newU]);
+  const plan = useMemo(() => (!newU ? monthPlan(s) : null), [s, newU]);
+  const forecast = useMemo(() => (!newU ? monthForecast(s) : null), [s, newU]);
   const applyPlan = () => {
     const total = actions.allocateGoals(plan.monthKey);
     toast(total > 0 ? 'Reservado ' + fm(total) + ' para as metas' : 'Nada a reservar', total > 0 ? 'success' : 'error');
