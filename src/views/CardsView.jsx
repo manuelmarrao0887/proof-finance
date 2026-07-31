@@ -63,6 +63,11 @@ export default function CardsView() {
             .filter((x) => normAcct(x.acct) === normAcct(cardLabel))
             .slice()
             .sort((x, y) => (y.date || '').localeCompare(x.date || ''));
+          // Pagamentos ao cartão = transferências cujo destino é este cartão.
+          const pays = (state.transfers || [])
+            .filter((t) => normAcct(t.to) === normAcct(cardLabel))
+            .slice()
+            .sort((x, y) => (y.date || '').localeCompare(x.date || ''));
 
           return (
             <div key={a.id || cardLabel} className="cd" style={{ marginBottom: 16, padding: 16 }}>
@@ -115,6 +120,30 @@ export default function CardsView() {
                   Pagar dívida
                 </button>
               </div>
+
+              {/* Pagamentos feitos ao cartão */}
+              {pays.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div className="lb" style={{ fontSize: 10, marginBottom: 8 }}>
+                    Pagamentos ({pays.length}) · {mv(a.paid || 0)}
+                  </div>
+                  {pays.slice(0, 4).map((t) => (
+                    <div key={t.id} className="rw" style={{ padding: '6px 0', borderTop: '1px solid var(--border)' }}>
+                      <span style={{ fontSize: 11, color: 'var(--text3)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t.date} · de {t.from}
+                      </span>
+                      <span className="m" style={{ fontSize: 12, fontWeight: 600, color: 'var(--success)', flexShrink: 0 }}>
+                        +{mv(t.amount)}
+                      </span>
+                    </div>
+                  ))}
+                  {pays.length > 4 && (
+                    <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 6 }}>
+                      + {pays.length - 4} outros — ver em Mais → Transferências
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Registo de despesas */}
               <div className="lb" style={{ fontSize: 10, marginBottom: 8 }}>Despesas do cartão ({exps.length})</div>
