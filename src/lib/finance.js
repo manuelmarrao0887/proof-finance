@@ -398,6 +398,29 @@ export function detectSubscriptions(state) {
   Object.keys(byKey).forEach(function (k) {
     const g = byKey[k];
     if (g.occurrences.length < 2) return;
+    /* Só sugerir o que se PARECE mesmo com uma subscrição, para não propor
+       "2 idas ao mesmo restaurante". Aceita quando:
+         a) os valores são praticamente iguais (± 5%), ou
+         b) o intervalo entre cobranças é compatível com mensal (25-35 dias)
+            ou semanal (6-8 dias). */
+    const amounts = g.occurrences.map(function (o) { return Number(o.amount) || 0; });
+    const maxAmt = Math.max.apply(null, amounts);
+    const minAmt = Math.min.apply(null, amounts);
+    const sameAmount = maxAmt > 0 && (maxAmt - minAmt) / maxAmt <= 0.05;
+
+    const times = g.occurrences
+      .map(function (o) { return new Date(o.date).getTime(); })
+      .filter(function (t) { return !isNaN(t); })
+      .sort(function (a, b) { return a - b; });
+    let regular = false;
+    if (times.length >= 2) {
+      const gaps = [];
+      for (let gi = 1; gi < times.length; gi++) gaps.push((times[gi] - times[gi - 1]) / dayMs);
+      regular = gaps.every(function (gp) {
+        return (gp >= 25 && gp <= 35) || (gp >= 6 && gp <= 8);
+      });
+    }
+    if (!sameAmount && !regular) return;
     // Skip suggestions the user has dismissed ("não e subscrição").
     if (dismissed.indexOf(k) > -1) return;
     // Check if already in recurring — normalize the recurring name the SAME way
