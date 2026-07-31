@@ -234,3 +234,25 @@ describe('insight de poupança', () => {
     expect(buildInsights(BASE, NOW).find((x) => x.id.startsWith('saving-'))).toBeUndefined();
   });
 });
+
+describe('insight de despesas suspeitas', () => {
+  it('cobrança repetida aparece como alerta no topo', () => {
+    const addedExp = [
+      // histórico afastado no tempo e com valores diferentes (não é suspeito)
+      { id: 'h1', desc: 'Pingo Doce', amount: 28, cat: 'sup', date: '2026-05-04' },
+      { id: 'h2', desc: 'Pingo Doce', amount: 33, cat: 'sup', date: '2026-05-18' },
+      { id: 'h3', desc: 'Pingo Doce', amount: 25, cat: 'sup', date: '2026-06-03' },
+      { id: 'h4', desc: 'Pingo Doce', amount: 31, cat: 'sup', date: '2026-06-19' },
+      { id: 'd1', desc: 'Netflix', amount: 10.99, cat: 'sub', date: '2026-07-05' },
+      { id: 'd2', desc: 'Netflix', amount: 10.99, cat: 'sub', date: '2026-07-06' },
+    ];
+    const ins = buildInsights({ ...BASE, addedExp }, NOW);
+    expect(ins[0].id).toContain('anom-');
+    expect(ins[0].tone).toBe('alert');
+    expect(ins[0].detail).toContain('Netflix');
+  });
+
+  it('sem anomalias não inventa alertas', () => {
+    expect(buildInsights(BASE, NOW).find((i) => i.id.startsWith('anom-'))).toBeUndefined();
+  });
+});
