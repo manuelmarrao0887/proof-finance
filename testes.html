@@ -372,6 +372,17 @@ const GROUPS = [
     { id: 'T27.6', title: 'Relatórios listam todos os meses com dados', steps: ['Mais → Relatórios'], expect: 'O seletor mostra TODOS os meses com despesas (ex.: Jan 26 … Jul 26), não apenas os últimos 6.' },
     { id: 'T27.7', title: 'Resumo continua no mês atual', steps: ['Navegar para meses antigos e voltar ao Resumo'], expect: '"Podes gastar" e os insights continuam a referir-se ao MÊS ATUAL (não são afetados pela navegação).' },
   ]},
+  { id: 'T28', title: 'Fiscal PT (IRS / IMI / IUC / e-Fatura)', tests: [
+    { id: 'T28.1', title: 'Calendário de obrigações', steps: ['Mais → Fiscal (IRS/IMI/IUC)'], expect: 'Lista as próximas obrigações com dias em falta: validar e-Fatura (25 fev), deduções apuradas (15 mar), IRS 1 abr–30 jun, pagamento IRS 31 ago.' },
+    { id: 'T28.2', title: 'IMI com prestações certas', steps: ['Configurar IMI: 80 € · depois 300 € · depois 900 €'], expect: '80 € → 1 prestação (maio); 300 € → 2 (maio e novembro); 900 € → 3 (maio, agosto e novembro), cada uma com o valor dividido.' },
+    { id: 'T28.3', title: 'IUC no mês da matrícula', steps: ['Configurar IUC com o mês (ex.: 3) ou vários (3, 9)'], expect: 'Aparece um evento IUC por veículo, no último dia do mês da matrícula.' },
+    { id: 'T28.4', title: 'Deduções estimadas por regime', steps: ['Ver "Deduções estimadas" com despesas registadas'], expect: 'Total a deduzir + barras por regime: Saúde 15% (teto 1.000 €), Educação 30% (800 €), Gerais 35% (250 €), IVA 15% do IVA suportado (250 €). Marca "NO LIMITE" quando o teto é atingido.' },
+    { id: 'T28.5', title: 'Categorias não dedutíveis excluídas', steps: ['Ter despesas em Prestação Casa, Seguros, Combustível, Negócio'], expect: 'Não entram na estimativa (regimes próprios ou fora do âmbito).' },
+    { id: 'T28.6', title: 'Tributação conjunta', steps: ['Ativar "Tributação conjunta" na configuração'], expect: 'O teto das despesas gerais passa de 250 € para 500 €.' },
+    { id: 'T28.7', title: 'Seletor de ano', steps: ['Escolher outro ano no seletor'], expect: 'A estimativa e o calendário passam a ser desse ano; só contam despesas datadas nesse ano.' },
+    { id: 'T28.8', title: 'Aviso no Resumo', steps: ['Estar a menos de 30 dias de uma obrigação fiscal'], expect: 'Aparece nos insights do Resumo (laranja se ≤7 dias) com os dias em falta.' },
+    { id: 'T28.9', title: 'Aviso de que é estimativa', steps: ['Ver o rodapé da vista'], expect: 'Diz claramente que é estimativa indicativa e não aconselhamento fiscal; só contam faturas com NIF comunicadas à AT.' },
+  ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
     { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },

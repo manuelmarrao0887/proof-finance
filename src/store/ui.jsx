@@ -29,7 +29,7 @@ export const MODALS = [
   'cardpay',        // pagar divida de cartao de credito
 ]
 
-const VALID_TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards']
+const VALID_TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax']
 function initialTab() {
   if (typeof location === 'undefined') return 'overview'
   const t = new URLSearchParams(location.search).get('tab')

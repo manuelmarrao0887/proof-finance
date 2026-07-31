@@ -53,7 +53,7 @@ const SLICE_KEYS = Object.keys(SUBCOLLECTIONS);
 const ROOT_KEYS = [
   'apiKey', 'aiHistory', 'dynAccts', 'dynSnaps', 'theme', 'forecastMonths',
   'fxRates', 'aiInsights', 'lastSeenPatchVersion', 'dismissedSubs', 'pinHash',
-  'faceIdCred', 'balancesHidden', 'housing', 'rolloverOn',
+  'faceIdCred', 'balancesHidden', 'housing', 'rolloverOn', 'taxCfg',
 ];
 
 const SCHEMA_VERSION = 2;
