@@ -36,6 +36,7 @@ import {
 import { fm, fc, uid } from '../lib/format.js';
 import { upcomingRecurring } from '../lib/reminders.js';
 import { dailyAllowance, savingsPulse, buildInsights, monthPlan, monthForecast } from '../lib/pulse.js';
+import { monthClosing } from '../lib/closing.js';
 
 const MONTHS_LONG = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -200,6 +201,7 @@ export default function OverviewView() {
   const insights = useMemo(() => (!newU ? buildInsights(s) : []), [s, newU]);
   const plan = useMemo(() => (!newU ? monthPlan(s) : null), [s, newU]);
   const forecast = useMemo(() => (!newU ? monthForecast(s) : null), [s, newU]);
+  const closing = useMemo(() => (!newU ? monthClosing(s) : null), [s, newU]);
   const applyPlan = () => {
     const total = actions.allocateGoals(plan.monthKey);
     toast(total > 0 ? 'Reservado ' + fm(total) + ' para as metas' : 'Nada a reservar', total > 0 ? 'success' : 'error');
@@ -211,6 +213,34 @@ export default function OverviewView() {
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
       {/* ── Quick actions (Finany-style) ── */}
       <QuickActions />
+
+      {/* ── Fecho do mês anterior (só nos primeiros dias) ── */}
+      {!newU && closing && (
+        <div className="cd" style={{ marginBottom: 16, padding: '16px 18px', borderLeft: '3px solid ' + (closing.better ? 'var(--success)' : 'var(--warning)') }}>
+          <div className="rw" style={{ marginBottom: 8 }}>
+            <div className="lb">Fecho de {closing.monthName}</div>
+            {closing.deltaPct != null && (
+              <span className="m" style={{ fontSize: 11, fontWeight: 700, color: closing.better ? 'var(--success)' : 'var(--warning)' }}>
+                {(closing.deltaPct > 0 ? '+' : '') + Math.round(closing.deltaPct)}% vs média
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 6 }}>
+            <span className="m" style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1 }}>
+              {hidden ? '••••' : fc(closing.total)}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, marginBottom: 2 }}>gastos</span>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.5 }}>
+            {closing.rate != null && (
+              <>Poupaste {hidden ? '••••' : fc(closing.saved)} ({Math.round(closing.rate)}% do rendimento). </>
+            )}
+            {closing.top.length > 0 && (
+              <>Onde foi: {closing.top.map((t) => t.name + ' ' + (hidden ? '••••' : fc(t.value))).join(' · ')}.</>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── PODES GASTAR — a métrica de decisão do mês ── */}
       {!newU && allow && (
