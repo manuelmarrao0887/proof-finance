@@ -20,7 +20,7 @@ import { DeviceProvider } from '../store/device.jsx';
 
 // Faz o que o App faz depois do login: define o utilizador e hidrata o estado.
 function Seed({ fixture, tab, openModal, payload, onReady, children }) {
-  const { dispatch } = useStore();
+  const { dispatch, actions } = useStore();
   const { setCurrentUser } = useAuth();
   const ui = useUI();
   const done = useRef(false);
@@ -31,7 +31,7 @@ function Seed({ fixture, tab, openModal, payload, onReady, children }) {
     dispatch({ type: 'hydrate', persisted: { ...initialPersisted(), ...(fixture || {}) } });
     if (tab) ui.goTab(tab);
     if (openModal) ui.open(openModal, payload === undefined ? true : payload);
-    if (onReady) onReady({ dispatch, ui });
+    if (onReady) onReady({ dispatch, ui, actions });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return children;

@@ -1,5 +1,7 @@
+import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, act } from '@testing-library/react';
+import { renderWithStore } from '../test/renderWithStore.jsx';
 
 vi.mock('../firebase/client.js', () => ({
   auth: null, db: null, IS_FILE: false, initError: null,
@@ -17,6 +19,14 @@ vi.mock('../firebase/data.js', () => ({
 }));
 
 afterEach(cleanup);
+
+// Monta o StoreProvider real (sem UI visível) e devolve as `actions` do
+// store, via o mesmo mecanismo `onReady` usado nos outros testes de fluxo.
+async function mountActions() {
+  let actions;
+  await renderWithStore(<div />, { onReady: (r) => { actions = r.actions; } });
+  return actions;
+}
 
 describe('slices de grupos', () => {
   it('arrancam vazios e são persistidos', async () => {
@@ -38,9 +48,40 @@ describe('slices de grupos', () => {
     expect(st.groupEntries).toEqual([{ id: 'e1' }]);
   });
 
-  it('addGroup preenche os valores por defeito', async () => {
+  it('expõe ME_ID e AVATAR_COLORS', async () => {
     const { AVATAR_COLORS, ME_ID } = await import('./store.jsx');
     expect(ME_ID).toBe('me');
     expect(AVATAR_COLORS.length).toBeGreaterThan(3);
+  });
+
+  it('addGroup preenche os valores por defeito', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ name: 'Férias' }));
+    const group = actions.getState().groups.at(-1);
+    expect(typeof group.id).toBe('string');
+    expect(group.id.length).toBeGreaterThan(0);
+    expect(group.emoji).toBe('👥');
+    expect(group.type).toBe('trip');
+    expect(group.currency).toBe('EUR');
+    expect(group.memberIds).toEqual(['me']);
+    expect(group.reflectMine).toBe(true);
+    expect(group.archived).toBe(false);
+  });
+
+  it('addGroup garante ME_ID em memberIds, exatamente uma vez e em primeiro', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ name: 'Sem mim', memberIds: ['p1'] }));
+    act(() => actions.addGroup({ name: 'Já com mim', memberIds: ['me', 'p1'] }));
+    const groups = actions.getState().groups;
+    expect(groups[0].memberIds).toEqual(['me', 'p1']);
+    expect(groups[1].memberIds).toEqual(['me', 'p1']);
+  });
+
+  it('addPerson gera um id não vazio', async () => {
+    const actions = await mountActions();
+    act(() => actions.addPerson({ name: 'Ana' }));
+    const person = actions.getState().people.at(-1);
+    expect(typeof person.id).toBe('string');
+    expect(person.id.length).toBeGreaterThan(0);
   });
 });

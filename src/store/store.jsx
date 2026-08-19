@@ -37,6 +37,14 @@ export const ME_ID = 'me';
 // Paleta dos avatares das pessoas (tokens do sistema visual).
 export const AVATAR_COLORS = ['#3b6fee', '#12b3a6', '#f5a623', '#f25592', '#7b5fe0', '#3fc97a', '#f25555'];
 
+// Garante o invariante memberIds = ['me', ...pessoas]: ME_ID presente exatamente
+// uma vez e sempre em primeiro. Nunca confiar no chamador (UI ou dados vindos
+// de fora) para manter isto — reforçado aqui, não na UI.
+function withMe(ids) {
+  const rest = (Array.isArray(ids) ? ids : []).filter((id) => id !== ME_ID);
+  return [ME_ID, ...rest];
+}
+
 // Ensure every addedExp row carries a stable `id` (backfills legacy rows saved
 // before ids existed). Used on hydrate and on any whole-array replacement.
 export function withExpenseIds(list) {
@@ -447,7 +455,10 @@ export function StoreProvider({ children }) {
       addPerson: (p) => {
         const list = getState().people || [];
         const color = p.color || AVATAR_COLORS[list.length % AVATAR_COLORS.length];
-        setField('people', [...list, { id: uid(), createdAt: Date.now(), ...p, color }]);
+        // id gerado nunca é anulado por um id vindo do chamador (mesma regra
+        // de addExpense): mantém o id se vier definido, senão gera um novo.
+        const withId = p.id ? p : { ...p, id: uid() };
+        setField('people', [...list, { createdAt: Date.now(), ...withId, color }]);
       },
       updatePerson: (id, partial) =>
         setField('people', (getState().people || []).map((x) => (x.id === id ? { ...x, ...partial } : x))),
@@ -464,17 +475,19 @@ export function StoreProvider({ children }) {
         setField('groups', [
           ...(getState().groups || []),
           {
-            id: uid(),
             emoji: '👥',
             type: 'trip',
             currency: 'EUR',
-            memberIds: [ME_ID],
             start: null,
             end: null,
             reflectMine: true,
             archived: false,
             createdAt: Date.now(),
             ...g,
+            // id gerado nunca é anulado pelo spread (mesma regra de addExpense);
+            // memberIds sempre inclui ME_ID uma única vez, em primeiro (spec).
+            id: g.id || uid(),
+            memberIds: withMe(g.memberIds),
           },
         ]),
       updateGroup: (id, partial) =>
