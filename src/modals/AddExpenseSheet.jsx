@@ -324,13 +324,13 @@ export default function AddExpenseSheet() {
         <>
           <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
             <div style={{ flex: 1 }}>
-              <div className="lb" style={{ marginBottom: 6 }}>Total (EUR)</div>
+              <div className="lb" style={{ marginBottom: 6 }}>Total (€)</div>
               <input
                 value={d.total}
                 onChange={(e) => set('total', e.target.value)}
                 placeholder="100,00"
                 inputMode="decimal"
-                aria-label="Total (EUR)"
+                aria-label="Total (€)"
                 style={{ ...monoBig, fontSize: 15, padding: '11px 14px' }}
               />
               {errText(errors.total)}
@@ -366,13 +366,13 @@ export default function AddExpenseSheet() {
       ) : (
         <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
           <div style={{ flex: 1 }}>
-            <div className="lb" style={{ marginBottom: 6 }}>Valor (EUR)</div>
+            <div className="lb" style={{ marginBottom: 6 }}>Valor (€)</div>
             <input
               value={d.amount}
               onChange={(e) => set('amount', e.target.value)}
               placeholder="0,00"
               inputMode="decimal"
-              aria-label="Valor (EUR)"
+              aria-label="Valor (€)"
               style={monoBig}
             />
             {errText(errors.amount)}

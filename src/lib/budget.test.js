@@ -35,3 +35,17 @@ describe('monthEffectiveLimits', () => {
     expect(m.sup.spent).toBe(90);
   });
 });
+
+
+describe('rollover com teto', () => {
+  it('o transitado nunca excede 1× o limite base (nem para cima nem para baixo)', () => {
+    const bdg = [{ id: 'sup', lm: 100 }];
+    const yms = ['2026-01', '2026-02', '2026-03', '2026-04'];
+    // gasta 0 durante 3 meses → sem teto o 4.º mês teria 400 de limite
+    const r = effectiveLimits(bdg, { '2026-01': {}, '2026-02': {}, '2026-03': {} }, yms, true);
+    expect(r['2026-04'].sup.eff).toBe(200); // base + no máximo 1× base
+    // estoura muito durante 2 meses → a falta transitada também é limitada
+    const r2 = effectiveLimits(bdg, { '2026-01': { sup: 1000 }, '2026-02': { sup: 1000 } }, yms.slice(0, 3), true);
+    expect(r2['2026-03'].sup.eff).toBe(0); // base − 1× base
+  });
+});

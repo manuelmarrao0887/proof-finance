@@ -81,6 +81,19 @@ export const cCol = {
   Outros: '#9aa3b5',
 };
 
+// Rótulo legível das categorias de conta (as chaves internas ficam sem acento
+// por compatibilidade com os dados já guardados).
+export const ACCT_CAT_LABEL = {
+  Liquidez: 'Liquidez',
+  Poupanca: 'Poupança',
+  Investimentos: 'Investimentos',
+  Cripto: 'Cripto',
+  Imobiliario: 'Imobiliário',
+  'Cartão de crédito': 'Cartão de crédito',
+  Outros: 'Outros',
+};
+export const acctCatLabel = (c) => ACCT_CAT_LABEL[c] || c;
+
 // Categoria reservada para cartões de crédito. O "saldo" de um cartão é DÍVIDA:
 // contribui NEGATIVAMENTE para o património. Ver cardUsage / getAcctsLive.
 export const CARD_CAT = 'Cartão de crédito';
@@ -283,12 +296,20 @@ export function compute(state) {
   Object.keys(ct).forEach(function (k) {
     ta += ct[k];
   });
+  // Ativos brutos (só o que é positivo) e dívida de cartões — para mostrar
+  // "Ativos X · Dívida Y" em vez de um total já líquido da dívida.
+  let gross = 0;
+  let cardDebt = 0;
+  ca.forEach(function (a) {
+    if (a.c === CARD_CAT) cardDebt += Math.max(0, -(a.v || 0));
+    else gross += a.v || 0;
+  });
   const nw = ta - _ln.out;
   const pp = _ln.cap > 0 ? ((_ln.cap - _ln.out) / _ln.cap) * 100 : 0;
   const h0 = ah[0] || { liq: 0, poup: 0, inv: 0, div: 0 };
   const hL = ah[ah.length - 1] || { liq: 0, poup: 0, inv: 0, div: 0 };
   const ad = hL.liq + hL.poup + hL.inv - (h0.liq + h0.poup + h0.inv);
-  return { accts: ca, hist: ah, grp: g, cT: ct, tA: ta, nW: nw, pp: pp, aD: ad, loan: _ln };
+  return { accts: ca, hist: ah, grp: g, cT: ct, tA: ta, nW: nw, pp: pp, aD: ad, loan: _ln, gross: gross, cardDebt: cardDebt, debt: cardDebt + (_ln.out || 0) };
 }
 
 /* ══ isNewUser (orig 493-502) ══ */
@@ -464,33 +485,51 @@ export function applyRules(state, desc) {
 
 export function emergencyFund(state) {
   const recurring = (state && state.recurring) || [];
-  const ca = getAccts(state);
+  // Colchão = liquidez + poupança VIVAS (o que há mesmo hoje), sem cartões.
   let safe = 0;
-  ca.forEach(function (a) {
+  getAcctsLive(state).forEach(function (a) {
     if (a.c === 'Liquidez' || a.c === 'Poupanca') safe += a.v;
   });
-  // Average monthly expense (recurring + avg discretionary + loan)
-  let monthlyRec = 0;
-  recurring.forEach(function (r) {
-    monthlyRec += r.amount || 0;
-  });
-  const loanPay = getLoan(state).pay || 0;
-  const nonRec = [];
-  const _byC = getByC(state);
-  for (let mIdx = 0; mIdx < 4; mIdx++) {
+  /* Despesa média mensal: a partir do HISTÓRICO REAL (média dos 3 meses
+     fechados anteriores com dados). Só sem histórico nenhum se cai na
+     estimativa antiga (recorrentes + crédito + 300 EUR de variáveis) — a
+     antiga fórmula dava números absurdos a quem já tinha meses importados. */
+  const addedExp = (state && state.addedExp) || [];
+  const now = new Date();
+  const totals = [];
+  for (let k = 1; k <= 3; k++) {
+    const m = new Date(now.getFullYear(), now.getMonth() - k, 1);
+    const key = m.getFullYear() + '-' + String(m.getMonth() + 1).padStart(2, '0');
     let t = 0;
-    Object.keys(_byC).forEach(function (k) {
-      if (_byC[k] && _byC[k][mIdx] != null) t += _byC[k][mIdx];
+    addedExp.forEach(function (x) {
+      if ((x.date || '').slice(0, 7) === key) t += Number(x.amount) || 0;
     });
-    nonRec.push(t);
+    if (t > 0) totals.push(t);
   }
-  const avgNonRec =
-    nonRec.slice(0, 3).reduce(function (s, v) {
-      return s + v;
-    }, 0) / 3;
-  const avgMonthly = Math.max(avgNonRec, monthlyRec + loanPay + 300);
+  let avgMonthly;
+  let basis;
+  if (totals.length) {
+    avgMonthly = totals.reduce(function (a, b) { return a + b; }, 0) / totals.length;
+    basis = 'history';
+  } else {
+    let monthlyRec = 0;
+    recurring.forEach(function (r) { monthlyRec += r.amount || 0; });
+    const loanPay = getLoan(state).pay || 0;
+    const nonRec = [];
+    const _byC = getByC(state);
+    for (let mIdx = 0; mIdx < 4; mIdx++) {
+      let t = 0;
+      Object.keys(_byC).forEach(function (k) {
+        if (_byC[k] && _byC[k][mIdx] != null) t += _byC[k][mIdx];
+      });
+      nonRec.push(t);
+    }
+    const avgNonRec = nonRec.slice(0, 3).reduce(function (s2, v) { return s2 + v; }, 0) / 3;
+    avgMonthly = Math.max(avgNonRec, monthlyRec + loanPay + 300);
+    basis = 'estimate';
+  }
   const months = avgMonthly > 0 ? safe / avgMonthly : 0;
-  return { safe: safe, avgMonthly: avgMonthly, months: months };
+  return { safe: safe, avgMonthly: avgMonthly, months: months, basis: basis };
 }
 
 /* ══ monthlySummary (orig 794-821) ══ */
@@ -565,9 +604,10 @@ export function healthScore(state) {
   const srPts = Math.max(0, Math.min((s.rate / 20) * 25, 25));
   br.push({ label: 'Taxa de poupanca', pts: Math.round(srPts), max: 25, detail: s.rate.toFixed(0) + '%' });
   // 3. Debt-to-asset (0-20)
-  const dta = C.tA > 0 ? (C.loan.out / C.tA) * 100 : C.loan.out > 0 ? 100 : 0;
+  const totalDebt = (C.loan.out || 0) + (C.cardDebt || 0);
+  const dta = C.gross > 0 ? (totalDebt / C.gross) * 100 : totalDebt > 0 ? 100 : 0;
   const dtaPts = Math.max(0, 20 - dta / 5);
-  br.push({ label: 'Dívida vs ativos', pts: Math.round(dtaPts), max: 20, detail: C.loan.out > 0 ? dta.toFixed(0) + '%' : 'sem dívida' });
+  br.push({ label: 'Dívida vs ativos', pts: Math.round(dtaPts), max: 20, detail: totalDebt > 0 ? dta.toFixed(0) + '%' : 'sem dívida' });
   // 4. Budget adherence (0-15)
   const _byCh = getByC(state);
   let totCat = 0,

@@ -78,6 +78,7 @@ export function richFixture() {
     housing: { valorAquisicao: 200000, valorEmprestimo: 150000, taxa: 3, prazoAnos: 30 },
     rolloverOn: true,
     theme: 'light',
+    lastSeenPatchVersion: 999, // não abrir as Novidades por cima nos testes/screenshots
   };
 }
 

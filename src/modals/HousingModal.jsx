@@ -103,17 +103,17 @@ export default function HousingModal() {
 
   return (
     <Sheet open={isOpen} onClose={close} title="Crédito à habitação" footer={footer}>
-      {field('Valor de aquisição (EUR)', 'valorAquisicao', { onAcqLoan: true, ph: '250000' })}
-      {field('Empréstimo bancário (EUR)', 'valorEmprestimo', { onAcqLoan: true, ph: '200000' })}
-      {field('Capitais próprios (EUR)', 'capitaisProprios', { ph: '50000' })}
-      {field('Impostos pagos na compra — IMT+IS (EUR)', 'impostos', { ph: '7000' })}
+      {field('Valor de aquisição (€)', 'valorAquisicao', { onAcqLoan: true, ph: '250000' })}
+      {field('Empréstimo bancário (€)', 'valorEmprestimo', { onAcqLoan: true, ph: '200000' })}
+      {field('Capitais próprios (€)', 'capitaisProprios', { ph: '50000' })}
+      {field('Impostos pagos na compra — IMT+IS (€)', 'impostos', { ph: '7000' })}
       {field('Data de aquisição', 'dataAquisicao', { type: 'date' })}
       <div style={{ display: 'flex', gap: 10 }}>
         <div style={{ flex: 1 }}>{field('Taxa de juro (%)', 'taxaJuro', { ph: '3,3' })}</div>
         <div style={{ flex: 1 }}>{field('Prazo (anos)', 'prazoAnos', { ph: '30' })}</div>
       </div>
-      {field('Prestação mensal (EUR)', 'prestacao', { ph: '870' })}
-      {field('Rendimento do agregado / mês (EUR)', 'rendimentoAgregado', { ph: '3000' })}
+      {field('Prestação mensal (€)', 'prestacao', { ph: '870' })}
+      {field('Rendimento do agregado / mês (€)', 'rendimentoAgregado', { ph: '3000' })}
       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, marginBottom: 8 }}>
         Usado para a taxa de esforço (prestação ÷ rendimento).
       </div>

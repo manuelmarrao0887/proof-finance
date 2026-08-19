@@ -37,6 +37,7 @@ describe('savingsOpportunities', () => {
     const o = savingsOpportunities(state, NOW).find((x) => x.kind === 'subscriptions');
     expect(o).toBeTruthy();
     expect(o.yearly).toBeCloseTo(46 * 12, 5);
+    expect(o.title).toBe('2 subscrições fixas');
     expect(o.detail).toContain('Ginásio'); // a maior primeiro
   });
 

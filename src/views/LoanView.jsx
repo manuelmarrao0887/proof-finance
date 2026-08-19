@@ -128,11 +128,11 @@ export default function LoanView() {
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
-            <div className="lb" style={{ marginBottom: 6 }}>Preço (EUR)</div>
+            <div className="lb" style={{ marginBottom: 6 }}>Preço (€)</div>
             <input value={sim.preco} onChange={(e) => setS('preco', e.target.value)} inputMode="decimal" placeholder="300000" aria-label="Preço" style={simInput} />
           </div>
           <div style={{ flex: 1 }}>
-            <div className="lb" style={{ marginBottom: 6 }}>Entrada (EUR)</div>
+            <div className="lb" style={{ marginBottom: 6 }}>Entrada (€)</div>
             <input value={sim.entrada} onChange={(e) => setS('entrada', e.target.value)} inputMode="decimal" placeholder="60000" aria-label="Entrada" style={simInput} />
           </div>
         </div>
@@ -147,7 +147,7 @@ export default function LoanView() {
           </div>
         </div>
         <div style={{ marginBottom: 6 }}>
-          <div className="lb" style={{ marginBottom: 6 }}>Rendimento do agregado / mês (EUR)</div>
+          <div className="lb" style={{ marginBottom: 6 }}>Rendimento do agregado / mês (€)</div>
           <input value={sim.rend} onChange={(e) => setS('rend', e.target.value)} inputMode="decimal" placeholder="3000" aria-label="Rendimento do agregado" style={simInput} />
         </div>
 

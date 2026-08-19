@@ -162,7 +162,7 @@ export default function TaxView() {
         </button>
       ) : (
         <div className="cd" style={{ padding: 16 }}>
-          <div className="lb" style={{ marginBottom: 8 }}>IMI anual (EUR)</div>
+          <div className="lb" style={{ marginBottom: 8 }}>IMI anual (€)</div>
           <input value={imi} onChange={(e) => setImi(e.target.value)} placeholder="Ex: 240" inputMode="decimal" style={{ ...input, marginBottom: 12 }} />
           <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: -8, marginBottom: 12 }}>
             Até 100 € paga-se de uma vez (maio); 100–500 € em 2 prestações (maio e novembro); acima de 500 € em 3 (maio, agosto e novembro).

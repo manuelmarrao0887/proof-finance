@@ -30,7 +30,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
-import { fm, normalizeStmtDate } from '../lib/format.js';
+import { fm, normalizeStmtDate, fmDateShort } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import { dedupeAddedExp } from '../lib/dedupe.js';
 import { monthEffectiveLimits } from '../lib/budget.js';
@@ -460,21 +460,6 @@ export default function ExpensesView() {
         </button>
       )}
 
-      {/* Remove all expenses in the selected month (wipe & re-import) */}
-      {monthExpCount > 0 && (
-        <button
-          type="button"
-          onClick={removeMonthExpenses}
-          style={{ width: '100%', marginBottom: 12, padding: '10px 14px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--signal)', borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M3 6h18" />
-            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-          </svg>
-          Remover as {monthExpCount} despesas de {selMonthLabel} (limpar p/ reimportar)
-        </button>
-      )}
-
       {/* Tag chips */}
       {tagList.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14, alignItems: 'center' }}>
@@ -719,7 +704,7 @@ export default function ExpensesView() {
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                            <span className="m" style={{ fontSize: 11, color: 'var(--text3)', flex: 1 }}>{x.date}</span>
+                            <span className="m" style={{ fontSize: 11, color: 'var(--text3)', flex: 1 }}>{fmDateShort(x.date)}</span>
                             {/* Categoria muda-se via Editar (sheet) — sem seletor por linha. */}
                             <button type="button" onClick={() => openAdd(x.id)} className="icon-btn" style={{ width: 36, height: 36 }} aria-label="Editar despesa">
                               <EditIcon />
@@ -742,6 +727,22 @@ export default function ExpensesView() {
           </div>
         );
       })}
+
+      {/* Remover o mês inteiro (limpar p/ reimportar) — ação destrutiva, por isso
+          discreta e no FIM da lista, não no topo do ecrã. */}
+      {monthExpCount > 0 && (
+        <button
+          type="button"
+          onClick={removeMonthExpenses}
+          style={{ width: '100%', marginTop: 20, padding: '10px 14px', border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text3)', borderRadius: 12, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 6h18" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+          Remover as {monthExpCount} despesas de {selMonthLabel} (para reimportar o extrato)
+        </button>
+      )}
     </div>
   );
 }

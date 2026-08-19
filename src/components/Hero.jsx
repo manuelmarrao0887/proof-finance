@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { useStore } from '../store/store.jsx';
-import { compute, isNewUser, cCol } from '../lib/finance.js';
+import { compute, isNewUser, cCol, CARD_CAT, acctCatLabel } from '../lib/finance.js';
 import { fm, fc } from '../lib/format.js';
 
 export default function Hero() {
@@ -43,7 +43,9 @@ export default function Hero() {
       .join(' ');
   }
 
-  const cats = Object.keys(C.cT);
+  // Alocação de ATIVOS: a dívida de cartões não é um ativo — não entra na barra.
+  const cats = Object.keys(C.cT).filter((c) => c !== CARD_CAT && C.cT[c] > 0);
+  const gross = C.gross != null ? C.gross : C.tA;
 
   return (
     <>
@@ -88,8 +90,8 @@ export default function Hero() {
           {fm(C.nW)}
         </div>
         <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, position: 'relative', zIndex: 1 }}>
-          Ativos {fc(C.tA)}
-          {C.loan.out > 0 ? ' · Dívida ' + fc(C.loan.out) : ''}
+          Ativos {fc(gross)}
+          {C.debt > 0 ? ' · Dívida ' + fc(C.debt) : ''}
         </div>
         {nwSeries.length > 1 && (
           <svg
@@ -111,7 +113,7 @@ export default function Hero() {
       </div>
 
       {/* Asset allocation bar (compact) — only when there are assets. */}
-      {C.tA > 0 && (
+      {gross > 0 && cats.length > 0 && (
         <div style={{ padding: '0 20px 16px' }}>
           <div
             style={{ display: 'flex', height: 6, background: 'var(--bg3)', borderRadius: 3, overflow: 'hidden' }}
@@ -120,7 +122,7 @@ export default function Hero() {
             {cats.map((c) => (
               <div
                 key={c}
-                style={{ width: (C.cT[c] / C.tA) * 100 + '%', background: cCol[c] || 'var(--fg-subtle)' }}
+                style={{ width: (C.cT[c] / gross) * 100 + '%', background: cCol[c] || 'var(--fg-subtle)' }}
               />
             ))}
           </div>
@@ -129,7 +131,7 @@ export default function Hero() {
               <div key={c} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: cCol[c] || 'var(--fg-subtle)' }} />
                 <span style={{ fontSize: 11, color: 'var(--text2)', fontWeight: 500 }}>
-                  {c} {((C.cT[c] / C.tA) * 100).toFixed(0)}%
+                  {acctCatLabel(c)} {((C.cT[c] / gross) * 100).toFixed(0)}%
                 </span>
               </div>
             ))}
