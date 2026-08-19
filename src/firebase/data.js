@@ -51,7 +51,7 @@ const SLICE_KEYS = Object.keys(SUBCOLLECTIONS);
 
 // Campos que ficam no doc raiz users/{uid} (definições e singletons).
 const ROOT_KEYS = [
-  'apiKey', 'aiHistory', 'dynAccts', 'dynSnaps', 'theme', 'forecastMonths',
+  'aiHistory', 'dynAccts', 'dynSnaps', 'theme', 'forecastMonths',
   'fxRates', 'aiInsights', 'lastSeenPatchVersion', 'dismissedSubs', 'pinHash',
   'faceIdCred', 'balancesHidden', 'housing', 'rolloverOn', 'taxCfg', 'dismissedAnomalies',
 ];
@@ -83,6 +83,9 @@ function rootPayload(src) {
     o[k] = src[k] !== undefined ? src[k] : null;
   });
   o.aiHistory = (src.aiHistory || []).slice(-20);
+  // A API key do utilizador deixou de existir na app (vive só no servidor).
+  // Apaga-se do doc raiz em qualquer sync, para não ficar lá em claro.
+  o.apiKey = deleteField();
   return o;
 }
 

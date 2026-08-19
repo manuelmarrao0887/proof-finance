@@ -100,7 +100,6 @@ export default function MoreMenu() {
           <div className="sheet-text">
             <div className="sheet-text-title">
               Definições
-              {!state.apiKey && <span style={{ color: 'var(--danger)', fontSize: 11 }}> — sem API key</span>}
             </div>
             <div className="sheet-text-sub">Conta, tema, IA, backup</div>
           </div>
