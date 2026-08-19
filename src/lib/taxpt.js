@@ -83,7 +83,9 @@ export function taxCalendarPT(year, cfg) {
         id: 'imi-' + year + '-' + m,
         date: iso(year, m, 31 - (m === 11 ? 1 : 0)), // maio/ago 31; nov 30
         title: parts === 1 ? 'IMI (prestação única)' : 'IMI · ' + (i + 1) + '.ª de ' + parts,
-        detail: 'Imposto Municipal sobre Imóveis' + (parts > 1 ? ' — prestação de ' + each.toFixed(2) + ' EUR' : ''),
+        detail:
+          'Imposto Municipal sobre Imóveis' +
+          (parts > 1 ? ' — prestação de ' + each.toFixed(2).replace('.', ',') + '\u00a0€' : ''),
         kind: 'imi',
         amount: each,
       });
