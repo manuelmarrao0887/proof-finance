@@ -66,8 +66,11 @@ for (const f of targets) {
 // Classificação com a MESMA regra da app.
 const classified = txns.map((t) => {
   const kind = t.isTransfer ? 'transfer' : t.amount > 0 ? 'income' : 'expense';
-  const cat = kind === 'expense' ? guessCategory(t.desc) || guessCategory(t.raw) || 'out' : null;
-  return { ...t, kind, cat, known: kind !== 'expense' || cat !== 'out', source: kind === 'income' ? incomeSource(t.raw) : null };
+  // known = a app TEM uma regra (mesmo que a regra diga 'out', ex.: encargos
+  // bancários). Desconhecido = nenhuma regra casou → cai em 'out' por defeito.
+  const guessed = kind === 'expense' ? guessCategory(t.desc) || guessCategory(t.raw) : null;
+  const cat = kind === 'expense' ? guessed || 'out' : null;
+  return { ...t, kind, cat, known: kind !== 'expense' || guessed != null, source: kind === 'income' ? incomeSource(t.raw) : null };
 });
 
 const expenses = classified.filter((x) => x.kind === 'expense');
