@@ -48,6 +48,7 @@ export default function RecurringView() {
 
   // Explicit display sort: amount descending (kept from the original).
   const sorted = recurring.slice().sort((a, b) => b.amount - a.amount);
+  const now = new Date();
   /* Recorrentes já lançadas como despesa neste mês (carregam recId) — para
      mostrar o que já está pago e não parecer que falta pagar tudo. */
   const thisYm = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
@@ -59,7 +60,6 @@ export default function RecurringView() {
   const total = sorted.reduce((s, r) => s + r.amount, 0);
   const pendingTotal = sorted.reduce((s, r) => (paidThisMonth.has(r.id) ? s : s + r.amount), 0);
   const yearly = total * 12;
-  const now = new Date();
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
