@@ -82,7 +82,6 @@ export default function Sidebar() {
 
       <button type="button" className="dnav-item" onClick={() => open('settings')}>
         <NavIcon name="settings" /> Definições
-        {!state.apiKey && <span style={{ color: 'var(--danger)', fontSize: 10, marginLeft: 'auto' }}>sem API key</span>}
       </button>
       <button type="button" className="dnav-item" onClick={toggleTheme}>
         <NavIcon name="theme" /> Tema: {state.theme || 'system'}

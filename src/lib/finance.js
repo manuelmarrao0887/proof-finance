@@ -29,22 +29,27 @@ export const hist = [
   { l: '29/04', liq: 621.57, poup: 7055.85, inv: 16553.68, div: 77555.06, xP: 10429.01, xT: 490.53, tC: 2228.09 },
 ];
 
+/* DADOS DE DEMONSTRAÇÃO (modo pré-visualização, sem login). São SINTÉTICOS:
+   números redondos e nomes genéricos. O repositório é público — nunca pôr aqui
+   saldos, crédito, salário ou nomes reais. */
 export const accts = [
-  { b: 'Bankinter', t: 'Conta a Ordem', v: 292.32, n: '584,64 / 2', c: 'Liquidez' },
-  { b: 'Activobank', t: 'Conta a Ordem', v: 325.46, c: 'Liquidez' },
-  { b: 'Revolut', t: 'Conta a Ordem', v: 0, c: 'Liquidez' },
-  { b: 'Moey', t: 'Conta a Ordem', v: 3.79, n: '3 contas', c: 'Liquidez' },
-  { b: 'Trade Republic', t: 'Poupanca', v: 7055.85, n: 'Juros: 82 EUR', c: 'Poupanca' },
-  { b: 'Trade Republic', t: 'Corretagem', v: 2228.09, n: '44%', c: 'Investimentos' },
-  { b: 'Trade Republic', t: 'Private Markets', v: 2060.8, n: '41%', c: 'Investimentos' },
-  { b: 'Trade Republic', t: 'Rend. Fixo', v: 752.24, n: '15%', c: 'Investimentos' },
-  { b: 'XTB', t: 'Transações', v: 490.53, n: 'P&L: -8,42', c: 'Investimentos' },
-  { b: 'XTB', t: 'Planos Invest.', v: 10429.01, n: 'P&L: +1.228', c: 'Investimentos' },
-  { b: 'Goparity', t: 'P2P Lending', v: 555.88, n: 'Juros: 82,24', c: 'Investimentos' },
-  { b: 'Raize', t: 'P2P Lending', v: 37.13, c: 'Investimentos' },
+  // Os nomes banco/tipo são CHAVES das contas-modelo (dynAccts['Banco_Tipo']) —
+  // não mudar. Os valores são sintéticos.
+  { b: 'Bankinter', t: 'Conta a Ordem', v: 640, n: 'conta conjunta', c: 'Liquidez' },
+  { b: 'Activobank', t: 'Conta a Ordem', v: 1250, c: 'Liquidez' },
+  { b: 'Revolut', t: 'Conta a Ordem', v: 85, c: 'Liquidez' },
+  { b: 'Moey', t: 'Conta a Ordem', v: 0, c: 'Liquidez' },
+  { b: 'Trade Republic', t: 'Poupanca', v: 6000, n: 'Juros: 2,8%', c: 'Poupanca' },
+  { b: 'Trade Republic', t: 'Corretagem', v: 3200, n: 'ações', c: 'Investimentos' },
+  { b: 'Trade Republic', t: 'Private Markets', v: 1000, c: 'Investimentos' },
+  { b: 'Trade Republic', t: 'Rend. Fixo', v: 800, c: 'Investimentos' },
+  { b: 'XTB', t: 'Transações', v: 500, c: 'Investimentos' },
+  { b: 'XTB', t: 'Planos Invest.', v: 3100, n: 'ETFs', c: 'Investimentos' },
+  { b: 'Goparity', t: 'P2P Lending', v: 300, c: 'Investimentos' },
+  { b: 'Raize', t: 'P2P Lending', v: 100, c: 'Investimentos' },
 ];
 
-export const ln = { cap: 90000, out: 77555.06, pay: 485.83 };
+export const ln = { cap: 150000, out: 118000, pay: 520 };
 
 export const bdgDefault = [
   { id: 'rest', nm: 'Restauração', lm: 250 }, { id: 'sup', nm: 'Supermercado', lm: 250 }, { id: 'cas', nm: 'Prestação Casa', lm: 350 },
@@ -54,22 +59,23 @@ export const bdgDefault = [
   { id: 'neg', nm: 'Negócio', lm: 50 }, { id: 'laz', nm: 'Lazer', lm: 100 }, { id: 'comp', nm: 'Compras', lm: 100 }, { id: 'bern', nm: 'Despesas Bernardo', lm: 100 }, { id: 'trf', nm: 'Transferências', lm: 100 }, { id: 'out', nm: 'Outros', lm: 30 },
 ];
 
+// Gastos por categoria nos 4 meses de demonstração (Jan–Abr).
 export const byC = {
-  rest: [509.52, 328.65, 383, 135.66], sup: [157.57, 348.81, 333.48, 50.5], cas: [350, 350, 350, 0], emp: [0, 360, 360, 0],
-  seg: [285.82, 121.58, 95.26, 115.94], ani: [20, 224.98, 0, 0], sau: [0, 0, 75.92, 17], tel: [57.88, 59.71, 118.38, 0],
-  car: [56.19, 13.53, 95.53, 13.53], sub: [34.46, 34.46, 76.95, 26.03], gym: [0, 0, 0, 35.9], cmb: [58.62, 0, 208.57, 0],
-  neg: [61.66, 83.28, 2.25, 12], laz: [22.3, 77.7, 134.67, 79.99], trf: [183.87, 76.7, 178.68, 110], out: [77.89, 35.4, 9.46, 0.36],
+  rest: [310, 280, 345, 120], sup: [240, 260, 255, 90], cas: [350, 350, 350, 0], emp: [0, 360, 360, 0],
+  seg: [120, 120, 95, 120], ani: [20, 60, 0, 0], sau: [0, 0, 75, 17], tel: [58, 58, 58, 0],
+  car: [56, 14, 95, 14], sub: [34, 34, 42, 26], gym: [0, 0, 0, 36], cmb: [60, 0, 120, 0],
+  neg: [40, 80, 5, 12], laz: [22, 78, 135, 80], trf: [100, 80, 120, 110], out: [45, 35, 10, 5],
 };
 
 export const txn = {
-  rest: [[['McDonalds', 42.35], ['Adega Lampeira', 54.5], ['Rest Browers', 69.5], ['Outros', 343.17]], [['McDonalds', 43.65], ['Pare e Prove', 60.5], ['Outros', 224.5]], [['O Tradicional', 51.2], ['Kanto Fusion', 55], ['Outros', 276.8]], [['O Tradicional', 36.7], ['Uber Eats', 16.81], ['H3', 12.95], ['Outros', 69.2]]],
-  sup: [[['Pingo Doce', 118.27], ['Continente', 31.06], ['Lidl', 8.24]], [['Continente', 179.83], ['Pingo Doce', 155.69]], [['Pingo Doce', 250.33], ['Continente', 83.15]], [['Pingo Doce', 29.15], ['Continente', 21.35]]],
-  seg: [[['Fidelidade', 190.56], ['MGEN', 67.64], ['Medis', 10.9], ['Barkibu', 16.72]], [['Seg.Social', 26.32], ['MGEN', 67.64], ['Medis', 10.9], ['Barkibu', 16.72]], [['MGEN', 67.64], ['Medis', 10.9], ['Barkibu', 16.72]], [['Seg.Social', 31.58], ['MGEN', 67.64], ['Barkibu', 16.72]]],
-  cas: [[['TRF Bankinter', 350]], [['TRF Bankinter', 350]], [['TRF Bankinter', 350]], []],
-  emp: [[], [['Atilio Gregorio', 360]], [['Ana Gregorio', 360]], []],
+  rest: [[['Restaurante A', 42], ['Café B', 18], ['Take-away C', 70], ['Outros', 180]], [['Restaurante A', 44], ['Pizzaria D', 60], ['Outros', 176]], [['Tasca E', 51], ['Sushi F', 55], ['Outros', 239]], [['Tasca E', 37], ['Entrega ao domicílio', 17], ['Hambúrguer G', 13], ['Outros', 53]]],
+  sup: [[['Supermercado A', 118], ['Supermercado B', 31], ['Supermercado C', 91]], [['Supermercado B', 110], ['Supermercado A', 150]], [['Supermercado A', 170], ['Supermercado B', 85]], [['Supermercado A', 55], ['Supermercado B', 35]]],
+  seg: [[['Seguro casa', 60], ['Seguro saúde', 50], ['Seguro animal', 10]], [['Seguro saúde', 50], ['Seguro auto', 60], ['Seguro animal', 10]], [['Seguro saúde', 50], ['Seguro animal', 10], ['Outros', 35]], [['Seguro saúde', 50], ['Seguro auto', 60], ['Seguro animal', 10]]],
+  cas: [[['Prestação casa', 350]], [['Prestação casa', 350]], [['Prestação casa', 350]], []],
+  emp: [[], [['Apoio doméstico', 360]], [['Apoio doméstico', 360]], []],
 };
 
-export const sal = [1923.54, 1849.33, 1898.89, null];
+export const sal = [1800, 1800, 1850, null];
 
 export const cCol = {
   Liquidez: '#3b6fee',

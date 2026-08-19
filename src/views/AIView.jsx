@@ -155,7 +155,8 @@ function actionLabel(a) {
     return {
       icon: 'recurring',
       lbl: a.name || '',
-      val: fm(a.amount || 0) + ' &middot; dia ' + (a.day || 1),
+      // a.day vem da IA e val é renderizado via dangerouslySetInnerHTML → só número.
+      val: fm(a.amount || 0) + ' &middot; dia ' + (parseInt(a.day, 10) || 1),
       tab: 'Recor.',
       color: 'var(--orange)',
     };

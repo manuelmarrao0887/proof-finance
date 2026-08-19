@@ -57,16 +57,6 @@ export default function SettingsSheet() {
   const { isOpen, close } = useModal('settings');
   const toast = useToast();
 
-  const [keyInput, setKeyInput] = useState(state.apiKey || '');
-  const [keyVisible, setKeyVisible] = useState(false);
-  const [testResult, setTestResult] = useState(null); // {kind:'info'|'ok'|'err', label, detail}
-
-  // Keep local key input in sync when the sheet (re)opens.
-  React.useEffect(() => {
-    if (isOpen) setKeyInput(state.apiKey || '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
-
   const curTheme = state.theme || 'system';
 
   /* ── sign-out (orig doLogout): signOutUser() then resetUser(). ──────────── */
@@ -83,57 +73,12 @@ export default function SettingsSheet() {
       });
   }, [resetUser, close]);
 
-  /* ── testAPI (orig 2004-2023). ─────────────────────────────────────────── */
-  const testAPI = useCallback(() => {
-    if (!state.apiKey) {
-      setTestResult({ kind: 'err', label: 'COLA A KEY PRIMEIRO' });
-      return;
-    }
-    setTestResult({ kind: 'info', label: 'A testar…' });
-    fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': state.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 50, messages: [{ role: 'user', content: 'Responde apenas: OK' }] }),
-    })
-      .then((r) =>
-        r.text().then((body) => {
-          if (r.ok) setTestResult({ kind: 'ok', label: 'API OK — STATUS ' + r.status, detail: body.substring(0, 150) });
-          else setTestResult({ kind: 'err', label: 'Erro ' + r.status, detail: body.substring(0, 300) });
-        })
-      )
-      .catch((err) => {
-        let msg = err.message || 'Erro';
-        let hint = '';
-        if (msg === 'Failed to fetch') hint = ' — CAUSA PROVAVEL: CORS bloqueado (file://). Tem de ser via HTTPS.';
-        setTestResult({ kind: 'err', label: 'Erro DE REDE', detail: msg + hint + ' | URL: ' + location.protocol + '//' + location.host });
-      });
-  }, [state.apiKey]);
-
-  const onSaveKey = useCallback(() => {
-    actions.setApiKey(keyInput);
-    close();
-    toast('Key guardada', 'success');
-  }, [actions, keyInput, close, toast]);
-
-  const onRemoveKey = useCallback(() => {
-    actions.setApiKey('');
-    setKeyInput('');
-    close();
-    toast('Key removida', 'success');
-  }, [actions, close, toast]);
-
   /* ── exportData (orig 1918-1941). ──────────────────────────────────────── */
   const exportData = useCallback(() => {
     if (!confirm('Exportar todos os dados para JSON?')) return;
     const data = {
       exportedAt: new Date().toISOString(),
       user: currentUser ? currentUser.email : null,
-      apiKey: state.apiKey,
       aiHistory: state.aiHistory,
       dynAccts: state.dynAccts,
       dynSnaps: state.dynSnaps,
@@ -183,7 +128,6 @@ export default function SettingsSheet() {
           if (!confirm('Restaurar substitui TODOS os dados atuais. Continuar?')) return;
           const theme = typeof d.theme === 'string' ? d.theme : 'system';
           const partial = {
-            apiKey: typeof d.apiKey === 'string' ? d.apiKey : state.apiKey,
             aiHistory: Array.isArray(d.aiHistory) ? d.aiHistory : [],
             dynAccts: d.dynAccts && typeof d.dynAccts === 'object' ? d.dynAccts : null,
             dynSnaps: Array.isArray(d.dynSnaps) ? d.dynSnaps : [],
@@ -205,17 +149,17 @@ export default function SettingsSheet() {
       };
       rd.readAsText(file);
     },
-    [actions, state.apiKey, toast]
+    [actions, toast]
   );
 
-  /* ── wipeData — apaga TODOS os dados financeiros, mantém API key / tema /
+  /* ── wipeData — apaga TODOS os dados financeiros, mantém tema /
      categorias. actions.patch dispara o auto-save → limpa também o documento
      no Firestore (e a cache local). Irreversível, por isso duplo-confirm. ─── */
   const wipeData = useCallback(() => {
     if (typeof confirm !== 'function') return;
     if (
       !confirm(
-        'Apagar TODOS os dados financeiros? Despesas, receitas, recorrentes, contas, saldos, metas e regras são removidos. As definições (API key, tema, categorias) mantêm-se. Esta ação NÃO pode ser desfeita.'
+        'Apagar TODOS os dados financeiros? Despesas, receitas, recorrentes, contas, saldos, metas e regras são removidos. As definições (tema, categorias) mantêm-se. Esta ação NÃO pode ser desfeita.'
       )
     )
       return;
@@ -289,59 +233,13 @@ export default function SettingsSheet() {
         })}
       </div>
 
-      {/* ── IA / API key ── */}
+      {/* ── Assistente IA — a chave vive só no servidor (proxy /api/ai); nada a
+            configurar aqui. (A key do utilizador guardada em claro foi removida:
+            ver revisão de segurança 2026-08.) ── */}
       <div className="lb" style={{ marginBottom: 10 }}>Assistente IA</div>
-      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.5 }}>
-        API key da Anthropic para o scanner e assistente. Obtem em console.anthropic.com.
+      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 20, lineHeight: 1.5 }}>
+        O assistente e o scanner de recibos correm através de um serviço seguro da app — não precisas de nenhuma chave. Se estiverem indisponíveis, é configuração do lado do servidor.
       </div>
-      <label htmlFor="ki" className="lb" style={{ display: 'block', marginBottom: 8 }}>Chave API</label>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <input
-          id="ki"
-          type={keyVisible ? 'text' : 'password'}
-          value={keyInput}
-          onChange={(e) => setKeyInput(e.target.value)}
-          placeholder="sk-ant-…"
-          style={{ flex: 1, padding: '12px 16px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontFamily: 'var(--mono)', fontSize: 12, boxSizing: 'border-box' }}
-        />
-        <button type="button" aria-pressed={keyVisible} onClick={() => setKeyVisible((v) => !v)} style={{ minHeight: 44, padding: '0 14px', border: 'none', background: 'var(--bg3)', color: 'var(--text2)', borderRadius: 'var(--r2)', fontSize: 11, fontWeight: 600 }}>
-          Ver
-        </button>
-      </div>
-      {state.apiKey ? (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 14, padding: '6px 12px', background: 'var(--success-soft)', borderRadius: 14 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} />
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--success)' }}>Configurada</div>
-        </div>
-      ) : (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 14, padding: '6px 12px', background: 'var(--signal-soft)', borderRadius: 14 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--signal)' }} />
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--signal)' }}>Sem key</div>
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        <button type="button" onClick={onSaveKey} style={{ flex: 1, padding: '12px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', fontSize: 13, fontWeight: 500, borderRadius: 999 }}>
-          Guardar
-        </button>
-        <button type="button" onClick={testAPI} style={{ padding: '12px 16px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text2)', borderRadius: 'var(--r2)', fontSize: 11, fontWeight: 600 }}>
-          Testar
-        </button>
-        {state.apiKey && (
-          <button type="button" onClick={onRemoveKey} style={{ padding: '12px 14px', border: '1px solid var(--signal)', background: 'transparent', color: 'var(--signal)', borderRadius: 'var(--r2)', fontSize: 11, fontWeight: 600 }}>
-            Remover
-          </button>
-        )}
-      </div>
-      {testResult && (
-        <div id="testResult" style={{ marginBottom: 16 }}>
-          <div className="lb" style={{ color: testResult.kind === 'ok' ? 'var(--success)' : testResult.kind === 'err' ? 'var(--signal)' : undefined }}>
-            {testResult.label}
-          </div>
-          {testResult.detail && (
-            <div className="m" style={{ fontSize: 9, color: 'var(--text3)', marginTop: 4, wordBreak: 'break-all' }}>{testResult.detail}</div>
-          )}
-        </div>
-      )}
 
       {/* ── Automacao ── */}
       <div className="lb" style={{ marginBottom: 10, marginTop: 8 }}>Automacao</div>
@@ -434,7 +332,7 @@ export default function SettingsSheet() {
         <span style={{ color: 'var(--text3)' }}>&rsaquo;</span>
       </button>
 
-      {/* Apagar todos os dados (irreversivel) — mantem API key, tema e categorias. */}
+      {/* Apagar todos os dados (irreversivel) — mantem tema e categorias. */}
       <button
         type="button"
         onClick={wipeData}

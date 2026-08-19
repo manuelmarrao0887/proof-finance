@@ -50,16 +50,16 @@ describe('mode flags', () => {
 describe('compute (preview demo data)', () => {
   const C = compute({}); // preview
   it('totals the three account categories', () => {
-    expect(C.cT.Liquidez).toBeCloseTo(621.57, 2);
-    expect(C.cT.Poupanca).toBeCloseTo(7055.85, 2);
-    expect(C.cT.Investimentos).toBeCloseTo(16553.68, 2);
+    expect(C.cT.Liquidez).toBeCloseTo(1975, 2);
+    expect(C.cT.Poupanca).toBeCloseTo(6000, 2);
+    expect(C.cT.Investimentos).toBeCloseTo(9000, 2);
   });
   it('computes total assets and net worth against the demo loan', () => {
-    expect(C.tA).toBeCloseTo(24231.1, 2);
-    expect(C.nW).toBeCloseTo(24231.1 - 77555.06, 2);
+    expect(C.tA).toBeCloseTo(16975, 2);
+    expect(C.nW).toBeCloseTo(16975 - 118000, 2);
   });
   it('computes loan paid-progress pp', () => {
-    expect(C.pp).toBeCloseTo(((90000 - 77555.06) / 90000) * 100, 4);
+    expect(C.pp).toBeCloseTo(((150000 - 118000) / 150000) * 100, 4);
   });
 });
 

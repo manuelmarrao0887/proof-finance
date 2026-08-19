@@ -330,7 +330,7 @@
 
 <div class="wrap" id="secWrap" style="display:none">
   <div class="card">
-    <p class="map-intro" style="margin:0">Relatório de segurança — auditoria ao código (Firebase, chaves, XSS, dependências). Cada item: gravidade, onde, risco e correção. <b id="secDate">Auditado: 2026-06-21</b>. Estado: <span class="sev-pill sev-fixed">Corrigido</span> = já resolvido neste código; <span class="sev-pill sev-rec">Recomendação</span> = precisa de decisão/ação tua.</p>
+    <p class="map-intro" style="margin:0">Relatório de segurança — auditoria ao código (Firebase, chaves, XSS, dependências). Cada item: gravidade, onde, risco e correção. <b id="secDate">Auditado: 2026-08-19</b>. Estado: <span class="sev-pill sev-fixed">Corrigido</span> = já resolvido neste código; <span class="sev-pill sev-rec">Recomendação</span> = precisa de decisão/ação tua.</p>
   </div>
 
   <div class="sec-summary" id="secSummary"></div>
@@ -961,50 +961,62 @@ renderFlow(); renderLinks(); renderEntities();
    sev: crit|high|med|low. status: 'fixed' (already resolved here) | 'rec'.
    ────────────────────────────────────────────────────────────────────────── */
 const SECURITY = [
-  { sev: 'crit', status: 'rec', title: 'API key da Anthropic guardada em texto simples', loc: 'store.jsx (PERSISTED_KEYS) · firebase/client.js saveUserDoc',
-    risk: 'A key (sk-ant-…, secreta e faturável) é gravada no documento Firestore, na cache IndexedDB de cada dispositivo, e em cada Backup JSON. Quem tiver acesso ao doc, ao dispositivo ou a um backup obtém uma key utilizável à tua conta.',
-    fix: 'Não persistir a key (manter só em sessão/memória), OU chamar a IA via um backend (Cloud Function) que guarde a key no servidor, tirando-a do browser.' },
-  { sev: 'crit', status: 'rec', title: 'Key enviada do browser direto para a Anthropic', loc: 'lib/ai.js · SettingsSheet.jsx · AIView.jsx',
-    risk: 'Usa anthropic-dangerous-direct-browser-access. Qualquer XSS na app consegue ler state.apiKey e exfiltrá-la; também fica visível em devtools/screenshots.',
-    fix: 'Mover as chamadas de IA para um proxy no servidor. Se ficar no browser, tratar a key como comprometível por XSS e minimizar a superfície de XSS (ver abaixo).' },
+  { sev: 'crit', status: 'fixed', title: 'API key da Anthropic guardada em texto simples', loc: 'store.jsx · firebase/data.js · SettingsSheet.jsx',
+    risk: 'A key era gravada no doc Firestore, na cache IndexedDB e em cada Backup JSON.',
+    fix: 'Corrigido (2026-08): a app deixou de ter key do utilizador — a IA corre por /api/ai (key só no servidor). apiKey saiu de PERSISTED_KEYS/ROOT_KEYS, do backup/restore e da UI; em cada sync é apagada do doc raiz (deleteField).' },
+  { sev: 'crit', status: 'fixed', title: 'Key enviada do browser direto para a Anthropic', loc: 'SettingsSheet.jsx testAPI (removido)',
+    risk: 'Usava anthropic-dangerous-direct-browser-access. Qualquer XSS lia state.apiKey.',
+    fix: 'Corrigido: botão "Testar" e chamada direta removidos; só o proxy fala com a Anthropic.' },
+  { sev: 'high', status: 'fixed', title: 'Proxy /api/ai aceitava qualquer conta Google', loc: 'api/ai.js',
+    risk: 'O sign-up Google está aberto: um token válido de QUALQUER conta servia para gastar a key (modelo e max_tokens controlados pelo cliente, sem teto).',
+    fix: 'Corrigido (2026-08): allowlist por email (env ALLOWED_EMAILS; fechado por omissão), email_verified obrigatório, whitelist de modelos no servidor, max_tokens com teto (8000), limite de tamanho do pedido, erros internos só no log.' },
   { sev: 'high', status: 'fixed', title: 'XSS via valores da IA nos cartões de ação', loc: 'views/AIView.jsx actionLabel → info.val (dangerouslySetInnerHTML)',
-    risk: 'a.cat / a.source vinham da IA sem escape e iam para innerHTML. Um extrato/recibo manipulado podia fazer a IA emitir <img onerror=…> e executar script na app autenticada (roubo da key + dados).',
-    fix: 'Corrigido: esc() aplicado a a.cat e a.source antes de irem para info.val.' },
+    risk: 'a.cat / a.source / a.day vinham da IA sem escape e iam para innerHTML.',
+    fix: 'Corrigido: esc() em a.cat/a.source; a.day passa por parseInt. lbl vai por JSX (seguro).' },
   { sev: 'high', status: 'fixed', title: 'Escape incompleto no gráfico SVG (chrt)', loc: 'lib/finance.js chrt() e()',
-    risk: 'e() só escapava & e < (não > " \'), e color / labels x.l iam crus para o SVG. Qualquer texto de utilizador/IA num label ou cor permitiria breakout de atributo.',
+    risk: 'e() só escapava & e <; color/labels iam crus para o SVG.',
     fix: 'Corrigido: e() escapa &<>"\' e é aplicado a label, color e x.l.' },
-  { sev: 'med', status: 'rec', title: 'Dependência xlsx 0.18.5 com vulnerabilidades', loc: 'package.json',
-    risk: 'xlsx@0.18.5 tem prototype pollution (CVE-2023-30533) e ReDoS conhecidos, e processa uploads não confiáveis (extratos/recibos). A correção não está no npm.',
-    fix: 'Migrar para o pacote no CDN da SheetJS (xlsx-0.20.x) ou outro parser mantido; fixar a versão.' },
+  { sev: 'med', status: 'rec', title: 'Dados pessoais em código num repositório PÚBLICO', loc: 'lib/categorize.js RULES (pessoas) · categorize.test.js',
+    risk: 'O repo GitHub é público. categorize.js tem nomes completos de terceiros com a relação (psicólogo, creche, escola, empregada) como regras de classificação. O número de conta real que estava numa fixture de teste foi substituído; os saldos/crédito/salário "demo" reais foram substituídos por sintéticos (2026-08).',
+    fix: 'Decisão do dono: (a) tornar o repo privado (1 clique, resolve tudo, mas o histórico git mantém-se), ou (b) mover as regras de pessoas para as rules/{id} do utilizador no Firestore e tirar os nomes do código. Ver nota no chat.' },
+  { sev: 'med', status: 'fixed', title: 'Dependência xlsx 0.18.5 com vulnerabilidades', loc: 'package.json',
+    risk: 'xlsx@0.18.5 tinha prototype pollution (CVE-2023-30533) e ReDoS, e processa uploads do utilizador.',
+    fix: 'Corrigido (2026-08): xlsx 0.20.3 (CDN oficial SheetJS, fixado). firebase 10→12 e firebase-admin atualizados: sem vulnerabilidades runtime high/critical.' },
   { sev: 'med', status: 'rec', title: 'Mensagens de erro do Firebase mostradas tal e qual', loc: 'components/Login.jsx',
-    risk: 'err.message mostrado verbatim pode revelar internals do Firebase e permitir enumeração de contas pela diferença de mensagem.',
-    fix: 'Mapear para mensagens genéricas ("Credenciais inválidas").' },
+    risk: 'err.message verbatim pode revelar internals. Mitigado: login é só Google (sem enumeração por email/password).',
+    fix: 'Mapear para mensagens genéricas. Impacto baixo com login Google-only.' },
   { sev: 'med', status: 'fixed', title: 'Gate de palavra-passe client-side removido', loc: 'components/Gate.jsx (removido)',
-    risk: 'Existia uma passphrase validada no browser (contornável). Foi removida; a app é independente do Proof Studio.',
-    fix: 'Corrigido: sem palavra-passe inicial. A fronteira de acesso é o login Google (Firebase Auth).' },
+    risk: 'Existia uma passphrase validada no browser (contornável).',
+    fix: 'Corrigido: a fronteira de acesso é o login Google (Firebase Auth).' },
+  { sev: 'low', status: 'fixed', title: 'Sem headers de segurança HTTP', loc: 'vercel.json',
+    risk: 'Sem X-Frame-Options, nosniff, Referrer-Policy, HSTS.',
+    fix: 'Corrigido (2026-08): headers adicionados. CSP estrita NÃO ativada de propósito (o popup do login Google precisa de validação em dispositivo real antes de fechar script-src/frame-src).' },
+  { sev: 'low', status: 'rec', title: 'PIN/FaceID dos saldos é privacidade de ecrã, não segurança', loc: 'lib/lock.js · BalanceLockSheet.jsx',
+    risk: 'PIN de 4 dígitos SHA-256 sem salt (reversível por quem ler o doc Firestore, i.e., o próprio ou um admin); WebAuthn só pede o prompt do SO (não valida assinatura). Os dados continuam em claro no IndexedDB/Firestore. Serve contra olhares por cima do ombro.',
+    fix: 'Documentar como privacidade. Se quiser mais: não sincronizar pinHash, PBKDF2 com salt + atraso entre tentativas.' },
   { sev: 'low', status: 'rec', title: 'Regras Firestore sem validação de campos', loc: 'firestore.rules',
-    risk: 'As regras (user-scoped, default-deny) estão corretas, mas não validam forma/tamanho do payload — um utilizador pode escrever campos arbitrários no SEU doc (só self-DoS/quota).',
-    fix: 'Opcional: validar tipos/tamanho no rules. Impacto baixo.' },
+    risk: 'User-scoped, default-deny, cobrem raiz e subcoleções — corretas. Não validam forma/tamanho (só self-DoS/quota).',
+    fix: 'Opcional: restringir {sub} aos 10 nomes conhecidos.' },
   { sev: 'low', status: 'rec', title: 'Config Firebase exposta no bundle', loc: 'firebase/client.js',
-    risk: 'A apiKey do Firebase é um identificador público (não secreto). O acesso é governado pelas regras Firestore (sólidas).',
-    fix: 'Sem ação. Garantir Authorized domains + App Check no console Firebase.' },
+    risk: 'A apiKey do Firebase é um identificador público. O acesso é governado pelas regras Firestore.',
+    fix: 'Restringir a key por referrer HTTP na Google Cloud Console; Authorized domains + App Check.' },
 ];
 
 const SEC_GOOD = [
-  'Regras Firestore user-scoped, default-deny, sem acesso cruzado nem regra de teste expirável.',
-  'Gate de HTTPS / file:// bloqueia contextos inseguros (Firebase/IA desligados em file://).',
-  'renderMD escapa o texto da IA ANTES dos transforms de markdown → caminho de análise da IA é seguro.',
-  'Password mínima de 6 chars validada no registo E na UI de login.',
-  '.gitignore exclui PDFs/Print Screens/logs; sem key Anthropic no histórico git.',
-  'Input da key é password com toggle de revelar; dist/ não está commitado.',
+  'Chave Anthropic só no servidor (/api/ai): verifica ID token Firebase, allowlist de emails, modelo e tokens limitados, sem CORS, nenhum erro devolve a key.',
+  'Regras Firestore user-scoped, default-deny, raiz E subcoleções, sem acesso cruzado.',
+  'Login só Google (sem enumeração por email/password); file:// bloqueado.',
+  'renderMD escapa ANTES dos transforms; chrt() escapa labels/cores; ações da IA saneadas por tipo antes de gravar.',
+  'Importador Excel determinístico (sem IA) com xlsx 0.20.3; classify-statements só lê BD/ (ignorado pelo git).',
+  '.gitignore exclui BD/, PDFs, Print Screens; sem ficheiros de dados nem segredos no histórico git.',
+  'Headers: nosniff, X-Frame-Options DENY, Referrer-Policy, HSTS, COOP same-origin-allow-popups (login Google).',
 ];
 
 const SEC_ACTIONS = [
-  'Revogar/rodar a API key que apareceu em screenshot (feito) e considerar deixar de a persistir no Firestore/backups.',
-  'Corrigido — escape dos valores da IA no AIView (info.val).',
-  'Corrigido — endurecer e() do chrt e aplicar a todos os valores interpolados.',
-  'Substituir/fixar o xlsx para fora do 0.18.5 vulnerável (processa uploads).',
-  'Genericizar mensagens de erro de auth; ativar App Check + Authorized domains no Firebase.',
+  'DECIDIR: repo público com nomes de terceiros em categorize.js — tornar privado ou mover as regras para o Firestore do utilizador.',
+  'Configurar ALLOWED_EMAILS (env Vercel) com o teu email — sem isso o assistente fica fechado por omissão.',
+  'Validar o login Google em dispositivo real após firebase 12 (build/testes/init OK; o popup precisa de humano).',
+  'Opcional: CSP estrita depois de testar o login; App Check; restringir a key Firebase por referrer.',
 ];
 
 const SEV_META = { crit: ['Crítico', 'sev-crit'], high: ['Alto', 'sev-high'], med: ['Médio', 'sev-med'], low: ['Baixo', 'sev-low'] };

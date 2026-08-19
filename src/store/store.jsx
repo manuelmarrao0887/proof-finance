@@ -115,7 +115,6 @@ function initialState() {
 
 // The exact field names that get written to Firestore (map §3).
 export const PERSISTED_KEYS = [
-  'apiKey',
   'aiHistory',
   'dynAccts',
   'dynSnaps',
@@ -148,7 +147,6 @@ export const PERSISTED_KEYS = [
    (aiHistory capped at last 20; fallbacks identical to persistUser 471-487). */
 export function buildPersistPayload(state) {
   return {
-    apiKey: state.apiKey || '',
     aiHistory: (state.aiHistory || []).slice(-20),
     dynAccts: state.dynAccts || null,
     dynSnaps: state.dynSnaps || [],
@@ -184,7 +182,7 @@ export function hydrateFromDoc(d) {
   const base = initialPersisted();
   if (!d) return base;
   return {
-    apiKey: d.apiKey || '',
+    apiKey: '', // nunca mais se lê/guarda a key do utilizador (proxy no servidor)
     aiHistory: Array.isArray(d.aiHistory) ? d.aiHistory : [],
     dynAccts: d.dynAccts || null,
     dynSnaps: Array.isArray(d.dynSnaps) ? d.dynSnaps : [],

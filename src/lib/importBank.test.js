@@ -24,7 +24,7 @@ describe('helpers', () => {
 });
 
 const ROWS = [
-  ['HISTÓRICO DE CONTA NÚMERO 45588780323', '', '', '', ''],
+  ['HISTÓRICO DE CONTA NÚMERO 00000000000', '', '', '', ''],
   ['Moeda:', 'EUR', '', '', ''],
   ['', '', '', '', ''],
   ['Data Lanc.', 'Data Valor', 'Descrição', 'Valor', 'Saldo'],
