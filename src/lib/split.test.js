@@ -53,13 +53,13 @@ describe('splitExact', () => {
   it('rejeita quando falta dinheiro e diz quanto', () => {
     const r = splitExact(100, [{ personId: 'me', amount: 40 }, { personId: 'a', amount: 50 }]);
     expect(r.shares).toBeNull();
-    expect(r.error).toBe('Faltam 10,00 € para chegar ao total.');
+    expect(r.error).toBe('Faltam 10,00 € para chegar ao total.');
   });
 
   it('rejeita quando sobra dinheiro e diz quanto', () => {
     const r = splitExact(100, [{ personId: 'me', amount: 70 }, { personId: 'a', amount: 50 }]);
     expect(r.shares).toBeNull();
-    expect(r.error).toBe('Sobram 20,00 € face ao total.');
+    expect(r.error).toBe('Sobram 20,00 € face ao total.');
   });
 });
 
