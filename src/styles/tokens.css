@@ -18,19 +18,22 @@
   --border:#e6e9f0;
   --border-strong:#d5dae6;
   --fg:#0a1633;
-  --fg-muted:#6b7280;
-  --fg-subtle:#9aa3b5;
-  /* Brand accents */
-  --primary:#3b6fee;
-  --primary-dark:#2a52c9;
-  --secondary:#7b5fe0;
-  --accent:#3b6fee;
+  --fg-muted:#535c6d;   /* ≥5:1 sobre surface/elevated (AA) */
+  --fg-subtle:#5f6a81;  /* era #9aa3b5 = 2,3:1 — ilegível ao sol; agora ≥4,6:1 */
+  /* Brand accents — tons AA (≥4,5:1 sobre surface/elevated) porque também se
+     usam como TEXTO (percentagens, badges, títulos de avisos). Os valores
+     antigos (#3b6fee/#7b5fe0) ficavam a 4,1:1. */
+  --primary:#2a5be0;
+  --primary-dark:#2149c4;
+  --secondary:#6b4fd6;
+  --accent:#2a5be0;
   --bg-glass:rgba(255,255,255,0.82);
-  /* System feedback colors */
-  --success:#3fc97a;
-  --warning:#f5a623;
-  --danger:#f25555;
-  --info:#3b6fee;
+  /* System feedback colors — idem: eram #3fc97a (2,0:1), #f5a623 (1,9:1) e
+     #f25555 (3,1:1) usados como texto; agora todos ≥4,6:1 e legíveis ao sol. */
+  --success:#137845;
+  --warning:#9c5e00;
+  --danger:#c42a2a;
+  --info:#2a5be0;
   /* Aliases for legacy code (map onto the new palette) */
   --bg2:var(--surface);
   --bg3:var(--elevated);
@@ -79,7 +82,7 @@ html[data-theme="dark"]{
   --border-strong:#344063;
   --fg:#eef2fb;
   --fg-muted:#9aa6c0;
-  --fg-subtle:#5f6b89;
+  --fg-subtle:#8792b0;  /* era #5f6b89 = 3,2:1 no escuro; agora ≥4,9:1 */
   --primary:#5b85f2;
   --primary-dark:#3b6fee;
   --secondary:#9a82f0;
