@@ -534,6 +534,8 @@ export function StoreProvider({ children }) {
           const expId = uid();
           full.linkedExpId = expId;
           setField('addedExp', [...(st.addedExp || []), { id: expId, ...mov }]);
+        } else {
+          full.linkedExpId = null;
         }
         setField('groupEntries', [...(st.groupEntries || []), full]);
         return id;

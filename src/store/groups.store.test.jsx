@@ -134,3 +134,214 @@ describe('ligação às despesas pessoais', () => {
     expect(reflectExpenseFor(group, entry)).toBeNull();
   });
 });
+
+describe('actions de movimentos de grupo', () => {
+  it('addGroupEntry num grupo que reflete devolve o id e cria só a minha parte em addedExp', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', name: 'Férias', memberIds: ['me', 'a'] }));
+    let id;
+    act(() => {
+      id = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'Jantar', amount: 40, date: '2026-08-12',
+        payerId: 'me', gcat: 'food', reflect: true,
+        shares: [{ personId: 'me', amount: 20 }, { personId: 'a', amount: 20 }],
+      });
+    });
+    expect(typeof id).toBe('string');
+    expect(id.length).toBeGreaterThan(0);
+    const st = actions.getState();
+    expect(st.addedExp.length).toBe(1);
+    expect(st.addedExp[0].amount).toBe(20); // a minha parte, não os 40 totais
+    expect(st.addedExp[0].groupEntryId).toBe(id);
+    const entry = st.groupEntries.find((e) => e.id === id);
+    expect(entry.linkedExpId).toBe(st.addedExp[0].id);
+  });
+
+  it('addGroupEntry de um acerto não mexe em addedExp', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    act(() => actions.addGroupEntry({ id: 's1', groupId: 'g1', kind: 'settlement', fromId: 'a', toId: 'me', amount: 100 }));
+    expect(actions.getState().addedExp).toEqual([]);
+  });
+
+  it('addGroupEntry define linkedExpId como null (nunca undefined) quando não há movimento', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let id;
+    act(() => {
+      id = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', amount: 20, date: '2026-08-01', reflect: false,
+        shares: [{ personId: 'me', amount: 10 }],
+      });
+    });
+    const entry = actions.getState().groupEntries.find((e) => e.id === id);
+    expect('linkedExpId' in entry).toBe(true);
+    expect(entry.linkedExpId).toBeNull();
+  });
+
+  it('updateGroupEntry ligado→ligado atualiza o movimento existente mantendo o mesmo id', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let id;
+    act(() => {
+      id = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'Táxi', amount: 20, date: '2026-08-01', reflect: true,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    const firstExpId = actions.getState().addedExp[0].id;
+    act(() => actions.updateGroupEntry(id, {
+      desc: 'Táxi aeroporto',
+      shares: [{ personId: 'me', amount: 15 }, { personId: 'a', amount: 5 }],
+    }));
+    const st = actions.getState();
+    expect(st.addedExp.length).toBe(1);
+    expect(st.addedExp[0].id).toBe(firstExpId);
+    expect(st.addedExp[0].amount).toBe(15);
+    expect(st.addedExp[0].desc).toBe('Táxi aeroporto');
+  });
+
+  it('updateGroupEntry sem ligação→ligado cria o movimento quando a despesa passa a refletir', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let id;
+    act(() => {
+      id = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', amount: 20, date: '2026-08-01', reflect: false,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    expect(actions.getState().addedExp).toEqual([]);
+    act(() => actions.updateGroupEntry(id, { reflect: true }));
+    const st = actions.getState();
+    expect(st.addedExp.length).toBe(1);
+    expect(st.addedExp[0].amount).toBe(10);
+    const entry = st.groupEntries.find((e) => e.id === id);
+    expect(entry.linkedExpId).toBe(st.addedExp[0].id);
+  });
+
+  it('updateGroupEntry ligado→sem ligação remove o movimento e limpa linkedExpId', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let id;
+    act(() => {
+      id = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', amount: 20, date: '2026-08-01', reflect: true,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    expect(actions.getState().addedExp.length).toBe(1);
+    act(() => actions.updateGroupEntry(id, { reflect: false }));
+    const st = actions.getState();
+    expect(st.addedExp).toEqual([]);
+    const entry = st.groupEntries.find((e) => e.id === id);
+    expect(entry.linkedExpId).toBeNull();
+  });
+
+  it('updateGroupEntry sem ligação→sem ligação não mexe em addedExp', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let id;
+    act(() => {
+      id = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', amount: 20, date: '2026-08-01', reflect: false,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    act(() => actions.updateGroupEntry(id, { desc: 'Novo nome' }));
+    const st = actions.getState();
+    expect(st.addedExp).toEqual([]);
+    const entry = st.groupEntries.find((e) => e.id === id);
+    expect(entry.linkedExpId).toBeNull();
+    expect(entry.desc).toBe('Novo nome');
+  });
+
+  it('deleteGroupEntry remove a despesa e o movimento ligado, sem afetar outras despesas', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let id1;
+    let id2;
+    act(() => {
+      id1 = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'A', amount: 20, date: '2026-08-01', reflect: true,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    act(() => {
+      id2 = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'B', amount: 30, date: '2026-08-02', reflect: true,
+        shares: [{ personId: 'me', amount: 15 }, { personId: 'a', amount: 15 }],
+      });
+    });
+    expect(actions.getState().addedExp.length).toBe(2);
+    act(() => actions.deleteGroupEntry(id1));
+    const st = actions.getState();
+    expect(st.groupEntries.find((e) => e.id === id1)).toBeUndefined();
+    expect(st.groupEntries.find((e) => e.id === id2)).toBeDefined();
+    expect(st.addedExp.length).toBe(1);
+    expect(st.addedExp[0].desc).toBe('B');
+  });
+
+  it('setGroupReflect(false) remove só os movimentos do grupo indicado', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    act(() => actions.addGroup({ id: 'g2', memberIds: ['me', 'b'] }));
+    let e1;
+    act(() => {
+      e1 = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'G1', amount: 20, date: '2026-08-01', reflect: true,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    act(() => actions.addGroupEntry({
+      groupId: 'g2', kind: 'expense', desc: 'G2', amount: 30, date: '2026-08-02', reflect: true,
+      shares: [{ personId: 'me', amount: 15 }, { personId: 'b', amount: 15 }],
+    }));
+    expect(actions.getState().addedExp.length).toBe(2);
+    act(() => actions.setGroupReflect('g1', false));
+    const st = actions.getState();
+    expect(st.addedExp.length).toBe(1);
+    expect(st.addedExp[0].desc).toBe('G2');
+    expect(st.groupEntries.find((e) => e.id === e1).linkedExpId).toBeNull();
+    expect(st.groups.find((g) => g.id === 'g1').reflectMine).toBe(false);
+  });
+
+  it('setGroupReflect(true) recria os movimentos, ignora reflect=false e acertos, e não duplica em chamadas repetidas', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let e1;
+    let e2;
+    let e3;
+    act(() => {
+      e1 = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'Reflete', amount: 20, date: '2026-08-01', reflect: true,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    act(() => {
+      e2 = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'Não reflete', amount: 20, date: '2026-08-01', reflect: false,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    act(() => {
+      e3 = actions.addGroupEntry({ groupId: 'g1', kind: 'settlement', fromId: 'a', toId: 'me', amount: 5 });
+    });
+    expect(actions.getState().addedExp.length).toBe(1); // só e1
+
+    act(() => actions.setGroupReflect('g1', false));
+    expect(actions.getState().addedExp).toEqual([]);
+
+    act(() => actions.setGroupReflect('g1', true));
+    let st = actions.getState();
+    expect(st.addedExp.length).toBe(1);
+    expect(st.addedExp[0].desc).toBe('Reflete');
+    expect(st.groupEntries.find((e) => e.id === e2).linkedExpId).toBeNull();
+    expect(st.groupEntries.find((e) => e.id === e3).linkedExpId).toBeNull();
+
+    // repetir com o mesmo valor não duplica o movimento
+    act(() => actions.setGroupReflect('g1', true));
+    st = actions.getState();
+    expect(st.addedExp.length).toBe(1);
+  });
+});
