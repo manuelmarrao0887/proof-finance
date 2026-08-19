@@ -73,3 +73,118 @@ export function resolveShares(mode, amount, entries, payerId) {
   if (mode === 'percent') return splitPercent(amount, list);
   return { shares: splitEqual(amount, list.map((e) => e.personId), payerId), error: null };
 }
+
+/* Categorias próprias das despesas de grupo (lista curta) + mapeamento para os
+   ids do orçamento (ver bdgDefault em lib/finance.js) usado quando a despesa
+   se reflete nas Despesas pessoais. */
+export const GROUP_CATS = [
+  { id: 'stay', nm: 'Alojamento', cat: 'cas' },
+  { id: 'food', nm: 'Comida e bebida', cat: 'rest' },
+  { id: 'transp', nm: 'Transporte', cat: 'cmb' },
+  { id: 'fun', nm: 'Atividades', cat: 'laz' },
+  { id: 'shop', nm: 'Compras', cat: 'comp' },
+  { id: 'other', nm: 'Outro', cat: 'out' },
+];
+
+export function groupCatMeta(id) {
+  return GROUP_CATS.find((c) => c.id === id) || GROUP_CATS[GROUP_CATS.length - 1];
+}
+
+/* Saldo de cada membro: o que pagou, menos a sua parte, mais/menos acertos.
+   Positivo = tem dinheiro a receber. A soma de todos dá sempre 0. */
+export function computeBalances(entries, memberIds) {
+  const ids = Array.isArray(memberIds) ? memberIds : [];
+  const cents = Object.fromEntries(ids.map((id) => [id, 0]));
+  const bump = (id, c) => {
+    if (id in cents) cents[id] += c;
+  };
+  (entries || []).forEach((e) => {
+    if (!e) return;
+    if (e.kind === 'settlement') {
+      bump(e.fromId, toCents(e.amount)); // pagar reduz a dívida
+      bump(e.toId, -toCents(e.amount)); // receber reduz o que tinha a haver
+      return;
+    }
+    bump(e.payerId, toCents(e.amount));
+    (e.shares || []).forEach((s) => bump(s.personId, -toCents(s.amount)));
+  });
+  return Object.fromEntries(ids.map((id) => [id, fromCents(cents[id])]));
+}
+
+/* Plano de pagamentos com o menor número de transferências: o maior devedor
+   paga ao maior credor até um dos dois ficar a zero. */
+export function simplifyDebts(balances) {
+  const credit = Object.entries(balances || {})
+    .map(([id, v]) => ({ id, c: toCents(v) }))
+    .filter((x) => x.c > 0)
+    .sort((a, b) => b.c - a.c || a.id.localeCompare(b.id));
+  const debt = Object.entries(balances || {})
+    .map(([id, v]) => ({ id, c: -toCents(v) }))
+    .filter((x) => x.c > 0)
+    .sort((a, b) => b.c - a.c || a.id.localeCompare(b.id));
+  const out = [];
+  let i = 0;
+  let j = 0;
+  while (i < credit.length && j < debt.length) {
+    const move = Math.min(credit[i].c, debt[j].c);
+    out.push({ from: debt[j].id, to: credit[i].id, amount: fromCents(move) });
+    credit[i].c -= move;
+    debt[j].c -= move;
+    if (credit[i].c === 0) i += 1;
+    if (debt[j].c === 0) j += 1;
+  }
+  return out;
+}
+
+export function isSettled(balances) {
+  return Object.values(balances || {}).every((v) => toCents(v) === 0);
+}
+
+/* Totais do grupo do ponto de vista do utilizador (`meId`, normalmente 'me'). */
+export function groupTotals(entries, meId) {
+  const list = entries || [];
+  const expenses = list.filter((e) => e && e.kind !== 'settlement');
+  const total = expenses.reduce((a, e) => a + toCents(e.amount), 0);
+  const paidByMe = expenses.filter((e) => e.payerId === meId).reduce((a, e) => a + toCents(e.amount), 0);
+  const myShare = expenses.reduce(
+    (a, e) => a + toCents((e.shares || []).find((s) => s.personId === meId)?.amount || 0),
+    0
+  );
+  const settleIn = list
+    .filter((e) => e && e.kind === 'settlement' && e.toId === meId)
+    .reduce((a, e) => a + toCents(e.amount), 0);
+  const settleOut = list
+    .filter((e) => e && e.kind === 'settlement' && e.fromId === meId)
+    .reduce((a, e) => a + toCents(e.amount), 0);
+  const net = paidByMe - myShare + settleOut - settleIn;
+  return {
+    total: fromCents(total),
+    paidByMe: fromCents(paidByMe),
+    myShare: fromCents(myShare),
+    owedToMe: fromCents(Math.max(0, net)),
+    owedByMe: fromCents(Math.max(0, -net)),
+  };
+}
+
+/* Resumo em texto para partilhar (WhatsApp e afins). */
+export function shareText({ group, entries, nameOf }) {
+  const list = entries || [];
+  const expenses = list.filter((e) => e && e.kind !== 'settlement');
+  const total = expenses.reduce((a, e) => a + toCents(e.amount), 0);
+  const ids = (group && group.memberIds) || [];
+  const lines = [
+    `${group.emoji ? group.emoji + ' ' : ''}${group.name} — resumo`,
+    `Total: ${fm(fromCents(total))} · ${ids.length} pessoas`,
+    '',
+    'Quem pagou:',
+  ];
+  ids.forEach((id) => {
+    const paid = expenses.filter((e) => e.payerId === id).reduce((a, e) => a + toCents(e.amount), 0);
+    if (paid > 0) lines.push(`• ${nameOf(id)}: ${fm(fromCents(paid))}`);
+  });
+  const plano = simplifyDebts(computeBalances(list, ids));
+  lines.push('', plano.length ? 'Para acertar:' : '✓ Contas acertadas');
+  plano.forEach((t) => lines.push(`• ${nameOf(t.from)} → ${nameOf(t.to)}: ${fm(t.amount)}`));
+  lines.push('', '— Proof. Finance');
+  return lines.join('\n');
+}
