@@ -64,4 +64,11 @@ describe('rulePatternFor (aprender regra do import)', () => {
     expect(rulePatternFor('')).toBe('');
     expect(rulePatternFor('COMPRA 4174 9999')).toBe('');
   });
+  it('MB WAY / TRF para pessoa → padrão é o NOME, nunca "mb way" (senão a regra apanhava todas)', () => {
+    expect(rulePatternFor('TRF MB WAY P/ ENG ANA PAULA PINTO PEREIRA')).toBe('eng ana paula');
+    expect(rulePatternFor('TRF MB WAY P/ CARLA SUSANA OLIVEIRA GARCIA')).toBe('carla susana oliveira');
+    expect(rulePatternFor('TRF P/ Nuno Catarino')).toBe('nuno catarino');
+    expect(rulePatternFor('TRF. P/O Manuel Jose Carrilho De Sousa')).toBe('manuel jose carrilho');
+    expect(rulePatternFor('TRF MB WAY P/ ANA RITA ALVES PALMA')).not.toBe(rulePatternFor('TRF MB WAY P/ ANA PAULA PINTO'));
+  });
 });

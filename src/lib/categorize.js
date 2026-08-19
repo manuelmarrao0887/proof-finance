@@ -94,9 +94,22 @@ export function guessCategory(desc) {
 export function rulePatternFor(desc) {
   let d = norm(desc);
   if (!d) return '';
+  // Transferência para uma PESSOA (MB WAY / TRF P/ / TRF. P/O): o padrão tem
+  // de ser o NOME, nunca o prefixo — senão a regra apanharia todas as MB WAY.
+  const person = /^(?:trf\.?\s*)?(?:mb\s*way\s*)?p\/o?\s+/.exec(d);
+  if (person) {
+    const name = d
+      .slice(person[0].length)
+      .replace(/\b\d{3,}\b/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const w = name.split(' ').filter((x) => x.length > 1);
+    // 3 palavras distinguem "ana paula pinto" de "ana rita alves".
+    return w.slice(0, 3).join(' ');
+  }
   d = d
     .replace(/^compra\s+\d+\s*/, '')
-    .replace(/^(dd|ele|trf|mbw|pagserv|lev atm)\s+/, '')
+    .replace(/^(dd|ele|mbw|pagserv|lev atm)\s+/, '')
     .replace(/\s*contactless\s*$/, '')
     .replace(/\b\d{4}-\d{3}\b/g, '') // código postal PT
     .replace(/\b\d{4,}\b/g, '') // números de contrato/cartão
