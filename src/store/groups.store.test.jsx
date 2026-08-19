@@ -85,3 +85,52 @@ describe('slices de grupos', () => {
     expect(person.id.length).toBeGreaterThan(0);
   });
 });
+
+describe('ligação às despesas pessoais', () => {
+  it('criar despesa de grupo cria só a minha parte nas Despesas', async () => {
+    const { reflectExpenseFor } = await import('./store.jsx');
+    const group = { id: 'g1', name: 'Férias', memberIds: ['me', 'a', 'b', 'c'], reflectMine: true };
+    const entry = {
+      id: 'e1', groupId: 'g1', kind: 'expense', desc: 'Airbnb', amount: 620,
+      date: '2026-08-12', payerId: 'me', gcat: 'stay', reflect: true,
+      shares: [
+        { personId: 'me', amount: 155 }, { personId: 'a', amount: 155 },
+        { personId: 'b', amount: 155 }, { personId: 'c', amount: 155 },
+      ],
+    };
+    const mov = reflectExpenseFor(group, entry);
+    expect(mov.amount).toBe(155);
+    expect(mov.desc).toBe('Airbnb');
+    expect(mov.cat).toBe('cas');
+    expect(mov.date).toBe('2026-08-12');
+    expect(mov.groupEntryId).toBe('e1');
+  });
+
+  it('não cria movimento quando o grupo não reflete', async () => {
+    const { reflectExpenseFor } = await import('./store.jsx');
+    const group = { id: 'g1', memberIds: ['me', 'a'], reflectMine: false };
+    const entry = { id: 'e1', groupId: 'g1', kind: 'expense', amount: 10, reflect: true, shares: [{ personId: 'me', amount: 5 }] };
+    expect(reflectExpenseFor(group, entry)).toBeNull();
+  });
+
+  it('não cria movimento quando a despesa tem o toggle desligado', async () => {
+    const { reflectExpenseFor } = await import('./store.jsx');
+    const group = { id: 'g1', memberIds: ['me', 'a'], reflectMine: true };
+    const entry = { id: 'e1', groupId: 'g1', kind: 'expense', amount: 10, reflect: false, shares: [{ personId: 'me', amount: 5 }] };
+    expect(reflectExpenseFor(group, entry)).toBeNull();
+  });
+
+  it('não cria movimento quando não participo na despesa', async () => {
+    const { reflectExpenseFor } = await import('./store.jsx');
+    const group = { id: 'g1', memberIds: ['me', 'a'], reflectMine: true };
+    const entry = { id: 'e1', groupId: 'g1', kind: 'expense', amount: 10, reflect: true, shares: [{ personId: 'a', amount: 10 }] };
+    expect(reflectExpenseFor(group, entry)).toBeNull();
+  });
+
+  it('acertos nunca geram movimento pessoal', async () => {
+    const { reflectExpenseFor } = await import('./store.jsx');
+    const group = { id: 'g1', memberIds: ['me', 'a'], reflectMine: true };
+    const entry = { id: 's1', groupId: 'g1', kind: 'settlement', fromId: 'a', toId: 'me', amount: 100 };
+    expect(reflectExpenseFor(group, entry)).toBeNull();
+  });
+});

@@ -31,6 +31,7 @@ import { loadUserData, syncUserData } from '../firebase/data.js';
 import { bdgDefault, snapshotFromState, normAcct } from '../lib/finance.js';
 import { uid } from '../lib/format.js';
 import { applySameBeneficiaryCategory } from '../lib/dedupe.js';
+import { groupCatMeta } from '../lib/split.js';
 
 // Id reservado do próprio utilizador nos grupos (nunca existe em state.people).
 export const ME_ID = 'me';
@@ -43,6 +44,24 @@ export const AVATAR_COLORS = ['#3b6fee', '#12b3a6', '#f5a623', '#f25592', '#7b5f
 function withMe(ids) {
   const rest = (Array.isArray(ids) ? ids : []).filter((id) => id !== ME_ID);
   return [ME_ID, ...rest];
+}
+
+/* Movimento pessoal correspondente à MINHA parte de uma despesa de grupo, ou
+   null quando não deve existir. Só a minha parte entra nas Despesas: lançar o
+   total pago inflaciona o orçamento do mês com dinheiro que é dos outros. */
+export function reflectExpenseFor(group, entry) {
+  if (!group || !entry || entry.kind === 'settlement') return null;
+  if (!group.reflectMine || entry.reflect === false) return null;
+  const mine = (entry.shares || []).find((s) => s.personId === ME_ID);
+  const amount = Number(mine && mine.amount) || 0;
+  if (amount <= 0) return null;
+  return {
+    desc: entry.desc || 'Despesa de grupo',
+    amount,
+    cat: entry.cat || groupCatMeta(entry.gcat).cat,
+    date: entry.date,
+    groupEntryId: entry.id,
+  };
 }
 
 // Ensure every addedExp row carries a stable `id` (backfills legacy rows saved
@@ -502,6 +521,75 @@ export function StoreProvider({ children }) {
         if (linked.length) {
           setField('addedExp', (st.addedExp || []).filter((x) => !linked.includes(x.id)));
         }
+      },
+
+      // ── Grupos: movimentos (despesas e acertos) ──────────────────────
+      addGroupEntry: (entry) => {
+        const st = getState();
+        const id = entry.id || uid();
+        const full = { createdAt: Date.now(), ...entry, id };
+        const group = (st.groups || []).find((g) => g.id === full.groupId);
+        const mov = reflectExpenseFor(group, full);
+        if (mov) {
+          const expId = uid();
+          full.linkedExpId = expId;
+          setField('addedExp', [...(st.addedExp || []), { id: expId, ...mov }]);
+        }
+        setField('groupEntries', [...(st.groupEntries || []), full]);
+        return id;
+      },
+      updateGroupEntry: (id, partial) => {
+        const st = getState();
+        const prev = (st.groupEntries || []).find((e) => e.id === id);
+        if (!prev) return;
+        const next = { ...prev, ...partial };
+        const group = (st.groups || []).find((g) => g.id === next.groupId);
+        const mov = reflectExpenseFor(group, next);
+        let exps = st.addedExp || [];
+        if (mov && next.linkedExpId) {
+          exps = exps.map((x) => (x.id === next.linkedExpId ? { ...x, ...mov } : x));
+        } else if (mov) {
+          const expId = uid();
+          next.linkedExpId = expId;
+          exps = [...exps, { id: expId, ...mov }];
+        } else if (next.linkedExpId) {
+          exps = exps.filter((x) => x.id !== next.linkedExpId);
+          next.linkedExpId = null;
+        }
+        setField('addedExp', exps);
+        setField('groupEntries', (st.groupEntries || []).map((e) => (e.id === id ? next : e)));
+      },
+      deleteGroupEntry: (id) => {
+        const st = getState();
+        const entry = (st.groupEntries || []).find((e) => e.id === id);
+        setField('groupEntries', (st.groupEntries || []).filter((e) => e.id !== id));
+        if (entry && entry.linkedExpId) {
+          setField('addedExp', (st.addedExp || []).filter((x) => x.id !== entry.linkedExpId));
+        }
+      },
+      /* Ligar/desligar o reflexo de um grupo inteiro: cria ou apaga os
+         movimentos pessoais das despesas existentes de uma vez. */
+      setGroupReflect: (groupId, on) => {
+        const st = getState();
+        const group = { ...((st.groups || []).find((g) => g.id === groupId) || {}), reflectMine: on };
+        let exps = st.addedExp || [];
+        const entries = (st.groupEntries || []).map((e) => {
+          if (e.groupId !== groupId || e.kind === 'settlement') return e;
+          const mov = reflectExpenseFor(group, e);
+          if (mov && !e.linkedExpId) {
+            const expId = uid();
+            exps = [...exps, { id: expId, ...mov }];
+            return { ...e, linkedExpId: expId };
+          }
+          if (!mov && e.linkedExpId) {
+            exps = exps.filter((x) => x.id !== e.linkedExpId);
+            return { ...e, linkedExpId: null };
+          }
+          return e;
+        });
+        setField('groups', (st.groups || []).map((g) => (g.id === groupId ? { ...g, reflectMine: on } : g)));
+        setField('groupEntries', entries);
+        setField('addedExp', exps);
       },
 
       // balance readings (balanceLog) — dated balance snapshots per account.
