@@ -2,8 +2,7 @@
    OverviewView — "Resumo" tab. Ported from rOverview (orig 823-991).
 
    Sections (each gated exactly as the original):
-     • Monthly summary card           (monthlySummary)
-     • Ativos / Dívida quick stats     (compute + getLoan via compute.loan)
+     • Monthly summary card           (monthlySummary; só sem "Podes gastar")
      • Financial health score          (healthScore: score/grade/breakdown/recs)
      • Subscriptions detected          (detectSubscriptions; "Adicionar" →
                                         actions.addRecurring like addSubFromSuggestion)
@@ -32,6 +31,7 @@ import {
   emergencyFund,
   cashFlowProjection,
   cCol,
+  acctCatLabel,
 } from '../lib/finance.js';
 import { fm, fc, uid } from '../lib/format.js';
 import { upcomingRecurring } from '../lib/reminders.js';
@@ -292,13 +292,12 @@ export default function OverviewView() {
               )}
               <div className="rw" style={{ marginTop: 10, gap: 12 }}>
                 <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                  Gasto {hidden ? '••••' : fc(allow.spent)}
+                  Rendimento {hidden ? '••••' : fc(allow.income)} · gasto {hidden ? '••••' : fc(allow.spent)}
                   {allow.pendingFixed > 0 && ' · fixas ' + (hidden ? '••••' : fc(allow.pendingFixed))}
                 </span>
                 {pulse && (
-                  <span style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'right' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     Poupança <b style={{ color: pulse.rate >= 20 ? 'var(--success)' : 'var(--text2)' }}>{Math.round(pulse.rate)}%</b>
-                    {pulse.months > 0 && ' · colchão ' + pulse.months.toFixed(1) + ' meses'}
                   </span>
                 )}
               </div>
@@ -470,8 +469,9 @@ export default function OverviewView() {
         </div>
       )}
 
-      {/* ── Monthly summary card ── */}
-      {(!newU || (state.addedExp || []).length > 0 || (state.incomes || []).length > 0) && (
+      {/* ── Resumo do mês — só quando o "Podes gastar" não está ativo (sem rendimento
+            registado); com ele ativo era a mesma informação com outra definição de despesa ── */}
+      {!(allow && allow.ready) && (!newU || (state.addedExp || []).length > 0 || (state.incomes || []).length > 0) && (
         <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
           <div className="rw" style={{ marginBottom: 14 }}>
             <div className="lb">Resumo · {curMonth}</div>
@@ -520,21 +520,6 @@ export default function OverviewView() {
       {/* ── Quick stats + health + subscriptions (only when not new) ── */}
       {!newU && (
         <>
-          <div className="g2" style={{ gap: 10, marginBottom: 16 }}>
-            <div className="cd" style={{ position: 'relative', overflow: 'hidden' }}>
-              <div className="lb" style={{ marginBottom: 6 }}>Ativos</div>
-              <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--success)' }}>
-                {mv(C.tA)}
-              </div>
-            </div>
-            <div className="cd" style={{ position: 'relative', overflow: 'hidden' }}>
-              <div className="lb" style={{ marginBottom: 6 }}>Dívida</div>
-              <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: C.loan.out > 0 ? 'var(--danger)' : 'var(--fg-subtle)' }}>
-                {fc(C.loan.out)}
-              </div>
-            </div>
-          </div>
-
           {/* Financial health score */}
           <div className="cd" style={{ marginBottom: 16, padding: 20 }}>
             <div className="rw" style={{ marginBottom: 14, alignItems: 'flex-start' }}>
@@ -781,7 +766,7 @@ export default function OverviewView() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
                     <div style={{ width: 8, height: 40, borderRadius: 4, background: cCol[cat] || 'var(--fg-subtle)' }} />
                     <div>
-                      <div style={{ fontSize: 15, fontWeight: 600 }}>{cat}</div>
+                      <div style={{ fontSize: 15, fontWeight: 600 }}>{acctCatLabel(cat)}</div>
                       <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
                         {items.length} contas · {pctOfAssets.toFixed(0)}%
                       </div>

@@ -29,9 +29,13 @@ export default function ContextStrip({ tab: tabProp }) {
   let col = 'var(--text)';
 
   if (tab === 'expenses') {
-    const ms = monthlySummary(s);
+    // O mesmo número que a vista mostra: despesas REGISTADAS no mês (sem
+    // projetar recorrentes por lançar — isso confundia: 715 no topo, 675 em baixo).
+    const now = new Date();
+    const key = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    const spent = (state.addedExp || []).reduce((t, x) => ((x.date || '').slice(0, 7) === key ? t + (Number(x.amount) || 0) : t), 0);
     label = 'Gastos do mês';
-    val = fc(ms.exp);
+    val = fc(spent);
     col = 'var(--signal)';
   } else if (tab === 'income') {
     let tot = 0;

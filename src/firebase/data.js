@@ -187,6 +187,7 @@ async function readRoot(uid) {
    + campos raiz), pronto para hydrateFromDoc. null = utilizador novo. */
 export async function loadUserData(uid) {
   if (!db || !uid) return null;
+  if (typeof window !== 'undefined' && window.__PROOF_NO_SYNC__) return null; // harness local de pré-visualização
   const root = await readRoot(uid);
   if (!root) return null; // novo utilizador → defaults
 
@@ -253,6 +254,7 @@ export function computeDiff(state, prev) {
 /* Grava as diferenças entre `state` e `prev` no Firestore. */
 export async function syncUserData(uid, state, prev) {
   if (!db || !uid) return;
+  if (typeof window !== 'undefined' && window.__PROOF_NO_SYNC__) return; // harness local de pré-visualização
   const { upserts, deletes, root } = computeDiff(state, prev);
   await commit(uid, upserts, deletes, root);
 }

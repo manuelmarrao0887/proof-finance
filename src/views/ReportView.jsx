@@ -112,16 +112,17 @@ export default function ReportView() {
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 72 }}>
             {ySum.totals.map((v, i) => {
-              const h = ySum.max > 0 ? Math.max(2, (v / ySum.max) * 100) : 2;
+              // Altura em px: dentro de uma coluna flex sem altura fixa, '%' resolve a 0.
+              const h = ySum.max > 0 ? Math.max(2, Math.round((v / ySum.max) * 56)) : 2;
               const isCur = i === curMonthIdx;
               const isMax = i === ySum.maxMonth;
               return (
-                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 4, height: '100%' }}>
                   <div
                     title={MS[i] + ': ' + fc(v)}
                     style={{
                       width: '100%',
-                      height: h + '%',
+                      height: h + 'px',
                       borderRadius: 3,
                       background: isCur ? 'var(--primary)' : isMax ? 'var(--signal)' : 'var(--bg3)',
                       opacity: v > 0 ? 1 : 0.45,

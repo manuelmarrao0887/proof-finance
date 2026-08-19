@@ -3,13 +3,18 @@
    `e()` (HTML escape) is intentionally dropped: JSX escapes by default.
    ════════════════════════════════════════════════════════════════════════ */
 
-// fm(v) -> "1.234,56 EUR" (pt-PT, 2 decimals)
+/* Moeda: símbolo "€" depois do número com espaço inseparável — a forma
+   portuguesa ("1 234,56 €"). Antes era o código "EUR", misturado com "€" nos
+   textos das análises; agora é um só formato em toda a app. */
+const EURO = '\u00a0€';
+
+// fm(v) -> "1 234,56 €" (pt-PT, 2 decimals)
 export function fm(v) {
   return (
     Number(v).toLocaleString('pt-PT', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }) + ' EUR'
+    }) + EURO
   );
 }
 
@@ -18,13 +23,13 @@ export function fk(v) {
   return v >= 10000 ? (v / 1000).toFixed(1) + 'k' : fm(v);
 }
 
-// fc(v) -> "1.234 EUR" (pt-PT, 0 decimals)
+// fc(v) -> "1 234 €" (pt-PT, 0 decimals)
 export function fc(v) {
   return (
     Number(v).toLocaleString('pt-PT', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }) + ' EUR'
+    }) + EURO
   );
 }
 
@@ -85,4 +90,20 @@ export function normalizeStmtDate(d) {
     return yr + '-' + String(mon).padStart(2, '0') + '-' + String(day).padStart(2, '0');
   }
   return s; // unknown — keep as-is
+}
+
+// fmDate('2026-08-20') -> '20/08/2026' (formato PT). Entrada desconhecida passa
+// intacta. Para LISTAS usa-se fmDateShort ('20 ago') que poupa espaço.
+const MON_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+export function fmDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return String(iso || '');
+  return m[3] + '/' + m[2] + '/' + m[1];
+}
+export function fmDateShort(iso, withYear) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return String(iso || '');
+  const mon = MON_PT[Number(m[2]) - 1] || m[2];
+  const thisYear = String(new Date().getFullYear()) === m[1];
+  return String(Number(m[3])) + ' ' + mon + (withYear || !thisYear ? ' ' + m[1].slice(2) : '');
 }

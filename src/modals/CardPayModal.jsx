@@ -114,7 +114,7 @@ export default function CardPayModal() {
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
         <div style={{ flex: 1 }}>
-          <div className="lb" style={{ marginBottom: 6 }}>Valor (EUR)</div>
+          <div className="lb" style={{ marginBottom: 6 }}>Valor (€)</div>
           <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" aria-label="Valor" style={input} />
         </div>
         <div style={{ flex: 1 }}>

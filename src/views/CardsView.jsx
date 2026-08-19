@@ -8,7 +8,7 @@ import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { fm } from '../lib/format.js';
+import { fm, fmDateShort } from '../lib/format.js';
 import { getAcctsLive, normAcct, CARD_CAT } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
 
@@ -130,7 +130,7 @@ export default function CardsView() {
                   {pays.slice(0, 4).map((t) => (
                     <div key={t.id} className="rw" style={{ padding: '6px 0', borderTop: '1px solid var(--border)' }}>
                       <span style={{ fontSize: 11, color: 'var(--text3)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {t.date} · de {t.from}
+                        {fmDateShort(t.date)} · de {t.from}
                       </span>
                       <span className="m" style={{ fontSize: 12, fontWeight: 600, color: 'var(--success)', flexShrink: 0 }}>
                         +{mv(t.amount)}
@@ -154,7 +154,7 @@ export default function CardsView() {
                   <div key={x.id} className="rw" style={{ padding: '8px 0', borderTop: '1px solid var(--border)' }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.desc}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>{catName(x.cat)} · {x.date}{x.imported ? ' · importada' : ''}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>{catName(x.cat)} · {fmDateShort(x.date)}{x.imported ? ' · importada' : ''}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                       <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>-{mv(Math.abs(x.amount))}</span>

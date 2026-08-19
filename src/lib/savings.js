@@ -59,10 +59,10 @@ export function savingsOpportunities(state, now, months) {
       out.push({
         id: 'subs-total',
         kind: 'subscriptions',
-        title: 'Subscrições custam ' + (totalMonthly * 12).toFixed(0) + '€/ano',
+        title: recurring.length + (recurring.length === 1 ? ' subscrição fixa' : ' subscrições fixas'),
         detail:
-          recurring.length +
-          ' fixas ativas. A maior é ' +
+          (totalMonthly * 12).toFixed(0) +
+          '€/ano no total. A maior é ' +
           sorted[0].name +
           ' (' +
           (Number(sorted[0].amount) || 0).toFixed(2) +

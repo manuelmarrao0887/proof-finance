@@ -6,7 +6,7 @@ import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { fm } from '../lib/format.js';
+import { fm, fmDateShort } from '../lib/format.js';
 
 export default function TransfersView() {
   const { state, actions } = useStore();
@@ -47,7 +47,7 @@ export default function TransfersView() {
                   <span style={{ color: 'var(--text3)' }}>→</span>
                   <span>{t.to}</span>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{t.date}{t.note ? ' · ' + t.note : ''}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{fmDateShort(t.date)}{t.note ? ' · ' + t.note : ''}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span className="m" style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}>{mv(t.amount)}</span>

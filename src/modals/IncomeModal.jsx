@@ -185,8 +185,8 @@ export default function IncomeModal() {
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
-          <div className="lb" style={{ marginBottom: 6 }}>Valor (EUR)</div>
-          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="1500,00" inputMode="decimal" aria-label="Valor (EUR)" style={numStyle} />
+          <div className="lb" style={{ marginBottom: 6 }}>Valor (€)</div>
+          <input value={draft.amount} onChange={(e) => set('amount', e.target.value)} placeholder="1500,00" inputMode="decimal" aria-label="Valor (€)" style={numStyle} />
         </div>
         {isRec ? (
           <div style={{ width: 90 }}>

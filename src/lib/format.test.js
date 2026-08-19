@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeStmtDate, todayISO } from './format.js';
+import { normalizeStmtDate, todayISO, fmDate, fmDateShort, fm, fc } from './format.js';
 
 describe('todayISO (data LOCAL, sem UTC shift)', () => {
   it('usa componentes locais — 1 de julho 00:30 local NÃO recua para junho', () => {
@@ -45,5 +45,30 @@ describe('normalizeStmtDate', () => {
   });
   it('pads single-digit ISO parts', () => {
     expect(normalizeStmtDate('2025-7-5')).toBe('2025-07-05');
+  });
+});
+
+describe('fmDate / fmDateShort', () => {
+  it('ISO → DD/MM/AAAA', () => {
+    expect(fmDate('2026-08-20')).toBe('20/08/2026');
+    expect(fmDate('lixo')).toBe('lixo');
+    expect(fmDate('')).toBe('');
+  });
+  it('curto: "20 ago" no ano corrente, com ano se for outro', () => {
+    const y = new Date().getFullYear();
+    expect(fmDateShort(y + '-08-20')).toBe('20 ago');
+    expect(fmDateShort((y - 1) + '-01-05')).toBe('5 jan ' + String(y - 1).slice(2));
+    expect(fmDateShort(y + '-08-20', true)).toBe('20 ago ' + String(y).slice(2));
+  });
+});
+
+describe('fm / fc — moeda em formato PT com símbolo', () => {
+  it('fm: 2 casas, vírgula decimal, símbolo € com espaço inseparável', () => {
+    expect(fm(1234.5)).toBe('1234,50 €');
+    expect(fm(0)).toBe('0,00 €');
+    expect(fm(-12.345)).toBe('-12,35 €');
+  });
+  it('fc: sem casas decimais', () => {
+    expect(fc(1234.5)).toBe('1235 €');
   });
 });
