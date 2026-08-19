@@ -150,12 +150,12 @@ function Header({ theme, onToggleTheme, syncStatus }) {
   return (
     <header className="app-header" style={{ padding: 'calc(8px + var(--safe-top)) 20px 16px' }}>
       <div className="rw">
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Proof.</span>
-          <span style={{ fontSize: 20, fontWeight: 400, color: 'var(--fg-muted)', letterSpacing: '-0.02em' }}>
+        <h1 style={{ display: 'flex', alignItems: 'baseline', gap: 8, margin: 0, fontSize: 20, lineHeight: 1.2 }}>
+          <span style={{ fontWeight: 600, letterSpacing: '-0.02em' }}>Proof.</span>
+          <span style={{ fontWeight: 400, color: 'var(--fg-muted)', letterSpacing: '-0.02em' }}>
             Finance
           </span>
-        </div>
+        </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <SyncChip status={syncStatus} />
           <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Mudar tema">
@@ -262,7 +262,7 @@ export default function Shell() {
         <div className="dshell">
           <Sidebar />
           <div className="dcontent">
-            <div className="dmain">
+            <main className="dmain">
               <Onboarding />
               {tab === 'overview' ? (
                 <>
@@ -281,7 +281,7 @@ export default function Shell() {
                   </Suspense>
                 </div>
               )}
-            </div>
+            </main>
           </div>
         </div>
         {modals}
@@ -295,10 +295,9 @@ export default function Shell() {
       {canToggle && <DeviceToggle />}
       <Header theme={state.theme} onToggleTheme={toggleTheme} syncStatus={syncStatus} />
 
-      {tab === 'overview' ? <Hero /> : <ContextStrip tab={tab} />}
-      <Onboarding />
-
       <main className="has-bnav scroll-body" style={{ minHeight: '60svh' }}>
+        {tab === 'overview' ? <Hero /> : <ContextStrip tab={tab} />}
+        <Onboarding />
         <Suspense fallback={<ViewFallback />}>
           <View />
         </Suspense>

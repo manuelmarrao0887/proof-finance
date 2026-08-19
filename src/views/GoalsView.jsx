@@ -163,7 +163,7 @@ export default function GoalsView() {
                     strokeDashoffset={C2 - (pct / 100) * C2}
                   />
                 </svg>
-                <div style={{ position: 'absolute', fontSize: 13, fontWeight: 700, color: c }}>
+                <div style={{ position: 'absolute', fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
                   {pctAbs.toFixed(0)}%
                 </div>
               </div>
@@ -175,7 +175,7 @@ export default function GoalsView() {
                   de {fc(g.target)}
                 </div>
                 {g.monthly > 0 && rem > 0 ? (
-                  <div style={{ fontSize: 11, color: c, marginTop: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span>
                       {fc(g.monthly)}/mês · conclui {ymLabel(etaDate(rem, g.monthly))} ({monthsToTarget(rem, g.monthly)} {monthsToTarget(rem, g.monthly) === 1 ? 'mês' : 'meses'})
                     </span>
