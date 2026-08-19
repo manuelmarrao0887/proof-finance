@@ -14,6 +14,7 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { compute, monthlySummary, isNewUser, getAcctsLive, CARD_CAT } from '../lib/finance.js';
 import { estimateDeductions } from '../lib/irs.js';
+import { totalValue } from '../lib/investments.js';
 import { fc } from '../lib/format.js';
 
 export default function ContextStrip({ tab: tabProp }) {
@@ -80,12 +81,21 @@ export default function ContextStrip({ tab: tabProp }) {
     val = String(n);
     col = 'var(--text)';
   } else if (tab === 'invest') {
-    let inv = 0;
-    getAcctsLive(s).forEach((a) => {
-      if (a.c === 'Investimentos' || a.c === 'Cripto') inv += a.v;
-    });
-    label = 'Carteira de investimentos';
-    val = fc(inv);
+    /* Mostrar o MESMO número que a vista: se há posições detalhadas, é o valor
+       delas; senão, o saldo das contas de investimento. (Antes a faixa somava
+       sempre as contas e ficava 5000 € por cima de um cartão de 3570 €.) */
+    const positions = state.positions || [];
+    if (positions.length) {
+      label = 'Posições';
+      val = fc(totalValue(positions));
+    } else {
+      let inv = 0;
+      getAcctsLive(s).forEach((a) => {
+        if (a.c === 'Investimentos' || a.c === 'Cripto') inv += a.v;
+      });
+      label = 'Carteira de investimentos';
+      val = fc(inv);
+    }
     col = 'var(--text)';
   } else if (tab === 'cal' || tab === 'charts' || tab === 'rec' || tab === 'ai' || tab === 'report') {
     label = 'Património liquido';

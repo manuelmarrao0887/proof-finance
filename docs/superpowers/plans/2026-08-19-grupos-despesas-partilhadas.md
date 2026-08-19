@@ -551,6 +551,7 @@ o número de transferências: com 4 pessoas passam de 6 para 3."
 - Modify: `src/store/store.jsx`
 - Modify: `src/firebase/data.js:37-49` (mapa `SUBCOLLECTIONS`)
 - Test: `src/store/groups.store.test.jsx` (novo)
+- Test: `src/firebase/data.test.js` (asserção das subcoleções novas)
 
 **Interfaces:**
 - Consumes: `uid`, `todayISO` de `src/lib/format.js`; `resolveShares` (Task 1).
@@ -610,13 +611,6 @@ describe('slices de grupos', () => {
     expect(st.groupEntries).toEqual([{ id: 'e1' }]);
   });
 
-  it('as subcoleções novas estão no mapa', async () => {
-    const mod = await vi.importActual('../firebase/data.js');
-    expect(mod.SUBCOLLECTIONS.people).toBe('people');
-    expect(mod.SUBCOLLECTIONS.groups).toBe('groups');
-    expect(mod.SUBCOLLECTIONS.groupEntries).toBe('groupEntries');
-  });
-
   it('addGroup preenche os valores por defeito', async () => {
     const { AVATAR_COLORS, ME_ID } = await import('./store.jsx');
     expect(ME_ID).toBe('me');
@@ -634,6 +628,19 @@ describe('slices de grupos', () => {
 > O import de `renderWithStore` e de `React` no topo do ficheiro só é preciso a
 > partir do momento em que houver um teste que monte componentes; se o linter
 > reclamar de imports não usados, remove-os.
+
+A verificação das subcoleções vai para `src/firebase/data.test.js` (que já importa
+`data.js` diretamente, sem mock) — acrescentar lá:
+
+```js
+describe('SUBCOLLECTIONS', () => {
+  it('cobre os slices de grupos', () => {
+    expect(SUBCOLLECTIONS.people).toBe('people');
+    expect(SUBCOLLECTIONS.groups).toBe('groups');
+    expect(SUBCOLLECTIONS.groupEntries).toBe('groupEntries');
+  });
+});
+```
 
 - [ ] **Step 2: Correr os testes e confirmar que falham**
 
@@ -744,7 +751,7 @@ Expected: PASS — nenhum teste existente falha.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/store/store.jsx src/firebase/data.js src/store/groups.store.test.jsx
+git add src/store/store.jsx src/firebase/data.js src/store/groups.store.test.jsx src/firebase/data.test.js
 git commit -m "feat(grupos): slices de pessoas, grupos e movimentos
 
 Persistem em subcoleções novas pelo mesmo mecanismo dos slices existentes;

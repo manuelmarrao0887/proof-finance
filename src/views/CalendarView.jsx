@@ -249,7 +249,7 @@ export default function CalendarView() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--signal)' }} />
-            Crédito / Despesa
+            Despesa
           </div>
         </div>
       </div>
