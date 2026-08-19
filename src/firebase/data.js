@@ -46,6 +46,9 @@ export const SUBCOLLECTIONS = {
   recurring: 'recurring',
   positions: 'positions',
   rules: 'rules',
+  people: 'people',
+  groups: 'groups',
+  groupEntries: 'groupEntries',
 };
 const SLICE_KEYS = Object.keys(SUBCOLLECTIONS);
 

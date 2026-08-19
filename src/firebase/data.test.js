@@ -61,3 +61,11 @@ describe('computeDiff (sync de subcoleções)', () => {
     expect(SUBCOLLECTIONS.bdg).toBe('categories');
   });
 });
+
+describe('SUBCOLLECTIONS', () => {
+  it('cobre os slices de grupos', () => {
+    expect(SUBCOLLECTIONS.people).toBe('people');
+    expect(SUBCOLLECTIONS.groups).toBe('groups');
+    expect(SUBCOLLECTIONS.groupEntries).toBe('groupEntries');
+  });
+});

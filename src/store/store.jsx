@@ -32,6 +32,11 @@ import { bdgDefault, snapshotFromState, normAcct } from '../lib/finance.js';
 import { uid } from '../lib/format.js';
 import { applySameBeneficiaryCategory } from '../lib/dedupe.js';
 
+// Id reservado do próprio utilizador nos grupos (nunca existe em state.people).
+export const ME_ID = 'me';
+// Paleta dos avatares das pessoas (tokens do sistema visual).
+export const AVATAR_COLORS = ['#3b6fee', '#12b3a6', '#f5a623', '#f25592', '#7b5fe0', '#3fc97a', '#f25555'];
+
 // Ensure every addedExp row carries a stable `id` (backfills legacy rows saved
 // before ids existed). Used on hydrate and on any whole-array replacement.
 export function withExpenseIds(list) {
@@ -101,6 +106,9 @@ export function initialPersisted() {
     transfers: [], // transferências entre contas { id, from, to, amount, date, note, settledFrom, settledTo }
     taxCfg: null, // config fiscal PT { imiAmount, iucMonths:[], irs, couple } ou null
     dismissedAnomalies: [], // ids de avisos de despesa suspeita já confirmados pelo utilizador
+    people: [], // contactos locais para grupos { id, name, color, createdAt }
+    groups: [], // grupos de despesas partilhadas { id, name, emoji, type, currency, memberIds, start, end, reflectMine, archived, createdAt }
+    groupEntries: [], // despesas e acertos dos grupos (ver lib/split.js)
   };
 }
 
@@ -141,6 +149,9 @@ export const PERSISTED_KEYS = [
   'transfers',
   'taxCfg',
   'dismissedAnomalies',
+  'people',
+  'groups',
+  'groupEntries',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -173,6 +184,9 @@ export function buildPersistPayload(state) {
     transfers: state.transfers || [],
     taxCfg: state.taxCfg || null,
     dismissedAnomalies: state.dismissedAnomalies || [],
+    people: state.people || [],
+    groups: state.groups || [],
+    groupEntries: state.groupEntries || [],
   };
 }
 
@@ -212,6 +226,9 @@ export function hydrateFromDoc(d) {
     transfers: Array.isArray(d.transfers) ? d.transfers : [],
     taxCfg: d.taxCfg && typeof d.taxCfg === 'object' ? d.taxCfg : null,
     dismissedAnomalies: Array.isArray(d.dismissedAnomalies) ? d.dismissedAnomalies : [],
+    people: Array.isArray(d.people) ? d.people : [],
+    groups: Array.isArray(d.groups) ? d.groups : [],
+    groupEntries: Array.isArray(d.groupEntries) ? d.groupEntries : [],
   };
 }
 
@@ -424,6 +441,54 @@ export function StoreProvider({ children }) {
         const idx = list.findIndex((x) => x.id === id);
         if (idx < 0) return;
         setField('addedExp', applySameBeneficiaryCategory(list, idx, cat, 'cat'));
+      },
+
+      // ── Grupos: pessoas ──────────────────────────────────────────────
+      addPerson: (p) => {
+        const list = getState().people || [];
+        const color = p.color || AVATAR_COLORS[list.length % AVATAR_COLORS.length];
+        setField('people', [...list, { id: uid(), createdAt: Date.now(), ...p, color }]);
+      },
+      updatePerson: (id, partial) =>
+        setField('people', (getState().people || []).map((x) => (x.id === id ? { ...x, ...partial } : x))),
+      deletePerson: (id) => {
+        const st = getState();
+        const used = (st.groups || []).some((g) => (g.memberIds || []).includes(id));
+        if (used) return false; // a UI bloqueia antes; isto é a rede de segurança
+        setField('people', (st.people || []).filter((x) => x.id !== id));
+        return true;
+      },
+
+      // ── Grupos ───────────────────────────────────────────────────────
+      addGroup: (g) =>
+        setField('groups', [
+          ...(getState().groups || []),
+          {
+            id: uid(),
+            emoji: '👥',
+            type: 'trip',
+            currency: 'EUR',
+            memberIds: [ME_ID],
+            start: null,
+            end: null,
+            reflectMine: true,
+            archived: false,
+            createdAt: Date.now(),
+            ...g,
+          },
+        ]),
+      updateGroup: (id, partial) =>
+        setField('groups', (getState().groups || []).map((x) => (x.id === id ? { ...x, ...partial } : x))),
+      archiveGroup: (id, archived = true) =>
+        setField('groups', (getState().groups || []).map((x) => (x.id === id ? { ...x, archived } : x))),
+      deleteGroup: (id) => {
+        const st = getState();
+        const linked = (st.groupEntries || []).filter((e) => e.groupId === id).map((e) => e.linkedExpId).filter(Boolean);
+        setField('groups', (st.groups || []).filter((x) => x.id !== id));
+        setField('groupEntries', (st.groupEntries || []).filter((e) => e.groupId !== id));
+        if (linked.length) {
+          setField('addedExp', (st.addedExp || []).filter((x) => !linked.includes(x.id)));
+        }
       },
 
       // balance readings (balanceLog) — dated balance snapshots per account.
