@@ -38,6 +38,7 @@ import BalanceUpdateSheet from './BalanceUpdateSheet.jsx';
 import CardPayModal from './CardPayModal.jsx';
 import CatManagerModal from './CatManagerModal.jsx';
 import GoalModal from './GoalModal.jsx';
+import GroupExpenseSheet from './GroupExpenseSheet.jsx';
 import GroupSheet from './GroupSheet.jsx';
 import HousingModal from './HousingModal.jsx';
 import ImportStatementSheet from './ImportStatementSheet.jsx';
@@ -62,6 +63,7 @@ const MODALS = [
   ['CardPayModal', CardPayModal, 'cardpay', [true, { cardLabel: 'Revolut · Cartão de Crédito' }]],
   ['CatManagerModal', CatManagerModal, 'cat', [true]],
   ['GoalModal', GoalModal, 'goal', [true, { id: 'g1' }]],
+  ['GroupExpenseSheet', GroupExpenseSheet, 'gexp', [{ groupId: 'g-ferias' }, { id: 'ge-1' }]],
   ['GroupSheet', GroupSheet, 'group', [true, { id: 'g-ferias' }]],
   ['HousingModal', HousingModal, 'housing', [true]],
   ['ImportStatementSheet', ImportStatementSheet, 'stmt', [true]],

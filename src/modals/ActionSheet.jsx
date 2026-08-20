@@ -14,9 +14,15 @@
      - Nova meta         -> open('goal')
      - Nova recorrência  -> open('rec')
      - Nova conta        -> open('acct')
+     - Despesa de grupo  -> depende de quantos grupos ativos existem (Task 8):
+       nenhum -> open('group') (não há para onde lançar a despesa, cria-se um
+       primeiro); exatamente um -> open('gexp', {groupId}) direto para esse
+       grupo; vários -> não há grupo óbvio, navega para o tab Grupos para o
+       utilizador escolher.
    ════════════════════════════════════════════════════════════════════════ */
 
 import React, { useEffect } from 'react';
+import { useStore } from '../store/store.jsx';
 import { useUI, useModal } from '../store/ui.jsx';
 
 const Chevron = (
@@ -26,6 +32,7 @@ const Chevron = (
 );
 
 export default function ActionSheet() {
+  const { state } = useStore();
   const ui = useUI();
   const { isOpen, close } = useModal('action');
 
@@ -47,6 +54,20 @@ export default function ActionSheet() {
     ui.open(key, payload === undefined ? true : payload);
   };
 
+  // Despesa de grupo não tem um destino óbvio como as outras opções — depende
+  // de quantos grupos ativos (não arquivados) o utilizador já tem.
+  const goGroupExpense = () => {
+    close();
+    const active = (state.groups || []).filter((g) => !g.archived);
+    if (active.length === 0) {
+      ui.open('group');
+    } else if (active.length === 1) {
+      ui.open('gexp', { groupId: active[0].id });
+    } else {
+      ui.goTab('groups');
+    }
+  };
+
   const items = [
     {
       title: 'Nova despesa',
@@ -56,6 +77,17 @@ export default function ActionSheet() {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      ),
+    },
+    {
+      title: 'Despesa de grupo',
+      sub: 'Dividir com amigos ou família',
+      onClick: goGroupExpense,
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
         </svg>
       ),
     },

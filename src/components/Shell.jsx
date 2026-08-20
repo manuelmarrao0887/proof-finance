@@ -58,6 +58,7 @@ const MODAL_COMPONENTS = {
   cardpay: lazy(() => import('../modals/CardPayModal.jsx')),
   group: lazy(() => import('../modals/GroupSheet.jsx')),
   person: lazy(() => import('../modals/PersonSheet.jsx')),
+  gexp: lazy(() => import('../modals/GroupExpenseSheet.jsx')),
 };
 
 /* ── Icons (inline SVG, no emoji) ──────────────────────────────────────── */
