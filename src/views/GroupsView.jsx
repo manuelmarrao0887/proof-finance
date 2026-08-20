@@ -138,15 +138,16 @@ function myImpactCents(entry) {
 
 // Linha de uma despesa (separador "Despesas"): categoria, descrição, quem pagou
 // e o impacto para o utilizador — a haver (verde) ou a dever (vermelho).
-function ExpenseRow({ entry, nameOf, onOpen }) {
+function ExpenseRow({ entry, nameOf, onOpen, disabled }) {
   const impactCents = myImpactCents(entry);
   const shareCount = (entry.shares || []).length;
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={disabled ? undefined : onOpen}
+      disabled={disabled}
       className="cd"
-      style={{ width: '100%', display: 'block', textAlign: 'left', marginBottom: 8, padding: '12px 16px', border: '1px solid var(--border)', cursor: 'pointer' }}
+      style={{ width: '100%', display: 'block', textAlign: 'left', marginBottom: 8, padding: '12px 16px', border: '1px solid var(--border)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
     >
       <div className="rw" style={{ gap: 12 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
@@ -237,7 +238,7 @@ function BalanceBar({ id, balance, maxAbsCents, nameOf, colorOf }) {
 }
 
 // Linha do plano de acertos (simplifyDebts): quem deve pagar a quem + botão.
-function SettleRow({ debt, nameOf, onSettle }) {
+function SettleRow({ debt, nameOf, onSettle, disabled }) {
   return (
     <div className="cd rw" style={{ marginBottom: 8, padding: '12px 16px' }}>
       <span style={{ fontSize: 13, fontWeight: 600 }}>{nameOf(debt.from)} → {nameOf(debt.to)}</span>
@@ -245,9 +246,10 @@ function SettleRow({ debt, nameOf, onSettle }) {
         <span className="m" style={{ fontSize: 13, fontWeight: 700 }}>{fm(debt.amount)}</span>
         <button
           type="button"
-          onClick={onSettle}
+          onClick={disabled ? undefined : onSettle}
+          disabled={disabled}
           aria-label={'Acertar ' + nameOf(debt.from) + ' → ' + nameOf(debt.to)}
-          style={{ padding: '6px 12px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+          style={{ padding: '6px 12px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: disabled ? 0.6 : 1 }}
         >
           Acertar
         </button>
@@ -258,7 +260,7 @@ function SettleRow({ debt, nameOf, onSettle }) {
 
 // Ecrã de detalhe de um grupo: totais, separador Despesas/Saldos/Atividade e
 // os dois atalhos fixos no fundo (Acertar / Despesa).
-function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, toast, onBack }) {
+function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, toast, onBack, isDemo }) {
   const [seg, setSeg] = useState('exp');
 
   const expenseEntries = useMemo(
@@ -309,13 +311,26 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
           <span style={{ fontSize: 20, lineHeight: 1 }} aria-hidden="true">{group.emoji || '👥'}</span>
           <span style={{ fontSize: 15, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.name}</span>
         </span>
-        <button type="button" onClick={() => open('group', group)} className="icon-btn" aria-label="Editar grupo">
+        <button
+          type="button"
+          onClick={isDemo ? undefined : () => open('group', group)}
+          disabled={isDemo}
+          className="icon-btn"
+          aria-label={isDemo ? 'Editar grupo (indisponível para dados de exemplo)' : 'Editar grupo'}
+          style={isDemo ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
           </svg>
         </button>
       </div>
+
+      {isDemo && (
+        <div className="cd" style={{ marginBottom: 16, padding: '12px 16px', fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>
+          Dados de exemplo — inicia sessão para criares os teus próprios grupos.
+        </div>
+      )}
 
       <div className="cd" style={{ marginBottom: 16 }}>
         <div className="lb">Total do grupo</div>
@@ -353,7 +368,7 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
             <div key={g.date}>
               <div className="lb" style={{ margin: '4px 4px 8px' }}>{fmDateShort(g.date)}</div>
               {g.items.map((e) => (
-                <ExpenseRow key={e.id} entry={e} nameOf={nameOf} onOpen={() => open('gexp', e)} />
+                <ExpenseRow key={e.id} entry={e} nameOf={nameOf} onOpen={() => open('gexp', e)} disabled={isDemo} />
               ))}
             </div>
           ))
@@ -381,6 +396,7 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
                 debt={debt}
                 nameOf={nameOf}
                 onSettle={() => open('settle', { groupId: group.id, from: debt.from, to: debt.to, amount: debt.amount })}
+                disabled={isDemo}
               />
             ))
           )}
@@ -406,15 +422,25 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
       <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
         <button
           type="button"
-          onClick={() => open('settle', { groupId: group.id })}
-          style={{ flex: 1, padding: '12px 0', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          onClick={isDemo ? undefined : () => open('settle', { groupId: group.id })}
+          disabled={isDemo}
+          style={{
+            flex: 1, padding: '12px 0', border: '1px solid var(--border)', background: 'var(--surface)',
+            color: isDemo ? 'var(--text3)' : 'var(--text)', borderRadius: 999, fontSize: 14, fontWeight: 600,
+            cursor: isDemo ? 'not-allowed' : 'pointer', opacity: isDemo ? 0.6 : 1,
+          }}
         >
           Acertar
         </button>
         <button
           type="button"
-          onClick={() => open('gexp', { groupId: group.id })}
-          style={{ flex: 1, padding: '12px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          onClick={isDemo ? undefined : () => open('gexp', { groupId: group.id })}
+          disabled={isDemo}
+          style={{
+            flex: 1, padding: '12px 0', border: 'none', background: isDemo ? 'var(--bg3)' : 'var(--primary)',
+            color: isDemo ? 'var(--text3)' : 'var(--bg)', borderRadius: 999, fontSize: 14, fontWeight: 600,
+            cursor: isDemo ? 'not-allowed' : 'pointer',
+          }}
         >
           Despesa
         </button>
@@ -432,10 +458,12 @@ export default function GroupsView() {
   // Em preview (sem login) e sem nada próprio ainda, mostra o grupo de
   // exemplo — só para ler: nunca é despachado para o store (ver finance.js
   // getGroupsData). O Resumo usa a mesma função, para as duas vistas nunca
-  // divergirem uma da outra.
-  const { people, groups, groupEntries: allEntries } = useMemo(
+  // divergirem uma da outra. Deps são as três slices que a função lê (não
+  // `state` inteiro) + `preview`, para não recalcular a cada alteração
+  // qualquer no store (ex.: editar uma despesa pessoal).
+  const { people, groups, groupEntries: allEntries, isDemo } = useMemo(
     () => getGroupsData(state, preview),
-    [state, preview]
+    [state.people, state.groups, state.groupEntries, preview]
   );
   const nameOf = useMemo(() => nameOfFactory(people), [people]);
   const colorOf = useMemo(() => colorOfFactory(people), [people]);
@@ -473,6 +501,7 @@ export default function GroupsView() {
         open={open}
         toast={toast}
         onBack={() => setOpenId(null)}
+        isDemo={isDemo}
       />
     );
   }

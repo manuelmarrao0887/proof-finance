@@ -161,11 +161,20 @@ export function getLoan(state) {
    preview. `preview` vem de useStore() (=!currentUser), não do `state`
    passado aqui (que é só o slice persistido, sem currentUser). Usada tanto
    pelo Resumo como pela vista de Grupos para nunca mostrarem coisas
-   diferentes uma da outra. */
+   diferentes uma da outra.
+
+   `isDemo` diz à vista de Grupos quando o grupo aberto é o de exemplo — as
+   sheets (GroupSheet/GroupExpenseSheet/SettleSheet) resolvem o grupo sempre
+   por `state.groups`, nunca por este seed, por isso o detalhe do grupo tem
+   de desativar as ações que abririam essas sheets em vez de as deixar
+   rebentar em silêncio (ver GroupsView.jsx). */
 export function getGroupsData(state, preview) {
   const own = (state.people || []).length > 0 || (state.groups || []).length > 0 || (state.groupEntries || []).length > 0;
-  if (preview && !own) return demoGroups();
-  return { people: state.people || [], groups: state.groups || [], groupEntries: state.groupEntries || [] };
+  if (preview && !own) {
+    const demo = demoGroups();
+    return { ...demo, isDemo: true };
+  }
+  return { people: state.people || [], groups: state.groups || [], groupEntries: state.groupEntries || [], isDemo: false };
 }
 
 export function getAccts(state) {
