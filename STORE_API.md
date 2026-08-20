@@ -254,7 +254,7 @@ customAccts, rules, em, forecastMonths`.
 | `lib/importBank.js` | parser determinístico do extrato; `isTransferDesc` = **só contas próprias**; `bankIncomeCandidates` (receitas) |
 | `lib/exportcsv.js` | exportação CSV para Excel PT (`;` + vírgula decimal + BOM) |
 | `lib/budget.js`, `lib/goals.js`, `lib/investments.js`, `lib/reports.js`, `lib/reminders.js`, `lib/mortgage.js`, `lib/lock.js` | orçamento com rollover, metas com reserva mensal, P&L de posições, relatórios (+`yearSummary`), lembretes, crédito habitação, PIN/FaceID |
-| `lib/split.js` | matemática pura das despesas partilhadas (secção "Grupos"): `resolveShares`/`splitEqual`/`splitExact`/`splitPercent`, `computeBalances`, `simplifyDebts` (acerto com poucas transferências — greedy, não garante o mínimo global), `groupTotals`, `shareText`, `GROUP_CATS`/`groupCatMeta`. Tudo em cêntimos inteiros por dentro (`toCents`/`fromCents`), euros só na fronteira. Ver §4c. |
+| `lib/split.js` | matemática pura das despesas partilhadas (secção "Grupos"): `resolveShares`/`splitEqual`/`splitExact`/`splitPercent`, `computeBalances`, `isSettled` (usada por `GroupsView` para separar "Ativos"/"Acertados"), `simplifyDebts` (acerto com poucas transferências — greedy, não garante o mínimo global), `groupTotals`, `shareText`, `GROUP_CATS`/`groupCatMeta`. Tudo em cêntimos inteiros por dentro (`toCents`/`fromCents`), euros só na fronteira. Ver §4c. |
 
 ## 4c. Grupos (despesas partilhadas)
 

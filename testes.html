@@ -354,8 +354,8 @@
    ────────────────────────────────────────────────────────────────────────── */
 const GROUPS = [
   { id: 'T43', title: 'Grupos (despesas partilhadas)', tests: [
-    { id: 'T43.1', title: 'Criar grupo', steps: ['Grupos → "+ Novo grupo"', 'Preencher o nome e escolher pelo menos uma pessoa nos chips (ou "+ Nova pessoa")', 'Criar grupo'], expect: 'Toast "Grupo criado"; o grupo aparece em "Ativos" com "Tu" + a(s) pessoa(s) escolhida(s) (memberIds sempre com "Tu" em primeiro). Sem nome ou com só "Tu" nos membros, mostra erro ("Dá um nome ao grupo." / "Um grupo precisa de pelo menos mais uma pessoa.") e não grava.' },
-    { id: 'T43.2', title: 'Adicionar pessoa', steps: ['Num grupo → "+ Nova pessoa" (ou "Gerir pessoas")', 'Escrever o nome', 'Adicionar'], expect: 'A pessoa aparece com um avatar cuja cor vem da paleta cíclica (nunca escolhida à mão). Um nome já usado (mesmo com maiúsculas diferentes) é recusado com "Já tens uma pessoa com esse nome."' },
+    { id: 'T43.1', title: 'Criar grupo', steps: ['Grupos, conta ainda sem grupos → "Novo grupo"', 'Preencher o nome e escolher pelo menos uma pessoa nos chips (ou "+ Nova pessoa")', 'Criar grupo'], expect: 'Toast "Grupo criado"; o grupo aparece em "Ativos" com "Tu" + a(s) pessoa(s) escolhida(s) (memberIds sempre com "Tu" em primeiro). Sem nome ou com só "Tu" nos membros, mostra erro ("Dá um nome ao grupo." / "Um grupo precisa de pelo menos mais uma pessoa.") e não grava.' },
+    { id: 'T43.2', title: 'Adicionar pessoa', steps: ['Grupos → ícone "Pessoas" no cabeçalho da lista (ou "+ Nova pessoa" dentro de Criar/editar grupo)', 'Escrever o nome', 'Adicionar'], expect: 'A pessoa aparece com um avatar cuja cor vem da paleta cíclica (nunca escolhida à mão). Um nome já usado (mesmo com maiúsculas diferentes) é recusado com "Já tens uma pessoa com esse nome."' },
     { id: 'T43.3', title: 'Divisão igual', steps: ['Nova despesa de grupo → "Como dividir" = Igual', 'Escolher os participantes e o valor total'], expect: 'Cada participante fica com uma parte igual; os cêntimos residuais vão primeiro para quem pagou. A pré-visualização por pessoa soma exatamente o total.' },
     { id: 'T43.4', title: 'Divisão por valores exatos', steps: ['"Como dividir" = Valores', 'Escrever um valor por pessoa que não bata certo com o total', 'Guardar'], expect: 'Erro "Faltam X para chegar ao total." ou "Sobram X face ao total." Corrigindo os valores até somarem o total, a despesa grava sem erro.' },
     { id: 'T43.5', title: 'Divisão por percentagem', steps: ['"Como dividir" = %', 'Escrever percentagens que não somem 100%', 'Guardar'], expect: 'Erro "As percentagens somam N% — têm de somar 100%." Com as percentagens a somar 100%, grava; a parte de cada um é a percentagem × total, com os cêntimos residuais distribuídos até fechar certo.' },
@@ -368,7 +368,7 @@ const GROUPS = [
     { id: 'T43.12', title: 'Apagar grupo com movimentos ligados', steps: ['Grupo com o reflexo ligado e pelo menos uma despesa já refletida nas Despesas pessoais', 'Editar grupo → "Apagar grupo" → confirmar'], expect: 'O aviso de confirmação diz quantos movimentos vão ser apagados, incluindo quantos nas Despesas pessoais. Ao confirmar, o grupo, as suas despesas/acertos E os movimentos ligados em addedExp desaparecem todos — deixam de aparecer nas Despesas.' },
     { id: 'T43.13', title: 'Ligar o reflexo', steps: ['Grupo com o reflexo desligado e despesas já registadas', 'Editar grupo → ligar "Refletir a minha parte nas Despesas"'], expect: 'Pede confirmação a dizer quantos movimentos vai criar. Ao confirmar, cria de imediato um movimento por cada despesa existente com parte própria acima de zero — não espera por "Guardar alterações". Toast "Despesas do grupo refletidas nas tuas Despesas".' },
     { id: 'T43.14', title: 'Desligar o reflexo', steps: ['Grupo com o reflexo ligado e despesas já refletidas', 'Editar grupo → desligar "Refletir a minha parte nas Despesas"'], expect: 'Pede confirmação a dizer quantos movimentos vai apagar. Ao confirmar, apaga de imediato os movimentos pessoais ligados a esse grupo. Toast "Movimentos removidos das tuas Despesas"; as despesas do grupo continuam intactas, só os movimentos pessoais saem.' },
-    { id: 'T43.15', title: 'Bloqueio ao apagar pessoa', steps: ['Pessoa que pertence a pelo menos um grupo (mesmo sem despesas nesse grupo)', '"Gerir pessoas" → apagar essa pessoa → confirmar'], expect: 'Toast de erro "A {nome} está em grupos — remove-a do grupo antes de apagar."; a pessoa continua na lista.' },
+    { id: 'T43.15', title: 'Bloqueio ao apagar pessoa', steps: ['Pessoa que pertence a pelo menos um grupo (mesmo sem despesas nesse grupo)', 'Grupos → ícone "Pessoas" → apagar essa pessoa → confirmar'], expect: 'Toast de erro "A {nome} está em grupos — remove-a do grupo antes de apagar."; a pessoa continua na lista.' },
     { id: 'T43.16', title: 'Modo demo — CTAs desativados', steps: ['Sem sessão iniciada e sem grupos próprios ainda criados', 'Grupos → abrir o grupo de exemplo "Férias Algarve"'], expect: 'Mostra o aviso "Dados de exemplo — inicia sessão para criares os teus próprios grupos." O lápis de editar, as linhas de despesa, os botões "Acertar" (linha a linha e o atalho no fundo) e "Despesa" ficam desativados (cursor bloqueado, opacidade reduzida). "Partilhar resumo" continua a funcionar (não muda dados, só lê).' },
     { id: 'T43.17', title: 'Isolamento dos dados (Firestore)', steps: ['Consola do Firebase → users/{uid}/people, /groups, /groupEntries'], expect: 'Os dados de grupos vivem nas mesmas subcoleções user-scoped do resto da app, dentro de users/{uid}, cobertas pela regra genérica já existente (match /{sub}/{docId}). Não foi aberta nenhuma regra nova para esta funcionalidade; usar Grupos normalmente não dá "Missing or insufficient permissions".' },
   ]},
@@ -848,6 +848,7 @@ const LAYERS = [
     ['Atualizar saldo (print)', 'BalanceUpdateSheet'],
     ['Conta própria', 'AcctModal'],
     ['Categoria / Regra / Meta', 'Cat·Rules·GoalModal'],
+    ['Grupo / Pessoa / Despesa de grupo / Acerto', 'GroupSheet·PersonSheet·GroupExpenseSheet·SettleSheet'],
   ]},
   { cls: 'l2', title: '2 · Dados guardados', sub: 'Firestore: users/{uid} + subcoleções', nodes: [
     ['Despesas', 'addedExp[] → /movements'],
@@ -859,6 +860,9 @@ const LAYERS = [
     ['Investimentos', 'positions[] → /positions'],
     ['Categorias', 'bdg[] → /categories'],
     ['Regras · Metas', 'rules[] → /rules · goals[] → /goals'],
+    ['Pessoas dos grupos', 'people[] → /people'],
+    ['Grupos', 'groups[] → /groups'],
+    ['Despesas e acertos de grupo', 'groupEntries[] → /groupEntries'],
     ['Definições (doc raiz)', 'theme · fxRates · pinHash · housing · taxCfg'],
   ]},
   { cls: 'l3', title: '3 · Derivações', sub: 'Funções puras (lib/)', nodes: [
@@ -876,6 +880,9 @@ const LAYERS = [
     ['Fiscal PT', 'taxCalendarPT() · estimateDeductions()'],
     ['Janela de meses', 'monthKeyAt() · categorySeries()'],
     ['Subscrições / saúde', 'detectSubscriptions() · healthScore()'],
+    ['Divisão da despesa de grupo', 'resolveShares() · lib/split.js'],
+    ['Saldos e plano de acerto do grupo', 'computeBalances() · simplifyDebts()'],
+    ['Só a minha parte do grupo', 'reflectExpenseFor()'],
   ]},
   { cls: 'l4', title: '4 · Ecrãs', sub: 'Views', nodes: [
     ['Resumo + Contas', 'OverviewView'],
@@ -890,6 +897,7 @@ const LAYERS = [
     ['Fiscal (IRS/IMI/IUC)', 'TaxView'],
     ['Relatórios', 'ReportView'],
     ['Investimentos', 'InvestmentsView'],
+    ['Grupos', 'GroupsView'],
     ['AI', 'AIView'],
   ]},
 ];
@@ -917,6 +925,12 @@ const LINKS = [
   ['taxCfg ⇒ taxCalendarPT', 'IMI em 1-3 prestações conforme o valor; IUC no mês da matrícula.'],
   ['import: corrigir categoria ⇒ rules', 'A correção no preview cria/atualiza a regra do comerciante (aprendizagem).'],
   ['state.em + state.mOff ⇒ mês selecionado', 'Janela de 4 meses deslizante dá acesso a todo o histórico.'],
+  ['groupEntries.groupId → groups.id', 'Cada despesa/acerto de grupo pertence a um grupo.'],
+  ['groups.memberIds → people.id (+ "me")', 'Quem participa no grupo; "me" é sempre o próprio utilizador, nunca uma pessoa gravada em people[].'],
+  ['groupEntries.shares[].personId → people.id', 'A divisão da despesa por pessoa (igual / valores exatos / percentagem) vem de resolveShares() em lib/split.js.'],
+  ['reflectExpenseFor(group, entry) ⇒ addedExp', 'Só a MINHA parte de uma despesa de grupo (nunca o total pago) vira um movimento pessoal; acertos nunca viram movimento.'],
+  ['addedExp.groupEntryId ↔ groupEntries.linkedExpId', 'Referência dupla entre o movimento pessoal e a despesa de grupo que o criou; apagar ou substituir um lado limpa sempre a referência do outro.'],
+  ['computeBalances(groupEntries) ⇒ simplifyDebts', 'O saldo de cada pessoa do grupo vira um plano de pagamentos (quem paga a quem) no separador Saldos.'],
 ];
 
 const ENTITIES = [
@@ -930,6 +944,9 @@ const ENTITIES = [
   { name: 'bdg[]', sub: 'Categoria / orçamento', fields: ['id', 'nm', 'lm (limite)'], to: 'usada por addedExp, recurring, rules' },
   { name: 'rules[]', sub: 'Regra de auto-categorização', fields: ['pattern', ['cat→bdg']], to: 'applyRules → addedExp.cat' },
   { name: 'goals[]', sub: 'Meta de poupança', fields: ['id', 'name', 'target', 'current', 'date'], to: 'GoalsView' },
+  { name: 'people[]', sub: 'Contacto local de um grupo (sem conta)', fields: ['id', 'name', 'color', 'createdAt'], to: 'groups.memberIds · groupEntries (payerId/shares/fromId/toId)' },
+  { name: 'groups[]', sub: 'Grupo de despesas partilhadas', fields: ['id', 'name', 'emoji', 'type', ['memberIds→people'], 'reflectMine', 'archived'], to: 'people · groupEntries' },
+  { name: 'groupEntries[]', sub: 'Despesa ou acerto de um grupo', fields: ['id', ['groupId→groups'], 'kind', 'amount', ['payerId→people'], 'shares[]', ['linkedExpId→addedExp']], to: 'groups · people · addedExp (reflexo da minha parte)' },
 ];
 
 function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }

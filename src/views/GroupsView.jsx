@@ -258,6 +258,27 @@ function SettleRow({ debt, nameOf, onSettle, disabled }) {
   );
 }
 
+// Cabeçalho da LISTA de grupos (nunca aparece no detalhe): dá acesso à gestão
+// de pessoas sem ser preciso estar a criar/editar um grupo primeiro. Até aqui
+// só existia um `open('person')` dentro de GroupSheet ("+ Nova pessoa"),
+// deixando "Gerir pessoas" inalcançável sem já se estar a criar/editar um
+// grupo — a Task 5 previa "acesso a Pessoas" a partir desta lista.
+function GroupsHeader({ onManagePeople }) {
+  return (
+    <div className="rw" style={{ margin: '6px 0 16px' }}>
+      <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>Grupos</span>
+      <button type="button" onClick={onManagePeople} className="icon-btn" aria-label="Gerir pessoas">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 // Ecrã de detalhe de um grupo: totais, separador Despesas/Saldos/Atividade e
 // os dois atalhos fixos no fundo (Acertar / Despesa).
 function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, toast, onBack, isDemo }) {
@@ -509,6 +530,7 @@ export default function GroupsView() {
   if (groups.length === 0) {
     return (
       <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
+        <GroupsHeader onManagePeople={() => open('person')} />
         <div className="empty">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -552,6 +574,7 @@ export default function GroupsView() {
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px calc(40px + var(--safe-bottom))' }}>
+      <GroupsHeader onManagePeople={() => open('person')} />
       <div className="hero fadeUp" style={{ margin: '6px 0 16px' }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85 }}>
           Saldo global dos grupos

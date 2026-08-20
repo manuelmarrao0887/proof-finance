@@ -2,8 +2,9 @@ import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { cleanup, screen, fireEvent, within, act } from '@testing-library/react';
 import { renderWithStore, captureConsole } from '../test/renderWithStore.jsx';
-import { richFixture } from '../test/fixtures.js';
+import { richFixture, emptyFixture } from '../test/fixtures.js';
 import GroupsView from './GroupsView.jsx';
+import PersonSheet from '../modals/PersonSheet.jsx';
 
 vi.mock('../firebase/client.js', () => ({
   auth: null, db: null, IS_FILE: false, initError: null,
@@ -79,5 +80,49 @@ describe('GroupsView — detalhe', () => {
     cap.restore();
     expect(screen.getByText(/Novo grupo/i)).toBeTruthy();
     expect(cap.errors).toEqual([]);
+  });
+});
+
+// Finding 1 (revisão da Task 12): "Gerir pessoas" só era alcançável a partir
+// de dentro do GroupSheet ("+ Nova pessoa"), nunca a partir da lista de
+// grupos — apesar de a Task 5 prever "acesso a Pessoas" a partir daqui.
+// GroupsView monta o botão; quem confirma que ele abre a sheet a sério é este
+// teste, renderizando os dois juntos (como o Shell faz na app real).
+describe('GroupsView — lista', () => {
+  it('o cabeçalho da lista tem um controlo "Pessoas" que abre a sheet de gestão de pessoas', async () => {
+    await renderWithStore(
+      <>
+        <GroupsView />
+        <PersonSheet />
+      </>,
+      { fixture: richFixture(), tab: 'groups' }
+    );
+    // Ainda não há nenhuma sheet aberta.
+    expect(screen.queryByText('Gerir pessoas')).toBeNull();
+
+    // Nome exato: um GroupCard (ex.: "Férias Algarve · 3 pessoas · ...") também
+    // é um <button> cujo texto contém "pessoas" — /pessoas/i sozinho apanhava
+    // os dois. "Gerir pessoas" (o aria-label do controlo novo) é inequívoco.
+    fireEvent.click(screen.getByRole('button', { name: 'Gerir pessoas' }));
+
+    // O título da sheet real (PersonSheet) confirma que abriu a sheet certa,
+    // não só que algum estado interno mudou.
+    expect(screen.getByText('Gerir pessoas')).toBeTruthy();
+  });
+
+  it('o controlo "Pessoas" também está disponível no estado vazio (sem grupos ainda)', async () => {
+    await renderWithStore(
+      <>
+        <GroupsView />
+        <PersonSheet />
+      </>,
+      { fixture: emptyFixture(), tab: 'groups' }
+    );
+    expect(screen.getByText('Ainda não tens grupos')).toBeTruthy();
+    // Nome exato: um GroupCard (ex.: "Férias Algarve · 3 pessoas · ...") também
+    // é um <button> cujo texto contém "pessoas" — /pessoas/i sozinho apanhava
+    // os dois. "Gerir pessoas" (o aria-label do controlo novo) é inequívoco.
+    fireEvent.click(screen.getByRole('button', { name: 'Gerir pessoas' }));
+    expect(screen.getByText('Gerir pessoas')).toBeTruthy();
   });
 });
