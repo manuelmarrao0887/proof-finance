@@ -12,8 +12,9 @@
      payload `{ groupId, from?, to?, amount? }` — from/to/amount pré-
      preenchem quando vêm de uma dívida já calculada (Saldos -> "Acertar"
      nessa linha do plano); em falta (atalho genérico "Acertar" no fundo do
-     detalhe do grupo), a sheet propõe o primeiro par devedor/credor a partir
-     dos saldos atuais.
+     detalhe do grupo), a sheet propõe o primeiro pagamento do MESMO plano
+     (simplifyDebts) que a tab Saldos já mostra — nunca um par diferente do
+     que já está escrito no ecrã por trás dela.
 
    A pré-visualização "antes/depois" usa SEMPRE computeBalances() (lib/split.js)
    sobre as entries reais do grupo + o acerto proposto — nunca um cálculo
@@ -27,7 +28,7 @@ import { useModal } from '../store/ui.jsx';
 import { useStore, ME_ID } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fm, todayISO } from '../lib/format.js';
-import { computeBalances } from '../lib/split.js';
+import { computeBalances, simplifyDebts } from '../lib/split.js';
 import { PrimaryButton } from '../components/Buttons.jsx';
 
 const METHODS = [
@@ -88,7 +89,8 @@ export default function SettleSheet() {
   const { state, actions } = useStore();
   const toast = useToast();
 
-  const groupId = payload && typeof payload === 'object' ? payload.groupId : null;
+  const p = payload && typeof payload === 'object' ? payload : {};
+  const groupId = p.groupId || null;
   const group = (state.groups || []).find((g) => g.id === groupId) || null;
   const people = state.people || [];
   const nameOf = useMemo(() => nameOfFactory(people), [people]);
@@ -105,29 +107,41 @@ export default function SettleSheet() {
   const [date, setDate] = useState(todayISO());
   const [error, setError] = useState('');
 
-  // (Re)seed sempre que a sheet abre: from/to/valor vêm do payload quando
-  // dados (ex: "Acertar" numa linha do plano já calculado); em falta,
-  // propõe-se o primeiro par devedor/credor a partir dos saldos atuais.
+  // (Re)seed sempre que a sheet abre OU o payload com que foi aberta muda
+  // (from/to/amount) — reabrir para outro par, na MESMA instância montada
+  // (Shell mantém os modais montados depois do primeiro open, ver MODAL_
+  // COMPONENTS), não passa por isOpen:false->true nem por um groupId novo,
+  // por isso o from/to/amount do payload têm de estar nas deps também (o
+  // mesmo cuidado de GroupExpenseSheet.jsx com editId/group).
+  //
+  // from/to no payload (ex: "Acertar" numa linha do plano já calculado em
+  // Saldos): usam-se tal e qual. Em falta os dois (atalho genérico "Acertar"
+  // no fundo do detalhe do grupo), propõe-se o PRIMEIRO PAGAMENTO do mesmo
+  // plano que a tab Saldos mostra (simplifyDebts) — a sheet nunca pode sugerir
+  // um par diferente do que já está escrito no ecrã por trás dela. Só cai no
+  // heurístico simples (primeiro devedor/credor por saldo) quando o grupo já
+  // está acertado (plano vazio).
   useEffect(() => {
     if (!isOpen || !group) return;
     const now = computeBalances(entries, memberIds);
-    const p = payload && typeof payload === 'object' ? payload : {};
-    const initFrom = p.from || memberIds.find((id) => (now[id] || 0) < 0) || memberIds[0] || '';
+    const suggestion = !p.from && !p.to ? simplifyDebts(now)[0] : null;
+    const initFrom =
+      p.from || (suggestion && suggestion.from) || memberIds.find((id) => (now[id] || 0) < 0) || memberIds[0] || '';
     const initTo =
       p.to ||
+      (suggestion && suggestion.to) ||
       memberIds.find((id) => id !== initFrom && (now[id] || 0) > 0) ||
       memberIds.find((id) => id !== initFrom) ||
       initFrom;
+    const initAmount = p.amount != null ? p.amount : suggestion ? suggestion.amount : debtBetween(now, initFrom, initTo);
     setFrom(initFrom);
     setTo(initTo);
-    setAmount(
-      p.amount != null ? String(p.amount).replace('.', ',') : String(debtBetween(now, initFrom, initTo)).replace('.', ',')
-    );
+    setAmount(String(initAmount).replace('.', ','));
     setMethod('mbway');
     setDate(todayISO());
     setError('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, groupId]);
+  }, [isOpen, groupId, p.from, p.to, p.amount]);
 
   if (!isOpen || !group) return null;
 
@@ -148,7 +162,10 @@ export default function SettleSheet() {
 
   const amountNum = parseNum(amount);
   const debtNow = debtBetween(balancesNow, from, to);
-  const overpaying = amountNum > 0 && debtNow > 0 && amountNum > debtNow;
+  // debtNow pode ser 0 (sem dívida nessa direção) — nesse caso QUALQUER valor
+  // positivo já é "mais do que a dívida atual" (0), por isso não há guarda
+  // debtNow > 0 aqui: seria precisamente quando o aviso mais importa.
+  const overpaying = amountNum > 0 && amountNum > debtNow;
 
   // Pré-visualização: sempre via computeBalances, nunca aritmética paralela.
   const afterEntries = [...entries, { kind: 'settlement', fromId: from, toId: to, amount: amountNum }];
@@ -289,7 +306,7 @@ export default function SettleSheet() {
       </div>
 
       <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-        Impacto nas tuas finanças: nenhum · recuperação
+        Não altera as tuas despesas nem receitas: a tua parte já foi contabilizada quando a despesa foi registada.
       </div>
     </Sheet>
   );
