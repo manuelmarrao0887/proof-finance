@@ -100,7 +100,7 @@ export default function OverviewView() {
   //    orçamento do mês (ver compute()/monthlySummary() acima, intocados).
   //    getGroupsData() troca para o grupo de exemplo em preview sem dados
   //    próprios — a MESMA fonte que a vista de Grupos usa, para este
-  //    indicador nunca dessincronizar da lista (Task 11).
+  //    indicador nunca dessincronizar da lista.
   const groupsSummary = useMemo(() => {
     const { groups, groupEntries } = getGroupsData(state, preview);
     const activeGroups = groups.filter((g) => !g.archived);
@@ -249,27 +249,27 @@ export default function OverviewView() {
           aria-label={
             'Grupos — ' +
             [
-              groupsSummary.owedToMe > 0 ? 'amigos devem-te ' + fm(groupsSummary.owedToMe) : null,
-              groupsSummary.owedByMe > 0 ? 'deves ' + fm(groupsSummary.owedByMe) : null,
+              groupsSummary.owedToMe > 0 ? 'amigos devem-te ' + (hidden ? '••••' : fm(groupsSummary.owedToMe)) : null,
+              groupsSummary.owedByMe > 0 ? 'deves ' + (hidden ? '••••' : fm(groupsSummary.owedByMe)) : null,
             ]
               .filter(Boolean)
               .join(' · ')
           }
           style={{ width: '100%', display: 'block', textAlign: 'left', marginBottom: 16, padding: '14px 18px', border: '1px solid var(--border)', cursor: 'pointer' }}
         >
-          <div className="rw">
+          <span className="rw">
             <div className="lb">Grupos</div>
             <span style={{ fontSize: 11, color: 'var(--text3)' }}>ver</span>
-          </div>
+          </span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 6 }}>
             {groupsSummary.owedToMe > 0 && (
               <span className="m" style={{ fontSize: 14, fontWeight: 700, color: 'var(--success)' }}>
-                Amigos devem-te {fm(groupsSummary.owedToMe)}
+                Amigos devem-te {hidden ? '••••' : fm(groupsSummary.owedToMe)}
               </span>
             )}
             {groupsSummary.owedByMe > 0 && (
               <span className="m" style={{ fontSize: 14, fontWeight: 700, color: 'var(--signal)' }}>
-                Deves {fm(groupsSummary.owedByMe)}
+                Deves {hidden ? '••••' : fm(groupsSummary.owedByMe)}
               </span>
             )}
           </div>

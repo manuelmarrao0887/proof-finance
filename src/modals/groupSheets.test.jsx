@@ -93,7 +93,7 @@ describe('PersonSheet', () => {
     // Ana (p-ana) está no grupo "Férias Algarve" da fixture.
     fireEvent.click(screen.getByRole('button', { name: 'Eliminar Ana' }));
 
-    expect(screen.getByText('A Ana está em grupos — remove-a do grupo antes de apagar.')).toBeTruthy();
+    expect(screen.getByText('Ana está em grupos — tira essa pessoa do grupo antes de apagar.')).toBeTruthy();
     expect(actionsRef.getState().people.some((p) => p.name === 'Ana')).toBe(true);
   });
 
@@ -258,10 +258,28 @@ describe('GroupSheet', () => {
     expect(saved.memberIds).toContain('p-ana');
   });
 
+  // A fixture "crua" (richFixture) tem "Airbnb" com reflect:true e uma parte
+  // de 'me' > 0, mas SEM linkedExpId (nunca passou por addGroupEntry) — serve
+  // para provar a contagem no sentido ON (que ainda se baseia em reflect+share)
+  // sem interferência de um movimento já ligado.
+  //
+  // Para o sentido OFF a contagem certa é por linkedExpId (setGroupReflect só
+  // apaga o que já está ligado) — por isso este describe liga "Airbnb" a um
+  // movimento real em addedExp antes de testar o desligar.
+  function fixtureWithLinkedAirbnb() {
+    const fixture = richFixture();
+    fixture.addedExp = [
+      ...fixture.addedExp,
+      { id: 'exp-airbnb', desc: 'Airbnb', amount: 100, cat: 'cas', date: '2026-08-12', groupEntryId: 'ge-1' },
+    ];
+    fixture.groupEntries = fixture.groupEntries.map((e) => (e.id === 'ge-1' ? { ...e, linkedExpId: 'exp-airbnb' } : e));
+    return fixture;
+  }
+
   it('toggle "Refletir a minha parte nas Despesas" avisa quantos movimentos apaga, e cancelar não muda nada', async () => {
     let actionsRef;
     await renderWithStore(<GroupSheet />, {
-      fixture: richFixture(),
+      fixture: fixtureWithLinkedAirbnb(),
       openModal: 'group',
       payload: { id: 'g-ferias' },
       onReady: ({ actions }) => { actionsRef = actions; },
@@ -270,16 +288,15 @@ describe('GroupSheet', () => {
     const toggle = screen.getByLabelText('Refletir a minha parte nas Despesas');
     expect(toggle.checked).toBe(true);
 
-    // Só "Airbnb" (despesa, reflect!==false, com parte de 'me' > 0) conta —
-    // o acerto (settlement) da fixture não entra na contagem. N = 1.
+    // Só "Airbnb" tem linkedExpId (o acerto da fixture nunca teria um) — N = 1.
     window.confirm = vi.fn(() => false);
     fireEvent.click(toggle);
-    expect(window.confirm).toHaveBeenCalledWith('Isto vai apagar 1 movimentos das tuas Despesas.');
+    expect(window.confirm).toHaveBeenCalledWith('Isto vai apagar 1 movimento das tuas Despesas.');
     expect(actionsRef.getState().groups.find((g) => g.id === 'g-ferias').reflectMine).toBe(true);
 
     window.confirm = vi.fn(() => true);
     fireEvent.click(toggle);
-    expect(window.confirm).toHaveBeenCalledWith('Isto vai apagar 1 movimentos das tuas Despesas.');
+    expect(window.confirm).toHaveBeenCalledWith('Isto vai apagar 1 movimento das tuas Despesas.');
     expect(actionsRef.getState().groups.find((g) => g.id === 'g-ferias').reflectMine).toBe(false);
     expect(screen.getByText('Movimentos removidos das tuas Despesas')).toBeTruthy();
   });
@@ -302,7 +319,29 @@ describe('GroupSheet', () => {
 
     fireEvent.click(toggle);
 
-    expect(window.confirm).toHaveBeenCalledWith('Isto vai criar 1 movimentos nas tuas Despesas.');
+    expect(window.confirm).toHaveBeenCalledWith('Isto vai criar 1 movimento nas tuas Despesas.');
     expect(actionsRef.getState().groups.find((g) => g.id === 'g-ferias').reflectMine).toBe(true);
+  });
+
+  it('desligar não promete apagar uma despesa que refletia mas cujo movimento ligado já desapareceu (M6)', async () => {
+    // richFixture "crua": "Airbnb" tem reflect:true e parte de 'me' > 0, mas
+    // linkedExpId é null (não há movimento nenhum para apagar). A contagem
+    // antiga (reflect+share) dizia "1" aqui e prometia um apagão que
+    // setGroupReflect nunca fazia — a correta conta por linkedExpId e dá 0.
+    let actionsRef;
+    await renderWithStore(<GroupSheet />, {
+      fixture: richFixture(),
+      openModal: 'group',
+      payload: { id: 'g-ferias' },
+      onReady: ({ actions }) => { actionsRef = actions; },
+    });
+    const before = actionsRef.getState().addedExp.length;
+
+    const toggle = screen.getByLabelText('Refletir a minha parte nas Despesas');
+    window.confirm = vi.fn(() => true);
+    fireEvent.click(toggle);
+
+    expect(window.confirm).toHaveBeenCalledWith('Isto vai apagar 0 movimentos das tuas Despesas.');
+    expect(actionsRef.getState().addedExp.length).toBe(before); // nada para apagar, e nada apagado
   });
 });

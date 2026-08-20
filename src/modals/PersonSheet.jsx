@@ -32,7 +32,7 @@ function Avatar({ name, color, size = 30 }) {
         width: size,
         height: size,
         borderRadius: '50%',
-        background: color,
+        background: color || 'var(--fg-subtle)',
         color: '#fff',
         display: 'flex',
         alignItems: 'center',
@@ -109,7 +109,7 @@ export default function PersonSheet() {
     if (typeof confirm === 'function' && !confirm('Apagar ' + p.name + '?')) return;
     const ok = actions.deletePerson(p.id);
     if (!ok) {
-      toast('A ' + p.name + ' está em grupos — remove-a do grupo antes de apagar.', 'error');
+      toast(p.name + ' está em grupos — tira essa pessoa do grupo antes de apagar.', 'error');
       return;
     }
     if (draft.editId === p.id) {

@@ -45,12 +45,20 @@ const EMPTY = {
   archived: false,
 };
 
-// Entradas de despesa (não acertos) que hoje contam para o reflexo nas
-// Despesas pessoais: mesma regra de reflectExpenseFor (store.jsx) — só o que
-// tem reflect !== false e uma parte > 0 do próprio utilizador ('me').
-function reflectableCount(entries) {
+// Quantas entradas o toggle vai mexer, para os dois sentidos:
+//   - a ligar (on=true): mesma regra de reflectExpenseFor (store.jsx) — só o
+//     que tem reflect !== false e uma parte > 0 do próprio utilizador ('me'),
+//     porque é isso que vai passar a ter um movimento criado.
+//   - a desligar (on=false): setGroupReflect só apaga o que JÁ TEM
+//     linkedExpId (mov fica sempre null com o grupo a não refletir, e só
+//     `!mov && e.linkedExpId` dispara o apagar) — contar por reflect+share
+//     aqui prometia mais apagões do que os que realmente aconteciam sempre
+//     que uma despesa "deveria" refletir mas o movimento ligado já tinha
+//     desaparecido por outra via (ex.: reconciliação de linkedExpId órfão).
+function reflectableCount(entries, on) {
   return (entries || []).filter((e) => {
     if (!e || e.kind === 'settlement') return false;
+    if (on === false) return !!e.linkedExpId;
     if (e.reflect === false) return false;
     const mine = (e.shares || []).find((s) => s.personId === ME_ID);
     return !!(mine && Number(mine.amount) > 0);
@@ -125,7 +133,7 @@ export default function GroupSheet() {
     if (inGroup) {
       if (personLockedIn(entriesForGroup, personId)) {
         const name = (people.find((p) => p.id === personId) || {}).name || 'Esta pessoa';
-        toast(name + ' já tem movimentos neste grupo — apaga-os primeiro para a poderes remover.', 'error');
+        toast(name + ' já tem movimentos neste grupo — apaga-os primeiro para poderes remover esta pessoa.', 'error');
         return;
       }
       set('memberIds', draft.memberIds.filter((id) => id !== personId));
@@ -139,10 +147,11 @@ export default function GroupSheet() {
       set('reflectMine', on);
       return;
     }
-    const count = reflectableCount(entriesForGroup);
+    const count = reflectableCount(entriesForGroup, on);
+    const noun = count === 1 ? 'movimento' : 'movimentos';
     const msg = on
-      ? `Isto vai criar ${count} movimentos nas tuas Despesas.`
-      : `Isto vai apagar ${count} movimentos das tuas Despesas.`;
+      ? `Isto vai criar ${count} ${noun} nas tuas Despesas.`
+      : `Isto vai apagar ${count} ${noun} das tuas Despesas.`;
     if (typeof confirm === 'function' && !confirm(msg)) return;
     actions.setGroupReflect(draft.id, on);
     set('reflectMine', on);

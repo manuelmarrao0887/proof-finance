@@ -112,6 +112,29 @@ describe('GroupExpenseSheet', () => {
     expect(screen.getByText('As percentagens somam 0% — têm de somar 100%.')).toBeTruthy();
   });
 
+  it('arredonda o valor ao cêntimo ao guardar (M3): "10,005" não deixa o total a divergir da soma das partes', async () => {
+    let actionsRef;
+    await renderWithStore(<GroupExpenseSheet />, {
+      ...open,
+      onReady: ({ actions }) => { actionsRef = actions; },
+    });
+    fireEvent.change(screen.getByLabelText(/descrição/i), { target: { value: 'Arredondamento' } });
+    fireEvent.change(screen.getByLabelText(/valor/i), { target: { value: '10,005' } });
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
+
+    const saved = actionsRef.getState().groupEntries.find((e) => e.desc === 'Arredondamento');
+    expect(saved.amount).toBe(10.01); // não 10.005 — fm(entry.amount) já não podia mostrar 10,01 com as partes a somar 10,00
+    const shareCents = saved.shares.reduce((a, s) => a + Math.round(s.amount * 100), 0);
+    expect(shareCents).toBe(Math.round(saved.amount * 100));
+  });
+
+  it('avisa, junto do toggle "Refletir", que importar o extrato duplica a despesa se a linha não for apagada (I6)', async () => {
+    await renderWithStore(<GroupExpenseSheet />, open);
+    expect(
+      screen.getByText(/importares o extrato do banco.*valor total.*entra nas Despesas/i)
+    ).toBeTruthy();
+  });
+
   it('apagar despesa pede confirmação e remove-a do grupo', async () => {
     const fixture = richFixture();
     const entry = fixture.groupEntries[0];

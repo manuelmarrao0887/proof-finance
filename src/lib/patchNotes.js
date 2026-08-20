@@ -15,6 +15,7 @@ export const PATCH_NOTES = [
       'Novo: saldos por pessoa e plano com o menor número de transferências.',
       'Novo: acertar contas e partilhar o resumo do grupo.',
       'Melhoria: nas tuas Despesas entra só a tua parte das despesas de grupo.',
+      'Nota: se também importares o extrato do banco, o valor total que pagaste entra nas Despesas — apaga essa linha para não contar a despesa duas vezes.',
     ],
   },
   {

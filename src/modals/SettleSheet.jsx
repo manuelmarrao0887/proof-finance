@@ -293,11 +293,11 @@ export default function SettleSheet() {
             <span style={{ fontSize: 13, fontWeight: 600 }}>{nameOf(id)}</span>
             <span style={{ display: 'flex', gap: 14 }}>
               <span style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 10, color: 'var(--text3)' }}>Saldo do {nameOf(id)} antes</div>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>Antes</div>
                 <div className="m" style={{ fontSize: 13, fontWeight: 700 }}>{fm(balancesNow[id] || 0)}</div>
               </span>
               <span style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 10, color: 'var(--text3)' }}>Saldo do {nameOf(id)} depois</div>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>Depois</div>
                 <div className="m" style={{ fontSize: 13, fontWeight: 700 }}>{fm(balancesAfter[id] || 0)}</div>
               </span>
             </span>

@@ -24,7 +24,7 @@ import { useModal } from '../store/ui.jsx';
 import { useStore, ME_ID } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fm, todayISO } from '../lib/format.js';
-import { resolveShares, GROUP_CATS, groupCatMeta } from '../lib/split.js';
+import { resolveShares, GROUP_CATS, groupCatMeta, toCents, fromCents } from '../lib/split.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
@@ -245,7 +245,11 @@ export default function GroupExpenseSheet() {
       setErrors({ desc: 'Preenche a descrição.' });
       return;
     }
-    const amount = parseNum(draft.amount);
+    // Arredondado ao cêntimo ANTES de gravar: parseNum('10,005') dava
+    // 10.005, e fm() mostrava "10,01 €" enquanto as partes (sempre em
+    // cêntimos inteiros, ver resolveShares) somavam 10,00 € — um cêntimo
+    // fantasma na pré-visualização que nunca batia certo com o total.
+    const amount = fromCents(toCents(parseNum(draft.amount)));
     if (amount <= 0) {
       setErrors({ amount: 'O valor tem de ser maior que zero.' });
       return;
@@ -602,6 +606,16 @@ export default function GroupExpenseSheet() {
             />
           </span>
         </label>
+      </div>
+      {/* Ressalva (v2 fica de fora): importar o extrato do banco lança o valor
+          TOTAL da despesa (620 €) enquanto este reflexo lança só a MINHA parte
+          (155 €) — como dedupeAddedExp compara desc|cêntimos|data, as duas
+          linhas nunca colidem e o mês fica inflacionado pelo valor total pago,
+          exatamente o que esta funcionalidade existe para evitar. Marcar o
+          movimento importado como "despesa de grupo" fica para uma versão
+          futura — por agora avisa-se aqui, onde a pessoa decide. */}
+      <div style={{ fontSize: 10, color: 'var(--text3)', lineHeight: 1.5, marginBottom: 4 }}>
+        Se também importares o extrato do banco, o valor total que pagaste entra nas Despesas — apaga essa linha para não contar a despesa duas vezes.
       </div>
     </Sheet>
   );

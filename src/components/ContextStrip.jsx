@@ -12,7 +12,7 @@
 import React from 'react';
 import { useStore, ME_ID } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
-import { compute, monthlySummary, isNewUser, getAcctsLive, CARD_CAT } from '../lib/finance.js';
+import { compute, monthlySummary, isNewUser, getAcctsLive, CARD_CAT, getGroupsData } from '../lib/finance.js';
 import { estimateDeductions } from '../lib/irs.js';
 import { totalValue } from '../lib/investments.js';
 import { computeBalances, groupTotals, isSettled } from '../lib/split.js';
@@ -61,8 +61,10 @@ export default function ContextStrip({ tab: tabProp }) {
   } else if (tab === 'groups') {
     // Mesma definição de "ativo" e os mesmos totais que a GroupsView mostra
     // no hero: soma de owedToMe/owedByMe de todos os grupos não arquivados.
-    const groups = state.groups || [];
-    const groupEntries = state.groupEntries || [];
+    // getGroupsData() troca para o grupo de exemplo em preview sem dados
+    // próprios — a MESMA fonte que o Resumo e a vista de Grupos usam, para
+    // esta faixa nunca dessincronizar do que a lista mostra por baixo.
+    const { groups, groupEntries } = getGroupsData(state, !currentUser);
     let activeCount = 0;
     let owedToMe = 0;
     let owedByMe = 0;

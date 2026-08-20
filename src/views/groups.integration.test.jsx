@@ -4,7 +4,7 @@
    sheet de despesa de grupo. */
 import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { cleanup, screen, fireEvent } from '@testing-library/react';
+import { cleanup, screen, fireEvent, within } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
 import { richFixture, emptyFixture } from '../test/fixtures.js';
 import { useUI } from '../store/ui.jsx';
@@ -60,6 +60,21 @@ describe('integração com o resto da app', () => {
     const fixture = { ...base, groups: base.groups.map((g) => ({ ...g, archived: true })) };
     await renderWithStore(<OverviewView />, { fixture, tab: 'overview' });
     expect(screen.queryByText(/devem-te/i)).toBeNull();
+  });
+
+  it('com "Ocultar saldos" ativo, o cartão de Grupos no Resumo mascara os valores, incluindo o aria-label (I1)', async () => {
+    // richFixture: ge-1 (300€, "me" pagou, parte de 100€) + ge-2 (acerto de
+    // Ana 50€ para "me") -> owedToMe = 300 - 100 - 50 = 150€. Sem a máscara
+    // este valor aparecia em claro mesmo com "Ocultar saldos" ativo, ao
+    // contrário de todas as outras figuras do Resumo (gastos, orçamento…).
+    const fixture = { ...richFixture(), balancesHidden: true };
+    await renderWithStore(<OverviewView />, { fixture, tab: 'overview' });
+
+    const card = screen.getByRole('button', { name: /grupos/i });
+    // aria-label: protege quem usa leitor de ecrã tanto quanto o texto visível.
+    expect(card.getAttribute('aria-label')).toBe('Grupos — amigos devem-te ••••');
+    expect(within(card).getByText('Amigos devem-te ••••')).toBeTruthy();
+    expect(screen.queryByText(/150,00\s*€/)).toBeNull();
   });
 
   it('o cartão de Grupos no Resumo navega para o separador Grupos ao tocar', async () => {

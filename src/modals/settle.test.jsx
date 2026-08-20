@@ -10,7 +10,7 @@
    montada com um payload diferente (from/to/amount) atualiza os campos. */
 import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { cleanup, act, screen, fireEvent } from '@testing-library/react';
+import { cleanup, act, screen, fireEvent, within } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
 import { richFixture } from '../test/fixtures.js';
 import { todayISO } from '../lib/format.js';
@@ -80,9 +80,17 @@ describe('SettleSheet', () => {
     expect(screen.getByLabelText(/valor/i).value).toBe('100');
   });
 
-  it('mostra o saldo antes e depois', async () => {
+  it('mostra o saldo antes e depois — rótulos genéricos "Antes"/"Depois" (o nome já vai na mesma linha)', async () => {
     await renderWithStore(<SettleSheet />, open);
-    expect(screen.getByText(/saldo do joão depois/i)).toBeTruthy();
+    // "Saldo do Tu antes"/"Saldo do Tu depois" não fazia sentido para o próprio
+    // utilizador nem concordava em género para nomes femininos — o nome de
+    // cada pessoa já está na própria linha, por isso os rótulos são só
+    // "Antes"/"Depois", dentro da linha de João.
+    // "João" também aparece nos <option> dos selects "De"/"Para" — restringe
+    // à linha da pré-visualização (um <span>, não uma <option>).
+    const joaoRow = screen.getByText('João', { selector: 'span' }).closest('.rw');
+    expect(within(joaoRow).getByText('Antes')).toBeTruthy();
+    expect(within(joaoRow).getByText('Depois')).toBeTruthy();
     expect(screen.getByText('0,00 €')).toBeTruthy();
   });
 

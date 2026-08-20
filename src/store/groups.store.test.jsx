@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { cleanup, act } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
+import { initialPersisted } from '../store/store.jsx';
 
 vi.mock('../firebase/client.js', () => ({
   auth: null, db: null, IS_FILE: false, initError: null,
@@ -238,6 +239,46 @@ describe('actions de movimentos de grupo', () => {
     expect(entry.linkedExpId).toBeNull();
   });
 
+  it('updateGroupEntry cria um movimento novo e repõe linkedExpId quando o alvo já não existe em addedExp (I3, id morto)', async () => {
+    let actions;
+    let dispatch;
+    await renderWithStore(<div />, { onReady: (r) => { actions = r.actions; dispatch = r.dispatch; } });
+
+    // Estado com uma group entry já "ligada" a um addedExp que nunca existiu
+    // nesta sessão — simula commit() (firebase/data.js) gravar upserts e
+    // deletes em lotes separados: uma falha a meio pode persistir um
+    // movimento apagado com linkedExpId ainda a apontar para ele. Hydrata-se
+    // o estado diretamente (não via addGroupEntry/deleteExpense, que
+    // reconciliam linkedExpId) para reproduzir exatamente esse cenário.
+    act(() => {
+      dispatch({
+        type: 'hydrate',
+        persisted: {
+          ...initialPersisted(),
+          groups: [{ id: 'g1', memberIds: ['me', 'a'], reflectMine: true, archived: false }],
+          groupEntries: [{
+            id: 'ge1', groupId: 'g1', kind: 'expense', desc: 'Táxi', amount: 20, date: '2026-08-01',
+            reflect: true, shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+            linkedExpId: 'ghost-exp',
+          }],
+          addedExp: [], // "ghost-exp" não existe — o alvo do linkedExpId está morto
+        },
+      });
+    });
+
+    act(() => actions.updateGroupEntry('ge1', { desc: 'Táxi aeroporto' }));
+
+    const st = actions.getState();
+    // Antes: o map() sobre addedExp era um no-op silencioso (nenhum x.id batia
+    // com 'ghost-exp') — nem movimento novo, nem aviso; o reflexo perdia-se.
+    expect(st.addedExp.length).toBe(1);
+    expect(st.addedExp[0].desc).toBe('Táxi aeroporto');
+    expect(st.addedExp[0].amount).toBe(10);
+    const entry = st.groupEntries.find((e) => e.id === 'ge1');
+    expect(entry.linkedExpId).toBe(st.addedExp[0].id); // repontado para o novo movimento
+    expect(entry.linkedExpId).not.toBe('ghost-exp');
+  });
+
   it('updateGroupEntry sem ligação→sem ligação não mexe em addedExp', async () => {
     const actions = await mountActions();
     act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
@@ -343,6 +384,32 @@ describe('actions de movimentos de grupo', () => {
     act(() => actions.setGroupReflect('g1', true));
     st = actions.getState();
     expect(st.addedExp.length).toBe(1);
+  });
+});
+
+describe('deleteGroup', () => {
+  it('apaga só os movimentos ligados ao grupo apagado, deixando os de outros grupos intactos (M7)', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    act(() => actions.addGroup({ id: 'g2', memberIds: ['me', 'b'] }));
+    act(() => actions.addGroupEntry({
+      groupId: 'g1', kind: 'expense', desc: 'G1', amount: 20, date: '2026-08-01', reflect: true,
+      shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+    }));
+    act(() => actions.addGroupEntry({
+      groupId: 'g2', kind: 'expense', desc: 'G2', amount: 30, date: '2026-08-02', reflect: true,
+      shares: [{ personId: 'me', amount: 15 }, { personId: 'b', amount: 15 }],
+    }));
+    expect(actions.getState().addedExp.length).toBe(2);
+
+    act(() => actions.deleteGroup('g1'));
+
+    const st = actions.getState();
+    expect(st.groups.find((g) => g.id === 'g1')).toBeUndefined();
+    expect(st.groups.find((g) => g.id === 'g2')).toBeDefined();
+    expect(st.groupEntries.some((e) => e.groupId === 'g1')).toBe(false);
+    expect(st.addedExp.length).toBe(1);
+    expect(st.addedExp[0].desc).toBe('G2');
   });
 });
 

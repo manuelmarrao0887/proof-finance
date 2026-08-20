@@ -553,11 +553,11 @@ export function StoreProvider({ children }) {
         setField('groups', (getState().groups || []).map((x) => (x.id === id ? { ...x, archived } : x))),
       deleteGroup: (id) => {
         const st = getState();
-        const linked = (st.groupEntries || []).filter((e) => e.groupId === id).map((e) => e.linkedExpId).filter(Boolean);
+        const linked = new Set((st.groupEntries || []).filter((e) => e.groupId === id).map((e) => e.linkedExpId).filter(Boolean));
         setField('groups', (st.groups || []).filter((x) => x.id !== id));
         setField('groupEntries', (st.groupEntries || []).filter((e) => e.groupId !== id));
-        if (linked.length) {
-          setField('addedExp', (st.addedExp || []).filter((x) => !linked.includes(x.id)));
+        if (linked.size) {
+          setField('addedExp', (st.addedExp || []).filter((x) => !linked.has(x.id)));
         }
       },
 
@@ -586,7 +586,14 @@ export function StoreProvider({ children }) {
         const group = (st.groups || []).find((g) => g.id === next.groupId);
         const mov = reflectExpenseFor(group, next);
         let exps = st.addedExp || [];
-        if (mov && next.linkedExpId) {
+        // O alvo de linkedExpId pode ter desaparecido de addedExp sem passar
+        // por deleteExpense/setAddedExp (ex.: commit() em firebase/data.js
+        // grava upserts e deletes em lotes separados — uma falha a meio pode
+        // persistir um movimento apagado com linkedExpId ainda a apontar para
+        // ele). Sem esta verificação o map() abaixo era um no-op silencioso:
+        // nenhum movimento novo, nenhum aviso — o reflexo perdia-se de vez.
+        const linkedExists = next.linkedExpId && exps.some((x) => x.id === next.linkedExpId);
+        if (mov && linkedExists) {
           exps = exps.map((x) => (x.id === next.linkedExpId ? { ...x, ...mov } : x));
         } else if (mov) {
           const expId = uid();
