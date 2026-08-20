@@ -25,6 +25,7 @@ vi.mock('../firebase/data.js', () => ({
 import OverviewView from './OverviewView.jsx';
 import ExpensesView from './ExpensesView.jsx';
 import GoalsView from './GoalsView.jsx';
+import GroupsView from './GroupsView.jsx';
 import CalendarView from './CalendarView.jsx';
 import IncomesView from './IncomesView.jsx';
 import RecurringView from './RecurringView.jsx';
@@ -37,7 +38,7 @@ import CardsView from './CardsView.jsx';
 import TaxView from './TaxView.jsx';
 
 const VIEWS = {
-  OverviewView, ExpensesView, GoalsView, CalendarView, IncomesView, RecurringView,
+  OverviewView, ExpensesView, GoalsView, GroupsView, CalendarView, IncomesView, RecurringView,
   ChartsView, LoanView, ReportView, InvestmentsView, TransfersView, CardsView, TaxView,
 };
 

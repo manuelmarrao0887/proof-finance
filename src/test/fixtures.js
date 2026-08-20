@@ -65,6 +65,31 @@ export function richFixture() {
       { id: 'p2', broker: 'XTB', asset: 'AAPL', qty: 5, avgPrice: 200, currentPrice: 150 },
       { id: 'p3', broker: 'XTB', asset: 'MSFT', qty: 2, avgPrice: 300, currentPrice: 310 },
     ],
+    people: [
+      { id: 'p-ana', name: 'Ana', color: '#12b3a6', createdAt: 1 },
+      { id: 'p-joao', name: 'João', color: '#f5a623', createdAt: 2 },
+    ],
+    groups: [
+      {
+        id: 'g-ferias', name: 'Férias Algarve', emoji: '🏖️', type: 'trip', currency: 'EUR',
+        memberIds: ['me', 'p-ana', 'p-joao'], start: '2026-08-12', end: '2026-08-19',
+        reflectMine: true, archived: false, createdAt: 3,
+      },
+    ],
+    groupEntries: [
+      {
+        id: 'ge-1', groupId: 'g-ferias', kind: 'expense', desc: 'Airbnb', amount: 300,
+        date: '2026-08-12', payerId: 'me', splitMode: 'equal', gcat: 'stay', reflect: true,
+        shares: [
+          { personId: 'me', amount: 100 }, { personId: 'p-ana', amount: 100 }, { personId: 'p-joao', amount: 100 },
+        ],
+        linkedExpId: null, createdAt: 4,
+      },
+      {
+        id: 'ge-2', groupId: 'g-ferias', kind: 'settlement', fromId: 'p-ana', toId: 'me',
+        amount: 50, date: '2026-08-18', method: 'mbway', createdAt: 5,
+      },
+    ],
     rules: [{ id: 'rule1', pattern: 'pingo doce', cat: 'sup', createdAt: 1 }],
     balanceLog: [
       { id: 'b1', acctKey: 'a1', bank: 'Activobank', type: 'Conta a Ordem', value: 2400, date: day(-1, 15), createdAt: 1 },

@@ -19,6 +19,7 @@ const Chevron = (
 
 // Tab items (orig 3076-3083). svg = inner path markup for a 24x24 stroke icon.
 const ITEMS = [
+  { id: 'groups', title: 'Grupos', sub: 'Despesas partilhadas com amigos', svg: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></> },
   { id: 'income', title: 'Receitas', sub: 'Salário e rendimentos', svg: <><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></> },
   { id: 'rec', title: 'Recorrentes', sub: 'Subscrições e despesas fixas', svg: <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></> },
   { id: 'cal', title: 'Calendário', sub: 'Vista mensal de movimentos', svg: <><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></> },

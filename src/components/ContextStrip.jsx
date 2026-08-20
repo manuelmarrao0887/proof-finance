@@ -10,11 +10,12 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 import React from 'react';
-import { useStore } from '../store/store.jsx';
+import { useStore, ME_ID } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { compute, monthlySummary, isNewUser, getAcctsLive, CARD_CAT } from '../lib/finance.js';
 import { estimateDeductions } from '../lib/irs.js';
 import { totalValue } from '../lib/investments.js';
+import { computeBalances, groupTotals, isSettled } from '../lib/split.js';
 import { fc } from '../lib/format.js';
 
 export default function ContextStrip({ tab: tabProp }) {
@@ -57,6 +58,25 @@ export default function ContextStrip({ tab: tabProp }) {
     label = 'Progresso global';
     val = p.toFixed(0) + '%';
     col = 'var(--blue)';
+  } else if (tab === 'groups') {
+    // Mesma definição de "ativo" e os mesmos totais que a GroupsView mostra
+    // no hero: soma de owedToMe/owedByMe de todos os grupos não arquivados.
+    const groups = state.groups || [];
+    const groupEntries = state.groupEntries || [];
+    let activeCount = 0;
+    let owedToMe = 0;
+    let owedByMe = 0;
+    groups.forEach((g) => {
+      if (g.archived) return;
+      const entries = groupEntries.filter((e) => e.groupId === g.id);
+      const t = groupTotals(entries, ME_ID);
+      owedToMe += t.owedToMe;
+      owedByMe += t.owedByMe;
+      if (!isSettled(computeBalances(entries, g.memberIds))) activeCount += 1;
+    });
+    label = activeCount + (activeCount === 1 ? ' grupo ativo' : ' grupos ativos');
+    val = 'a receber ' + fc(owedToMe) + ' · a pagar ' + fc(owedByMe);
+    col = 'var(--text)';
   } else if (tab === 'loan') {
     label = 'Património liquido';
     val = fc(C.nW);

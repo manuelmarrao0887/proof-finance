@@ -27,9 +27,13 @@ export const MODALS = [
   'position',       // adicionar/editar posicao de investimento
   'transfer',       // transferencia entre contas
   'cardpay',        // pagar divida de cartao de credito
+  'group',          // criar/editar grupo de despesas partilhadas
+  'person',         // criar/editar pessoa (contacto local dos grupos)
+  'gexp',           // criar/editar despesa de grupo
+  'settle',         // registar acerto de contas num grupo
 ]
 
-const VALID_TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax']
+const VALID_TABS = ['overview', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax']
 function initialTab() {
   if (typeof location === 'undefined') return 'overview'
   const t = new URLSearchParams(location.search).get('tab')

@@ -21,6 +21,7 @@ import Onboarding from './Onboarding.jsx';
 import OverviewView from '../views/OverviewView.jsx';
 const ExpensesView = lazy(() => import('../views/ExpensesView.jsx'));
 const GoalsView = lazy(() => import('../views/GoalsView.jsx'));
+const GroupsView = lazy(() => import('../views/GroupsView.jsx'));
 const CalendarView = lazy(() => import('../views/CalendarView.jsx'));
 const IncomesView = lazy(() => import('../views/IncomesView.jsx'));
 const RecurringView = lazy(() => import('../views/RecurringView.jsx'));
@@ -105,6 +106,7 @@ const VIEWS = {
   overview: OverviewView,
   expenses: ExpensesView,
   goals: GoalsView,
+  groups: GroupsView,
   cal: CalendarView,
   income: IncomesView,
   rec: RecurringView,
@@ -179,7 +181,7 @@ function BottomNav({ tab, onTab, onPlus, onMore }) {
       <span>{label}</span>
     </button>
   );
-  const moreTabs = ['cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax'];
+  const moreTabs = ['groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax'];
   return (
     <nav className="bnav">
       {slot('overview', 'Resumo')}
