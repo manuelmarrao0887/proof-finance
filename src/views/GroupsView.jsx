@@ -7,19 +7,16 @@
    - Secção "Acertados": grupos saldados (isSettled) ou arquivados, com
      opacidade reduzida.
    - Estado vazio quando não há nenhum grupo.
-   - Botão "Novo grupo" abre a sheet (Task 7); por agora só regista o modal
-     em store/ui.jsx — abrir sem componente registado não rebenta (Shell.jsx
-     só monta o componente do modal se `MODAL_COMPONENTS[key]` existir).
+   - Botão "Novo grupo" abre a GroupSheet (store/ui.jsx).
 
-   `openId` + os derivados abaixo (nameOf/colorOf/entriesOf) ficam prontos
-   para a Task 6, que acrescenta o ramo de detalhe a este mesmo ficheiro.
+   `openId` + os derivados abaixo (nameOf/colorOf/entriesOf) alimentam o ramo
+   de detalhe (GroupDetail), mais abaixo neste mesmo ficheiro.
    ════════════════════════════════════════════════════════════════════════ */
 
-import React, { useMemo, useState } from 'react';
-import { useStore } from '../store/store.jsx';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useStore, ME_ID } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { ME_ID } from '../store/store.jsx';
 import { computeBalances, simplifyDebts, groupTotals, isSettled, groupCatMeta, shareText, toCents, fromCents } from '../lib/split.js';
 import { getGroupsData } from '../lib/finance.js';
 import { fm, fmDateShort } from '../lib/format.js';
@@ -47,7 +44,9 @@ function initialsOf(name, id) {
 }
 
 // Cartão de um grupo na lista: emoji, nome, resumo e saldo (ou "acertado").
-function GroupCard({ group, totals, settled, onOpen }) {
+// `btnRef` deixa GroupsView reganhar o foco neste cartão ao voltar do
+// detalhe (ver useEffect de foco em GroupsView, mais abaixo).
+function GroupCard({ group, totals, settled, onOpen, btnRef }) {
   const memberCount = (group.memberIds || []).length;
   const hasRange = !!(group.start && group.end);
   const saldoColor = totals.owedToMe > 0 ? 'var(--success)' : totals.owedByMe > 0 ? 'var(--signal)' : 'var(--text3)';
@@ -60,6 +59,7 @@ function GroupCard({ group, totals, settled, onOpen }) {
 
   return (
     <button
+      ref={btnRef}
       type="button"
       onClick={onOpen}
       className="cd"
@@ -74,7 +74,7 @@ function GroupCard({ group, totals, settled, onOpen }) {
         opacity: settled ? 0.6 : 1,
       }}
     >
-      <div className="rw">
+      <span className="rw">
         <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">
             {group.emoji || '👥'}
@@ -96,7 +96,7 @@ function GroupCard({ group, totals, settled, onOpen }) {
             {saldoLabel}
           </span>
         )}
-      </div>
+      </span>
     </button>
   );
 }
@@ -149,7 +149,7 @@ function ExpenseRow({ entry, nameOf, onOpen, disabled }) {
       className="cd"
       style={{ width: '100%', display: 'block', textAlign: 'left', marginBottom: 8, padding: '12px 16px', border: '1px solid var(--border)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
     >
-      <div className="rw" style={{ gap: 12 }}>
+      <span className="rw" style={{ gap: 12 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <CategoryIcon id={groupCatMeta(entry.gcat).cat} size={36} />
           <span style={{ minWidth: 0 }}>
@@ -167,7 +167,7 @@ function ExpenseRow({ entry, nameOf, onOpen, disabled }) {
             </span>
           )}
         </span>
-      </div>
+      </span>
     </button>
   );
 }
@@ -262,11 +262,14 @@ function SettleRow({ debt, nameOf, onSettle, disabled }) {
 // de pessoas sem ser preciso estar a criar/editar um grupo primeiro. Até aqui
 // só existia um `open('person')` dentro de GroupSheet ("+ Nova pessoa"),
 // deixando "Gerir pessoas" inalcançável sem já se estar a criar/editar um
-// grupo — a Task 5 previa "acesso a Pessoas" a partir desta lista.
-function GroupsHeader({ onManagePeople }) {
+// grupo — este cabeçalho dá acesso a Pessoas diretamente a partir da lista.
+// `headingRef` (tabIndex=-1, alvo programático — não entra no tab order) é o
+// destino de foco de recurso quando se volta do detalhe e o cartão do grupo
+// já não existe (ex.: apagado noutro sítio enquanto o detalhe estava aberto).
+function GroupsHeader({ onManagePeople, headingRef }) {
   return (
     <div className="rw" style={{ margin: '6px 0 16px' }}>
-      <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>Grupos</span>
+      <span ref={headingRef} tabIndex={-1} style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>Grupos</span>
       <button type="button" onClick={onManagePeople} className="icon-btn" aria-label="Gerir pessoas">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -283,6 +286,16 @@ function GroupsHeader({ onManagePeople }) {
 // os dois atalhos fixos no fundo (Acertar / Despesa).
 function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, toast, onBack, isDemo }) {
   const [seg, setSeg] = useState('exp');
+  const headingRef = useRef(null);
+
+  // GroupsView troca TODA a subárvore ao entrar no detalhe (a lista
+  // desmonta) — sem mover o foco explicitamente ele cai para <body>, o que
+  // deixa quem navega por teclado/leitor de ecrã sem contexto de onde está.
+  // tabIndex=-1 no título (abaixo) torna-o um alvo de foco programático válido
+  // sem entrar no tab order normal.
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, [group.id]);
 
   const expenseEntries = useMemo(
     () => entries.filter((e) => e.kind !== 'settlement').slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')),
@@ -328,7 +341,11 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <span style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minWidth: 0 }}>
+        <span
+          ref={headingRef}
+          tabIndex={-1}
+          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minWidth: 0 }}
+        >
           <span style={{ fontSize: 20, lineHeight: 1 }} aria-hidden="true">{group.emoji || '👥'}</span>
           <span style={{ fontSize: 15, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.name}</span>
         </span>
@@ -475,6 +492,12 @@ export default function GroupsView() {
   const { open } = useUI();
   const toast = useToast();
   const [openId, setOpenId] = useState(null);
+  // Foco: refs dos cartões (por id de grupo) + do título da lista, para
+  // devolver o foco a um sítio com sentido quando se volta do detalhe (ver
+  // o useEffect a seguir a `openDerived`, mais abaixo).
+  const cardRefs = useRef({});
+  const listHeadingRef = useRef(null);
+  const pendingFocusIdRef = useRef(null);
 
   // Em preview (sem login) e sem nada próprio ainda, mostra o grupo de
   // exemplo — só para ler: nunca é despachado para o store (ver finance.js
@@ -510,6 +533,24 @@ export default function GroupsView() {
   // para que um grupo apagado noutro sítio deixe de resolver sozinho e caia
   // de volta na lista, em vez de renderizar um detalhe órfão.
   const openDerived = openId ? derived.find((d) => d.group.id === openId) : null;
+
+  // Foco ao voltar à lista (Voltar, ou o grupo aberto ter desaparecido
+  // entretanto): guarda sempre o id do grupo em exibição enquanto o detalhe
+  // está aberto; quando `openDerived` cai a null, tenta focar o cartão desse
+  // id de volta na lista — e cai para o título da lista se o cartão já não
+  // existir (grupo apagado noutro sítio). O detalhe cuida do seu próprio
+  // foco ao abrir (ver useEffect em GroupDetail).
+  useEffect(() => {
+    if (openDerived) {
+      pendingFocusIdRef.current = openDerived.group.id;
+      return;
+    }
+    const id = pendingFocusIdRef.current;
+    pendingFocusIdRef.current = null;
+    if (!id) return;
+    (cardRefs.current[id] || listHeadingRef.current)?.focus();
+  }, [openDerived]);
+
   if (openDerived) {
     return (
       <GroupDetail
@@ -530,7 +571,7 @@ export default function GroupsView() {
   if (groups.length === 0) {
     return (
       <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
-        <GroupsHeader onManagePeople={() => open('person')} />
+        <GroupsHeader onManagePeople={() => open('person')} headingRef={listHeadingRef} />
         <div className="empty">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -574,7 +615,7 @@ export default function GroupsView() {
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px calc(40px + var(--safe-bottom))' }}>
-      <GroupsHeader onManagePeople={() => open('person')} />
+      <GroupsHeader onManagePeople={() => open('person')} headingRef={listHeadingRef} />
       <div className="hero fadeUp" style={{ margin: '6px 0 16px' }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85 }}>
           Saldo global dos grupos
@@ -603,7 +644,14 @@ export default function GroupsView() {
             Ativos
           </div>
           {activeGroups.map((d) => (
-            <GroupCard key={d.group.id} group={d.group} totals={d.totals} settled={false} onOpen={() => setOpenId(d.group.id)} />
+            <GroupCard
+              key={d.group.id}
+              group={d.group}
+              totals={d.totals}
+              settled={false}
+              onOpen={() => setOpenId(d.group.id)}
+              btnRef={(el) => { cardRefs.current[d.group.id] = el; }}
+            />
           ))}
         </>
       )}
@@ -614,7 +662,14 @@ export default function GroupsView() {
             Acertados
           </div>
           {settledGroups.map((d) => (
-            <GroupCard key={d.group.id} group={d.group} totals={d.totals} settled onOpen={() => setOpenId(d.group.id)} />
+            <GroupCard
+              key={d.group.id}
+              group={d.group}
+              totals={d.totals}
+              settled
+              onOpen={() => setOpenId(d.group.id)}
+              btnRef={(el) => { cardRefs.current[d.group.id] = el; }}
+            />
           ))}
         </>
       )}

@@ -35,6 +35,9 @@ export function splitEqual(amount, personIds, payerId) {
 
 export function splitExact(amount, entries) {
   const list = Array.isArray(entries) ? entries : [];
+  if (list.some((e) => (Number(e.amount) || 0) < 0)) {
+    return { shares: null, error: 'Os valores não podem ser negativos.' };
+  }
   const total = toCents(amount);
   const sum = list.reduce((acc, e) => acc + toCents(e.amount), 0);
   if (sum !== total) {
@@ -47,8 +50,14 @@ export function splitExact(amount, entries) {
   return { shares: list.map((e) => ({ personId: e.personId, amount: fromCents(toCents(e.amount)) })), error: null };
 }
 
-export function splitPercent(amount, entries) {
+/* `payerId` segue a mesma regra de splitEqual (Invariantes do spec): o
+   cêntimo que sobra do arredondamento vai primeiro para o pagador (é quem
+   adiantou o dinheiro), só depois pela ordem da lista. */
+export function splitPercent(amount, entries, payerId) {
   const list = Array.isArray(entries) ? entries : [];
+  if (list.some((e) => (Number(e.percent) || 0) < 0)) {
+    return { shares: null, error: 'As percentagens não podem ser negativas.' };
+  }
   const pct = list.reduce((acc, e) => acc + Math.round((Number(e.percent) || 0) * 100), 0);
   if (pct !== 10000) {
     const shown = String(Math.round(pct / 100 * 100) / 100).replace('.', ',');
@@ -57,7 +66,9 @@ export function splitPercent(amount, entries) {
   const total = toCents(amount);
   const cents = list.map((e) => Math.floor((total * Math.round((Number(e.percent) || 0) * 100)) / 10000));
   let rest = total - cents.reduce((a, c) => a + c, 0);
-  for (let i = 0; rest > 0; i = (i + 1) % cents.length) {
+  const payerIdx = list.findIndex((e) => e.personId === payerId);
+  const startIdx = payerIdx >= 0 ? payerIdx : 0;
+  for (let i = startIdx; rest > 0; i = (i + 1) % cents.length) {
     cents[i] += 1;
     rest -= 1;
   }
@@ -70,7 +81,7 @@ export function resolveShares(mode, amount, entries, payerId) {
   if (toCents(amount) <= 0) return { shares: null, error: 'O valor tem de ser maior que zero.' };
   if (!list.length) return { shares: null, error: 'Escolhe pelo menos uma pessoa.' };
   if (mode === 'exact') return splitExact(amount, list);
-  if (mode === 'percent') return splitPercent(amount, list);
+  if (mode === 'percent') return splitPercent(amount, list, payerId);
   return { shares: splitEqual(amount, list.map((e) => e.personId), payerId), error: null };
 }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { toCents, fromCents, splitEqual, splitExact, splitPercent, resolveShares } from './split.js';
 import { fm } from './format.js';
+import { bdgDefault } from './finance.js';
 
 describe('toCents / fromCents', () => {
   it('converte sem erro de vírgula flutuante', () => {
@@ -62,6 +63,14 @@ describe('splitExact', () => {
     expect(r.shares).toBeNull();
     expect(r.error).toBe('Sobram 20,00 € face ao total.');
   });
+
+  it('rejeita um valor negativo mesmo que a soma bata certo com o total', () => {
+    // -10 + 110 = 100 = o total — sem a validação isto passava, dando a
+    // "a" uma parte negativa (uma dívida às avessas dentro da despesa).
+    const r = splitExact(100, [{ personId: 'a', amount: -10 }, { personId: 'b', amount: 110 }]);
+    expect(r.shares).toBeNull();
+    expect(r.error).toBe('Os valores não podem ser negativos.');
+  });
 });
 
 describe('splitPercent', () => {
@@ -85,6 +94,37 @@ describe('splitPercent', () => {
     const r = splitPercent(100, [{ personId: 'me', percent: 30 }, { personId: 'a', percent: 60 }]);
     expect(r.shares).toBeNull();
     expect(r.error).toBe('As percentagens somam 90% — têm de somar 100%.');
+  });
+
+  it('o cêntimo que sobra do arredondamento vai para o pagador (payerId), tal como em splitEqual', () => {
+    const entries = [
+      { personId: 'me', percent: 33.33 },
+      { personId: 'a', percent: 33.33 },
+      { personId: 'b', percent: 33.34 },
+    ];
+    const r = splitPercent(1, entries, 'a');
+    expect(r.error).toBeNull();
+    expect(r.shares.find((s) => s.personId === 'a').amount).toBe(0.34);
+    expect(r.shares.find((s) => s.personId === 'me').amount).toBe(0.33);
+    expect(r.shares.find((s) => s.personId === 'b').amount).toBe(0.33);
+  });
+
+  it('sem payerId (ou payer fora da lista) segue a ordem da lista, como antes', () => {
+    const entries = [
+      { personId: 'me', percent: 33.33 },
+      { personId: 'a', percent: 33.33 },
+      { personId: 'b', percent: 33.34 },
+    ];
+    const r = splitPercent(1, entries);
+    expect(r.shares.find((s) => s.personId === 'me').amount).toBe(0.34);
+  });
+
+  it('rejeita uma percentagem negativa mesmo que a soma bata certo em 100%', () => {
+    // -10 + 110 = 100% — sem a validação isto passava, dando a "a" uma parte
+    // negativa (uma dívida às avessas dentro da despesa).
+    const r = splitPercent(100, [{ personId: 'a', percent: -10 }, { personId: 'b', percent: 110 }]);
+    expect(r.shares).toBeNull();
+    expect(r.error).toBe('As percentagens não podem ser negativas.');
   });
 });
 
@@ -219,9 +259,13 @@ describe('shareText', () => {
 });
 
 describe('GROUP_CATS', () => {
-  it('cada categoria mapeia para uma categoria do orçamento', () => {
+  it('cada categoria mapeia para um id de categoria que existe mesmo no orçamento (bdgDefault)', () => {
     expect(GROUP_CATS.map((c) => c.id)).toEqual(['stay', 'food', 'transp', 'fun', 'shop', 'other']);
-    GROUP_CATS.forEach((c) => expect(typeof c.cat).toBe('string'));
+    // typeof === 'string' passava mesmo com um id inventado (ex.: 'xyz') —
+    // uma despesa de grupo refletida nas Despesas pessoais (reflectExpenseFor,
+    // store.jsx) gravaria um `cat` que a UI do orçamento não reconhece.
+    const budgetIds = new Set(bdgDefault.map((b) => b.id));
+    GROUP_CATS.forEach((c) => expect(budgetIds.has(c.cat), `${c.id} -> cat "${c.cat}" não existe em bdgDefault`).toBe(true));
     expect(groupCatMeta('food').cat).toBe('rest');
     expect(groupCatMeta('inexistente').id).toBe('other');
   });

@@ -81,6 +81,43 @@ describe('GroupsView — detalhe', () => {
     expect(screen.getByText(/Novo grupo/i)).toBeTruthy();
     expect(cap.errors).toEqual([]);
   });
+
+  // Finding M11 (revisão final): GroupsView troca TODA a subárvore ao abrir/
+  // fechar o detalhe (a lista/o detalhe desmonta por completo) — sem gerir o
+  // foco explicitamente, ele cai para <body> em ambos os sentidos, deixando
+  // quem navega por teclado ou leitor de ecrã sem contexto de onde está.
+  describe('gestão de foco (M11)', () => {
+    it('abrir um grupo move o foco para o título do detalhe', async () => {
+      await renderWithStore(<GroupsView />, { fixture: richFixture(), tab: 'groups' });
+      fireEvent.click(screen.getByText('Férias Algarve'));
+      expect(document.activeElement.textContent).toContain('Férias Algarve');
+      expect(document.activeElement.getAttribute('tabindex')).toBe('-1');
+    });
+
+    it('"Voltar" devolve o foco ao cartão do grupo na lista', async () => {
+      await renderWithStore(<GroupsView />, { fixture: richFixture(), tab: 'groups' });
+      const card = screen.getByText('Férias Algarve').closest('button');
+      fireEvent.click(card);
+      fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
+      expect(document.activeElement).toBe(screen.getByText('Férias Algarve').closest('button'));
+    });
+
+    it('grupo apagado noutro sítio enquanto o detalhe está aberto devolve o foco ao título da lista', async () => {
+      let actionsRef;
+      await renderWithStore(<GroupsView />, {
+        fixture: richFixture(),
+        tab: 'groups',
+        onReady: ({ actions }) => { actionsRef = actions; },
+      });
+      fireEvent.click(screen.getByText('Férias Algarve'));
+      // O cartão já não existe para onde voltar — cai para o título "Grupos".
+      act(() => {
+        actionsRef.deleteGroup('g-ferias');
+      });
+      expect(document.activeElement).toBe(screen.getByText('Grupos'));
+      expect(document.activeElement.getAttribute('tabindex')).toBe('-1');
+    });
+  });
 });
 
 // Finding 1 (revisão da Task 12): "Gerir pessoas" só era alcançável a partir

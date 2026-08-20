@@ -14,7 +14,7 @@
      - Nova meta         -> open('goal')
      - Nova recorrência  -> open('rec')
      - Nova conta        -> open('acct')
-     - Despesa de grupo  -> depende de quantos grupos ativos existem (Task 8):
+     - Despesa de grupo  -> depende de quantos grupos ativos existem:
        nenhum -> open('group') (não há para onde lançar a despesa, cria-se um
        primeiro); exatamente um -> open('gexp', {groupId}) direto para esse
        grupo; vários -> não há grupo óbvio, navega para o tab Grupos para o
