@@ -20,7 +20,7 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { ME_ID } from '../store/store.jsx';
-import { computeBalances, simplifyDebts, groupTotals, isSettled, groupCatMeta, shareText } from '../lib/split.js';
+import { computeBalances, simplifyDebts, groupTotals, isSettled, groupCatMeta, shareText, toCents, fromCents } from '../lib/split.js';
 import { fm, fmDateShort } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 
@@ -131,8 +131,8 @@ function MemberAvatar({ id, nameOf, colorOf, size = 30 }) {
 // (paguei mais do que a minha parte), negativo = devo (a minha parte por pagar).
 function myImpactCents(entry) {
   const myShare = (entry.shares || []).find((s) => s.personId === ME_ID)?.amount || 0;
-  const paid = entry.payerId === ME_ID ? Number(entry.amount) || 0 : 0;
-  return Math.round((paid - myShare) * 100);
+  const paidCents = entry.payerId === ME_ID ? toCents(entry.amount) : 0;
+  return paidCents - toCents(myShare);
 }
 
 // Linha de uma despesa (separador "Despesas"): categoria, descrição, quem pagou
@@ -161,7 +161,7 @@ function ExpenseRow({ entry, nameOf, onOpen }) {
           <span className="m" style={{ fontSize: 13, fontWeight: 700, display: 'block' }}>{fm(entry.amount)}</span>
           {impactCents !== 0 && (
             <span style={{ fontSize: 11, fontWeight: 600, color: impactCents > 0 ? 'var(--success)' : 'var(--signal)' }}>
-              {impactCents > 0 ? 'emprestaste ' : 'deves '}{fm(Math.abs(impactCents) / 100)}
+              {impactCents > 0 ? 'emprestaste ' : 'deves '}{fm(fromCents(Math.abs(impactCents)))}
             </span>
           )}
         </span>
@@ -195,12 +195,13 @@ function ActivityRow({ entry, nameOf }) {
 
 // Barra de saldo por membro: cresce para a direita do centro quando positivo
 // (tem a receber), para a esquerda quando negativo (deve). A cor nunca é o
-// único sinal — o texto "Tens a receber"/"Deves"/"Acertado" acompanha sempre.
-// O nome de cada pessoa vai só no avatar (aria-label); o texto por extenso
-// "quem paga a quem" fica reservado à lista de acertos (SettleRow), que é o
-// sítio natural para essa pergunta.
+// único sinal — o texto "Tens a receber"/"Deves"/"Acertado" acompanha sempre,
+// e o nome vai por extenso ao lado do avatar (não só no aria-label): um
+// membro com saldo exatamente zero não aparece em simplifyDebts, por isso
+// esta linha é o único sítio garantido onde o nome fica visível para toda a
+// gente, não só para quem usa leitor de ecrã ou passa o rato pelo avatar.
 function BalanceBar({ id, balance, maxAbsCents, nameOf, colorOf }) {
-  const cents = Math.round((Number(balance) || 0) * 100);
+  const cents = toCents(balance);
   const ratio = maxAbsCents > 0 ? Math.min(1, Math.abs(cents) / maxAbsCents) : 0;
   const widthPct = ratio * 50;
   const color = cents > 0 ? 'var(--success)' : cents < 0 ? 'var(--signal)' : 'var(--text3)';
@@ -208,7 +209,10 @@ function BalanceBar({ id, balance, maxAbsCents, nameOf, colorOf }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div className="rw" style={{ marginBottom: 6 }}>
-        <MemberAvatar id={id} nameOf={nameOf} colorOf={colorOf} size={26} />
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <MemberAvatar id={id} nameOf={nameOf} colorOf={colorOf} size={26} />
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{nameOf(id)}</span>
+        </span>
         <span className="m" style={{ fontSize: 12, fontWeight: 700, color }}>{label}</span>
       </div>
       <div style={{ position: 'relative', height: 8, background: 'var(--elevated)', borderRadius: 4 }}>
@@ -272,7 +276,7 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
   const activity = useMemo(() => entries.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)), [entries]);
   const plan = useMemo(() => simplifyDebts(balances), [balances]);
   const maxAbsCents = useMemo(
-    () => Math.max(1, ...(group.memberIds || []).map((id) => Math.abs(Math.round((balances[id] || 0) * 100)))),
+    () => Math.max(1, ...(group.memberIds || []).map((id) => Math.abs(toCents(balances[id])))),
     [group.memberIds, balances]
   );
 
@@ -357,11 +361,14 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
 
       {seg === 'bal' && (
         <>
-          <div className="cd" style={{ marginBottom: 16 }}>
-            {(group.memberIds || []).map((id) => (
-              <BalanceBar key={id} id={id} balance={balances[id] || 0} maxAbsCents={maxAbsCents} nameOf={nameOf} colorOf={colorOf} />
-            ))}
-          </div>
+          <section aria-labelledby="grp-bal-heading">
+            <div id="grp-bal-heading" className="lb" style={{ margin: '0 4px 8px' }}>Saldo de cada pessoa</div>
+            <div className="cd" style={{ marginBottom: 16 }}>
+              {(group.memberIds || []).map((id) => (
+                <BalanceBar key={id} id={id} balance={balances[id] || 0} maxAbsCents={maxAbsCents} nameOf={nameOf} colorOf={colorOf} />
+              ))}
+            </div>
+          </section>
 
           <div className="lb" style={{ margin: '0 4px 8px' }}>Para acertar</div>
           {plan.length === 0 ? (
