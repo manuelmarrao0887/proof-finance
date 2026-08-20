@@ -56,6 +56,8 @@ const MODAL_COMPONENTS = {
   position: lazy(() => import('../modals/PositionModal.jsx')),
   transfer: lazy(() => import('../modals/TransferModal.jsx')),
   cardpay: lazy(() => import('../modals/CardPayModal.jsx')),
+  group: lazy(() => import('../modals/GroupSheet.jsx')),
+  person: lazy(() => import('../modals/PersonSheet.jsx')),
 };
 
 /* ── Icons (inline SVG, no emoji) ──────────────────────────────────────── */

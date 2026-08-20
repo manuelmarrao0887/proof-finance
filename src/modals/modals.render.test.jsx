@@ -38,11 +38,13 @@ import BalanceUpdateSheet from './BalanceUpdateSheet.jsx';
 import CardPayModal from './CardPayModal.jsx';
 import CatManagerModal from './CatManagerModal.jsx';
 import GoalModal from './GoalModal.jsx';
+import GroupSheet from './GroupSheet.jsx';
 import HousingModal from './HousingModal.jsx';
 import ImportStatementSheet from './ImportStatementSheet.jsx';
 import IncomeModal from './IncomeModal.jsx';
 import MoreMenu from './MoreMenu.jsx';
 import PatchNotesSheet from './PatchNotesSheet.jsx';
+import PersonSheet from './PersonSheet.jsx';
 import PositionModal from './PositionModal.jsx';
 import RecModal from './RecModal.jsx';
 import RulesModal from './RulesModal.jsx';
@@ -60,11 +62,13 @@ const MODALS = [
   ['CardPayModal', CardPayModal, 'cardpay', [true, { cardLabel: 'Revolut · Cartão de Crédito' }]],
   ['CatManagerModal', CatManagerModal, 'cat', [true]],
   ['GoalModal', GoalModal, 'goal', [true, { id: 'g1' }]],
+  ['GroupSheet', GroupSheet, 'group', [true, { id: 'g-ferias' }]],
   ['HousingModal', HousingModal, 'housing', [true]],
   ['ImportStatementSheet', ImportStatementSheet, 'stmt', [true]],
   ['IncomeModal', IncomeModal, 'income', [true, { id: 'sal' }]],
   ['MoreMenu', MoreMenu, 'more', [true]],
   ['PatchNotesSheet', PatchNotesSheet, 'patchNotes', [true]],
+  ['PersonSheet', PersonSheet, 'person', [true]],
   ['PositionModal', PositionModal, 'position', [true, { id: 'p1' }]],
   ['RecModal', RecModal, 'rec', [true, { id: 'rec-gym' }]],
   ['RulesModal', RulesModal, 'rules', [true]],
