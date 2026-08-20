@@ -265,7 +265,7 @@
     <p>Lista para validar manualmente que a app está a funcionar. Marca cada caso como <b>Passou</b>, <b>Falhou</b> ou <b>N/A</b>. O estado fica guardado neste navegador.</p>
     <div class="meta-row">
       <span class="pill">Versão app: branch <code>react</code></span>
-      <span class="pill">Atualizado: 2026-06-20</span>
+      <span class="pill">Atualizado: 2026-08-19</span>
       <span class="pill" id="hdrCount">0 / 0 testados</span>
     </div>
   </div>
@@ -353,6 +353,25 @@
    Steps render as an ordered list; single-string steps render as a paragraph.
    ────────────────────────────────────────────────────────────────────────── */
 const GROUPS = [
+  { id: 'T43', title: 'Grupos (despesas partilhadas)', tests: [
+    { id: 'T43.1', title: 'Criar grupo', steps: ['Grupos → "+ Novo grupo"', 'Preencher o nome e escolher pelo menos uma pessoa nos chips (ou "+ Nova pessoa")', 'Criar grupo'], expect: 'Toast "Grupo criado"; o grupo aparece em "Ativos" com "Tu" + a(s) pessoa(s) escolhida(s) (memberIds sempre com "Tu" em primeiro). Sem nome ou com só "Tu" nos membros, mostra erro ("Dá um nome ao grupo." / "Um grupo precisa de pelo menos mais uma pessoa.") e não grava.' },
+    { id: 'T43.2', title: 'Adicionar pessoa', steps: ['Num grupo → "+ Nova pessoa" (ou "Gerir pessoas")', 'Escrever o nome', 'Adicionar'], expect: 'A pessoa aparece com um avatar cuja cor vem da paleta cíclica (nunca escolhida à mão). Um nome já usado (mesmo com maiúsculas diferentes) é recusado com "Já tens uma pessoa com esse nome."' },
+    { id: 'T43.3', title: 'Divisão igual', steps: ['Nova despesa de grupo → "Como dividir" = Igual', 'Escolher os participantes e o valor total'], expect: 'Cada participante fica com uma parte igual; os cêntimos residuais vão primeiro para quem pagou. A pré-visualização por pessoa soma exatamente o total.' },
+    { id: 'T43.4', title: 'Divisão por valores exatos', steps: ['"Como dividir" = Valores', 'Escrever um valor por pessoa que não bata certo com o total', 'Guardar'], expect: 'Erro "Faltam X para chegar ao total." ou "Sobram X face ao total." Corrigindo os valores até somarem o total, a despesa grava sem erro.' },
+    { id: 'T43.5', title: 'Divisão por percentagem', steps: ['"Como dividir" = %', 'Escrever percentagens que não somem 100%', 'Guardar'], expect: 'Erro "As percentagens somam N% — têm de somar 100%." Com as percentagens a somar 100%, grava; a parte de cada um é a percentagem × total, com os cêntimos residuais distribuídos até fechar certo.' },
+    { id: 'T43.6', title: 'Tirar participante', steps: ['Editar grupo → desativar o chip de uma pessoa sem despesas registadas nesse grupo'], expect: 'Sai de memberIds sem aviso; deixa de ser opção nas despesas/acertos futuros desse grupo.' },
+    { id: 'T43.7', title: 'Bloqueio ao remover membro com movimentos', steps: ['Grupo com uma despesa em que X é pagador, participante, ou lado de um acerto', 'Editar grupo → desativar o chip de X'], expect: 'Toast de erro "X já tem movimentos neste grupo — apaga-os primeiro para a poderes remover."; o chip mantém-se ativo (memberIds não muda).' },
+    { id: 'T43.8', title: 'Acertar parcialmente', steps: ['Saldos → "Acertar" numa linha do plano', 'Reduzir o valor sugerido para menos do que a dívida'], expect: 'Regista o acerto; o saldo dos dois muda pelo valor pago (não fica a zero); a dívida que sobra continua no plano "Para acertar".' },
+    { id: 'T43.9', title: 'Acertar por completo', steps: ['Saldos → "Acertar" numa linha do plano, com o valor sugerido (a dívida toda)'], expect: 'Depois de gravar, esse par sai do plano "Para acertar". Quando todos os pares chegam a zero, mostra "✓ Contas acertadas." e o grupo passa para "Acertados" na lista.' },
+    { id: 'T43.10', title: 'Aviso de sobre-pagamento', steps: ['Acertar contas → escrever um valor maior do que a dívida atual entre as duas pessoas'], expect: 'Mostra o aviso "Estás a registar mais do que a dívida atual." mas continua a deixar gravar.' },
+    { id: 'T43.11', title: 'Arquivar grupo', steps: ['Editar grupo → "Arquivar"'], expect: 'Toast "Grupo arquivado"; o grupo passa para "Acertados" (opacidade reduzida) mesmo com saldo por acertar. "Reativar" no mesmo sítio devolve-o a "Ativos".' },
+    { id: 'T43.12', title: 'Apagar grupo com movimentos ligados', steps: ['Grupo com o reflexo ligado e pelo menos uma despesa já refletida nas Despesas pessoais', 'Editar grupo → "Apagar grupo" → confirmar'], expect: 'O aviso de confirmação diz quantos movimentos vão ser apagados, incluindo quantos nas Despesas pessoais. Ao confirmar, o grupo, as suas despesas/acertos E os movimentos ligados em addedExp desaparecem todos — deixam de aparecer nas Despesas.' },
+    { id: 'T43.13', title: 'Ligar o reflexo', steps: ['Grupo com o reflexo desligado e despesas já registadas', 'Editar grupo → ligar "Refletir a minha parte nas Despesas"'], expect: 'Pede confirmação a dizer quantos movimentos vai criar. Ao confirmar, cria de imediato um movimento por cada despesa existente com parte própria acima de zero — não espera por "Guardar alterações". Toast "Despesas do grupo refletidas nas tuas Despesas".' },
+    { id: 'T43.14', title: 'Desligar o reflexo', steps: ['Grupo com o reflexo ligado e despesas já refletidas', 'Editar grupo → desligar "Refletir a minha parte nas Despesas"'], expect: 'Pede confirmação a dizer quantos movimentos vai apagar. Ao confirmar, apaga de imediato os movimentos pessoais ligados a esse grupo. Toast "Movimentos removidos das tuas Despesas"; as despesas do grupo continuam intactas, só os movimentos pessoais saem.' },
+    { id: 'T43.15', title: 'Bloqueio ao apagar pessoa', steps: ['Pessoa que pertence a pelo menos um grupo (mesmo sem despesas nesse grupo)', '"Gerir pessoas" → apagar essa pessoa → confirmar'], expect: 'Toast de erro "A {nome} está em grupos — remove-a do grupo antes de apagar."; a pessoa continua na lista.' },
+    { id: 'T43.16', title: 'Modo demo — CTAs desativados', steps: ['Sem sessão iniciada e sem grupos próprios ainda criados', 'Grupos → abrir o grupo de exemplo "Férias Algarve"'], expect: 'Mostra o aviso "Dados de exemplo — inicia sessão para criares os teus próprios grupos." O lápis de editar, as linhas de despesa, os botões "Acertar" (linha a linha e o atalho no fundo) e "Despesa" ficam desativados (cursor bloqueado, opacidade reduzida). "Partilhar resumo" continua a funcionar (não muda dados, só lê).' },
+    { id: 'T43.17', title: 'Isolamento dos dados (Firestore)', steps: ['Consola do Firebase → users/{uid}/people, /groups, /groupEntries'], expect: 'Os dados de grupos vivem nas mesmas subcoleções user-scoped do resto da app, dentro de users/{uid}, cobertas pela regra genérica já existente (match /{sub}/{docId}). Não foi aberta nenhuma regra nova para esta funcionalidade; usar Grupos normalmente não dá "Missing or insufficient permissions".' },
+  ]},
   { id: 'T26', title: 'Podes gastar & Insights (Resumo)', tests: [
     { id: 'T26.1', title: 'Cartão "Podes gastar"', steps: ['Abrir Resumo com rendimento e despesas registados'], expect: 'Mostra X€/dia = (rendimento − já gasto − fixas por pagar) ÷ dias que faltam. Indica os dias restantes e o total disponível.' },
     { id: 'T26.2', title: 'Fixas por pagar já descontadas', steps: ['Ter uma recorrente com dia futuro (ex.: dia 30)'], expect: 'O valor/dia já desconta essa fixa; a barra mostra a parte laranja (fixas) além do gasto (azul).' },
@@ -996,7 +1015,7 @@ const SECURITY = [
     fix: 'Documentar como privacidade. Se quiser mais: não sincronizar pinHash, PBKDF2 com salt + atraso entre tentativas.' },
   { sev: 'low', status: 'rec', title: 'Regras Firestore sem validação de campos', loc: 'firestore.rules',
     risk: 'User-scoped, default-deny, cobrem raiz e subcoleções — corretas. Não validam forma/tamanho (só self-DoS/quota).',
-    fix: 'Opcional: restringir {sub} aos 10 nomes conhecidos.' },
+    fix: 'Opcional: restringir {sub} aos 13 nomes conhecidos.' },
   { sev: 'low', status: 'rec', title: 'Config Firebase exposta no bundle', loc: 'firebase/client.js',
     risk: 'A apiKey do Firebase é um identificador público. O acesso é governado pelas regras Firestore.',
     fix: 'Restringir a key por referrer HTTP na Google Cloud Console; Authorized domains + App Check.' },

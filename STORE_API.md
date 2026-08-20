@@ -42,6 +42,11 @@ of runtime fields.
   positions: [],                               // investimentos {id,broker,asset,qty,avgPrice,currentPrice}
   transfers: [],                               // entre contas {id,from,to,amount,date,note,settledFrom,settledTo,cardPayment?}
   taxCfg: null,                                // fiscal PT {imiAmount,iucMonths:[],couple,irs}
+  people: [],                                  // contactos locais dos grupos: {id, name, color, createdAt}
+  groups: [],                                  // {id, name, emoji, type, currency, memberIds:[ME_ID,...], start, end, reflectMine, archived, createdAt}
+  groupEntries: [],                            // despesa: {id, groupId, kind:'expense', desc, amount, date, payerId,
+                                                //   splitMode, shares:[{personId,amount}], gcat, notes, reflect, linkedExpId, createdAt}
+                                                // acerto:  {id, groupId, kind:'settlement', fromId, toId, amount, date, method, createdAt}
 }
 ```
 `PERSISTED_KEYS` (exported) é a lista canónica dos campos persistidos.
@@ -57,10 +62,14 @@ numa **subcoleção** (ver `src/firebase/data.js`):
 | `incomes` | `incomes` | | `recurring` | `recurring` |
 | `balanceLog` | `balances` | | `positions` | `positions` |
 | `bdg` | `categories` | | `rules` | `rules` |
+| `people` | `people` | | `groups` | `groups` |
+| `groupEntries` | `groupEntries` | | | |
 
 `loadUserData` monta tudo de volta na forma antiga (migração 1× marcada com
 `schemaVersion:2`); `syncUserData`/`computeDiff` escrevem só o que mudou.
 As regras do Firestore **têm de cobrir `match /users/{uid}/{sub}/{docId}`**.
+O bloco é genérico (`match /{sub}/{docId}`), por isso `people`/`groups`/
+`groupEntries` já ficam cobertos sem abrir nenhuma regra nova.
 
 ### Contas: categorias especiais
 `customAccts[].category === 'Cartão de crédito'` (`finance.CARD_CAT`) marca um
@@ -245,6 +254,86 @@ customAccts, rules, em, forecastMonths`.
 | `lib/importBank.js` | parser determinístico do extrato; `isTransferDesc` = **só contas próprias**; `bankIncomeCandidates` (receitas) |
 | `lib/exportcsv.js` | exportação CSV para Excel PT (`;` + vírgula decimal + BOM) |
 | `lib/budget.js`, `lib/goals.js`, `lib/investments.js`, `lib/reports.js`, `lib/reminders.js`, `lib/mortgage.js`, `lib/lock.js` | orçamento com rollover, metas com reserva mensal, P&L de posições, relatórios (+`yearSummary`), lembretes, crédito habitação, PIN/FaceID |
+| `lib/split.js` | matemática pura das despesas partilhadas (secção "Grupos"): `resolveShares`/`splitEqual`/`splitExact`/`splitPercent`, `computeBalances`, `simplifyDebts` (acerto com poucas transferências — greedy, não garante o mínimo global), `groupTotals`, `shareText`, `GROUP_CATS`/`groupCatMeta`. Tudo em cêntimos inteiros por dentro (`toCents`/`fromCents`), euros só na fronteira. Ver §4c. |
+
+## 4c. Grupos (despesas partilhadas)
+
+Três slices persistidas (`people`, `groups`, `groupEntries`), geridas em
+`src/store/store.jsx`. Toda a matemática vive em `src/lib/split.js` (pura, sem
+React/Firebase — ver §4b). UI: `views/GroupsView.jsx` (lista + detalhe com
+separadores Despesas/Saldos/Atividade) e as sheets `modals/GroupSheet.jsx`
+(criar/editar grupo), `modals/PersonSheet.jsx` (gerir pessoas),
+`modals/GroupExpenseSheet.jsx` (despesa de grupo) e `modals/SettleSheet.jsx`
+(acertar contas).
+
+### Constantes e helpers exportados de `store.jsx`
+- `ME_ID = 'me'` — id reservado do próprio utilizador nos grupos.
+- `AVATAR_COLORS` — paleta cíclica de 7 cores para os avatares das pessoas.
+- `nextAvatarColor(people)` — cor seguinte da paleta (`people.length % 7`);
+  fonte única partilhada por `addPerson` (grava) e `PersonSheet` (pré-visualiza),
+  para nunca divergirem.
+- `reflectExpenseFor(group, entry)` — devolve o movimento pessoal a refletir
+  em `addedExp` (`{desc, amount, cat, date, groupEntryId}`) para uma despesa de
+  grupo, ou `null`. É a ÚNICA fonte desta decisão — usada por `addGroupEntry`,
+  `updateGroupEntry` e `setGroupReflect`, nunca recalculada em paralelo.
+- `withExpenseIds`, `orphanedGroupEntries` — helpers internos (ver invariante 5).
+
+### Actions (`actions.*`)
+- Pessoas: `addPerson(p)`, `updatePerson(id, partial)`, `deletePerson(id)` →
+  `boolean` (`false` = bloqueado, não apagou nada — ver invariante 7).
+- Grupos: `addGroup(g)`, `updateGroup(id, partial)`,
+  `archiveGroup(id, archived=true)`, `deleteGroup(id)`.
+- Movimentos de grupo (despesas e acertos, ambos em `groupEntries`):
+  `addGroupEntry(entry)` → devolve o `id` gerado, `updateGroupEntry(id, partial)`,
+  `deleteGroupEntry(id)`, `setGroupReflect(groupId, on)` — liga/desliga o
+  reflexo de **todas** as despesas existentes do grupo de uma vez (cria ou
+  apaga os movimentos pessoais em bloco).
+
+### Referência bidirecional (`groupEntryId` / `linkedExpId`)
+Uma despesa pessoal criada a partir de uma despesa de grupo carrega
+`groupEntryId` (aponta para a `groupEntry` de origem); a `groupEntry` carrega
+`linkedExpId` (aponta de volta para o movimento em `addedExp`). Sem movimento
+refletido, `linkedExpId` é `null`.
+
+### Invariantes (reforçados no store — não só na UI)
+1. **Só a parte do utilizador entra em `addedExp`.** `addGroupEntry`,
+   `updateGroupEntry` e `setGroupReflect` decidem sempre via
+   `reflectExpenseFor`; nunca lançam o total pago.
+2. **Os acertos nunca tocam em `addedExp`.** `reflectExpenseFor` devolve
+   `null` de imediato quando `entry.kind === 'settlement'`.
+3. **`'me'` é reservado**: nunca existe em `state.people` (é sempre o "Tu"
+   da UI).
+4. **`memberIds` contém `'me'` exatamente uma vez, sempre em primeiro**
+   (`withMe`, aplicada em `addGroup`; `updateGroup` confia no
+   `partial.memberIds` já vir assim das sheets — nunca reordena sozinho).
+5. **`linkedExpId` reconcilia-se sozinho.** Uma despesa pessoal ligada a uma
+   group entry pode sair de `addedExp` por duas vias fora do fluxo de grupos:
+   `deleteExpense(id)` e `setAddedExp(list)` (substituição em bloco — limpar
+   duplicadas, apagar o mês, reaplicar regras, importações). As duas
+   reconciliam `groupEntries` (`orphanedGroupEntries`), pondo
+   `linkedExpId: null` em quem perdeu o movimento — sem isto, editar essa
+   entry mais tarde falhava a repor o movimento em silêncio.
+6. `deleteGroup(id)` apaga o grupo + as suas `groupEntries` + qualquer
+   movimento pessoal ligado (`linkedExpId`) em `addedExp`.
+7. `deletePerson(id)` devolve `false` (não apaga nada) se a pessoa ainda
+   pertence a algum `group.memberIds` — rede de segurança atrás do bloqueio
+   já feito na UI (`PersonSheet`). Bloqueio irmão, mas por outro critério:
+   `GroupSheet` impede tirar alguém de `memberIds` enquanto essa pessoa ainda
+   tiver movimentos (pagador, parte de uma despesa, ou lado de um acerto)
+   **nesse grupo** (`personLockedIn`, local à sheet).
+
+### Preview / modo demo
+`getGroupsData(state, preview)`, em `lib/finance.js`: se `preview` e o
+utilizador ainda não tem nada próprio (`people`/`groups`/`groupEntries` todos
+vazios), devolve o grupo de exemplo de `demoGroups()` (função pura, nunca
+gravada no store) com `isDemo: true`; caso contrário devolve sempre
+`state.{people,groups,groupEntries}` com `isDemo: false`. Chamada tanto pelo
+indicador do Resumo (`OverviewView`) como por `GroupsView`, para as duas
+vistas nunca mostrarem coisas diferentes uma da outra. `isDemo` desativa as
+ações que mutariam o grupo de exemplo (editar, acertar, nova despesa) — as
+sheets resolvem sempre por `state.groups`, nunca pelo seed, por isso o
+detalhe tem de desativar essas ações em vez de as deixar rebentar em
+silêncio.
 
 ## 5. Shared components
 

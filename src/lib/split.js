@@ -111,8 +111,9 @@ export function computeBalances(entries, memberIds) {
   return Object.fromEntries(ids.map((id) => [id, fromCents(cents[id])]));
 }
 
-/* Plano de pagamentos com o menor número de transferências: o maior devedor
-   paga ao maior credor até um dos dois ficar a zero. */
+/* Plano de pagamentos guloso: o maior devedor paga ao maior credor até um dos
+   dois ficar a zero. Garante no máximo n-1 transferências para n pessoas, mas
+   NÃO garante o mínimo global possível (esse é NP-difícil de calcular). */
 export function simplifyDebts(balances) {
   const credit = Object.entries(balances || {})
     .map(([id, v]) => ({ id, c: toCents(v) }))

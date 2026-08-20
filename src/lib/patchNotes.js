@@ -6,6 +6,18 @@
 
 export const PATCH_NOTES = [
   {
+    version: 7,
+    date: '2026-08-19',
+    title: 'Grupos — despesas partilhadas',
+    items: [
+      'Novo: grupos para dividir despesas com amigos (férias, casa, jantares).',
+      'Novo: divisão igual, por valores exatos ou por percentagem.',
+      'Novo: saldos por pessoa e plano com o menor número de transferências.',
+      'Novo: acertar contas e partilhar o resumo do grupo.',
+      'Melhoria: nas tuas Despesas entra só a tua parte das despesas de grupo.',
+    ],
+  },
+  {
     version: 6,
     date: '2026-07-31',
     title: 'Análise: onde poupar, despesas suspeitas e fecho do mês',

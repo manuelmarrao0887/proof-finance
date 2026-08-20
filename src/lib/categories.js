@@ -28,6 +28,7 @@ export const CAT_META = {
   cmb: { icon: 'fuel', color: '#f25555' },
   neg: { icon: 'briefcase', color: '#3b6fee' },
   laz: { icon: 'ticket', color: '#f5a623' },
+  comp: { icon: 'cart', color: '#12b3a6' },
   trf: { icon: 'transfer', color: '#6b7280' },
   out: { icon: 'dots', color: '#9aa3b5' },
 };
