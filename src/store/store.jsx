@@ -38,6 +38,14 @@ export const ME_ID = 'me';
 // Paleta dos avatares das pessoas (tokens do sistema visual).
 export const AVATAR_COLORS = ['#3b6fee', '#12b3a6', '#f5a623', '#f25592', '#7b5fe0', '#3fc97a', '#f25555'];
 
+// Cor cíclica seguinte da paleta, dada a lista atual de pessoas. Única fonte
+// desta fórmula: addPerson usa-a para gravar, PersonSheet usa-a para
+// pré-visualizar antes de gravar — assim as duas nunca podem divergir.
+export function nextAvatarColor(people) {
+  const n = Array.isArray(people) ? people.length : 0;
+  return AVATAR_COLORS[n % AVATAR_COLORS.length];
+}
+
 // Garante o invariante memberIds = ['me', ...pessoas]: ME_ID presente exatamente
 // uma vez e sempre em primeiro. Nunca confiar no chamador (UI ou dados vindos
 // de fora) para manter isto — reforçado aqui, não na UI.
@@ -473,7 +481,7 @@ export function StoreProvider({ children }) {
       // ── Grupos: pessoas ──────────────────────────────────────────────
       addPerson: (p) => {
         const list = getState().people || [];
-        const color = p.color || AVATAR_COLORS[list.length % AVATAR_COLORS.length];
+        const color = p.color || nextAvatarColor(list);
         // id gerado nunca é anulado por um id vindo do chamador (mesma regra
         // de addExpense): mantém o id se vier definido, senão gera um novo.
         const withId = p.id ? p : { ...p, id: uid() };

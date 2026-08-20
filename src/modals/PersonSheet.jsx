@@ -15,7 +15,7 @@
 import React, { useState } from 'react';
 import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
-import { useStore, AVATAR_COLORS } from '../store/store.jsx';
+import { useStore, nextAvatarColor } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 
 const EMPTY_DRAFT = { editId: null, name: '' };
@@ -58,8 +58,10 @@ export default function PersonSheet() {
 
   const people = (state.people || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt'));
   const isEdit = !!draft.editId;
-  // Cor que addPerson vai atribuir à próxima pessoa (paleta cíclica).
-  const nextColor = AVATAR_COLORS[(state.people || []).length % AVATAR_COLORS.length];
+  // Cor que addPerson vai atribuir à próxima pessoa — mesma fórmula do store,
+  // nunca reimplementada aqui (senão a pré-visualização podia divergir do
+  // que fica realmente gravado).
+  const nextColor = nextAvatarColor(state.people);
   const editingPerson = isEdit ? people.find((p) => p.id === draft.editId) : null;
   const previewColor = editingPerson ? editingPerson.color || nextColor : nextColor;
 

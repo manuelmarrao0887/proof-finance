@@ -1,16 +1,28 @@
 /* Testes de comportamento de GroupSheet e PersonSheet (Task 7) — para além do
    smoke test em modals.render.test.jsx, cobre o que realmente importa:
    - as duas validações de cada sheet (mensagens exatas do brief);
-   - o bloqueio de remover um membro com movimentos no grupo (e que um membro
-     sem movimentos continua livre para sair);
+   - o bloqueio de remover um membro com movimentos no grupo — uma cláusula de
+     cada vez (ver `fixtureWithLockCases` abaixo), para que apagar qualquer
+     condição de personLockedIn (GroupSheet.jsx) faça pelo menos um teste
+     falhar, e não só quando várias condições coincidem na mesma pessoa;
    - o bloqueio de apagar uma pessoa em uso, com o toast exato;
    - o aviso do toggle "Refletir a minha parte nas Despesas" com a contagem
-     certa, nos dois sentidos, e que cancelar a confirmação não muda nada. */
+     certa, nos dois sentidos, e que cancelar a confirmação não muda nada;
+   - a cor de pré-visualização de uma nova pessoa nunca diverge da que fica
+     realmente gravada (as duas usam o mesmo helper `nextAvatarColor`). */
 import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
 import { richFixture } from '../test/fixtures.js';
+import { nextAvatarColor } from '../store/store.jsx';
+
+// jsdom normaliza `style.background` de "#rrggbb" para "rgb(r, g, b)" ao lê-lo
+// de volta — converte-se a cor esperada da mesma forma antes de comparar.
+function hexToRgb(hex) {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return 'rgb(' + [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(', ') + ')';
+}
 
 vi.mock('../firebase/client.js', () => ({
   auth: null, db: null, IS_FILE: false, initError: null,
@@ -84,6 +96,32 @@ describe('PersonSheet', () => {
     expect(screen.getByText('A Ana está em grupos — remove-a do grupo antes de apagar.')).toBeTruthy();
     expect(actionsRef.getState().people.some((p) => p.name === 'Ana')).toBe(true);
   });
+
+  it('a cor de pré-visualização da próxima pessoa é a mesma que fica gravada', async () => {
+    const fixture = richFixture();
+    let actionsRef;
+    const { container } = await renderWithStore(<PersonSheet />, {
+      fixture,
+      openModal: 'person',
+      payload: true,
+      onReady: ({ actions }) => { actionsRef = actions; },
+    });
+
+    // Ambos calculados por nextAvatarColor (store.jsx) — a pré-visualização
+    // (Avatar do formulário "Nova pessoa", o último span aria-hidden do DOM,
+    // depois dos avatares da lista) usa o mesmo helper que addPerson vai usar
+    // para gravar, por isso não podem divergir.
+    const expected = nextAvatarColor(fixture.people);
+    const avatars = container.querySelectorAll('span[aria-hidden="true"]');
+    const preview = avatars[avatars.length - 1];
+    expect(preview.style.background).toBe(hexToRgb(expected));
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nome' }), { target: { value: 'Carla' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+    const saved = actionsRef.getState().people.find((p) => p.name === 'Carla');
+    expect(saved.color).toBe(expected);
+  });
 });
 
 describe('GroupSheet', () => {
@@ -119,37 +157,105 @@ describe('GroupSheet', () => {
     expect(actionsRef.getState().groups.length).toBe(1);
   });
 
-  it('remoção de membro: bloqueia quem tem movimentos no grupo, permite quem não tem', async () => {
+  // Cada teste de remoção abaixo isola UMA cláusula de personLockedIn
+  // (GroupSheet.jsx): Rui só é pagador, Sofia só está num acerto, Mia não
+  // tem nenhuma entrada. João (fixture base, sem alterações) só está nas
+  // shares. Nenhuma destas pessoas está presa por mais do que uma condição —
+  // ao contrário da Ana da fixture, que é simultaneamente uma share e a
+  // origem de um acerto, por isso não serve para testar as cláusulas em
+  // isolado (apagar qualquer uma delas continuaria a bloqueá-la).
+  function fixtureWithLockCases() {
     const fixture = richFixture();
-    // Mia entra no grupo mas nunca aparece em nenhuma entrada — deve poder sair.
-    fixture.people = [...fixture.people, { id: 'p-mia', name: 'Mia', color: '#3fc97a', createdAt: 10 }];
+    fixture.people = [
+      ...fixture.people,
+      { id: 'p-rui', name: 'Rui', color: '#7b5fe0', createdAt: 10 },
+      { id: 'p-sofia', name: 'Sofia', color: '#f25592', createdAt: 11 },
+      { id: 'p-mia', name: 'Mia', color: '#3fc97a', createdAt: 12 },
+    ];
     fixture.groups = fixture.groups.map((g) =>
-      g.id === 'g-ferias' ? { ...g, memberIds: [...g.memberIds, 'p-mia'] } : g
+      g.id === 'g-ferias' ? { ...g, memberIds: [...g.memberIds, 'p-rui', 'p-sofia', 'p-mia'] } : g
     );
+    fixture.groupEntries = [
+      ...fixture.groupEntries,
+      // Rui pagou "Presente surpresa" mas não está nas próprias shares dela
+      // (nem de nenhuma outra) — pina isoladamente `e.payerId === personId`.
+      {
+        id: 'ge-payer-only', groupId: 'g-ferias', kind: 'expense', desc: 'Presente surpresa',
+        amount: 40, date: '2026-08-13', payerId: 'p-rui', splitMode: 'equal', gcat: 'other', reflect: true,
+        shares: [{ personId: 'me', amount: 20 }, { personId: 'p-ana', amount: 20 }],
+        linkedExpId: null, createdAt: 6,
+      },
+      // Sofia só é o destino de um acerto — nenhuma despesa, nenhuma share —
+      // pina isoladamente `e.fromId === personId || e.toId === personId`.
+      {
+        id: 'ge-settlement-only', groupId: 'g-ferias', kind: 'settlement',
+        fromId: 'me', toId: 'p-sofia', amount: 30, date: '2026-08-19', method: 'cash', createdAt: 7,
+      },
+    ];
+    return fixture;
+  }
 
+  it('bloqueia remover quem só está nas shares de uma despesa (João) — pina a cláusula shares', async () => {
+    await renderWithStore(<GroupSheet />, {
+      fixture: richFixture(),
+      openModal: 'group',
+      payload: { id: 'g-ferias' },
+    });
+
+    // João (p-joao): só está em ge-1.shares — nunca pagador, nunca num acerto.
+    const chip = screen.getByRole('button', { name: 'João' });
+    fireEvent.click(chip);
+
+    expect(screen.getByText(/já tem movimentos neste grupo/)).toBeTruthy();
+    expect(chip).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('bloqueia remover um pagador que não está nas próprias shares (Rui) — pina a cláusula payerId', async () => {
+    await renderWithStore(<GroupSheet />, {
+      fixture: fixtureWithLockCases(),
+      openModal: 'group',
+      payload: { id: 'g-ferias' },
+    });
+
+    const chip = screen.getByRole('button', { name: 'Rui' });
+    fireEvent.click(chip);
+
+    expect(screen.getByText(/já tem movimentos neste grupo/)).toBeTruthy();
+    expect(chip).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('bloqueia remover quem só está num acerto, sem despesas (Sofia) — pina a cláusula fromId/toId', async () => {
+    await renderWithStore(<GroupSheet />, {
+      fixture: fixtureWithLockCases(),
+      openModal: 'group',
+      payload: { id: 'g-ferias' },
+    });
+
+    const chip = screen.getByRole('button', { name: 'Sofia' });
+    fireEvent.click(chip);
+
+    expect(screen.getByText(/já tem movimentos neste grupo/)).toBeTruthy();
+    expect(chip).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('permite remover livremente um membro sem nenhuma entrada (Mia) — caso positivo', async () => {
     let actionsRef;
     await renderWithStore(<GroupSheet />, {
-      fixture,
+      fixture: fixtureWithLockCases(),
       openModal: 'group',
       payload: { id: 'g-ferias' },
       onReady: ({ actions }) => { actionsRef = actions; },
     });
 
-    // Ana: paga/partilha a despesa "Airbnb" e é origem do acerto — bloqueada.
-    const anaChip = screen.getByRole('button', { name: 'Ana' });
-    fireEvent.click(anaChip);
-    expect(screen.getByText(/já tem movimentos neste grupo/)).toBeTruthy();
-    expect(anaChip).toHaveAttribute('aria-pressed', 'true');
-
-    // Mia: sem entradas — sai livremente.
-    const miaChip = screen.getByRole('button', { name: 'Mia' });
-    fireEvent.click(miaChip);
-    expect(miaChip).toHaveAttribute('aria-pressed', 'false');
+    const chip = screen.getByRole('button', { name: 'Mia' });
+    fireEvent.click(chip);
+    expect(chip).toHaveAttribute('aria-pressed', 'false');
 
     fireEvent.click(screen.getByRole('button', { name: /guardar alterações/i }));
     const saved = actionsRef.getState().groups.find((g) => g.id === 'g-ferias');
-    expect(saved.memberIds).toContain('p-ana');
     expect(saved.memberIds).not.toContain('p-mia');
+    // Só a Mia saiu — a remoção livre de um membro não mexe nos outros.
+    expect(saved.memberIds).toContain('p-ana');
   });
 
   it('toggle "Refletir a minha parte nas Despesas" avisa quantos movimentos apaga, e cancelar não muda nada', async () => {
