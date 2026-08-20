@@ -91,6 +91,22 @@ export default function ExpensesView() {
 
   const openAdd = (editId) => ui.open('add', editId != null ? { editId } : true);
 
+  // Editar um movimento: se veio de um grupo (`groupEntryId`), abre a sheet de
+  // despesa de grupo com a entry correspondente (procurada em state.groupEntries,
+  // nunca confiada ao próprio movimento) — assim a edição mexe na divisão pelas
+  // pessoas, não só na minha parte. Sem entry correspondente (apagada entretanto,
+  // dado legado), cai no comportamento normal.
+  const openExpEdit = (x) => {
+    if (x.groupEntryId) {
+      const entry = (state.groupEntries || []).find((e) => e.id === x.groupEntryId);
+      if (entry) {
+        ui.open('gexp', entry);
+        return;
+      }
+    }
+    openAdd(x.id);
+  };
+
   const toggleTagFilter = (t) =>
     setTagFilter((tf) => (tf.indexOf(t) > -1 ? tf.filter((x) => x !== t) : [...tf, t]));
   const clearTagFilter = () => setTagFilter([]);
@@ -241,6 +257,11 @@ export default function ExpensesView() {
                           /{x.split || 2}
                         </span>
                       )}
+                      {x.groupEntryId && (
+                        <span className="chip" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', border: 'none', padding: '1px 8px', fontSize: 10, marginLeft: 4 }}>
+                          grupo
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
                       {(b ? b.nm : '-') + ' · ' + (x.date || '') + (x.acct ? ' · ' + x.acct : '')}
@@ -268,7 +289,7 @@ export default function ExpensesView() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{fm(x.amount)}</div>
-                    <button type="button" onClick={() => openAdd(x.id)} className="icon-btn" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Editar despesa">
+                    <button type="button" onClick={() => openExpEdit(x)} className="icon-btn" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Editar despesa">
                       <EditIcon />
                     </button>
                   </div>
@@ -695,6 +716,11 @@ export default function ExpensesView() {
                                   /{x.split || 2}
                                 </span>
                               )}
+                              {x.groupEntryId && (
+                                <span className="chip" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', border: 'none', padding: '1px 8px', fontSize: 10, marginLeft: 4 }}>
+                                  grupo
+                                </span>
+                              )}
                             </span>
                             <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>
                               {fm(x.amount)}
@@ -706,7 +732,7 @@ export default function ExpensesView() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                             <span className="m" style={{ fontSize: 11, color: 'var(--text3)', flex: 1 }}>{fmDateShort(x.date)}</span>
                             {/* Categoria muda-se via Editar (sheet) — sem seletor por linha. */}
-                            <button type="button" onClick={() => openAdd(x.id)} className="icon-btn" style={{ width: 36, height: 36 }} aria-label="Editar despesa">
+                            <button type="button" onClick={() => openExpEdit(x)} className="icon-btn" style={{ width: 36, height: 36 }} aria-label="Editar despesa">
                               <EditIcon />
                             </button>
                             <button type="button" onClick={() => deleteExp(x.id)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 11, cursor: 'pointer', padding: '8px 10px', minHeight: 36 }}>

@@ -345,3 +345,76 @@ describe('actions de movimentos de grupo', () => {
     expect(st.addedExp.length).toBe(1);
   });
 });
+
+describe('reconciliação de linkedExpId quando o movimento ligado desaparece de addedExp', () => {
+  it('deleteExpense limpa o linkedExpId da group entry quando apaga o movimento ligado', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let id;
+    act(() => {
+      id = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'Táxi', amount: 20, date: '2026-08-01', reflect: true,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    const linkedId = actions.getState().addedExp[0].id;
+    act(() => actions.deleteExpense(linkedId));
+    const st = actions.getState();
+    expect(st.addedExp).toEqual([]);
+    expect(st.groupEntries.find((e) => e.id === id).linkedExpId).toBeNull();
+  });
+
+  it('deleteExpense de um movimento sem groupEntryId não mexe nas group entries', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let id;
+    act(() => {
+      id = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'Táxi', amount: 20, date: '2026-08-01', reflect: true,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    act(() => actions.addExpense({ id: 'solo', desc: 'Café', amount: 3, cat: 'rest', date: '2026-08-02' }));
+    act(() => actions.deleteExpense('solo'));
+    const st = actions.getState();
+    expect(st.addedExp.length).toBe(1);
+    expect(st.groupEntries.find((e) => e.id === id).linkedExpId).toBe(st.addedExp[0].id);
+  });
+
+  it('setAddedExp limpa o linkedExpId das group entries cujo movimento saiu numa substituição em bloco', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let id;
+    act(() => {
+      id = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'Táxi', amount: 20, date: '2026-08-01', reflect: true,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    act(() => actions.addExpense({ id: 'solo', desc: 'Café', amount: 3, cat: 'rest', date: '2026-08-02' }));
+    expect(actions.getState().addedExp.length).toBe(2);
+    // Simula uma substituição em bloco (ex.: "remover mês", dedupe) que
+    // descarta o movimento ligado sem passar por deleteExpense.
+    act(() => actions.setAddedExp(actions.getState().addedExp.filter((x) => x.id === 'solo')));
+    const st = actions.getState();
+    expect(st.addedExp.map((x) => x.id)).toEqual(['solo']);
+    expect(st.groupEntries.find((e) => e.id === id).linkedExpId).toBeNull();
+  });
+
+  it('setAddedExp não mexe nas group entries quando o movimento ligado se mantém na lista', async () => {
+    const actions = await mountActions();
+    act(() => actions.addGroup({ id: 'g1', memberIds: ['me', 'a'] }));
+    let id;
+    act(() => {
+      id = actions.addGroupEntry({
+        groupId: 'g1', kind: 'expense', desc: 'Táxi', amount: 20, date: '2026-08-01', reflect: true,
+        shares: [{ personId: 'me', amount: 10 }, { personId: 'a', amount: 10 }],
+      });
+    });
+    const linkedId = actions.getState().addedExp[0].id;
+    act(() => actions.setAddedExp(actions.getState().addedExp.map((x) => ({ ...x, desc: 'Táxi (editado)' }))));
+    const st = actions.getState();
+    expect(st.addedExp[0].id).toBe(linkedId);
+    expect(st.groupEntries.find((e) => e.id === id).linkedExpId).toBe(linkedId);
+  });
+});

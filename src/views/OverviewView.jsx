@@ -17,7 +17,7 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 import React, { useState, useMemo } from 'react';
-import { useStore } from '../store/store.jsx';
+import { useStore, ME_ID } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import Icon from '../components/Icon.jsx';
 import QuickActions from '../components/QuickActions.jsx';
@@ -33,6 +33,7 @@ import {
   cCol,
   acctCatLabel,
 } from '../lib/finance.js';
+import { groupTotals } from '../lib/split.js';
 import { fm, fc, uid } from '../lib/format.js';
 import { upcomingRecurring } from '../lib/reminders.js';
 import { dailyAllowance, savingsPulse, buildInsights, monthPlan, monthForecast } from '../lib/pulse.js';
@@ -89,9 +90,27 @@ const Chevron = ({ open }) => (
 
 export default function OverviewView() {
   const { state, actions, currentUser } = useStore();
-  const { open } = useUI();
+  const { open, goTab } = useUI();
   const toast = useToast();
   const [xCat, setXCat] = useState(null); // expanded account category (orig global xCat)
+
+  // ── Grupos: quanto os amigos te devem / quanto deves (soma dos grupos não
+  //    arquivados). É só informação — nunca entra no património nem no
+  //    orçamento do mês (ver compute()/monthlySummary() acima, intocados).
+  const groupsSummary = useMemo(() => {
+    const activeGroups = (state.groups || []).filter((g) => !g.archived);
+    if (!activeGroups.length) return null;
+    let owedToMe = 0;
+    let owedByMe = 0;
+    activeGroups.forEach((g) => {
+      const entries = (state.groupEntries || []).filter((e) => e.groupId === g.id);
+      const t = groupTotals(entries, ME_ID);
+      owedToMe += t.owedToMe;
+      owedByMe += t.owedByMe;
+    });
+    if (owedToMe <= 0 && owedByMe <= 0) return null; // tudo acertado — nada a mostrar
+    return { owedToMe, owedByMe };
+  }, [state.groups, state.groupEntries]);
 
   /* Todos os cálculos do Resumo dependem só de (state, currentUser). Sem memo
      corriam de novo a cada render — com centenas de despesas nota-se ao abrir
@@ -213,6 +232,44 @@ export default function OverviewView() {
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
       {/* ── Quick actions (Finany-style) ── */}
       <QuickActions />
+
+      {/* ── Grupos: amigos devem-te / deves — informação, não entra no património
+            nem no orçamento. Some invisível quando não há grupos ativos ou tudo
+            está acertado. ── */}
+      {groupsSummary && (
+        <button
+          type="button"
+          onClick={() => goTab('groups')}
+          className="cd"
+          aria-label={
+            'Grupos — ' +
+            [
+              groupsSummary.owedToMe > 0 ? 'amigos devem-te ' + fm(groupsSummary.owedToMe) : null,
+              groupsSummary.owedByMe > 0 ? 'deves ' + fm(groupsSummary.owedByMe) : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')
+          }
+          style={{ width: '100%', display: 'block', textAlign: 'left', marginBottom: 16, padding: '14px 18px', border: '1px solid var(--border)', cursor: 'pointer' }}
+        >
+          <div className="rw">
+            <div className="lb">Grupos</div>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>ver</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 6 }}>
+            {groupsSummary.owedToMe > 0 && (
+              <span className="m" style={{ fontSize: 14, fontWeight: 700, color: 'var(--success)' }}>
+                Amigos devem-te {fm(groupsSummary.owedToMe)}
+              </span>
+            )}
+            {groupsSummary.owedByMe > 0 && (
+              <span className="m" style={{ fontSize: 14, fontWeight: 700, color: 'var(--signal)' }}>
+                Deves {fm(groupsSummary.owedByMe)}
+              </span>
+            )}
+          </div>
+        </button>
+      )}
 
       {/* ── Fecho do mês anterior (só nos primeiros dias) ── */}
       {!newU && closing && (

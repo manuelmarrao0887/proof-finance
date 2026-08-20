@@ -79,6 +79,20 @@ export function withExpenseIds(list) {
   return list.map((x) => (x && x.id ? x : { ...x, id: uid() }));
 }
 
+/* Uma despesa pessoal ligada a uma entry de grupo (`groupEntryId`) pode sair
+   de addedExp por duas vias: apagada a solo (deleteExpense) ou arrastada numa
+   substituição em bloco (setAddedExp — limpar duplicadas, apagar o mês,
+   reaplicar regras, importações). Nos dois casos a group entry ficava com
+   linkedExpId a apontar para um id morto, e editá-la mais tarde falhava a
+   repor o movimento em silêncio (ver updateGroupEntry). Devolve as
+   groupEntries com linkedExpId limpo para quem perdeu o movimento ligado, ou
+   null quando nada muda (evita um setField a mais). */
+function orphanedGroupEntries(groupEntries, removedExps) {
+  const ids = new Set((removedExps || []).filter((x) => x && x.groupEntryId).map((x) => x.groupEntryId));
+  if (!ids.size) return null;
+  return (groupEntries || []).map((e) => (ids.has(e.id) ? { ...e, linkedExpId: null } : e));
+}
+
 /* ── Theme (orig applyTheme 310-316) ─────────────────────────────────────── */
 export function applyTheme(t) {
   const actual =
@@ -459,7 +473,18 @@ export function StoreProvider({ children }) {
       // expenses (addedExp) — mutated by STABLE id, never array index, so that
       // edits/deletes survive list reordering (clean-imported, remove-month) and
       // background re-hydrates. setAddedExp backfills ids defensively.
-      setAddedExp: (addedExp) => setField('addedExp', withExpenseIds(addedExp)),
+      setAddedExp: (addedExp) => {
+        const st = getState();
+        const next = withExpenseIds(addedExp);
+        const nextIds = new Set(next.map((x) => x.id));
+        // Bulk replaces (dedupe, apagar o mês, reaplicar regras, importações)
+        // podem descartar linhas ligadas a um grupo — reconciliar aqui, não em
+        // cada chamador.
+        const removed = (st.addedExp || []).filter((x) => !nextIds.has(x.id));
+        setField('addedExp', next);
+        const reconciled = orphanedGroupEntries(st.groupEntries, removed);
+        if (reconciled) setField('groupEntries', reconciled);
+      },
       addExpense: (exp) =>
         setField('addedExp', [...(getState().addedExp || []), exp.id ? exp : { ...exp, id: uid() }]),
       updateExpense: (id, exp) =>
@@ -467,8 +492,13 @@ export function StoreProvider({ children }) {
           'addedExp',
           (getState().addedExp || []).map((x) => (x.id === id ? { ...x, ...exp } : x))
         ),
-      deleteExpense: (id) =>
-        setField('addedExp', (getState().addedExp || []).filter((x) => x.id !== id)),
+      deleteExpense: (id) => {
+        const st = getState();
+        const removed = (st.addedExp || []).find((x) => x.id === id);
+        setField('addedExp', (st.addedExp || []).filter((x) => x.id !== id));
+        const reconciled = orphanedGroupEntries(st.groupEntries, removed ? [removed] : []);
+        if (reconciled) setField('groupEntries', reconciled);
+      },
       // Classify by id, applying the chosen category to every same-beneficiary
       // row (resolves the index fresh against current state — no stale closure).
       classifyExpense: (id, cat) => {
