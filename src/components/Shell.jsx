@@ -59,6 +59,7 @@ const MODAL_COMPONENTS = {
   group: lazy(() => import('../modals/GroupSheet.jsx')),
   person: lazy(() => import('../modals/PersonSheet.jsx')),
   gexp: lazy(() => import('../modals/GroupExpenseSheet.jsx')),
+  settle: lazy(() => import('../modals/SettleSheet.jsx')),
 };
 
 /* ── Icons (inline SVG, no emoji) ──────────────────────────────────────── */

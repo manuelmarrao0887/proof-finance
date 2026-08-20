@@ -50,6 +50,7 @@ import PositionModal from './PositionModal.jsx';
 import RecModal from './RecModal.jsx';
 import RulesModal from './RulesModal.jsx';
 import SettingsSheet from './SettingsSheet.jsx';
+import SettleSheet from './SettleSheet.jsx';
 import TransferModal from './TransferModal.jsx';
 
 // [nome, Componente, chave do modal, payloads a testar]
@@ -75,6 +76,7 @@ const MODALS = [
   ['RecModal', RecModal, 'rec', [true, { id: 'rec-gym' }]],
   ['RulesModal', RulesModal, 'rules', [true]],
   ['SettingsSheet', SettingsSheet, 'settings', [true]],
+  ['SettleSheet', SettleSheet, 'settle', [{ groupId: 'g-ferias' }, { groupId: 'g-ferias', from: 'p-joao', to: 'me', amount: 100 }]],
   ['TransferModal', TransferModal, 'transfer', [true]],
 ];
 
