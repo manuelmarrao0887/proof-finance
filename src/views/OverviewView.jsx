@@ -32,6 +32,7 @@ import {
   cashFlowProjection,
   cCol,
   acctCatLabel,
+  getGroupsData,
 } from '../lib/finance.js';
 import { groupTotals } from '../lib/split.js';
 import { fm, fc, uid } from '../lib/format.js';
@@ -89,7 +90,7 @@ const Chevron = ({ open }) => (
 );
 
 export default function OverviewView() {
-  const { state, actions, currentUser } = useStore();
+  const { state, actions, currentUser, preview } = useStore();
   const { open, goTab } = useUI();
   const toast = useToast();
   const [xCat, setXCat] = useState(null); // expanded account category (orig global xCat)
@@ -97,20 +98,24 @@ export default function OverviewView() {
   // ── Grupos: quanto os amigos te devem / quanto deves (soma dos grupos não
   //    arquivados). É só informação — nunca entra no património nem no
   //    orçamento do mês (ver compute()/monthlySummary() acima, intocados).
+  //    getGroupsData() troca para o grupo de exemplo em preview sem dados
+  //    próprios — a MESMA fonte que a vista de Grupos usa, para este
+  //    indicador nunca dessincronizar da lista (Task 11).
   const groupsSummary = useMemo(() => {
-    const activeGroups = (state.groups || []).filter((g) => !g.archived);
+    const { groups, groupEntries } = getGroupsData(state, preview);
+    const activeGroups = groups.filter((g) => !g.archived);
     if (!activeGroups.length) return null;
     let owedToMe = 0;
     let owedByMe = 0;
     activeGroups.forEach((g) => {
-      const entries = (state.groupEntries || []).filter((e) => e.groupId === g.id);
+      const entries = groupEntries.filter((e) => e.groupId === g.id);
       const t = groupTotals(entries, ME_ID);
       owedToMe += t.owedToMe;
       owedByMe += t.owedByMe;
     });
     if (owedToMe <= 0 && owedByMe <= 0) return null; // tudo acertado — nada a mostrar
     return { owedToMe, owedByMe };
-  }, [state.groups, state.groupEntries]);
+  }, [state.people, state.groups, state.groupEntries, preview]);
 
   /* Todos os cálculos do Resumo dependem só de (state, currentUser). Sem memo
      corriam de novo a cada render — com centenas de despesas nota-se ao abrir

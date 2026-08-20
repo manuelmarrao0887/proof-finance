@@ -21,6 +21,7 @@ import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { ME_ID } from '../store/store.jsx';
 import { computeBalances, simplifyDebts, groupTotals, isSettled, groupCatMeta, shareText, toCents, fromCents } from '../lib/split.js';
+import { getGroupsData } from '../lib/finance.js';
 import { fm, fmDateShort } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 
@@ -423,14 +424,19 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
 }
 
 export default function GroupsView() {
-  const { state } = useStore();
+  const { state, preview } = useStore();
   const { open } = useUI();
   const toast = useToast();
   const [openId, setOpenId] = useState(null);
 
-  const people = state.people || [];
-  const groups = state.groups || [];
-  const allEntries = state.groupEntries || [];
+  // Em preview (sem login) e sem nada próprio ainda, mostra o grupo de
+  // exemplo — só para ler: nunca é despachado para o store (ver finance.js
+  // getGroupsData). O Resumo usa a mesma função, para as duas vistas nunca
+  // divergirem uma da outra.
+  const { people, groups, groupEntries: allEntries } = useMemo(
+    () => getGroupsData(state, preview),
+    [state, preview]
+  );
   const nameOf = useMemo(() => nameOfFactory(people), [people]);
   const colorOf = useMemo(() => colorOfFactory(people), [people]);
   const entriesOf = useMemo(

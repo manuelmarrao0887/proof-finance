@@ -6,6 +6,7 @@
      const { container } = await renderWithStore(<OverviewView />, { fixture });
      // fixture: parte do slice persistido a sobrepor aos defaults
      // opts.tab / opts.openModal: navegação inicial do UIProvider
+     // opts.preview: true → sem login (Seed não chama setCurrentUser)
 
    O Firebase é mockado nos testes (ver vi.mock em cada ficheiro de teste ou
    em setup): aqui só se assume que loadUserData/syncUserData não tocam na rede.
@@ -19,7 +20,7 @@ import { UIProvider, useUI } from '../store/ui.jsx';
 import { DeviceProvider } from '../store/device.jsx';
 
 // Faz o que o App faz depois do login: define o utilizador e hidrata o estado.
-function Seed({ fixture, tab, openModal, payload, onReady, children }) {
+function Seed({ fixture, tab, openModal, payload, onReady, children, preview }) {
   const { dispatch, actions } = useStore();
   const { setCurrentUser } = useAuth();
   const ui = useUI();
@@ -27,7 +28,7 @@ function Seed({ fixture, tab, openModal, payload, onReady, children }) {
   useEffect(() => {
     if (done.current) return;
     done.current = true;
-    setCurrentUser({ uid: 'test-user', email: 'test@example.com' });
+    if (!preview) setCurrentUser({ uid: 'test-user', email: 'test@example.com' });
     dispatch({ type: 'hydrate', persisted: { ...initialPersisted(), ...(fixture || {}) } });
     if (tab) ui.goTab(tab);
     if (openModal) ui.open(openModal, payload === undefined ? true : payload);
@@ -45,7 +46,7 @@ export async function renderWithStore(element, opts = {}) {
         <ToastProvider>
           <UIProvider>
             <DeviceProvider>
-              <Seed fixture={opts.fixture} tab={opts.tab} openModal={opts.openModal} payload={opts.payload} onReady={opts.onReady}>
+              <Seed fixture={opts.fixture} tab={opts.tab} openModal={opts.openModal} payload={opts.payload} onReady={opts.onReady} preview={opts.preview}>
                 {element}
               </Seed>
             </DeviceProvider>

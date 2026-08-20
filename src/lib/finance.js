@@ -21,6 +21,8 @@
    equivalent passing `state` through so behaviour is preserved 1:1.
    ════════════════════════════════════════════════════════════════════════ */
 
+import { splitEqual } from './split.js';
+
 /* ══ DEMO / SEED DATA (orig 256-285) — preview mode only ══ */
 
 export const hist = [
@@ -77,6 +79,36 @@ export const txn = {
 
 export const sal = [1800, 1800, 1850, null];
 
+/* Grupo de exemplo (modo pré-visualização): 3 pessoas fictícias + uma viagem
+   com 4 despesas, para a secção "Grupos" também ter algo para mostrar sem
+   login. Chamada de novo a cada render — devolve sempre o mesmo conteúdo
+   (ids/datas/valores fixos), nunca é gravada no store (ver getGroupsData). */
+export function demoGroups() {
+  const people = [
+    { id: 'demo-ana', name: 'Ana', color: '#12b3a6', createdAt: 0 },
+    { id: 'demo-joao', name: 'João', color: '#f5a623', createdAt: 0 },
+    { id: 'demo-rita', name: 'Rita', color: '#f25592', createdAt: 0 },
+  ];
+  const ids = ['me', 'demo-ana', 'demo-joao', 'demo-rita'];
+  const groups = [{
+    id: 'demo-ferias', name: 'Férias Algarve', emoji: '🏖️', type: 'trip', currency: 'EUR',
+    memberIds: ids, start: '2026-08-12', end: '2026-08-19',
+    reflectMine: true, archived: false, createdAt: 0,
+  }];
+  const mk = (id, desc, amount, payerId, date, gcat, members) => ({
+    id, groupId: 'demo-ferias', kind: 'expense', desc, amount, date, payerId,
+    splitMode: 'equal', gcat, reflect: true, linkedExpId: null, createdAt: 0,
+    shares: splitEqual(amount, members || ids, payerId),
+  });
+  const groupEntries = [
+    mk('demo-e1', 'Airbnb · 7 noites', 620, 'me', '2026-08-12', 'stay'),
+    mk('demo-e2', 'Bilhetes Zoomarine', 84, 'demo-rita', '2026-08-12', 'fun', ['me', 'demo-ana', 'demo-rita']),
+    mk('demo-e3', 'Jantar marisqueira', 96, 'demo-ana', '2026-08-14', 'food'),
+    mk('demo-e4', 'Gasolina', 60, 'demo-joao', '2026-08-14', 'transp'),
+  ];
+  return { people, groups, groupEntries };
+}
+
 export const cCol = {
   Liquidez: '#3b6fee',
   Poupanca: '#3fc97a',
@@ -121,6 +153,19 @@ export function getSal(state) {
 
 export function getLoan(state) {
   return isPreviewMode(state) ? ln : { cap: 0, out: 0, pay: 0 };
+}
+
+/* Pessoas/grupos/movimentos a mostrar nos ecrãs de Grupos: os do utilizador
+   quando já tem alguma coisa própria (mesmo só localmente — preview permite
+   editar a sessão sem gravar), senão o grupo de exemplo enquanto está em
+   preview. `preview` vem de useStore() (=!currentUser), não do `state`
+   passado aqui (que é só o slice persistido, sem currentUser). Usada tanto
+   pelo Resumo como pela vista de Grupos para nunca mostrarem coisas
+   diferentes uma da outra. */
+export function getGroupsData(state, preview) {
+  const own = (state.people || []).length > 0 || (state.groups || []).length > 0 || (state.groupEntries || []).length > 0;
+  if (preview && !own) return demoGroups();
+  return { people: state.people || [], groups: state.groups || [], groupEntries: state.groupEntries || [] };
 }
 
 export function getAccts(state) {
