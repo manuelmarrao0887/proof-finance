@@ -18,9 +18,18 @@
 import React, { useMemo, useState } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
+import { useToast } from '../components/Toast.jsx';
 import { ME_ID } from '../store/store.jsx';
 import { computeBalances, simplifyDebts, groupTotals, isSettled, groupCatMeta, shareText } from '../lib/split.js';
 import { fm, fmDateShort } from '../lib/format.js';
+import CategoryIcon from '../components/CategoryIcon.jsx';
+
+// Os três separadores do detalhe do grupo.
+const SEGMENTS = [
+  { id: 'exp', label: 'Despesas' },
+  { id: 'bal', label: 'Saldos' },
+  { id: 'act', label: 'Atividade' },
+];
 
 // Nome a mostrar para um id de pessoa ('me' é sempre "Tu").
 function nameOfFactory(people) {
@@ -91,9 +100,325 @@ function GroupCard({ group, totals, settled, onOpen }) {
   );
 }
 
+// Avatar circular com iniciais: cor da pessoa como fundo, nome como aria-label
+// (role="img" para o leitor de ecrã anunciar o nome em vez de "Tu"/iniciais soltas).
+function MemberAvatar({ id, nameOf, colorOf, size = 30 }) {
+  return (
+    <span
+      role="img"
+      aria-label={nameOf(id)}
+      title={nameOf(id)}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: colorOf(id),
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: size * 0.36,
+        fontWeight: 700,
+        flexShrink: 0,
+      }}
+    >
+      {initialsOf(nameOf(id), id)}
+    </span>
+  );
+}
+
+// Quanto é que esta despesa muda a minha posição: positivo = emprestei
+// (paguei mais do que a minha parte), negativo = devo (a minha parte por pagar).
+function myImpactCents(entry) {
+  const myShare = (entry.shares || []).find((s) => s.personId === ME_ID)?.amount || 0;
+  const paid = entry.payerId === ME_ID ? Number(entry.amount) || 0 : 0;
+  return Math.round((paid - myShare) * 100);
+}
+
+// Linha de uma despesa (separador "Despesas"): categoria, descrição, quem pagou
+// e o impacto para o utilizador — a haver (verde) ou a dever (vermelho).
+function ExpenseRow({ entry, nameOf, onOpen }) {
+  const impactCents = myImpactCents(entry);
+  const shareCount = (entry.shares || []).length;
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="cd"
+      style={{ width: '100%', display: 'block', textAlign: 'left', marginBottom: 8, padding: '12px 16px', border: '1px solid var(--border)', cursor: 'pointer' }}
+    >
+      <div className="rw" style={{ gap: 12 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <CategoryIcon id={groupCatMeta(entry.gcat).cat} size={36} />
+          <span style={{ minWidth: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, display: 'block' }}>{entry.desc}</span>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+              {nameOf(entry.payerId)} pagou · {shareCount} {shareCount === 1 ? 'pessoa' : 'pessoas'}
+            </span>
+          </span>
+        </span>
+        <span style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+          <span className="m" style={{ fontSize: 13, fontWeight: 700, display: 'block' }}>{fm(entry.amount)}</span>
+          {impactCents !== 0 && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: impactCents > 0 ? 'var(--success)' : 'var(--signal)' }}>
+              {impactCents > 0 ? 'emprestaste ' : 'deves '}{fm(Math.abs(impactCents) / 100)}
+            </span>
+          )}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+// Linha de atividade: despesa (categoria + quem pagou) ou acerto ("X pagou a Y").
+function ActivityRow({ entry, nameOf }) {
+  const isSettlement = entry.kind === 'settlement';
+  return (
+    <div className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
+      <div className="rw" style={{ gap: 12 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          {!isSettlement && <CategoryIcon id={groupCatMeta(entry.gcat).cat} size={32} />}
+          <span style={{ minWidth: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, display: 'block' }}>
+              {isSettlement ? nameOf(entry.fromId) + ' pagou a ' + nameOf(entry.toId) + ' · acerto' : entry.desc}
+            </span>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+              {isSettlement ? fmDateShort(entry.date) : nameOf(entry.payerId) + ' pagou · ' + fmDateShort(entry.date)}
+            </span>
+          </span>
+        </span>
+        <span className="m" style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>{fm(entry.amount)}</span>
+      </div>
+    </div>
+  );
+}
+
+// Barra de saldo por membro: cresce para a direita do centro quando positivo
+// (tem a receber), para a esquerda quando negativo (deve). A cor nunca é o
+// único sinal — o texto "Tens a receber"/"Deves"/"Acertado" acompanha sempre.
+// O nome de cada pessoa vai só no avatar (aria-label); o texto por extenso
+// "quem paga a quem" fica reservado à lista de acertos (SettleRow), que é o
+// sítio natural para essa pergunta.
+function BalanceBar({ id, balance, maxAbsCents, nameOf, colorOf }) {
+  const cents = Math.round((Number(balance) || 0) * 100);
+  const ratio = maxAbsCents > 0 ? Math.min(1, Math.abs(cents) / maxAbsCents) : 0;
+  const widthPct = ratio * 50;
+  const color = cents > 0 ? 'var(--success)' : cents < 0 ? 'var(--signal)' : 'var(--text3)';
+  const label = cents > 0 ? 'Tens a receber ' + fm(balance) : cents < 0 ? 'Deves ' + fm(Math.abs(balance)) : 'Acertado';
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div className="rw" style={{ marginBottom: 6 }}>
+        <MemberAvatar id={id} nameOf={nameOf} colorOf={colorOf} size={26} />
+        <span className="m" style={{ fontSize: 12, fontWeight: 700, color }}>{label}</span>
+      </div>
+      <div style={{ position: 'relative', height: 8, background: 'var(--elevated)', borderRadius: 4 }}>
+        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'var(--border)' }} />
+        {cents !== 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              [cents > 0 ? 'left' : 'right']: '50%',
+              width: widthPct + '%',
+              background: color,
+              borderRadius: 4,
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Linha do plano de acertos (simplifyDebts): quem deve pagar a quem + botão.
+function SettleRow({ debt, nameOf, onSettle }) {
+  return (
+    <div className="cd rw" style={{ marginBottom: 8, padding: '12px 16px' }}>
+      <span style={{ fontSize: 13, fontWeight: 600 }}>{nameOf(debt.from)} → {nameOf(debt.to)}</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span className="m" style={{ fontSize: 13, fontWeight: 700 }}>{fm(debt.amount)}</span>
+        <button
+          type="button"
+          onClick={onSettle}
+          aria-label={'Acertar ' + nameOf(debt.from) + ' → ' + nameOf(debt.to)}
+          style={{ padding: '6px 12px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+        >
+          Acertar
+        </button>
+      </span>
+    </div>
+  );
+}
+
+// Ecrã de detalhe de um grupo: totais, separador Despesas/Saldos/Atividade e
+// os dois atalhos fixos no fundo (Acertar / Despesa).
+function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, toast, onBack }) {
+  const [seg, setSeg] = useState('exp');
+
+  const expenseEntries = useMemo(
+    () => entries.filter((e) => e.kind !== 'settlement').slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')),
+    [entries]
+  );
+  const dayGroups = useMemo(() => {
+    const out = [];
+    expenseEntries.forEach((e) => {
+      const last = out[out.length - 1];
+      if (last && last.date === e.date) last.items.push(e);
+      else out.push({ date: e.date, items: [e] });
+    });
+    return out;
+  }, [expenseEntries]);
+  const activity = useMemo(() => entries.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)), [entries]);
+  const plan = useMemo(() => simplifyDebts(balances), [balances]);
+  const maxAbsCents = useMemo(
+    () => Math.max(1, ...(group.memberIds || []).map((id) => Math.abs(Math.round((balances[id] || 0) * 100)))),
+    [group.memberIds, balances]
+  );
+
+  async function handleShare() {
+    const text = shareText({ group, entries, nameOf });
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: group.name, text });
+        return;
+      }
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        toast('Resumo copiado', 'success');
+      }
+    } catch {
+      // utilizador cancelou a partilha (ou falhou a cópia) — sem toast de erro.
+    }
+  }
+
+  return (
+    <div className="fadeUp" style={{ padding: '0 20px calc(40px + var(--safe-bottom))' }}>
+      <div className="rw" style={{ margin: '6px 0 16px' }}>
+        <button type="button" onClick={onBack} className="icon-btn" aria-label="Voltar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <span style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minWidth: 0 }}>
+          <span style={{ fontSize: 20, lineHeight: 1 }} aria-hidden="true">{group.emoji || '👥'}</span>
+          <span style={{ fontSize: 15, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.name}</span>
+        </span>
+        <button type="button" onClick={() => open('group', group)} className="icon-btn" aria-label="Editar grupo">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="cd" style={{ marginBottom: 16 }}>
+        <div className="lb">Total do grupo</div>
+        <div className="m" style={{ fontSize: 26, fontWeight: 800, marginTop: 4, letterSpacing: '-0.02em' }}>{fm(totals.total)}</div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
+          tu pagaste {fm(totals.paidByMe)} · a tua parte {fm(totals.myShare)}
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+          {(group.memberIds || []).map((id) => (
+            <MemberAvatar key={id} id={id} nameOf={nameOf} colorOf={colorOf} />
+          ))}
+        </div>
+      </div>
+
+      <div className="ms-bar" style={{ marginBottom: 16 }}>
+        {SEGMENTS.map((s, i) => (
+          <button
+            key={s.id}
+            type="button"
+            className={'ms' + (seg === s.id ? ' on' : '')}
+            aria-pressed={seg === s.id}
+            onClick={() => setSeg(s.id)}
+            style={i < SEGMENTS.length - 1 ? { borderRight: '1px solid var(--border)' } : undefined}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {seg === 'exp' && (
+        expenseEntries.length === 0 ? (
+          <div className="empty">Sem despesas registadas.</div>
+        ) : (
+          dayGroups.map((g) => (
+            <div key={g.date}>
+              <div className="lb" style={{ margin: '4px 4px 8px' }}>{fmDateShort(g.date)}</div>
+              {g.items.map((e) => (
+                <ExpenseRow key={e.id} entry={e} nameOf={nameOf} onOpen={() => open('gexp', e)} />
+              ))}
+            </div>
+          ))
+        )
+      )}
+
+      {seg === 'bal' && (
+        <>
+          <div className="cd" style={{ marginBottom: 16 }}>
+            {(group.memberIds || []).map((id) => (
+              <BalanceBar key={id} id={id} balance={balances[id] || 0} maxAbsCents={maxAbsCents} nameOf={nameOf} colorOf={colorOf} />
+            ))}
+          </div>
+
+          <div className="lb" style={{ margin: '0 4px 8px' }}>Para acertar</div>
+          {plan.length === 0 ? (
+            <div className="empty">✓ Contas acertadas.</div>
+          ) : (
+            plan.map((debt) => (
+              <SettleRow
+                key={debt.from + '→' + debt.to}
+                debt={debt}
+                nameOf={nameOf}
+                onSettle={() => open('settle', { groupId: group.id, from: debt.from, to: debt.to, amount: debt.amount })}
+              />
+            ))
+          )}
+
+          <button
+            type="button"
+            onClick={handleShare}
+            style={{ width: '100%', marginTop: 12, padding: '12px 0', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          >
+            Partilhar resumo
+          </button>
+        </>
+      )}
+
+      {seg === 'act' && (
+        activity.length === 0 ? (
+          <div className="empty">Sem atividade registada.</div>
+        ) : (
+          activity.map((e) => <ActivityRow key={e.id} entry={e} nameOf={nameOf} />)
+        )
+      )}
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+        <button
+          type="button"
+          onClick={() => open('settle', { groupId: group.id })}
+          style={{ flex: 1, padding: '12px 0', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+        >
+          Acertar
+        </button>
+        <button
+          type="button"
+          onClick={() => open('gexp', { groupId: group.id })}
+          style={{ flex: 1, padding: '12px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+        >
+          Despesa
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function GroupsView() {
   const { state } = useStore();
   const { open } = useUI();
+  const toast = useToast();
   const [openId, setOpenId] = useState(null);
 
   const people = state.people || [];
@@ -106,8 +431,8 @@ export default function GroupsView() {
     [allEntries]
   );
 
-  // Derivados por grupo (entradas, totais e saldo), calculados uma vez para
-  // toda a lista — a Task 6 vai reaproveitar o mesmo objeto para o detalhe.
+  // Derivados por grupo (entradas, totais e saldo), calculados uma vez e
+  // reaproveitados tanto pela lista como pelo detalhe (openId).
   const derived = useMemo(
     () =>
       groups.map((g) => {
@@ -118,6 +443,26 @@ export default function GroupsView() {
       }),
     [groups, entriesOf]
   );
+
+  // Detalhe: procura-se sempre em `derived` (nunca guarda-se o grupo à parte)
+  // para que um grupo apagado noutro sítio deixe de resolver sozinho e caia
+  // de volta na lista, em vez de renderizar um detalhe órfão.
+  const openDerived = openId ? derived.find((d) => d.group.id === openId) : null;
+  if (openDerived) {
+    return (
+      <GroupDetail
+        group={openDerived.group}
+        entries={openDerived.entries}
+        totals={openDerived.totals}
+        balances={openDerived.balances}
+        nameOf={nameOf}
+        colorOf={colorOf}
+        open={open}
+        toast={toast}
+        onBack={() => setOpenId(null)}
+      />
+    );
+  }
 
   if (groups.length === 0) {
     return (
