@@ -153,9 +153,9 @@ read-modify-write inside a handler without stale closures).
 
 ### Expenses (`addedExp`)
 - `setAddedExp(arr)` — replace whole list (use for import commit + bulk re-key).
-- `addExpense(exp)`
-- `updateExpense(idx, partial)` — by index.
-- `deleteExpense(idx)` — by index.
+- `addExpense(exp)` — gera `id` com `uid()` se `exp.id` não vier.
+- `updateExpense(id, partial)` — **by id**.
+- `deleteExpense(id)` — **by id**; reconcilia `groupEntries` órfãs.
 
 > **FIX 1 (same-beneficiary classify):** when a category `<select>` changes on an
 > expense/import row, build the new list with
@@ -177,8 +177,9 @@ Each collection has the same trio plus a bulk setter:
 - Rules: `setRules`, `addRule`, `deleteRule(id)`
 
 > Generate ids with `uid()` from `lib/format`. Goals/recurring/incomes/accts/rules
-> all carry an `id`; update/delete are by `id`. Expenses are by **index** (the
-> original keyed them positionally).
+> **e despesas** carregam um `id`; update/delete são todos por `id`.
+> `withExpenseIds` (exportado de `store.jsx`) faz backfill do `id` nas linhas
+> antigas, na hidratação e em qualquer `setAddedExp`.
 
 ---
 

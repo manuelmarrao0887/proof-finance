@@ -152,22 +152,22 @@ vêm de `resolveShares` e os invariantes de grupos continuam a ser aplicados
 pelo store (`addGroupEntry` decide o reflexo em `addedExp` via
 `reflectExpenseFor`).
 
-#### Referências estáveis de despesas
+#### Identificação de registos
 
-As despesas são indexadas por posição (`updateExpense(idx)`,
-`deleteExpense(idx)`). O índice pode mudar entre a leitura do modelo e a
-escrita, e apagar a despesa errada seria silencioso.
+Todas as coleções são endereçadas por `id`. `actions.updateExpense(id, partial)`
+e `actions.deleteExpense(id)` recebem **ids**, não índices, e
+`withExpenseIds` garante que toda a linha de `addedExp` tem um `id` estável
+(backfill na hidratação e em qualquer substituição em bloco). Metas,
+recorrentes, receitas, contas, regras, pessoas, grupos e movimentos de grupo já
+usam `id`.
 
-`query_expenses` devolve, por linha, `ref = "<idx>:<hash>"`, em que `hash` é
-derivado de `date|desc|amount`. No `execTool`, `resolveExpenseRef`:
+Logo, as tools de leitura devolvem o `id` de cada registo e as de escrita
+recebem-no tal e qual. Se o `id` não existir no estado atual, `execTool`
+devolve `{ error: 'not_found' }` ao modelo, sem escrever, para ele voltar a
+consultar em vez de adivinhar.
 
-1. vai buscar a lista atual com `actions.getState()`;
-2. confirma que o hash da posição `idx` bate certo — se sim, usa `idx`;
-3. se não bater, procura o hash na lista toda e usa a posição encontrada;
-4. se não encontrar, devolve `{ error: 'ref_stale' }` ao modelo, **sem
-   escrever**, para o modelo voltar a consultar.
-
-Nenhuma escrita usa um índice cru vindo do modelo.
+> Nota: `STORE_API.md` §3 descrevia estas ações como sendo por índice. Está
+> desatualizado face ao código; corrigido no âmbito deste trabalho.
 
 #### Gate das ações destrutivas
 
@@ -193,8 +193,10 @@ voltas para o custo total do pedido.
   os restantes.
 - `renderMD` sai de `AIView.jsx` para `src/lib/markdown.js`, partilhado pelas
   duas UIs (e tira ~70 linhas a um ficheiro de 1027).
-- Ações não destrutivas: aplica e mostra toast com **Anular** (guarda o array
-  anterior da slice; anular restaura-o).
+- Ações não destrutivas: aplica, mostra toast de confirmação e deixa um botão
+  **Anular** no cartão da resposta dentro da sheet (guarda o array anterior de
+  cada slice tocada; anular restaura-o). O `Toast` partilhado não suporta
+  botões de ação e não é alterado por este trabalho.
 - Ações destrutivas: cartão de pré-visualização com **Confirmar** / **Cancelar**
   ("Vou apagar *Continente 45,67 EUR · 28.08*").
 - `AIView` mantém o painel de import de documentos e o histórico, passando a
@@ -212,14 +214,14 @@ Traduzidos para PT no cliente, sem expor a key nem o corpo cru da resposta:
 | 401/403 do proxy | mensagens atuais de sessão/acesso, inalteradas |
 | rede | "Erro de rede ao contactar a IA. Tenta novamente." |
 
-`ref_stale` e erros de validação de argumentos voltam ao **modelo** como
+`not_found` e erros de validação de argumentos voltam ao **modelo** como
 resultado de tool, não ao utilizador — o modelo corrige-se sozinho.
 
 ## 6. Testes
 
-- `aiTools.test.js` — resolução de refs (bate, deslocou-se, stale), gate
-  destrutivo (primeira chamada não escreve; `confirmed` escreve), mapeamento
-  de cada tool para a action certa, validação de argumentos.
+- `aiTools.test.js` — resolução por `id` (existe, não existe → `not_found`),
+  gate destrutivo (primeira chamada não escreve; `confirmed` escreve),
+  mapeamento de cada tool para a action certa, validação de argumentos.
 - `aiChat.test.js` — loop com `chat` mocado: uma volta, várias voltas, corte
   às 4 voltas, acumulação de `usage`.
 - `ai.test.js` — tradutor de conteúdo (PDF/imagem/texto) com `fetch` mocado.
