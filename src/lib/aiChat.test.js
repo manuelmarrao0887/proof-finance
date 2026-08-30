@@ -1,0 +1,126 @@
+import { describe, it, expect, vi } from 'vitest';
+import { runAssistant, confirmPending, estimateCost, ASSISTANT_SYSTEM, MAX_ROUNDS } from './aiChat.js';
+
+function ctx(seed = {}) {
+  const state = { addedExp: [{ id: 'e1', desc: 'Continente', amount: 45.67, cat: 'sup', date: '2026-08-28' }], ...seed };
+  const actions = {
+    getState: () => state,
+    addExpense: vi.fn(),
+    deleteExpense: vi.fn(),
+  };
+  return { state, actions };
+}
+
+const say = (content) => ({ choices: [{ message: { role: 'assistant', content } }], usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 } });
+const callTool = (name, args, id = 'c1') => ({
+  choices: [{ message: { role: 'assistant', content: null, tool_calls: [{ id, type: 'function', function: { name, arguments: JSON.stringify(args) } }] } }],
+  usage: { prompt_tokens: 20, completion_tokens: 8, total_tokens: 28 },
+});
+
+describe('runAssistant', () => {
+  it('devolve o texto quando o modelo nao chama tools', async () => {
+    const chatFn = vi.fn(() => Promise.resolve(say('Gastaste 45,67 EUR.')));
+    const out = await runAssistant('quanto gastei?', { ...ctx(), chatFn });
+    expect(out.text).toBe('Gastaste 45,67 EUR.');
+    expect(chatFn).toHaveBeenCalledTimes(1);
+    expect(out.applied).toEqual([]);
+  });
+
+  it('executa a tool e volta a chamar o modelo com o resultado', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('add_expense', { desc: 'Cafe', amount: 1.2, cat: 'rest' }))
+      .mockResolvedValueOnce(say('Registei o cafe.'));
+    const c = ctx();
+    const out = await runAssistant('regista um cafe de 1,20', { ...c, chatFn });
+    expect(c.actions.addExpense).toHaveBeenCalledTimes(1);
+    expect(out.text).toBe('Registei o cafe.');
+    expect(out.applied[0].name).toBe('add_expense');
+    // a segunda chamada leva a mensagem de tool com o tool_call_id certo
+    const second = chatFn.mock.calls[1][0];
+    const toolMsg = second[second.length - 1];
+    expect(toolMsg.role).toBe('tool');
+    expect(toolMsg.tool_call_id).toBe('c1');
+  });
+
+  it('soma o usage de todas as voltas', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('add_expense', { desc: 'X', amount: 1 }))
+      .mockResolvedValueOnce(say('feito'));
+    const out = await runAssistant('x', { ...ctx(), chatFn });
+    expect(out.usage.total_tokens).toBe(28 + 15);
+  });
+
+  it('para nas MAX_ROUNDS voltas mesmo que o modelo continue a pedir tools', async () => {
+    const chatFn = vi.fn(() => Promise.resolve(callTool('add_expense', { desc: 'loop', amount: 1 })));
+    const out = await runAssistant('x', { ...ctx(), chatFn });
+    expect(chatFn).toHaveBeenCalledTimes(MAX_ROUNDS);
+    expect(out.text).toMatch(/nao consegui concluir/i);
+  });
+
+  it('junta uma accao destrutiva a pending e nao escreve', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('delete_expense', { id: 'e1' }))
+      .mockResolvedValueOnce(say('Confirmas?'));
+    const c = ctx();
+    const out = await runAssistant('apaga a do continente', { ...c, chatFn });
+    expect(c.actions.deleteExpense).not.toHaveBeenCalled();
+    expect(out.pending).toHaveLength(1);
+    expect(out.pending[0].preview.label).toContain('Continente');
+  });
+
+  it('ignora um confirmed vindo do modelo e continua a pedir confirmacao', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('delete_expense', { id: 'e1', confirmed: true }))
+      .mockResolvedValueOnce(say('Confirmas?'));
+    const c = ctx();
+    const out = await runAssistant('apaga ja', { ...c, chatFn });
+    expect(c.actions.deleteExpense).not.toHaveBeenCalled();
+    expect(out.pending).toHaveLength(1);
+  });
+
+  it('devolve o erro da tool ao modelo em vez de rebentar', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('delete_expense', { id: 'nao-existe' }))
+      .mockResolvedValueOnce(say('Nao encontrei essa despesa.'));
+    const out = await runAssistant('apaga', { ...ctx(), chatFn });
+    expect(out.text).toBe('Nao encontrei essa despesa.');
+    expect(out.pending).toEqual([]);
+  });
+
+  it('sobrevive a argumentos que nao sao JSON valido', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce({ choices: [{ message: { role: 'assistant', tool_calls: [{ id: 'c1', function: { name: 'add_expense', arguments: '{oops' } }] } }] })
+      .mockResolvedValueOnce(say('desculpa'));
+    const out = await runAssistant('x', { ...ctx(), chatFn });
+    expect(out.text).toBe('desculpa');
+  });
+});
+
+describe('estimateCost', () => {
+  it('calcula o custo do tier fast em euros', () => {
+    // 1M tokens de entrada = 0,30 USD; 1M de saida = 2,50 USD.
+    const c = estimateCost({ prompt_tokens: 1_000_000, completion_tokens: 0 });
+    expect(c).toBeCloseTo(0.3, 6);
+    const c2 = estimateCost({ prompt_tokens: 0, completion_tokens: 1_000_000 });
+    expect(c2).toBeCloseTo(2.5, 6);
+  });
+  it('devolve 0 sem usage', () => {
+    expect(estimateCost(null)).toBe(0);
+    expect(estimateCost({})).toBe(0);
+  });
+});
+
+describe('ASSISTANT_SYSTEM', () => {
+  it('diz ao modelo para nao preencher o campo confirmed', () => {
+    expect(ASSISTANT_SYSTEM).toMatch(/confirmed/);
+  });
+});
+
+describe('confirmPending', () => {
+  it('executa a chamada com confirmed e escreve', () => {
+    const c = ctx();
+    const r = confirmPending({ name: 'delete_expense', args: { id: 'e1' } }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.deleteExpense).toHaveBeenCalledWith('e1');
+  });
+});
