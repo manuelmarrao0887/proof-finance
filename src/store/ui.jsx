@@ -31,6 +31,7 @@ export const MODALS = [
   'person',         // criar/editar pessoa (contacto local dos grupos)
   'gexp',           // criar/editar despesa de grupo
   'settle',         // registar acerto de contas num grupo
+  'assistant',      // chat do assistente de IA
 ]
 
 const VALID_TABS = ['overview', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax']

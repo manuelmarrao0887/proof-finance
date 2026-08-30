@@ -1743,6 +1743,8 @@ describe('tools de grupos', () => {
     expect(entry.groupId).toBe('gr1');
     expect(entry.payerId).toBe('me');
     expect(entry.amount).toBe(60);
+    expect(entry.kind).toBe('expense');
+    expect(entry.splitMode).toBe('equal');
     expect(entry.shares.reduce((s, x) => s + x.amount, 0)).toBeCloseTo(60, 2);
     expect(entry.shares).toHaveLength(3);
   });
@@ -1768,8 +1770,10 @@ describe('tools de grupos', () => {
     const r = execTool('settle_group', { group_id: 'gr1', from_id: 'p1', to_id: 'me', amount: 20 }, c);
     expect(r.ok).toBe(true);
     const entry = c.actions.addGroupEntry.mock.calls[0][0];
-    expect(entry.kind).toBe('settle');
-    expect(entry.payerId).toBe('p1');
+    expect(entry.kind).toBe('settlement');
+    expect(entry.fromId).toBe('p1');
+    expect(entry.toId).toBe('me');
+    expect(entry.shares).toBeUndefined();
   });
 
   it('delete_group_entry pede confirmacao antes de apagar', () => {
@@ -1793,7 +1797,7 @@ Expected: FAIL — `unknown_tool` para `create_group` e restantes.
 Em `src/lib/aiTools.js`:
 
 ```js
-import { resolveShares } from './split.js';
+import { resolveShares, GROUP_CATS } from './split.js';
 
 // Espelha ME_ID de store/store.jsx. Não é importado de lá para este módulo
 // continuar puro (store.jsx puxa React); um teste garante que não divergem.
@@ -1844,6 +1848,7 @@ const groupTools = {
         date: { type: 'string', description: 'data YYYY-MM-DD; por omissao hoje' },
         payer_id: { type: 'string', description: 'quem pagou; por omissao o proprio ("me")' },
         member_ids: { type: 'array', items: { type: 'string' }, description: 'quem divide; por omissao todos os membros' },
+        gcat: { type: 'string', description: 'categoria da despesa de grupo (ver GROUP_CATS em lib/split.js)' },
       },
       required: ['group_id', 'desc', 'amount'],
     },
@@ -1860,6 +1865,14 @@ const groupTools = {
         : members;
       if (!chosen.length) return { error: 'invalid_args', detail: 'nenhum membro valido para dividir' };
       const amount = Math.abs(Number(args.amount) || 0);
+      // resolveShares devolve {shares, error} — nunca um array.
+      const { shares, error } = resolveShares(
+        'equal',
+        amount,
+        chosen.map((id) => ({ personId: id })),
+        payerId
+      );
+      if (error) return { error: 'invalid_args', detail: error };
       const entry = {
         groupId: group.id,
         kind: 'expense',
@@ -1867,7 +1880,9 @@ const groupTools = {
         amount,
         date: safeDate(args.date),
         payerId,
-        shares: resolveShares('equal', amount, chosen.map((id) => ({ personId: id })), payerId),
+        splitMode: 'equal',
+        shares,
+        gcat: GROUP_CATS.some((c) => c.id === args.gcat) ? args.gcat : 'other',
       };
       const id = actions.addGroupEntry(entry);
       return ok({ id, groupId: group.id, amount });
@@ -1895,14 +1910,16 @@ const groupTools = {
       if (members.indexOf(args.from_id) === -1 || members.indexOf(args.to_id) === -1)
         return { error: 'invalid_args', detail: 'from_id ou to_id nao sao membros do grupo' };
       const amount = Math.abs(Number(args.amount) || 0);
+      // Um acerto NAO e uma despesa: kind 'settlement', com fromId/toId e sem
+      // shares (ver split.js:114 e modals/SettleSheet.jsx). O store nunca
+      // reflecte um settlement em addedExp.
       const entry = {
         groupId: group.id,
-        kind: 'settle',
-        desc: 'Acerto',
+        kind: 'settlement',
+        fromId: args.from_id,
+        toId: args.to_id,
         amount,
         date: safeDate(args.date),
-        payerId: args.from_id,
-        shares: [{ personId: args.to_id, amount }],
       };
       const id = actions.addGroupEntry(entry);
       return ok({ id, amount });
@@ -1946,7 +1963,7 @@ Atualizar o registry:
 export const TOOLS = { ...readTools, ...writeTools, ...destructiveTools, ...groupTools };
 ```
 
-> Antes de correr os testes, ler `src/lib/split.js` (`resolveShares`) e o `addGroupEntry` em `src/store/store.jsx` para confirmar a forma exata de `shares` (nome do campo do id da pessoa e do valor) e de uma entry de acerto. Alinhar o código e os testes acima com o que o store já espera — os invariantes de grupos são do store, não destas tools.
+> Formas já confirmadas contra o código (não voltar a adivinhar): `resolveShares(mode, amount, entries, payerId)` devolve `{ shares, error }`, com `shares` no formato `[{ personId, amount }]`; uma despesa de grupo é `{ groupId, kind:'expense', desc, amount, date, payerId, splitMode, shares, gcat }` (ver `modals/GroupExpenseSheet.jsx:270-281`); um acerto é `{ groupId, kind:'settlement', fromId, toId, amount, date }` (ver `modals/SettleSheet.jsx:184`). `reflectExpenseFor` ignora `kind === 'settlement'`, por isso um acerto nunca gera movimento pessoal. Os invariantes continuam a ser do store, não destas tools.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -1985,9 +2002,9 @@ continuarem no store."
     - `applied`: `[{ name, args, data }]`
     - `pending`: `[{ name, args, preview }]`
     - `usage`: `{ prompt_tokens, completion_tokens, total_tokens }` somado de todas as voltas
-  - `confirmPending(call, ctx) -> { ok, data } | { error }` — executa uma chamada pendente com `confirmed: true`.
+  - `confirmPending(call, ctx) -> { ok, data } | { error }` — executa uma chamada pendente com `confirmed: true`. **É o ÚNICO sítio que injeta `confirmed`**; o loop descarta qualquer `confirmed` que venha do modelo. Nada fora deste módulo chama `TOOLS[nome].run()` diretamente — o gate vive em `execTool`.
   - `ASSISTANT_SYSTEM` — o system prompt do assistente, numa constante só (usado pela `AssistantSheet` e pelo `AIView`).
-  - `estimateCost(usage) -> number` — custo em euros do pedido, a partir do preço do tier `fast`.
+  - `estimateCost(usage) -> number` — custo do pedido **em dólares** (o OpenRouter cobra em USD), a partir do preço do tier `fast`. A UI rotula-o como USD; não há conversão para euros.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2064,6 +2081,16 @@ describe('runAssistant', () => {
     expect(out.pending[0].preview.label).toContain('Continente');
   });
 
+  it('ignora um confirmed vindo do modelo e continua a pedir confirmacao', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('delete_expense', { id: 'e1', confirmed: true }))
+      .mockResolvedValueOnce(say('Confirmas?'));
+    const c = ctx();
+    const out = await runAssistant('apaga ja', { ...c, chatFn });
+    expect(c.actions.deleteExpense).not.toHaveBeenCalled();
+    expect(out.pending).toHaveLength(1);
+  });
+
   it('devolve o erro da tool ao modelo em vez de rebentar', async () => {
     const chatFn = vi.fn()
       .mockResolvedValueOnce(callTool('delete_expense', { id: 'nao-existe' }))
@@ -2083,7 +2110,7 @@ describe('runAssistant', () => {
 });
 
 describe('estimateCost', () => {
-  it('calcula o custo do tier fast em euros', () => {
+  it('calcula o custo do tier fast em dolares', () => {
     // 1M tokens de entrada = 0,30 USD; 1M de saida = 2,50 USD.
     const c = estimateCost({ prompt_tokens: 1_000_000, completion_tokens: 0 });
     expect(c).toBeCloseTo(0.3, 6);
@@ -2212,7 +2239,14 @@ export async function runAssistant(userText, opts) {
       if (args.__parse_error) {
         result = { error: 'invalid_args', detail: 'argumentos nao sao JSON valido' };
       } else {
-        result = execTool(name, args, ctx);
+        // Barreira de confiança: um `confirmed` que venha do modelo é
+        // DESCARTADO aqui. A confirmação só entra por confirmPending(), que a
+        // UI chama depois de o utilizador ver a pré-visualização. O campo nem
+        // sequer aparece nos schemas enviados ao modelo, mas um modelo pode
+        // sempre inventar um argumento — por isso o corte é aqui, e não numa
+        // instrução em linguagem natural.
+        const { confirmed: _ignored, ...safeArgs } = args;
+        result = execTool(name, safeArgs, ctx);
       }
       if (result && result.pending) {
         pending.push({ name, args, preview: result.preview });
@@ -2609,7 +2643,8 @@ describe('AssistantSheet', () => {
     await openSheet();
     fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'x' } });
     fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
-    await waitFor(() => expect(screen.getByText(/EUR/)).toBeInTheDocument());
+    // O OpenRouter cobra em USD — o rodape mostra dolares, nao euros.
+    await waitFor(() => expect(screen.getByText(/^\$\d/)).toBeInTheDocument());
   });
 
   it('mostra o erro quando o pedido falha', async () => {
@@ -2788,7 +2823,7 @@ export default function AssistantSheet() {
             )}
             {t.usage ? (
               <div className="lb" style={{ fontSize: 10, color: 'var(--text3)' }}>
-                {estimateCost(t.usage).toFixed(4).replace('.', ',')} EUR
+                {'$' + estimateCost(t.usage).toFixed(4)}
               </div>
             ) : null}
           </div>

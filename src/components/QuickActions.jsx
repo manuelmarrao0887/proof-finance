@@ -12,6 +12,7 @@ const ACTIONS = [
   { key: 'balanceUpdate', label: 'Saldo', icon: 'balance', color: 'var(--primary)' },
   { key: 'add', label: 'Despesa', icon: 'expense', color: 'var(--danger)' },
   { key: 'income', label: 'Receita', icon: 'income', color: 'var(--success)' },
+  { key: 'assistant', label: 'IA', icon: 'sparkle', color: 'var(--blue)' },
   { key: 'more', label: 'Mais', icon: 'dots', color: 'var(--secondary)' },
 ];
 
@@ -29,8 +30,8 @@ export default function QuickActions() {
         >
           <span
             style={{
-              width: 54,
-              height: 54,
+              width: 48,
+              height: 48,
               borderRadius: '50%',
               background: 'color-mix(in srgb, ' + a.color + ' 12%, transparent)', // ~12% tint of the token
               color: a.color,
@@ -39,7 +40,7 @@ export default function QuickActions() {
               justifyContent: 'center',
             }}
           >
-            <Icon name={a.icon} size={24} />
+            <Icon name={a.icon} size={22} />
           </span>
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)' }}>{a.label}</span>
         </button>
