@@ -5,7 +5,8 @@
      action). Background var(--primary)/text var(--bg) when enabled; var(--bg3)/
      var(--text3) when disabled.
    - SecondaryButton: full-width transparent text button used for destructive /
-     secondary actions (e.g. "Eliminar"), coloured var(--signal).
+     secondary actions (e.g. "Eliminar"), coloured var(--signal). Text dims to
+     var(--text3) when disabled, same treatment as PrimaryButton.
 
    Optional `style` is merged LAST so callers can tweak spacing (e.g. marginTop).
    ════════════════════════════════════════════════════════════════════════ */
@@ -36,20 +37,21 @@ export function PrimaryButton({ children, onClick, disabled, type = 'button', st
   );
 }
 
-export function SecondaryButton({ children, onClick, type = 'button', style }) {
+export function SecondaryButton({ children, onClick, disabled, type = 'button', style }) {
   return (
     <button
       type={type}
       onClick={onClick}
+      disabled={disabled}
       style={{
         width: '100%',
         padding: '10px 0',
         border: 'none',
         background: 'transparent',
-        color: 'var(--signal)',
+        color: disabled ? 'var(--text3)' : 'var(--signal)',
         fontSize: 12,
         fontWeight: 600,
-        cursor: 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
         ...style,
       }}
     >

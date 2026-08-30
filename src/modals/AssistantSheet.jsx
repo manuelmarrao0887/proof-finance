@@ -17,10 +17,10 @@ import { renderMD } from '../lib/markdown.js';
 import { buildAIContext } from '../lib/ai.js';
 import { runAssistant, confirmPending, estimateCost, ASSISTANT_SYSTEM } from '../lib/aiChat.js';
 
-// Guarda o estado anterior de todas as slices que uma tool pode tocar, para o
-// Anular repor exatamente o que a volta alterou (ver COLLECTIONS em
-// lib/aiTools.js + os creators diretos: update_balance, add_snapshot,
-// add_category/add_rule, add_person/add_group_expense/delete_group_entry).
+// Guarda o estado anterior de todas as slices que uma tool pode tocar — o
+// "antes" de que o Anular precisa. Note-se que isto sozinho NÃO chega: ver
+// SLICE_BY_TOOL/undoSnapshotFor abaixo para o porquê de só se repor as slices
+// que a PRÓPRIA volta tocou, nunca as 11 de uma vez.
 function snapshotSlices(state) {
   return {
     addedExp: state.addedExp,
@@ -35,6 +35,48 @@ function snapshotSlices(state) {
     groups: state.groups,
     groupEntries: state.groupEntries,
   };
+}
+
+// Tool -> slice que essa tool escreve, verificado uma a uma contra
+// src/lib/aiTools.js (writeTools + groupTools). As tools destrutivas
+// (update_*/delete_*, incl. delete_group_entry) NUNCA aparecem aqui: nunca
+// entram em `applied` — só escrevem via confirmPending(), fora deste caminho
+// (ver execTool: um tool_call destrutivo sem confirmed:true devolve
+// {pending}, nunca {ok}).
+const SLICE_BY_TOOL = {
+  add_expense: 'addedExp',
+  add_income: 'incomes',
+  add_goal: 'goals',
+  add_recurring: 'recurring',
+  add_category: 'bdg',
+  set_budget: 'bdg',
+  add_rule: 'rules',
+  update_balance: 'dynAccts',
+  add_snapshot: 'dynSnaps',
+  create_group: 'groups',
+  add_person: 'people',
+  add_group_expense: 'groupEntries',
+  settle_group: 'groupEntries',
+};
+
+// Devolve o subconjunto de `before` correspondente às slices que ESTA lista
+// de `applied` tocou — nunca as 11 de uma vez. Sem isto, o Anular de uma
+// volta antiga sobrescreve com um valor obsoleto qualquer slice que uma volta
+// mais recente (ou qualquer outra parte da app, entretanto) tenha alterado,
+// apagando esse trabalho. Uma tool não reconhecida faz devolver null — o
+// Anular fica indisponível em vez de arriscar restaurar a slice errada.
+function undoSnapshotFor(applied, before) {
+  const keys = new Set();
+  for (const a of applied) {
+    const slice = SLICE_BY_TOOL[a.name];
+    if (!slice) return null;
+    keys.add(slice);
+  }
+  const snap = {};
+  keys.forEach((k) => {
+    snap[k] = before[k];
+  });
+  return snap;
 }
 
 export default function AssistantSheet() {
@@ -66,15 +108,21 @@ export default function AssistantSheet() {
         historyRef.current = (res.messages || []).filter(
           (m) => m.role === 'user' || (m.role === 'assistant' && m.content)
         );
+        const applied = res.applied || [];
         setTurns((t) => [
-          ...t,
+          // Uma volta que aplicou qualquer coisa torna obsoleto o "antes" de
+          // TODAS as voltas anteriores (tocasse ou não a mesma slice) — só a
+          // aplicação mais recente pode oferecer Anular, nunca duas ao mesmo
+          // tempo. Um botão Anular parado a reescrever silenciosamente o
+          // passado é pior do que não ter Anular nenhum.
+          ...t.map((x) => (applied.length ? { ...x, undo: null } : x)),
           {
             cmd,
             text: res.text,
-            applied: res.applied || [],
+            applied,
             pending: res.pending || [],
             usage: res.usage,
-            undo: (res.applied || []).length ? before : null,
+            undo: applied.length ? undoSnapshotFor(applied, before) : null,
           },
         ]);
         setText('');
@@ -142,64 +190,77 @@ export default function AssistantSheet() {
       <PrimaryButton onClick={send} disabled={busy}>
         {busy ? 'A pensar…' : 'Enviar'}
       </PrimaryButton>
+      {/* Anúncio para leitores de ecrã — o botão sozinho não é uma live
+          region, um leitor de ecrã não repara na mudança do texto. */}
+      {busy && (
+        <div aria-live="polite" className="lb" style={{ marginTop: 8, color: 'var(--text3)' }}>
+          A pensar…
+        </div>
+      )}
     </>
   );
 
   return (
     <Sheet open={isOpen} onClose={close} title="Assistente" footer={footer}>
-      {turns.length === 0 ? (
-        <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
-          Escreve em linguagem natural — "gastei 12 no Pingo Doce", "quanto gastei em restaurantes este mês?".
-        </div>
-      ) : (
-        turns.map((t, i) => (
-          <div key={i} className="cd fadeUp" style={{ marginBottom: 8, padding: '14px 16px' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{t.cmd}</div>
-
-            {t.error ? (
-              <div role="alert" style={{ borderLeft: '3px solid var(--signal)', padding: '8px 12px', borderRadius: 8 }}>
-                <div className="lb" style={{ color: 'var(--signal)' }}>{t.error}</div>
-              </div>
-            ) : (
-              <>
-                <div
-                  style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.6 }}
-                  dangerouslySetInnerHTML={{ __html: renderMD(t.text) }}
-                />
-
-                {(t.pending || []).map((p, j) => (
-                  <div key={j} className="cs" style={{ padding: 14, marginTop: 10 }}>
-                    <div className="lb" style={{ marginBottom: 6 }}>
-                      {p.preview.action === 'delete' ? 'Apagar' : 'Alterar'} · {p.preview.kind}
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{p.preview.label}</div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <PrimaryButton onClick={() => confirm(i, j)} style={{ flex: 1 }}>
-                        Confirmar
-                      </PrimaryButton>
-                      <SecondaryButton onClick={() => cancel(i, j)} style={{ flex: 1, color: 'var(--text2)' }}>
-                        Cancelar
-                      </SecondaryButton>
-                    </div>
-                  </div>
-                ))}
-
-                {t.undo && (
-                  <SecondaryButton onClick={() => undo(i)} style={{ marginTop: 10, color: 'var(--text2)' }}>
-                    Anular
-                  </SecondaryButton>
-                )}
-
-                {t.usage ? (
-                  <div className="lb" style={{ marginTop: 10, color: 'var(--fg-subtle)' }}>
-                    {'$' + estimateCost(t.usage).toFixed(4)}
-                  </div>
-                ) : null}
-              </>
-            )}
+      {/* Live region única e sempre montada: quando uma nova volta chega,
+          o leitor de ecrã anuncia só o que mudou (aria-live="polite" +
+          aria-atomic="false", o default) — mesmo padrão de
+          ImportStatementSheet.jsx (stScanning). */}
+      <div aria-live="polite">
+        {turns.length === 0 ? (
+          <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
+            Escreve em linguagem natural — "gastei 12 no Pingo Doce", "quanto gastei em restaurantes este mês?".
           </div>
-        ))
-      )}
+        ) : (
+          turns.map((t, i) => (
+            <div key={i} className="cd fadeUp" style={{ marginBottom: 8, padding: '14px 16px' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{t.cmd}</div>
+
+              {t.error ? (
+                <div role="alert" style={{ borderLeft: '3px solid var(--signal)', padding: '8px 12px', borderRadius: 8 }}>
+                  <div className="lb" style={{ color: 'var(--signal)' }}>{t.error}</div>
+                </div>
+              ) : (
+                <>
+                  <div
+                    style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.6 }}
+                    dangerouslySetInnerHTML={{ __html: renderMD(t.text) }}
+                  />
+
+                  {(t.pending || []).map((p, j) => (
+                    <div key={j} className="cs" style={{ padding: 14, marginTop: 10 }}>
+                      <div className="lb" style={{ marginBottom: 6 }}>
+                        {p.preview.action === 'delete' ? 'Apagar' : 'Alterar'} · {p.preview.kind}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{p.preview.label}</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <PrimaryButton onClick={() => confirm(i, j)} disabled={busy} style={{ flex: 1 }}>
+                          Confirmar
+                        </PrimaryButton>
+                        <SecondaryButton onClick={() => cancel(i, j)} disabled={busy} style={{ flex: 1, color: 'var(--text2)' }}>
+                          Cancelar
+                        </SecondaryButton>
+                      </div>
+                    </div>
+                  ))}
+
+                  {t.undo && (
+                    <SecondaryButton onClick={() => undo(i)} disabled={busy} style={{ marginTop: 10, color: 'var(--text2)' }}>
+                      Anular
+                    </SecondaryButton>
+                  )}
+
+                  {t.usage ? (
+                    <div className="lb" style={{ marginTop: 10, color: 'var(--fg-subtle)' }}>
+                      {'$' + estimateCost(t.usage).toFixed(4)}
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
+          ))
+        )}
+      </div>
     </Sheet>
   );
 }

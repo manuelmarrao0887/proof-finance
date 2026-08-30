@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
 
 const runAssistant = vi.fn();
@@ -28,6 +28,14 @@ describe('AssistantSheet', () => {
   it('mostra o campo de escrita', async () => {
     await openSheet();
     expect(screen.getByPlaceholderText(/pergunta ou regista/i)).toBeInTheDocument();
+  });
+
+  // Cobertura extra (não vem do brief, pedida pela revisão): a conversa é
+  // uma live region — sem isto, um leitor de ecrã fica em silêncio quando a
+  // resposta do assistente chega.
+  it('a conversa é anunciada a leitores de ecrã (aria-live=polite)', async () => {
+    const { container } = await openSheet();
+    expect(container.querySelector('[aria-live="polite"]')).not.toBeNull();
   });
 
   it('envia o texto e mostra a resposta', async () => {
@@ -144,5 +152,153 @@ describe('AssistantSheet', () => {
     expect(capturedActions.getState().addedExp).toEqual([
       { id: 'e0', desc: 'Existente', amount: 5, cat: 'out', date: '2026-08-01' },
     ]);
+  });
+
+  // Cobertura extra (não vem do brief, pedida pela revisão): duas criações
+  // seguidas na MESMA slice. Antes do fix, o Anular da 1ª volta ficava vivo
+  // depois da 2ª aplicar — clicar nele repunha addedExp para o valor de ANTES
+  // da 1ª volta, apagando as duas criações de uma vez. O fix exige duas
+  // coisas ao mesmo tempo: (1) só a volta mais recente pode oferecer Anular
+  // (o da 1ª desaparece assim que a 2ª aplica algo) e (2) mesmo esse único
+  // Anular restante só repõe a slice tal como estava ANTES da 2ª volta — ou
+  // seja, já COM a criação da 1ª volta lá dentro.
+  it('duas criações seguidas: o Anular da 1ª desaparece e o da 2ª não apaga a 1ª', async () => {
+    let capturedActions;
+    let call = 0;
+    runAssistant.mockImplementation((cmd, opts) => {
+      call += 1;
+      if (call === 1) {
+        opts.actions.addExpense({ id: 'e1', desc: 'Café', amount: 1.2, cat: 'rest', date: '2026-08-28' });
+        return Promise.resolve({
+          text: 'Registei o café.',
+          applied: [{ name: 'add_expense', args: { desc: 'Café', amount: 1.2 }, data: { id: 'e1' } }],
+          pending: [],
+          usage: {},
+        });
+      }
+      opts.actions.addExpense({ id: 'e2', desc: 'Pastel', amount: 1.1, cat: 'rest', date: '2026-08-29' });
+      return Promise.resolve({
+        text: 'Registei o pastel.',
+        applied: [{ name: 'add_expense', args: { desc: 'Pastel', amount: 1.1 }, data: { id: 'e2' } }],
+        pending: [],
+        usage: {},
+      });
+    });
+    await renderWithStore(<AssistantSheet />, {
+      openModal: 'assistant',
+      fixture: { addedExp: [{ id: 'e0', desc: 'Existente', amount: 5, cat: 'out', date: '2026-08-01' }] },
+      onReady: (ctx) => {
+        capturedActions = ctx.actions;
+      },
+    });
+    const input = screen.getByPlaceholderText(/pergunta ou regista/i);
+    const sendBtn = () => screen.getByRole('button', { name: /enviar/i });
+
+    fireEvent.change(input, { target: { value: 'cafe' } });
+    fireEvent.click(sendBtn());
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /anular/i })).toHaveLength(1));
+
+    fireEvent.change(input, { target: { value: 'pastel' } });
+    fireEvent.click(sendBtn());
+    await waitFor(() => expect(screen.getByText('Registei o pastel.')).toBeInTheDocument());
+
+    // O registo da 2ª volta chegou ao store sem nada o ter apagado.
+    expect(capturedActions.getState().addedExp.map((x) => x.id).sort()).toEqual(['e0', 'e1', 'e2']);
+
+    // Só pode haver UM Anular vivo — o da 2ª volta. O da 1ª desapareceu.
+    const anularButtons = screen.getAllByRole('button', { name: /anular/i });
+    expect(anularButtons).toHaveLength(1);
+
+    // E esse único Anular restante (o da 2ª volta) não pode apagar a
+    // criação da 1ª: repõe addedExp para o estado logo antes da 2ª volta,
+    // que já tinha e0 e e1 lá dentro.
+    fireEvent.click(anularButtons[0]);
+    await waitFor(() => expect(screen.queryByRole('button', { name: /anular/i })).toBeNull());
+    expect(capturedActions.getState().addedExp.map((x) => x.id).sort()).toEqual(['e0', 'e1']);
+  });
+
+  // Cobertura extra (não vem do brief, pedida pela revisão): o Anular só
+  // pode repor a slice que a PRÓPRIA volta tocou (addedExp, aqui) — nunca as
+  // 11 de uma vez. Simula-se "outra parte da app" a escrever 'people'
+  // diretamente (fora do assistente) enquanto o Anular ainda está vivo; se o
+  // Anular repusesse o snapshot completo de 11 slices, essa escrita seria
+  // apagada silenciosamente mesmo sem ter nada a ver com esta volta.
+  it('anular só mexe na slice da própria volta — não apaga outra slice alterada entretanto', async () => {
+    let capturedActions;
+    runAssistant.mockImplementation((cmd, opts) => {
+      opts.actions.addExpense({ id: 'e1', desc: 'Café', amount: 1.2, cat: 'rest', date: '2026-08-28' });
+      return Promise.resolve({
+        text: 'Registei o café.',
+        applied: [{ name: 'add_expense', args: { desc: 'Café', amount: 1.2 }, data: { id: 'e1' } }],
+        pending: [],
+        usage: {},
+      });
+    });
+    await renderWithStore(<AssistantSheet />, {
+      openModal: 'assistant',
+      fixture: {
+        addedExp: [{ id: 'e0', desc: 'Existente', amount: 5, cat: 'out', date: '2026-08-01' }],
+        people: [{ id: 'p0', name: 'Ana' }],
+      },
+      onReady: (ctx) => {
+        capturedActions = ctx.actions;
+      },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'cafe' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /anular/i })).toBeInTheDocument());
+
+    // Outra parte da app (não o assistente) escreve 'people' enquanto o
+    // Anular deste turno ainda está no ecrã.
+    act(() => {
+      capturedActions.addPerson({ id: 'p1', name: 'Bruno' });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /anular/i }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: /anular/i })).toBeNull());
+
+    // addedExp voltou ao que era antes desta volta (só e0)...
+    expect(capturedActions.getState().addedExp.map((x) => x.id).sort()).toEqual(['e0']);
+    // ...mas 'people' — slice que esta volta nunca tocou — ficou intacto,
+    // com a escrita entretanto feita por fora.
+    expect(capturedActions.getState().people.map((p) => p.id).sort()).toEqual(['p0', 'p1']);
+  });
+
+  // Cobertura extra (não vem do brief, pedida pela revisão — Minor): um
+  // pedido em curso (busy) tem de desativar Confirmar/Cancelar/Anular de
+  // voltas anteriores, tal como já desativa o Enviar — nada pode escrever a
+  // meio de um pedido.
+  it('enquanto está ocupado, Confirmar/Cancelar/Anular ficam desativados', async () => {
+    runAssistant.mockResolvedValueOnce({
+      text: 'Registei e falta confirmar uma coisa.',
+      applied: [{ name: 'add_expense', args: { desc: 'Café', amount: 1.2 }, data: { id: 'e1' } }],
+      pending: [{ name: 'delete_expense', args: { id: 'e0' }, preview: { action: 'delete', kind: 'despesa', label: 'Continente' } }],
+      usage: {},
+    });
+    await openSheet();
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'x' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /anular/i })).toBeInTheDocument());
+
+    // 2º pedido fica pendurado (nunca resolve) para observar o estado busy.
+    let resolveSecond;
+    runAssistant.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSecond = resolve;
+        })
+    );
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'y' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /confirmar/i })).toBeDisabled());
+    expect(screen.getByRole('button', { name: /cancelar/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /anular/i })).toBeDisabled();
+
+    // Resolve a promise pendurada para não vazar estado para o teste seguinte.
+    await act(async () => {
+      resolveSecond({ text: 'ok', applied: [], pending: [], usage: {} });
+      await Promise.resolve();
+    });
   });
 });
