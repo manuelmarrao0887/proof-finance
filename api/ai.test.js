@@ -74,4 +74,16 @@ describe('sanitizeRequest', () => {
     expect(sanitizeRequest({ ...base, tools: 'nope' }).tools).toBeUndefined();
     expect(sanitizeRequest({ ...base, tools: [{ type: 'function' }] }).tools).toHaveLength(1);
   });
+  it('conta os tools no limite de tamanho do corpo', () => {
+    const body = {
+      messages: [{ role: 'user', content: 'ola' }],
+      tools: [{ type: 'function', function: { name: 'x', description: 'y'.repeat(3_000_001) } }],
+    };
+    try {
+      sanitizeRequest(body);
+      throw new Error('devia ter rejeitado');
+    } catch (e) {
+      expect(e.status).toBe(413);
+    }
+  });
 });

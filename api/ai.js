@@ -54,13 +54,18 @@ export function sanitizeRequest(body) {
   messages.forEach((m) => {
     if (!m || !ROLES.has(m.role)) throw bad(400, 'Role invalido');
   });
-  if (JSON.stringify(messages).length > MAX_BODY_CHARS) throw bad(413, 'Pedido demasiado grande');
   const parsed = parseInt(b.max_tokens, 10);
   const max_tokens = Math.min(Math.max(Number.isFinite(parsed) ? parsed : 4000, MIN_TOKENS), MAX_TOKENS_CAP);
+  const tools = Array.isArray(b.tools) && b.tools.length ? b.tools : undefined;
+
+  // Validar tamanho total do payload (messages + tools).
+  const payload = { messages, tools, model: 'temp', max_tokens };
+  if (JSON.stringify(payload).length > MAX_BODY_CHARS) throw bad(413, 'Pedido demasiado grande');
+
   return {
     model: resolveModel(b.tier),
     messages,
-    tools: Array.isArray(b.tools) && b.tools.length ? b.tools : undefined,
+    tools,
     max_tokens,
   };
 }
@@ -162,7 +167,7 @@ export default async function handler(req, res) {
     const data = await r.json();
     if (!r.ok) {
       console.error('[api/ai] upstream', r.status, JSON.stringify(data).slice(0, 300));
-      return res.status(r.status).json({ error: 'upstream', status: r.status });
+      return res.status(r.status).json({ error: 'Falha no assistente', status: r.status });
     }
     const choices = Array.isArray(data.choices)
       ? data.choices.map((c) => ({ ...c, message: capToolCalls(c.message) }))
