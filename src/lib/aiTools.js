@@ -237,9 +237,12 @@ const readTools = {
   },
 };
 
-/* ── Tools de escrita não destrutivas ────────────────────────────────────
-   Todas criam um registo novo (nunca alteram nem apagam um existente), por
-   isso não pedem confirmação — ao contrário de update_* / delete_* (Task 5).
+/* ── Tools de escrita ────────────────────────────────────────────────────
+   As add_* criam um registo NOVO (nunca alteram nem apagam um existente) e
+   por isso aplicam-se logo, sem confirmação. As duas excepções vivem aqui
+   por proximidade temática mas estão marcadas `destructive`: set_budget e
+   update_balance substituem um valor existente (limite, saldo) e passam pelo
+   mesmo portão de pré-visualização das update_* / delete_*.
    Saneamento na fronteira: categoria desconhecida cai em 'out', dia fora de
    1-31 cai em 1, o valor de uma despesa é sempre guardado positivo. */
 
@@ -254,10 +257,43 @@ function safeDay(d) {
   return Number.isFinite(n) && n >= 1 && n <= 31 ? n : 1;
 }
 function safeDate(d) {
-  return d ? normalizeStmtDate(d) : todayISO();
+  // normalizeStmtDate devolve a entrada INTACTA quando não reconhece o formato
+  // (lib/format.js, "Unknown formats pass through") — sem esta verificação uma
+  // data inventada pelo modelo entrava tal e qual no estado. Datas são
+  // comparadas como texto em toda a app (filtros de mês, orçamento, listagens),
+  // por isso uma linha assim fica invisível em todos esses sítios. Formato
+  // irreconhecível → hoje, a mesma omissão de quando não vem data nenhuma.
+  const iso = d ? normalizeStmtDate(d) : '';
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : todayISO();
 }
 function txt(v, max) {
   return String(v == null ? '' : v).substring(0, max || 60);
+}
+function eur(n) {
+  return (Number(n) || 0).toFixed(2) + ' EUR';
+}
+
+/* Saneamento de uma despesa — a MESMA função para o caminho de CRIAÇÃO
+   (add_expense) e para o de ALTERAÇÃO (update_expense). Estavam separados e
+   divergiram: o update fazia um Number() nu, e por aí passava um valor
+   negativo (que em vez de somar, subtrai ao total da categoria), uma `cat`
+   inexistente (a despesa fica invisível em qualquer resumo de orçamento), uma
+   `date` que normalizeStmtDate devolve tal e qual quando não a reconhece
+   (lib/format.js) e uma `desc` sem limite de tamanho. Só as chaves presentes
+   em `raw` são tratadas — um patch parcial continua parcial. */
+const EXPENSE_FIELD_SANITIZERS = {
+  desc: (v) => txt(v),
+  amount: (v) => Math.abs(Number(v) || 0),
+  cat: (v) => safeCat(v),
+  date: (v) => safeDate(v),
+};
+function sanitizeExpenseFields(raw) {
+  const out = {};
+  Object.keys(raw).forEach((k) => {
+    const f = EXPENSE_FIELD_SANITIZERS[k];
+    if (f) out[k] = f(raw[k]);
+  });
+  return out;
 }
 
 // Bancos/tipos válidos para update_balance vêm de ACCT_TEMPLATES (a MESMA
@@ -284,12 +320,11 @@ const writeTools = {
     },
     description: 'Regista uma despesa nova.',
     run(args, { actions }) {
+      // As quatro chaves vão sempre (mesmo indefinidas) para o saneador
+      // aplicar os defaults: cat -> 'out', date -> hoje.
       const exp = {
         id: uid(),
-        desc: txt(args.desc),
-        amount: Math.abs(Number(args.amount) || 0),
-        cat: safeCat(args.cat),
-        date: safeDate(args.date),
+        ...sanitizeExpenseFields({ desc: args.desc, amount: args.amount, cat: args.cat, date: args.date }),
       };
       actions.addExpense(exp);
       return ok({ id: exp.id, ...exp });
@@ -420,25 +455,50 @@ const writeTools = {
     },
   },
 
+  /* set_budget e update_balance são DESTRUTIVAS, apesar de viverem entre as
+     tools de escrita: cada uma substitui um valor que já lá estava (o limite
+     da categoria, o saldo da conta) e o valor antigo não se recupera. A regra
+     do produto é "criar aplica-se logo; alterar e apagar pedem confirmação" —
+     estas alteram, logo passam pelo mesmo portão de pré-visualização das
+     tools update_ e delete_. Nunca entram em `applied` nem em
+     WRITE_TOOL_SLICES. */
   set_budget: {
+    destructive: true,
     schema: {
       type: 'object',
       properties: {
         cat: { type: 'string', description: 'id da categoria (ver list_categories)' },
         limit: { type: 'number', description: 'novo limite mensal em euros' },
+        confirmed: { type: 'boolean', description: 'nao preencher: o utilizador e que confirma na app' },
       },
       required: ['cat', 'limit'],
     },
-    description: 'Define o orcamento mensal de uma categoria.',
-    run(args, { actions }) {
-      const bdg = actions.getState().bdg || [];
-      if (!bdg.some((b) => b.id === args.cat)) return notFound();
-      actions.setBdg(bdg.map((b) => (b.id === args.cat ? { ...b, lm: Number(args.limit) || 0 } : b)));
-      return ok({ cat: args.cat, limit: Number(args.limit) || 0 });
+    description: 'Define o orcamento mensal de uma categoria. Substitui o limite atual — o utilizador confirma na app.',
+    preview(args, { actions }) {
+      const cur = (actions.getState().bdg || []).find((b) => b.id === args.cat);
+      if (!cur) return notFound();
+      const lm = Number(args.limit) || 0;
+      return {
+        action: 'update',
+        kind: 'orçamento',
+        label: (cur.nm || cur.id) + ' · ' + eur(cur.lm) + ' → ' + eur(lm),
+        before: cur,
+        after: { ...cur, lm },
+        patch: { lm },
+      };
+    },
+    run(args, ctx) {
+      const p = this.preview(args, ctx);
+      if (p.error) return p;
+      // updateCategory (bdg.map por id, com atualizador funcional) em vez de
+      // reescrever o array inteiro lido antes do dispatch.
+      ctx.actions.updateCategory(args.cat, p.patch);
+      return ok({ cat: args.cat, limit: p.patch.lm });
     },
   },
 
   update_balance: {
+    destructive: true,
     schema: {
       type: 'object',
       properties: {
@@ -446,23 +506,51 @@ const writeTools = {
         account_type: { type: 'string', description: ACCT_TYPES.join(' | ') },
         value: { type: 'number', description: 'saldo em euros' },
         note: { type: 'string', description: 'nota opcional (ex: total antes de dividir)' },
+        confirmed: { type: 'boolean', description: 'nao preencher: o utilizador e que confirma na app' },
       },
       required: ['account_bank', 'account_type', 'value'],
     },
-    description: 'Atualiza o saldo de uma conta.',
-    run(args, { actions }) {
+    description: 'Atualiza o saldo de uma conta. Substitui o saldo atual — o utilizador confirma na app.',
+    preview(args, { actions }) {
       // O par banco/tipo tem de existir em ACCT_TEMPLATES: getAccts só expõe
       // dynAccts['Banco_Tipo'] para pares que reconhece — uma chave que não
       // bate certo com nenhum par fica órfã (nunca entra no património,
       // get_overview ou UI) mesmo que a escrita "tenha sucesso".
       const valid = ACCT_TEMPLATES.some((a) => a.b === args.account_bank && a.t === args.account_type);
       if (!valid) return notFound();
-      const st = actions.getState();
       const key = args.account_bank + '_' + args.account_type;
-      const dyn = { ...(st.dynAccts || {}) };
-      dyn[key] = { v: Number(args.value) || 0, d: todayISO().replace(/-/g, '.'), n: args.note || null };
-      actions.setDynAccts(dyn);
-      return ok({ key, value: dyn[key].v });
+      const cur = ((actions.getState() || {}).dynAccts || {})[key] || null;
+      // Nota sem limite era o único campo desta tool que ia em bruto para o
+      // estado — passa pelo mesmo txt() das restantes.
+      const note = args.note != null && args.note !== '' ? txt(args.note) : null;
+      const before = { key, value: cur ? cur.v : null, note: cur ? cur.n || null : null };
+      const after = { key, value: Number(args.value) || 0, note: note || before.note };
+      return {
+        action: 'update',
+        kind: 'saldo',
+        label:
+          args.account_bank + ' · ' + args.account_type + ' · ' +
+          (before.value == null ? 'sem leitura' : eur(before.value)) + ' → ' + eur(after.value),
+        before,
+        after,
+      };
+    },
+    run(args, ctx) {
+      const p = this.preview(args, ctx);
+      if (p.error) return p;
+      // MESMO caminho do fluxo manual (BalanceUpdateSheet): addBalanceReading
+      // acrescenta ao balanceLog (o histórico que o BalanceHistorySheet mostra),
+      // atualiza o saldo vivo e faz upsert do snapshot patrimonial do dia.
+      // Escrever dynAccts à mão perdia as três coisas e apagava a nota anterior.
+      // `note` indefinida = manter a nota que lá estava (regra da action).
+      const note = args.note != null && args.note !== '' ? txt(args.note) : undefined;
+      ctx.actions.addBalanceReading({
+        account: { bank: args.account_bank, type: args.account_type, custom: false },
+        value: p.after.value,
+        date: todayISO(),
+        note,
+      });
+      return ok({ key: p.after.key, value: p.after.value });
     },
   },
 
@@ -501,6 +589,9 @@ const COLLECTIONS = {
     update: (a) => a.updateExpense,
     remove: (a) => a.deleteExpense,
     label: (x) => x.desc + ' · ' + (Number(x.amount) || 0).toFixed(2) + ' EUR · ' + (x.date || ''),
+    // O MESMO saneador de add_expense: alterar uma despesa não pode aceitar o
+    // que criar uma despesa rejeita (ver sanitizeExpenseFields).
+    sanitize: sanitizeExpenseFields,
     fields: {
       desc: { type: 'string' },
       amount: { type: 'number' },
@@ -537,6 +628,17 @@ const COLLECTIONS = {
 // Campos que nunca são escritos a partir dos argumentos do modelo.
 const RESERVED = new Set(['id', 'confirmed']);
 
+// Coerção genérica para as colecções sem saneador próprio: os campos numéricos
+// passam por Number(), o resto vai como veio (comportamento histórico).
+const NUMERIC_FIELDS = new Set(['amount', 'target', 'current', 'day']);
+function coerceNumericFields(raw) {
+  const out = {};
+  Object.keys(raw).forEach((k) => {
+    out[k] = NUMERIC_FIELDS.has(k) ? Number(raw[k]) : raw[k];
+  });
+  return out;
+}
+
 function findIn(ctx, slice, id) {
   return ((ctx.actions.getState() || {})[slice] || []).find((x) => x.id === id) || null;
 }
@@ -558,10 +660,11 @@ function makeUpdateTool(key) {
     preview(args, ctx) {
       const cur = findIn(ctx, c.slice, args.id);
       if (!cur) return notFound();
-      const patch = {};
+      const raw = {};
       Object.keys(args).forEach((k) => {
-        if (!RESERVED.has(k) && c.fields[k]) patch[k] = k === 'amount' || k === 'target' || k === 'current' || k === 'day' ? Number(args[k]) : args[k];
+        if (!RESERVED.has(k) && c.fields[k]) raw[k] = args[k];
       });
+      const patch = c.sanitize ? c.sanitize(raw) : coerceNumericFields(raw);
       return { action: 'update', kind: c.kind, label: c.label(cur), before: cur, after: { ...cur, ...patch }, patch };
     },
     run(args, ctx) {
@@ -790,19 +893,19 @@ const groupTools = {
        reflectExpenseFor() devolve sempre null para entry.kind==='settlement'
        (a primeira linha da função, antes de olhar para reflectMine) — por
        isso settle_group nunca toca 'addedExp'.
-   Tools destrutivas (update_* e delete_*, incl. delete_group_entry) nunca
-   aparecem aqui: nunca entram em `applied` — só escrevem via
-   confirmPending(), fora deste caminho (execTool devolve {pending} sem
-   confirmed:true, nunca {ok}). */
+   Tools destrutivas nunca aparecem aqui: nunca entram em `applied` — só
+   escrevem via confirmPending(), fora deste caminho (execTool devolve
+   {pending} sem confirmed:true, nunca {ok}). São as update_* / delete_* da
+   fábrica, delete_group_entry e — desde que passaram a pedir confirmação —
+   set_budget e update_balance, que substituem um valor existente em vez de
+   criarem um registo novo. */
 export const WRITE_TOOL_SLICES = {
   add_expense: ['addedExp'],
   add_income: ['incomes'],
   add_goal: ['goals'],
   add_recurring: ['recurring'],
   add_category: ['bdg'],
-  set_budget: ['bdg'],
   add_rule: ['rules'],
-  update_balance: ['dynAccts'],
   add_snapshot: ['dynSnaps'],
   create_group: ['groups'],
   add_person: ['people'],
@@ -814,9 +917,10 @@ export const WRITE_TOOL_SLICES = {
 // aparecer em `applied`) — exportado só para o teste de cobertura em
 // aiTools.test.js confirmar que WRITE_TOOL_SLICES não diverge nem falta nem
 // sobra nada face a writeTools/groupTools. Nada no runtime do assistente usa
-// isto — só o teste.
+// isto — só o teste. O filtro `destructive` aplica-se aos DOIS registos:
+// writeTools também já tem tools destrutivas (set_budget, update_balance).
 export const WRITE_TOOL_NAMES = [
-  ...Object.keys(writeTools),
+  ...Object.keys(writeTools).filter((name) => !writeTools[name].destructive),
   ...Object.keys(groupTools).filter((name) => !groupTools[name].destructive),
 ];
 

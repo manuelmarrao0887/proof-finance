@@ -71,8 +71,8 @@ function writeCtx(seed = {}) {
     addIncome: vi.fn(), updateIncome: vi.fn(), deleteIncome: vi.fn(),
     addGoal: vi.fn(), updateGoal: vi.fn(), deleteGoal: vi.fn(),
     addRecurring: vi.fn(), updateRecurring: vi.fn(), deleteRecurring: vi.fn(),
-    addCategory: vi.fn(), setBdg: vi.fn(), addRule: vi.fn(),
-    setDynAccts: vi.fn(), setDynSnaps: vi.fn(),
+    addCategory: vi.fn(), updateCategory: vi.fn(), setBdg: vi.fn(), addRule: vi.fn(),
+    setDynAccts: vi.fn(), setDynSnaps: vi.fn(), addBalanceReading: vi.fn(),
     addPerson: vi.fn(), addGroup: vi.fn(), addGroupEntry: vi.fn(() => 'ge1'), deleteGroupEntry: vi.fn(),
   };
   return { state, actions };
@@ -292,26 +292,88 @@ describe('add_rule', () => {
   });
 });
 
-describe('set_budget', () => {
-  it('altera o limite de uma categoria existente', () => {
+/* set_budget e update_balance substituem um valor que já existia (limite,
+   saldo) e o antigo não se recupera — a regra do produto é "criar aplica-se
+   logo; alterar e apagar pedem confirmação". Passaram por isso a destrutivas,
+   com a mesma pré-visualização das update_*. */
+describe('set_budget (destrutiva)', () => {
+  it('NAO altera nada na primeira chamada — devolve o antes e o depois', () => {
     const c = writeCtx();
     const r = execTool('set_budget', { cat: 'sup', limit: 250 }, c);
-    expect(r.ok).toBe(true);
-    expect(c.actions.setBdg.mock.calls[0][0].find((b) => b.id === 'sup').lm).toBe(250);
+    expect(r.pending).toBe(true);
+    expect(r.preview.action).toBe('update');
+    expect(r.preview.before.lm).toBe(300);
+    expect(r.preview.after.lm).toBe(250);
+    // O cartao partilhado (PendingActionCard) mostra `label` — tem de dizer
+    // ao utilizador o valor antigo E o novo, senao confirma as cegas.
+    expect(r.preview.label).toContain('300.00 EUR');
+    expect(r.preview.label).toContain('250.00 EUR');
+    expect(c.actions.updateCategory).not.toHaveBeenCalled();
+    expect(c.actions.setBdg).not.toHaveBeenCalled();
   });
-  it('devolve not_found para uma categoria que nao existe', () => {
+  it('altera o limite com confirmed: true', () => {
+    const c = writeCtx();
+    const r = execTool('set_budget', { cat: 'sup', limit: 250, confirmed: true }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.updateCategory).toHaveBeenCalledWith('sup', { lm: 250 });
+  });
+  it('devolve not_found para uma categoria que nao existe, sem pedir confirmacao', () => {
     expect(execTool('set_budget', { cat: 'zzz', limit: 10 }, writeCtx())).toEqual({ error: 'not_found' });
   });
 });
 
-describe('update_balance e add_snapshot', () => {
-  it('update_balance grava a chave banco_tipo em dynAccts', () => {
+describe('update_balance (destrutiva) e add_snapshot', () => {
+  it('NAO grava nada na primeira chamada — pre-visualiza o saldo antigo e o novo', () => {
+    const c = writeCtx({ dynAccts: { 'Bankinter_Conta a Ordem': { v: 100, d: '2026.08.01', n: 'nota antiga' } } });
+    const r = execTool('update_balance', { account_bank: 'Bankinter', account_type: 'Conta a Ordem', value: 584.64 }, c);
+    expect(r.pending).toBe(true);
+    expect(r.preview.action).toBe('update');
+    expect(r.preview.before.value).toBe(100);
+    expect(r.preview.after.value).toBe(584.64);
+    expect(r.preview.label).toContain('100.00 EUR');
+    expect(r.preview.label).toContain('584.64 EUR');
+    expect(c.actions.addBalanceReading).not.toHaveBeenCalled();
+  });
+
+  it('sem leitura anterior, a pre-visualizacao diz "sem leitura" em vez de inventar um valor', () => {
     const c = writeCtx();
     const r = execTool('update_balance', { account_bank: 'Bankinter', account_type: 'Conta a Ordem', value: 584.64 }, c);
-    expect(r.ok).toBe(true);
-    const arg = c.actions.setDynAccts.mock.calls[0][0];
-    expect(arg['Bankinter_Conta a Ordem'].v).toBe(584.64);
+    expect(r.preview.before.value).toBeNull();
+    expect(r.preview.label).toContain('sem leitura');
   });
+
+  // O bug: escrever dynAccts a mao perdia o historico (balanceLog, o que o
+  // BalanceHistorySheet mostra), o snapshot patrimonial do dia e a nota
+  // anterior da conta. addBalanceReading e o MESMO caminho do fluxo manual
+  // (BalanceUpdateSheet) e faz as tres coisas.
+  it('com confirmed grava pela mesma action do fluxo manual (addBalanceReading), nao por setDynAccts', () => {
+    const c = writeCtx();
+    const r = execTool(
+      'update_balance',
+      { account_bank: 'Bankinter', account_type: 'Conta a Ordem', value: 584.64, confirmed: true },
+      c
+    );
+    expect(r.ok).toBe(true);
+    expect(c.actions.setDynAccts).not.toHaveBeenCalled();
+    expect(c.actions.addBalanceReading).toHaveBeenCalledTimes(1);
+    const arg = c.actions.addBalanceReading.mock.calls[0][0];
+    expect(arg.account).toEqual({ bank: 'Bankinter', type: 'Conta a Ordem', custom: false });
+    expect(arg.value).toBe(584.64);
+    expect(arg.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // Sem nota nova, `note` fica indefinida — a action mantem a que la estava.
+    expect(arg.note).toBeUndefined();
+  });
+
+  it('trunca a nota (era o unico campo desta tool que ia em bruto para o estado)', () => {
+    const c = writeCtx();
+    execTool(
+      'update_balance',
+      { account_bank: 'Bankinter', account_type: 'Conta a Ordem', value: 10, note: 'x'.repeat(500), confirmed: true },
+      c
+    );
+    expect(c.actions.addBalanceReading.mock.calls[0][0].note).toHaveLength(60);
+  });
+
   it('update_balance devolve not_found para um par banco/tipo que nao existe no template, sem escrever', () => {
     const c = writeCtx();
     // 'Transacoes' (sem acentos) é precisamente a falha realista: o par real
@@ -319,6 +381,7 @@ describe('update_balance e add_snapshot', () => {
     // dynAccts (getAccts nunca o volta a ler).
     const r = execTool('update_balance', { account_bank: 'Bankinter', account_type: 'Transacoes', value: 100 }, c);
     expect(r).toEqual({ error: 'not_found' });
+    expect(c.actions.addBalanceReading).not.toHaveBeenCalled();
     expect(c.actions.setDynAccts).not.toHaveBeenCalled();
   });
   it('add_snapshot acrescenta ao fim da lista', () => {
@@ -374,6 +437,48 @@ describe('gate das accoes destrutivas', () => {
     const c = writeCtx(seed());
     execTool('update_expense', { id: 'e1', amount: 50, confirmed: true }, c);
     expect(c.actions.updateExpense).toHaveBeenCalledWith('e1', { amount: 50 });
+  });
+
+  /* O caminho de ALTERAR tem de aplicar exactamente os mesmos saneadores do
+     caminho de CRIAR (sanitizeExpenseFields, partilhado). Antes, update_expense
+     fazia um Number() nu e deixava passar: valor negativo (subtrai ao total da
+     categoria em vez de somar), categoria inexistente (a despesa desaparece de
+     qualquer resumo de orçamento), data que normalizeStmtDate devolve intacta
+     por não a reconhecer, e descrição sem limite. */
+  it('update_expense guarda o valor positivo, tal como add_expense', () => {
+    const c = writeCtx(seed());
+    const r = execTool('update_expense', { id: 'e1', amount: -50 }, c);
+    expect(r.preview.after.amount).toBe(50);
+    execTool('update_expense', { id: 'e1', amount: -50, confirmed: true }, c);
+    expect(c.actions.updateExpense).toHaveBeenCalledWith('e1', { amount: 50 });
+  });
+
+  it('update_expense cai em "out" para uma categoria desconhecida, tal como add_expense', () => {
+    const c = writeCtx(seed());
+    execTool('update_expense', { id: 'e1', cat: 'inventada', confirmed: true }, c);
+    expect(c.actions.updateExpense).toHaveBeenCalledWith('e1', { cat: 'out' });
+  });
+
+  it('update_expense normaliza a data e nunca guarda uma que nao percebe', () => {
+    const c = writeCtx(seed());
+    execTool('update_expense', { id: 'e1', date: '03/09/2026', confirmed: true }, c);
+    expect(c.actions.updateExpense).toHaveBeenCalledWith('e1', { date: '2026-09-03' });
+
+    const c2 = writeCtx(seed());
+    execTool('update_expense', { id: 'e1', date: 'amanha talvez', confirmed: true }, c2);
+    expect(c2.actions.updateExpense.mock.calls[0][1].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('update_expense trunca a descricao, tal como add_expense', () => {
+    const c = writeCtx(seed());
+    execTool('update_expense', { id: 'e1', desc: 'x'.repeat(500), confirmed: true }, c);
+    expect(c.actions.updateExpense.mock.calls[0][1].desc).toHaveLength(60);
+  });
+
+  it('os campos numericos das outras coleccoes continuam a passar por Number()', () => {
+    const c = writeCtx(seed());
+    execTool('update_goal', { id: 'g1', target: '12000', confirmed: true }, c);
+    expect(c.actions.updateGoal).toHaveBeenCalledWith('g1', { target: 12000 });
   });
 
   it('cobre as restantes coleccoes', () => {
