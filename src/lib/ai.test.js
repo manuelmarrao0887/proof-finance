@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('../firebase/client.js', () => ({
-  getIdToken: () => Promise.resolve('tok-123'),
+  getIdToken: vi.fn(() => Promise.resolve('tok-123')),
 }));
 
+import { getIdToken } from '../firebase/client.js';
 import { toOpenAIContent, chat, callAIRaw, TIER_FOR_MODEL, buildAIContext } from './ai.js';
 
 function mockFetchOnce(payload, ok = true, status = 200) {
@@ -19,6 +20,8 @@ function mockFetchOnce(payload, ok = true, status = 200) {
 
 beforeEach(() => {
   global.fetch = undefined;
+  getIdToken.mockReset();
+  getIdToken.mockResolvedValue('tok-123');
 });
 afterEach(() => {
   vi.restoreAllMocks();
@@ -83,6 +86,63 @@ describe('chat', () => {
   it('traduz 429 para uma mensagem de excesso de pedidos', async () => {
     mockFetchOnce({ error: 'upstream', status: 429 }, false, 429);
     await expect(chat([{ role: 'user', content: 'x' }])).rejects.toThrow(/pedidos/i);
+  });
+
+  // Regressão do incidente de 2026-08-30: uma falha de arranque do servidor
+  // (getFirebaseAuth() a rebentar) respondia 401 e o chat() mostrava sempre
+  // "Precisas de iniciar sessao", escondendo que o servidor estava avariado.
+  // O proxy já distingue as duas origens no corpo: um erro reencaminhado do
+  // upstream (OpenRouter) traz `status` numérico; um erro que o próprio proxy
+  // levanta traz só `error`, já pronto para o utilizador.
+  it('mostra a mensagem do proprio proxy sem alteracoes quando o corpo nao tem `status` numerico', async () => {
+    mockFetchOnce({ error: 'Assistente indisponivel de momento (erro no servidor).' }, false, 503);
+    await expect(chat([{ role: 'user', content: 'x' }])).rejects.toThrow(
+      'Assistente indisponivel de momento (erro no servidor).'
+    );
+  });
+
+  it('mostra "Sessao invalida" tal e qual (nao "Precisas de iniciar sessao")', async () => {
+    mockFetchOnce({ error: 'Sessao invalida' }, false, 401);
+    await expect(chat([{ role: 'user', content: 'x' }])).rejects.toThrow('Sessao invalida');
+  });
+
+  it('continua a mapear pela tabela ERRORS quando o corpo tem `status` numerico (upstream)', async () => {
+    mockFetchOnce({ error: 'Falha no assistente', status: 402 }, false, 402);
+    await expect(chat([{ role: 'user', content: 'x' }])).rejects.toThrow(/creditos/i);
+  });
+
+  it('cai na mensagem generica quando o corpo nao tem nem `error` nem `status`', async () => {
+    mockFetchOnce({}, false, 500);
+    await expect(chat([{ role: 'user', content: 'x' }])).rejects.toThrow('Falha no assistente.');
+  });
+
+  // Regressão do incidente: getIdToken() engolia qualquer falha (incluindo
+  // uma falha de rede a renovar o token) e devolvia `null`, indistinguivel de
+  // "ninguem tem sessao iniciada". chat() mostrava sempre "Precisas de
+  // iniciar sessao" — mesmo quando havia sessao e só a renovação falhou.
+  it('quando nao ha utilizador (getIdToken resolve null), pede para iniciar sessao', async () => {
+    getIdToken.mockResolvedValueOnce(null);
+    await expect(chat([{ role: 'user', content: 'x' }])).rejects.toThrow(/iniciar sessao/i);
+  });
+
+  it('quando a renovacao do token falha (getIdToken rejeita), a mensagem e diferente de "sem sessao" e diz o que aconteceu', async () => {
+    const err = new Error('TOKEN_REFRESH_FAILED');
+    err.tokenRefreshFailed = true;
+    getIdToken.mockRejectedValueOnce(err);
+    let caught;
+    try {
+      await chat([{ role: 'user', content: 'x' }]);
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeTruthy();
+    // Nao pode ser a mensagem de "sem sessao"...
+    expect(caught.message).not.toMatch(/iniciar sessao/i);
+    // ...nem o erro técnico em bruto (isso seria apenas trocar uma mensagem
+    // enganosa por uma inútil) — tem de ser uma mensagem PT-PT explicando
+    // que a renovacao falhou, com uma sugestao accionavel.
+    expect(caught.message).not.toBe('TOKEN_REFRESH_FAILED');
+    expect(caught.message).toMatch(/renova|liga[cç][aã]o|reabr/i);
   });
 });
 

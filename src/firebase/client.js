@@ -121,10 +121,25 @@ export function signOutUser() {
 
 // Current user's Firebase ID-token (or null). Sent to /api/ai so the serverless
 // proxy can verify the request before calling the Anthropic API with its key.
+//
+// `null` significa genuinamente "ninguém tem sessão iniciada" — nunca uma
+// falha a ir buscar o token. Uma falha na renovação (rede em baixo, relógio
+// dessincronizado, etc.) é um problema diferente de "sem sessão" e não pode
+// ser reduzida ao mesmo `null`: o chamador (chat() em src/lib/ai.js) precisa
+// de saber qual dos dois aconteceu para dar o conselho certo ao utilizador.
+// Por isso aqui rejeita-se (com a causa registada na consola) em vez de
+// engolir o erro.
 export function getIdToken() {
   const u = auth && auth.currentUser;
   if (!u) return Promise.resolve(null);
-  return u.getIdToken().catch(() => null);
+  return u.getIdToken().catch((e) => {
+    // eslint-disable-next-line no-console
+    console.error('[firebase] getIdToken: falha a renovar o token', e && e.message);
+    const err = new Error('TOKEN_REFRESH_FAILED');
+    err.tokenRefreshFailed = true;
+    err.cause = e;
+    throw err;
+  });
 }
 
 export function onAuth(cb) {

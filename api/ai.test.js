@@ -6,6 +6,7 @@ import {
   resolveModel,
   capToolCalls,
   sanitizeRequest,
+  verifyRequestToken,
 } from './ai.js';
 
 describe('resolveModel', () => {
@@ -85,5 +86,55 @@ describe('sanitizeRequest', () => {
     } catch (e) {
       expect(e.status).toBe(413);
     }
+  });
+});
+
+// Regressão do incidente de 2026-08-30: um `jwks-rsa` que rebenta a carregar
+// (require('jose') em ESM-only) era apanhado pelo mesmo catch que trata um
+// token inválido, e o proxy respondia sempre 401 "Sessao invalida" — o
+// utilizador via "precisas de iniciar sessao" com o servidor completamente
+// avariado. verifyRequestToken() separa as duas causas: getAuth() a rebentar
+// é uma falha do servidor (503); verifyIdToken() a rejeitar é um token mau
+// (401, comportamento inalterado).
+describe('verifyRequestToken', () => {
+  it('getAuth() a rebentar (ex: dependencia ESM-only) devolve 503, nao 401', async () => {
+    const getAuth = () => Promise.reject(new Error('ERR_REQUIRE_ESM: require() of ES Module jose'));
+    let caught;
+    try {
+      await verifyRequestToken('qualquer-token', getAuth);
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeTruthy();
+    expect(caught.status).toBe(503);
+  });
+
+  it('a mensagem do erro 503 nao contem o detalhe interno (nao leaka para o cliente)', async () => {
+    const getAuth = () => Promise.reject(new Error('ERR_REQUIRE_ESM: require() of ES Module jose'));
+    try {
+      await verifyRequestToken('qualquer-token', getAuth);
+      throw new Error('devia ter rejeitado');
+    } catch (e) {
+      expect(e.message).not.toMatch(/ERR_REQUIRE_ESM|jose/);
+    }
+  });
+
+  it('verifyIdToken() a rejeitar (token mau) continua 401 "Sessao invalida"', async () => {
+    const getAuth = () => Promise.resolve({ verifyIdToken: () => Promise.reject(new Error('token expirado')) });
+    let caught;
+    try {
+      await verifyRequestToken('token-mau', getAuth);
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeTruthy();
+    expect(caught.status).toBe(401);
+    expect(caught.message).toBe('Sessao invalida');
+  });
+
+  it('devolve o token decodificado quando tudo corre bem', async () => {
+    const decoded = { email: 'x@y.pt', email_verified: true };
+    const getAuth = () => Promise.resolve({ verifyIdToken: () => Promise.resolve(decoded) });
+    await expect(verifyRequestToken('bom-token', getAuth)).resolves.toEqual(decoded);
   });
 });

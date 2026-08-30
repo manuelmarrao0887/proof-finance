@@ -110,37 +110,55 @@ const ERRORS = {
 
 export function chat(messages, opts) {
   const o = opts || {};
-  return getIdToken().then(function (token) {
-    if (!token) throw new Error('Precisas de iniciar sessao para usar a IA.');
-    return fetch('/api/ai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({
-        messages: messages,
-        tools: o.tools && o.tools.length ? o.tools : undefined,
-        tier: o.tier || 'fast',
-        max_tokens: o.maxTokens || 4000,
-      }),
-    })
-      .then(function (r) {
+  return getIdToken()
+    .then(function (token) {
+      if (!token) throw new Error('Precisas de iniciar sessao para usar a IA.');
+      return fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({
+          messages: messages,
+          tools: o.tools && o.tools.length ? o.tools : undefined,
+          tier: o.tier || 'fast',
+          max_tokens: o.maxTokens || 4000,
+        }),
+      }).then(function (r) {
         if (r.ok) return r.json();
-        // O corpo do upstream nunca é mostrado ao utilizador; só o código.
         return r.json().then(
           function (b) {
-            throw new Error(ERRORS[b && b.status] || ERRORS[r.status] || 'Falha no assistente.');
+            // O proxy distingue as duas origens do erro no proprio corpo:
+            //   - reencaminhado do upstream (OpenRouter): { error, status: <numero> }
+            //     -> mapeia-se pela tabela ERRORS, como sempre.
+            //   - levantado pelo proprio proxy: { error } sem `status`, já uma
+            //     mensagem PT-PT pronta para o utilizador (nunca leva detalhe
+            //     interno) -> mostra-se tal e qual, sem adivinhar pelo código HTTP.
+            if (b && typeof b.status === 'number') {
+              throw new Error(ERRORS[b.status] || ERRORS[r.status] || 'Falha no assistente.');
+            }
+            if (b && typeof b.error === 'string' && b.error) {
+              throw new Error(b.error);
+            }
+            throw new Error(ERRORS[r.status] || 'Falha no assistente.');
           },
           function () {
             throw new Error(ERRORS[r.status] || 'Falha no assistente.');
           }
         );
-      })
-      .catch(function (err) {
-        const msg = err && err.message ? err.message : 'Erro desconhecido';
-        if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') > -1)
-          throw new Error('Erro de rede ao contactar a IA. Tenta novamente.');
-        throw err;
       });
-  });
+    })
+    .catch(function (err) {
+      // getIdToken() rejeitou (renovação do token falhou) — diferente de
+      // "ninguém tem sessão iniciada": ha sessao, so nao foi possivel
+      // confirma-la agora. Conselho diferente: reabrir a app / verificar
+      // ligação, em vez de iniciar sessão.
+      if (err && err.tokenRefreshFailed) {
+        throw new Error('Nao foi possivel renovar a sessao. Verifica a ligacao ou reabre a app.');
+      }
+      const msg = err && err.message ? err.message : 'Erro desconhecido';
+      if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') > -1)
+        throw new Error('Erro de rede ao contactar a IA. Tenta novamente.');
+      throw err;
+    });
 }
 
 function firstText(res) {

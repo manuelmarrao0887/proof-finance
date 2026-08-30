@@ -86,6 +86,29 @@ async function getFirebaseAuth() {
   return _auth;
 }
 
+// Duas falhas muito diferentes partilhavam o mesmo catch (incidente de
+// 2026-08-30): getAuth() a rebentar (ex: dependencia que deixou de carregar
+// por require(), como o jose>=6 ESM-only) significa que o servidor nao
+// consegue verificar NINGUEM — falha do servidor, 503. verifyIdToken() a
+// rejeitar significa que este token em concreto e mau — 401, como sempre.
+// Extraido para ser testavel sem depender do firebase-admin real: os testes
+// injetam getAuth diretamente.
+export async function verifyRequestToken(token, getAuth) {
+  let auth;
+  try {
+    auth = await getAuth();
+  } catch (e) {
+    console.error('[api/ai] auth-init', e && e.message);
+    throw bad(503, 'Assistente indisponivel de momento (erro no servidor).');
+  }
+  try {
+    return await auth.verifyIdToken(token);
+  } catch (e) {
+    console.error('[api/ai] auth', e && e.message);
+    throw bad(401, 'Sessao invalida');
+  }
+}
+
 function readBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
   if (typeof req.body === 'string') {
@@ -125,11 +148,9 @@ export default async function handler(req, res) {
     if (!token) return res.status(401).json({ error: 'Sem token de sessao' });
     let decoded;
     try {
-      const auth = await getFirebaseAuth();
-      decoded = await auth.verifyIdToken(token);
+      decoded = await verifyRequestToken(token, getFirebaseAuth);
     } catch (e) {
-      console.error('[api/ai] auth', e && e.message);
-      return res.status(401).json({ error: 'Sessao invalida' });
+      return res.status(e.status || 401).json({ error: e.message });
     }
     const allow = allowedEmails();
     if (!allow.size) {
