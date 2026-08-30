@@ -10,6 +10,9 @@
 
 import * as XLSX from 'xlsx';
 import { getIdToken } from '../firebase/client.js';
+import { compute } from './finance.js';
+import { monthEffectiveLimits } from './budget.js';
+import { todayISO } from './format.js';
 
 /* ── Prompt constants (orig 2024-2059, verbatim) ────────────────────────── */
 
@@ -271,13 +274,46 @@ export function readExcelRows(file) {
   });
 }
 
-/* ── buildAIContext (stub — orig 2554; to be filled in a later stage) ──────
-   Will snapshot compute()/accounts/incomes/recurring/goals/bdg/addedExp/byC/
-   history into a context object for the chat sysPrompt. Returns a minimal
-   object for now so callers can wire it without errors. */
+/* buildAIContext (orig 2554) — retrato COMPACTO do estado para o system
+   prompt. Só agregados, contagens e nomes (com os respetivos ids); as
+   listas (despesas, movimentos de grupo) vêm das tools de leitura
+   (aiTools.js), a pedido do modelo. É isto que mantém o custo por
+   mensagem nos milésimos de euro em vez de embutir tudo no prompt. */
 export function buildAIContext(state) {
+  const s = state || {};
+  const today = todayISO();
+  const month = today.slice(0, 7);
+  let c = { tA: 0, nW: 0, cardDebt: 0, loan: { out: 0 }, accts: [] };
+  try {
+    c = compute(s);
+  } catch (e) {
+    // Estado incompleto (ex: utilizador novo sem dados ainda) — seguimos com zeros.
+  }
+  const lim = monthEffectiveLimits(s.addedExp || [], s.bdg || [], month, !!s.rolloverOn);
   return {
-    todo: 'buildAIContext not yet implemented (map §10).',
-    hasState: !!state,
+    today,
+    month,
+    netWorth: c.nW || 0,
+    totalAssets: c.tA || 0,
+    cardDebt: c.cardDebt || 0,
+    loanOutstanding: (c.loan && c.loan.out) || 0,
+    // Nome = "banco · tipo", a mesma convenção do get_overview (aiTools.js):
+    // a.n é uma nota opcional, não a identidade da conta.
+    accounts: (c.accts || []).map((a) => ({ name: a.b + ' · ' + a.t, value: a.v })),
+    budget: (s.bdg || []).map((b) => ({
+      id: b.id,
+      nm: b.nm,
+      lm: b.lm,
+      spent: lim[b.id] ? lim[b.id].spent : 0,
+    })),
+    counts: {
+      expenses: (s.addedExp || []).length,
+      incomes: (s.incomes || []).length,
+      goals: (s.goals || []).length,
+      recurring: (s.recurring || []).length,
+      groupEntries: (s.groupEntries || []).length,
+    },
+    groups: (s.groups || []).map((g) => ({ id: g.id, name: g.name })),
+    people: (s.people || []).map((p) => ({ id: p.id, name: p.name })),
   };
 }

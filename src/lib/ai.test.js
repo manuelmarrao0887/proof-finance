@@ -4,7 +4,7 @@ vi.mock('../firebase/client.js', () => ({
   getIdToken: () => Promise.resolve('tok-123'),
 }));
 
-import { toOpenAIContent, chat, callAIRaw, TIER_FOR_MODEL } from './ai.js';
+import { toOpenAIContent, chat, callAIRaw, TIER_FOR_MODEL, buildAIContext } from './ai.js';
 
 function mockFetchOnce(payload, ok = true, status = 200) {
   global.fetch = vi.fn(() =>
@@ -103,5 +103,48 @@ describe('callAIRaw (compatibilidade)', () => {
     const body = JSON.parse(global.fetch.mock.calls[0][1].body);
     expect(body.messages[0]).toEqual({ role: 'system', content: 'as instrucoes' });
     expect(body.messages[1].role).toBe('user');
+  });
+});
+
+describe('buildAIContext', () => {
+  const state = {
+    addedExp: [
+      { id: 'e1', desc: 'Pingo Doce', amount: 45.2, cat: 'sup', date: new Date().toISOString().slice(0, 10) },
+    ],
+    bdg: [{ id: 'sup', nm: 'Supermercado', lm: 300 }],
+    goals: [{ id: 'g1', name: 'Fundo', target: 10000, current: 2500 }],
+    incomes: [], recurring: [], customAccts: [], dynAccts: null, dynSnaps: [], rules: [],
+    people: [{ id: 'p1', name: 'Ana' }],
+    groups: [{ id: 'gr1', name: 'Algarve', memberIds: ['me', 'p1'] }],
+    groupEntries: [],
+  };
+
+  it('inclui a data de hoje em ISO', () => {
+    expect(buildAIContext(state).today).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+  it('inclui agregados patrimoniais', () => {
+    const c = buildAIContext(state);
+    expect(typeof c.netWorth).toBe('number');
+    expect(typeof c.totalAssets).toBe('number');
+  });
+  it('inclui orcamento do mes com gasto', () => {
+    const c = buildAIContext(state);
+    expect(c.budget.find((b) => b.id === 'sup').spent).toBe(45.2);
+  });
+  it('inclui contagens em vez de listas de despesas', () => {
+    const c = buildAIContext(state);
+    expect(c.counts.expenses).toBe(1);
+    expect(JSON.stringify(c)).not.toContain('Pingo Doce');
+  });
+  it('inclui nomes de grupos e pessoas com os ids', () => {
+    const c = buildAIContext(state);
+    expect(c.groups).toContainEqual({ id: 'gr1', name: 'Algarve' });
+    expect(c.people).toContainEqual({ id: 'p1', name: 'Ana' });
+  });
+  it('fica bem abaixo de 8000 caracteres', () => {
+    expect(JSON.stringify(buildAIContext(state)).length).toBeLessThan(8000);
+  });
+  it('aguenta um estado vazio', () => {
+    expect(() => buildAIContext({})).not.toThrow();
   });
 });
