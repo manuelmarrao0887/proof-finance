@@ -211,6 +211,49 @@ describe('add_income / add_goal / add_recurring', () => {
     execTool('add_recurring', { name: 'Netflix', amount: 10.99, cat: 'sub', day: 3 }, c);
     expect(c.actions.addRecurring.mock.calls[0][0]).toMatchObject({ name: 'Netflix', cat: 'sub', day: 3 });
   });
+  it('add_recurring guarda o valor sempre positivo', () => {
+    const c = writeCtx();
+    execTool('add_recurring', { name: 'Ginasio', amount: -25 }, c);
+    expect(c.actions.addRecurring.mock.calls[0][0].amount).toBe(25);
+  });
+});
+
+describe('add_category', () => {
+  it('normaliza o id: minusculas, sem pontuacao/espacos', () => {
+    const c = writeCtx();
+    const r = execTool('add_category', { id: 'Casa-Nova!', nm: 'Casa Nova' }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.addCategory.mock.calls[0][0].id).toBe('casanova');
+  });
+  it('trunca o id normalizado a 12 caracteres', () => {
+    const c = writeCtx();
+    execTool('add_category', { id: 'umidentificadormuitocomprido', nm: 'Longo' }, c);
+    expect(c.actions.addCategory.mock.calls[0][0].id).toHaveLength(12);
+  });
+  it('rejeita um id que fica vazio depois de normalizar, sem escrever', () => {
+    const c1 = writeCtx();
+    expect(execTool('add_category', { id: '!!!', nm: 'X' }, c1).error).toBe('invalid_args');
+    expect(c1.actions.addCategory).not.toHaveBeenCalled();
+    const c2 = writeCtx();
+    expect(execTool('add_category', { id: '   ', nm: 'X' }, c2).error).toBe('invalid_args');
+    expect(c2.actions.addCategory).not.toHaveBeenCalled();
+  });
+  it('rejeita um id ja usado por outra categoria, sem escrever', () => {
+    const c = writeCtx();
+    const r = execTool('add_category', { id: 'sup', nm: 'Duplicada' }, c);
+    expect(r.error).toBe('invalid_args');
+    expect(c.actions.addCategory).not.toHaveBeenCalled();
+  });
+});
+
+describe('add_rule', () => {
+  it('cai em "out" para uma categoria desconhecida e devolve o id da regra', () => {
+    const c = writeCtx();
+    const r = execTool('add_rule', { pattern: 'Uber', cat: 'inventada' }, c);
+    expect(r.ok).toBe(true);
+    expect(r.data.id).toBeTruthy();
+    expect(c.actions.addRule.mock.calls[0][0]).toMatchObject({ pattern: 'Uber', cat: 'out' });
+  });
 });
 
 describe('set_budget', () => {
@@ -232,6 +275,15 @@ describe('update_balance e add_snapshot', () => {
     expect(r.ok).toBe(true);
     const arg = c.actions.setDynAccts.mock.calls[0][0];
     expect(arg['Bankinter_Conta a Ordem'].v).toBe(584.64);
+  });
+  it('update_balance devolve not_found para um par banco/tipo que nao existe no template, sem escrever', () => {
+    const c = writeCtx();
+    // 'Transacoes' (sem acentos) é precisamente a falha realista: o par real
+    // no template é 'Transações' — um par que não bate certo fica órfão em
+    // dynAccts (getAccts nunca o volta a ler).
+    const r = execTool('update_balance', { account_bank: 'Bankinter', account_type: 'Transacoes', value: 100 }, c);
+    expect(r).toEqual({ error: 'not_found' });
+    expect(c.actions.setDynAccts).not.toHaveBeenCalled();
   });
   it('add_snapshot acrescenta ao fim da lista', () => {
     const c = writeCtx({ dynSnaps: [{ l: '01.08' }] });

@@ -13,7 +13,7 @@
        {pending, preview}; só escrevem com args.confirmed === true.
    ════════════════════════════════════════════════════════════════════════ */
 
-import { compute, getGroupsData } from './finance.js';
+import { compute, getGroupsData, accts as ACCT_TEMPLATES } from './finance.js';
 import { monthEffectiveLimits } from './budget.js';
 import { computeBalances, simplifyDebts } from './split.js';
 import { uid, todayISO, normalizeStmtDate } from './format.js';
@@ -255,6 +255,16 @@ function txt(v, max) {
   return String(v == null ? '' : v).substring(0, max || 60);
 }
 
+// Bancos/tipos válidos para update_balance vêm de ACCT_TEMPLATES (a MESMA
+// lista que getAccts usa para expor dynAccts) — nunca reescrever à mão aqui,
+// senão o schema desalinha da lista real e o modelo grava chaves órfãs
+// (dynAccts[banco_tipo] que getAccts nunca lê de volta).
+function uniq(arr) {
+  return Array.from(new Set(arr));
+}
+const ACCT_BANKS = uniq(ACCT_TEMPLATES.map((a) => a.b));
+const ACCT_TYPES = uniq(ACCT_TEMPLATES.map((a) => a.t));
+
 const writeTools = {
   add_expense: {
     schema: {
@@ -354,7 +364,7 @@ const writeTools = {
       const r = {
         id: uid(),
         name: txt(args.name),
-        amount: Number(args.amount) || 0,
+        amount: Math.abs(Number(args.amount) || 0),
         cat: safeCat(args.cat || 'sub'),
         day: safeDay(args.day),
         createdAt: Date.now(),
@@ -378,6 +388,10 @@ const writeTools = {
     run(args, { actions }) {
       const id = String(args.id).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
       if (!id) return { error: 'invalid_args', detail: 'id vazio depois de normalizar' };
+      const bdg = actions.getState().bdg || [];
+      // Um id repetido faria set_budget (bdg.map por id) atualizar as duas
+      // categorias ao mesmo tempo — rejeitar aqui, antes de escrever.
+      if (bdg.some((b) => b.id === id)) return { error: 'invalid_args', detail: 'ja existe uma categoria com esse id' };
       const cat = { id, nm: txt(args.nm, 30), lm: Number(args.lm) || 0 };
       actions.addCategory(cat);
       return ok(cat);
@@ -423,8 +437,8 @@ const writeTools = {
     schema: {
       type: 'object',
       properties: {
-        account_bank: { type: 'string', description: 'Bankinter | Activobank | Moey | Trade Republic | XTB | Goparity | Raize' },
-        account_type: { type: 'string', description: 'Conta a Ordem | Poupanca | Corretagem | Private Markets | Rend. Fixo | Transacoes | Planos Invest. | P2P Lending' },
+        account_bank: { type: 'string', description: ACCT_BANKS.join(' | ') },
+        account_type: { type: 'string', description: ACCT_TYPES.join(' | ') },
         value: { type: 'number', description: 'saldo em euros' },
         note: { type: 'string', description: 'nota opcional (ex: total antes de dividir)' },
       },
@@ -432,6 +446,12 @@ const writeTools = {
     },
     description: 'Atualiza o saldo de uma conta.',
     run(args, { actions }) {
+      // O par banco/tipo tem de existir em ACCT_TEMPLATES: getAccts só expõe
+      // dynAccts['Banco_Tipo'] para pares que reconhece — uma chave que não
+      // bate certo com nenhum par fica órfã (nunca entra no património,
+      // get_overview ou UI) mesmo que a escrita "tenha sucesso".
+      const valid = ACCT_TEMPLATES.some((a) => a.b === args.account_bank && a.t === args.account_type);
+      if (!valid) return notFound();
       const st = actions.getState();
       const key = args.account_bank + '_' + args.account_type;
       const dyn = { ...(st.dynAccts || {}) };
