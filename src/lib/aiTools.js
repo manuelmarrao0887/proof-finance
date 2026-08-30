@@ -15,10 +15,15 @@
 
 import { compute, getGroupsData, accts as ACCT_TEMPLATES } from './finance.js';
 import { monthEffectiveLimits } from './budget.js';
-import { computeBalances, simplifyDebts } from './split.js';
+import { computeBalances, simplifyDebts, resolveShares, GROUP_CATS } from './split.js';
 import { uid, todayISO, normalizeStmtDate } from './format.js';
 
 const CATS = 'rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
+
+// Espelha ME_ID de store/store.jsx. Não é importado de lá para este módulo
+// continuar puro (store.jsx puxa React); um teste (aiTools.test.js) garante
+// que as duas constantes não divergem.
+export const ME_ID = 'me';
 
 /* ── validação mínima de argumentos ──────────────────────────────────────
    Chega para apanhar campos obrigatórios em falta e tipos trocados; o resto
@@ -601,9 +606,168 @@ const destructiveTools = Object.keys(COLLECTIONS).reduce((acc, key) => {
   return acc;
 }, {});
 
+/* ── Tools de grupos (despesas partilhadas) ──────────────────────────────
+   Casca fina sobre as actions do store: a divisão vem sempre de split.js
+   (resolveShares) e os invariantes de grupo (refletir a minha parte nas
+   Despesas pessoais, manter linkedExpId consistente) são responsabilidade de
+   actions.addGroupEntry — não se repetem aqui. */
+
+const groupTools = {
+  create_group: {
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'nome do grupo' },
+        person_ids: { type: 'array', items: { type: 'string' }, description: 'ids de pessoas (ver list_people); o proprio entra sempre' },
+      },
+      required: ['name'],
+    },
+    description: 'Cria um grupo de despesas partilhadas.',
+    run(args, { actions }) {
+      const people = actions.getState().people || [];
+      const known = new Set(people.map((p) => p.id));
+      const ids = (Array.isArray(args.person_ids) ? args.person_ids : []).filter((id) => known.has(id));
+      const g = { id: uid(), name: txt(args.name, 40), memberIds: [ME_ID, ...ids], createdAt: Date.now() };
+      actions.addGroup(g);
+      return ok({ id: g.id, memberIds: g.memberIds });
+    },
+  },
+
+  add_person: {
+    schema: {
+      type: 'object',
+      properties: { name: { type: 'string', description: 'nome da pessoa' } },
+      required: ['name'],
+    },
+    description: 'Cria uma pessoa para usar em grupos de despesas partilhadas.',
+    run(args, { actions }) {
+      const p = { id: uid(), name: txt(args.name, 40) };
+      actions.addPerson(p);
+      return ok({ id: p.id, name: p.name });
+    },
+  },
+
+  add_group_expense: {
+    schema: {
+      type: 'object',
+      properties: {
+        group_id: { type: 'string', description: 'id do grupo (ver list_groups)' },
+        desc: { type: 'string' },
+        amount: { type: 'number', description: 'valor total da despesa' },
+        date: { type: 'string', description: 'data YYYY-MM-DD; por omissao hoje' },
+        payer_id: { type: 'string', description: 'quem pagou; por omissao o proprio ("me")' },
+        member_ids: { type: 'array', items: { type: 'string' }, description: 'quem divide; por omissao todos os membros' },
+        gcat: { type: 'string', description: 'categoria da despesa de grupo (ver GROUP_CATS em lib/split.js)' },
+      },
+      required: ['group_id', 'desc', 'amount'],
+    },
+    description: 'Lanca uma despesa partilhada num grupo, dividida por igual.',
+    run(args, { actions }) {
+      const st = actions.getState();
+      const group = (st.groups || []).find((g) => g.id === args.group_id);
+      if (!group) return notFound();
+      const members = group.memberIds || [];
+      const payerId = args.payer_id || ME_ID;
+      if (members.indexOf(payerId) === -1) return { error: 'invalid_args', detail: 'payer_id nao e membro do grupo' };
+      const chosen = Array.isArray(args.member_ids) && args.member_ids.length
+        ? args.member_ids.filter((id) => members.indexOf(id) !== -1)
+        : members;
+      if (!chosen.length) return { error: 'invalid_args', detail: 'nenhum membro valido para dividir' };
+      const amount = Math.abs(Number(args.amount) || 0);
+      // resolveShares devolve {shares, error} — nunca um array.
+      const { shares, error } = resolveShares(
+        'equal',
+        amount,
+        chosen.map((id) => ({ personId: id })),
+        payerId
+      );
+      if (error) return { error: 'invalid_args', detail: error };
+      const entry = {
+        groupId: group.id,
+        kind: 'expense',
+        desc: txt(args.desc),
+        amount,
+        date: safeDate(args.date),
+        payerId,
+        splitMode: 'equal',
+        shares,
+        gcat: GROUP_CATS.some((c) => c.id === args.gcat) ? args.gcat : 'other',
+      };
+      const id = actions.addGroupEntry(entry);
+      return ok({ id, groupId: group.id, amount });
+    },
+  },
+
+  settle_group: {
+    schema: {
+      type: 'object',
+      properties: {
+        group_id: { type: 'string' },
+        from_id: { type: 'string', description: 'quem paga' },
+        to_id: { type: 'string', description: 'quem recebe' },
+        amount: { type: 'number' },
+        date: { type: 'string', description: 'data YYYY-MM-DD; por omissao hoje' },
+      },
+      required: ['group_id', 'from_id', 'to_id', 'amount'],
+    },
+    description: 'Regista um acerto de contas entre dois membros de um grupo.',
+    run(args, { actions }) {
+      const st = actions.getState();
+      const group = (st.groups || []).find((g) => g.id === args.group_id);
+      if (!group) return notFound();
+      const members = group.memberIds || [];
+      if (members.indexOf(args.from_id) === -1 || members.indexOf(args.to_id) === -1)
+        return { error: 'invalid_args', detail: 'from_id ou to_id nao sao membros do grupo' };
+      const amount = Math.abs(Number(args.amount) || 0);
+      // Um acerto NAO e uma despesa: kind 'settlement', com fromId/toId e sem
+      // shares (ver split.js:114 e modals/SettleSheet.jsx). O store nunca
+      // reflecte um settlement em addedExp (reflectExpenseFor).
+      const entry = {
+        groupId: group.id,
+        kind: 'settlement',
+        fromId: args.from_id,
+        toId: args.to_id,
+        amount,
+        date: safeDate(args.date),
+      };
+      const id = actions.addGroupEntry(entry);
+      return ok({ id, amount });
+    },
+  },
+
+  delete_group_entry: {
+    destructive: true,
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'id do movimento (ver get_group)' },
+        confirmed: { type: 'boolean', description: 'nao preencher: o utilizador e que confirma na app' },
+      },
+      required: ['id'],
+    },
+    description: 'Apaga uma despesa ou acerto de um grupo.',
+    preview(args, { actions }) {
+      const e = ((actions.getState() || {}).groupEntries || []).find((x) => x.id === args.id);
+      if (!e) return notFound();
+      return {
+        action: 'delete',
+        kind: 'movimento de grupo',
+        label: (e.desc || 'Movimento') + ' · ' + (Number(e.amount) || 0).toFixed(2) + ' EUR',
+        before: e,
+      };
+    },
+    run(args, ctx) {
+      const p = this.preview(args, ctx);
+      if (p.error) return p;
+      ctx.actions.deleteGroupEntry(args.id);
+      return ok({ id: args.id, deleted: true });
+    },
+  },
+};
+
 /* ── Registry + execução ─────────────────────────────────────────────── */
 
-export const TOOLS = { ...readTools, ...writeTools, ...destructiveTools };
+export const TOOLS = { ...readTools, ...writeTools, ...destructiveTools, ...groupTools };
 
 // O `confirmed` existe no schema interno (o validador precisa dele), mas NUNCA
 // e mostrado ao modelo: a confirmacao vem da UI, depois de o utilizador ver a

@@ -1,5 +1,26 @@
 import { describe, it, expect, vi } from 'vitest';
-import { TOOLS, TOOL_SCHEMAS, execTool } from './aiTools.js';
+import { TOOLS, TOOL_SCHEMAS, execTool, ME_ID as TOOLS_ME_ID } from './aiTools.js';
+import { ME_ID } from '../store/store.jsx';
+
+// aiTools.js e um modulo puro (sem Firebase). Este ficheiro de testes importa
+// ME_ID de store/store.jsx so para comparar com a constante local de
+// aiTools.js (ver teste abaixo) — mocka-se Firebase para esse import nao
+// inicializar nada a serio, mesmo padrao de groups.store.test.jsx e
+// settle.test.jsx.
+vi.mock('../firebase/client.js', () => ({
+  auth: null, db: null, IS_FILE: false, initError: null,
+  onAuth: () => () => {}, setAuthPersistenceLocal: () => Promise.resolve(),
+  signInGoogle: () => Promise.resolve(), signOutUser: () => Promise.resolve(),
+  signInEmail: () => Promise.resolve(), registerEmail: () => Promise.resolve(),
+  getIdToken: () => Promise.resolve(null),
+  loadUserDoc: () => Promise.resolve(null), saveUserDoc: () => Promise.resolve(),
+}));
+vi.mock('../firebase/data.js', () => ({
+  loadUserData: () => Promise.resolve(null),
+  syncUserData: () => Promise.resolve(),
+  computeDiff: () => ({ upserts: [], deletes: [], root: null }),
+  SUBCOLLECTIONS: {},
+}));
 
 function ctx(overrides = {}) {
   const state = {
@@ -400,5 +421,84 @@ describe('gate das accoes destrutivas', () => {
   it('nenhuma tool de criacao pede confirmacao', () => {
     const c = writeCtx(seed());
     expect(execTool('add_expense', { desc: 'X', amount: 1 }, c).ok).toBe(true);
+  });
+});
+
+describe('tools de grupos', () => {
+  const seed = () => ({
+    people: [{ id: 'p1', name: 'Ana' }, { id: 'p2', name: 'Bruno' }],
+    groups: [{ id: 'gr1', name: 'Algarve', memberIds: ['me', 'p1', 'p2'] }],
+    groupEntries: [],
+  });
+
+  it('o ME_ID local acompanha o do store', () => {
+    expect(TOOLS_ME_ID).toBe(ME_ID);
+  });
+
+  it('create_group cria com o proprio incluido', () => {
+    const c = writeCtx(seed());
+    const r = execTool('create_group', { name: 'Ferias', person_ids: ['p1'] }, c);
+    expect(r.ok).toBe(true);
+    const arg = c.actions.addGroup.mock.calls[0][0];
+    expect(arg.name).toBe('Ferias');
+    expect(arg.memberIds).toContain('p1');
+  });
+
+  it('add_person cria uma pessoa e devolve o id', () => {
+    const c = writeCtx(seed());
+    const r = execTool('add_person', { name: 'Carla' }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.addPerson.mock.calls[0][0].name).toBe('Carla');
+    expect(r.data.id).toBeTruthy();
+  });
+
+  it('add_group_expense divide por igual por omissao e usa o proprio como pagador', () => {
+    const c = writeCtx(seed());
+    const r = execTool('add_group_expense', { group_id: 'gr1', desc: 'Jantar', amount: 60 }, c);
+    expect(r.ok).toBe(true);
+    const entry = c.actions.addGroupEntry.mock.calls[0][0];
+    expect(entry.groupId).toBe('gr1');
+    expect(entry.payerId).toBe('me');
+    expect(entry.amount).toBe(60);
+    expect(entry.kind).toBe('expense');
+    expect(entry.splitMode).toBe('equal');
+    expect(entry.shares.reduce((s, x) => s + x.amount, 0)).toBeCloseTo(60, 2);
+    expect(entry.shares).toHaveLength(3);
+  });
+
+  it('add_group_expense aceita um pagador diferente', () => {
+    const c = writeCtx(seed());
+    execTool('add_group_expense', { group_id: 'gr1', desc: 'Hotel', amount: 300, payer_id: 'p1' }, c);
+    expect(c.actions.addGroupEntry.mock.calls[0][0].payerId).toBe('p1');
+  });
+
+  it('add_group_expense rejeita um grupo que nao existe', () => {
+    expect(execTool('add_group_expense', { group_id: 'zz', desc: 'X', amount: 1 }, writeCtx(seed())))
+      .toEqual({ error: 'not_found' });
+  });
+
+  it('add_group_expense rejeita um pagador que nao e membro', () => {
+    const r = execTool('add_group_expense', { group_id: 'gr1', desc: 'X', amount: 1, payer_id: 'p9' }, writeCtx(seed()));
+    expect(r.error).toBe('invalid_args');
+  });
+
+  it('settle_group regista um acerto entre dois membros', () => {
+    const c = writeCtx(seed());
+    const r = execTool('settle_group', { group_id: 'gr1', from_id: 'p1', to_id: 'me', amount: 20 }, c);
+    expect(r.ok).toBe(true);
+    const entry = c.actions.addGroupEntry.mock.calls[0][0];
+    expect(entry.kind).toBe('settlement');
+    expect(entry.fromId).toBe('p1');
+    expect(entry.toId).toBe('me');
+    expect(entry.shares).toBeUndefined();
+  });
+
+  it('delete_group_entry pede confirmacao antes de apagar', () => {
+    const c = writeCtx({ ...seed(), groupEntries: [{ id: 'ge1', groupId: 'gr1', desc: 'Jantar', amount: 60 }] });
+    const r = execTool('delete_group_entry', { id: 'ge1' }, c);
+    expect(r.pending).toBe(true);
+    expect(c.actions.deleteGroupEntry).not.toHaveBeenCalled();
+    execTool('delete_group_entry', { id: 'ge1', confirmed: true }, c);
+    expect(c.actions.deleteGroupEntry).toHaveBeenCalledWith('ge1');
   });
 });
