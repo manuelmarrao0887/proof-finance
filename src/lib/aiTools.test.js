@@ -441,6 +441,9 @@ describe('tools de grupos', () => {
     expect(r.ok).toBe(true);
     const arg = c.actions.addGroup.mock.calls[0][0];
     expect(arg.name).toBe('Ferias');
+    // ME_ID vem sempre em primeiro (convencao do store, ver withMe em
+    // store.jsx) — 'p1' sozinho nao apanhava um prefixo ME_ID em falta.
+    expect(arg.memberIds[0]).toBe(ME_ID);
     expect(arg.memberIds).toContain('p1');
   });
 
@@ -482,6 +485,16 @@ describe('tools de grupos', () => {
     expect(r.error).toBe('invalid_args');
   });
 
+  it('add_group_expense cai em gcat "other" quando a categoria falta ou e desconhecida', () => {
+    const c1 = writeCtx(seed());
+    execTool('add_group_expense', { group_id: 'gr1', desc: 'X', amount: 1 }, c1);
+    expect(c1.actions.addGroupEntry.mock.calls[0][0].gcat).toBe('other');
+
+    const c2 = writeCtx(seed());
+    execTool('add_group_expense', { group_id: 'gr1', desc: 'X', amount: 1, gcat: 'inventada' }, c2);
+    expect(c2.actions.addGroupEntry.mock.calls[0][0].gcat).toBe('other');
+  });
+
   it('settle_group regista um acerto entre dois membros', () => {
     const c = writeCtx(seed());
     const r = execTool('settle_group', { group_id: 'gr1', from_id: 'p1', to_id: 'me', amount: 20 }, c);
@@ -491,6 +504,28 @@ describe('tools de grupos', () => {
     expect(entry.fromId).toBe('p1');
     expect(entry.toId).toBe('me');
     expect(entry.shares).toBeUndefined();
+  });
+
+  it('settle_group rejeita um grupo que nao existe', () => {
+    expect(execTool('settle_group', { group_id: 'zz', from_id: 'p1', to_id: 'me', amount: 20 }, writeCtx(seed())))
+      .toEqual({ error: 'not_found' });
+  });
+
+  it('settle_group rejeita from_id/to_id que nao sao membros', () => {
+    const c1 = writeCtx(seed());
+    expect(execTool('settle_group', { group_id: 'gr1', from_id: 'p9', to_id: 'me', amount: 20 }, c1).error).toBe('invalid_args');
+    expect(c1.actions.addGroupEntry).not.toHaveBeenCalled();
+
+    const c2 = writeCtx(seed());
+    expect(execTool('settle_group', { group_id: 'gr1', from_id: 'p1', to_id: 'p9', amount: 20 }, c2).error).toBe('invalid_args');
+    expect(c2.actions.addGroupEntry).not.toHaveBeenCalled();
+  });
+
+  it('settle_group rejeita from_id igual a to_id, sem escrever', () => {
+    const c = writeCtx(seed());
+    const r = execTool('settle_group', { group_id: 'gr1', from_id: 'p1', to_id: 'p1', amount: 20 }, c);
+    expect(r.error).toBe('invalid_args');
+    expect(c.actions.addGroupEntry).not.toHaveBeenCalled();
   });
 
   it('delete_group_entry pede confirmacao antes de apagar', () => {

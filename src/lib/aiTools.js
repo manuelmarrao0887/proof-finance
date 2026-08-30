@@ -718,6 +718,12 @@ const groupTools = {
       const members = group.memberIds || [];
       if (members.indexOf(args.from_id) === -1 || members.indexOf(args.to_id) === -1)
         return { error: 'invalid_args', detail: 'from_id ou to_id nao sao membros do grupo' };
+      // Um acerto de alguem consigo mesmo nao corrompe saldos (anula em
+      // computeBalances), mas fica uma linha sem sentido no historico do
+      // grupo que o utilizador depois tem de encontrar e apagar — a mesma
+      // guarda que SettleSheet.jsx aplica na UI antes de chamar addGroupEntry.
+      if (args.from_id === args.to_id)
+        return { error: 'invalid_args', detail: 'from_id e to_id tem de ser pessoas diferentes' };
       const amount = Math.abs(Number(args.amount) || 0);
       // Um acerto NAO e uma despesa: kind 'settlement', com fromId/toId e sem
       // shares (ver split.js:114 e modals/SettleSheet.jsx). O store nunca
