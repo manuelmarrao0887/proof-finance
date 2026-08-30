@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { TOOLS, TOOL_SCHEMAS, execTool } from './aiTools.js';
 
 function ctx(overrides = {}) {
@@ -33,6 +33,28 @@ function ctx(overrides = {}) {
     ...overrides,
   };
   return { state, actions: { getState: () => state } };
+}
+
+// ctx com espiões: cada action regista o que recebeu e devolve o próprio store.
+function writeCtx(seed = {}) {
+  const state = {
+    addedExp: [], goals: [], incomes: [], recurring: [], bdg: [{ id: 'sup', nm: 'Supermercado', lm: 300 }],
+    rules: [], people: [], groups: [], groupEntries: [], dynAccts: null, dynSnaps: [],
+    ...seed,
+  };
+  const actions = {
+    getState: () => state,
+    addExpense: vi.fn((e) => { state.addedExp = [...state.addedExp, e]; }),
+    updateExpense: vi.fn((id, p) => { state.addedExp = state.addedExp.map((x) => (x.id === id ? { ...x, ...p } : x)); }),
+    deleteExpense: vi.fn((id) => { state.addedExp = state.addedExp.filter((x) => x.id !== id); }),
+    addIncome: vi.fn(), updateIncome: vi.fn(), deleteIncome: vi.fn(),
+    addGoal: vi.fn(), updateGoal: vi.fn(), deleteGoal: vi.fn(),
+    addRecurring: vi.fn(), updateRecurring: vi.fn(), deleteRecurring: vi.fn(),
+    addCategory: vi.fn(), setBdg: vi.fn(), addRule: vi.fn(),
+    setDynAccts: vi.fn(), setDynSnaps: vi.fn(),
+    addPerson: vi.fn(), addGroup: vi.fn(), addGroupEntry: vi.fn(() => 'ge1'), deleteGroupEntry: vi.fn(),
+  };
+  return { state, actions };
 }
 
 describe('TOOL_SCHEMAS', () => {
@@ -141,5 +163,81 @@ describe('outras tools de leitura', () => {
   it('get_overview nomeia a conta por banco e tipo, nao pela nota', () => {
     const r = execTool('get_overview', {}, ctx());
     expect(r.data.accounts).toContainEqual({ name: 'Activobank · Conta a Ordem', category: 'Liquidez', value: 2500 });
+  });
+});
+
+describe('add_expense', () => {
+  it('cria a despesa com id, valor positivo e data normalizada', () => {
+    const c = writeCtx();
+    const r = execTool('add_expense', { desc: 'Continente', amount: -45.67, cat: 'sup', date: '2026-08-28' }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.addExpense).toHaveBeenCalledTimes(1);
+    const arg = c.actions.addExpense.mock.calls[0][0];
+    expect(arg.amount).toBe(45.67);
+    expect(arg.date).toBe('2026-08-28');
+    expect(arg.id).toBeTruthy();
+    expect(r.data.id).toBe(arg.id);
+  });
+  it('usa a data de hoje quando nao vem data', () => {
+    const c = writeCtx();
+    execTool('add_expense', { desc: 'Cafe', amount: 1.2, cat: 'rest' }, c);
+    expect(c.actions.addExpense.mock.calls[0][0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+  it('cai em "out" para uma categoria desconhecida', () => {
+    const c = writeCtx();
+    execTool('add_expense', { desc: 'X', amount: 1, cat: 'inventada' }, c);
+    expect(c.actions.addExpense.mock.calls[0][0].cat).toBe('out');
+  });
+  it('exige descricao e valor', () => {
+    expect(execTool('add_expense', { amount: 1 }, writeCtx()).error).toBe('invalid_args');
+    expect(execTool('add_expense', { desc: 'X' }, writeCtx()).error).toBe('invalid_args');
+  });
+});
+
+describe('add_income / add_goal / add_recurring', () => {
+  it('add_income normaliza o dia para 1-31', () => {
+    const c = writeCtx();
+    execTool('add_income', { name: 'Salario', amount: 1800, source: 'salary', recurring: true, day: 99 }, c);
+    expect(c.actions.addIncome.mock.calls[0][0].day).toBe(1);
+  });
+  it('add_goal aceita alvo e prazo', () => {
+    const c = writeCtx();
+    const r = execTool('add_goal', { name: 'Fundo', target: 10000, deadline: '2027-01-01' }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.addGoal.mock.calls[0][0]).toMatchObject({ name: 'Fundo', target: 10000, current: 0 });
+  });
+  it('add_recurring guarda categoria e dia', () => {
+    const c = writeCtx();
+    execTool('add_recurring', { name: 'Netflix', amount: 10.99, cat: 'sub', day: 3 }, c);
+    expect(c.actions.addRecurring.mock.calls[0][0]).toMatchObject({ name: 'Netflix', cat: 'sub', day: 3 });
+  });
+});
+
+describe('set_budget', () => {
+  it('altera o limite de uma categoria existente', () => {
+    const c = writeCtx();
+    const r = execTool('set_budget', { cat: 'sup', limit: 250 }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.setBdg.mock.calls[0][0].find((b) => b.id === 'sup').lm).toBe(250);
+  });
+  it('devolve not_found para uma categoria que nao existe', () => {
+    expect(execTool('set_budget', { cat: 'zzz', limit: 10 }, writeCtx())).toEqual({ error: 'not_found' });
+  });
+});
+
+describe('update_balance e add_snapshot', () => {
+  it('update_balance grava a chave banco_tipo em dynAccts', () => {
+    const c = writeCtx();
+    const r = execTool('update_balance', { account_bank: 'Bankinter', account_type: 'Conta a Ordem', value: 584.64 }, c);
+    expect(r.ok).toBe(true);
+    const arg = c.actions.setDynAccts.mock.calls[0][0];
+    expect(arg['Bankinter_Conta a Ordem'].v).toBe(584.64);
+  });
+  it('add_snapshot acrescenta ao fim da lista', () => {
+    const c = writeCtx({ dynSnaps: [{ l: '01.08' }] });
+    execTool('add_snapshot', { label: '30.08', liq: 100, poup: 200, inv: 300 }, c);
+    const arg = c.actions.setDynSnaps.mock.calls[0][0];
+    expect(arg).toHaveLength(2);
+    expect(arg[1].l).toBe('30.08');
   });
 });

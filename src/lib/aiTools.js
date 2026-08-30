@@ -16,6 +16,7 @@
 import { compute, getGroupsData } from './finance.js';
 import { monthEffectiveLimits } from './budget.js';
 import { computeBalances, simplifyDebts } from './split.js';
+import { uid, todayISO, normalizeStmtDate } from './format.js';
 
 const CATS = 'rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
 
@@ -231,9 +232,242 @@ const readTools = {
   },
 };
 
+/* ── Tools de escrita não destrutivas ────────────────────────────────────
+   Todas criam um registo novo (nunca alteram nem apagam um existente), por
+   isso não pedem confirmação — ao contrário de update_* / delete_* (Task 5).
+   Saneamento na fronteira: categoria desconhecida cai em 'out', dia fora de
+   1-31 cai em 1, o valor de uma despesa é sempre guardado positivo. */
+
+const CAT_IDS = new Set(CATS.split(','));
+const SOURCES = new Set(['salary', 'freelance', 'dividend', 'rental', 'bonus', 'other']);
+
+function safeCat(c) {
+  return CAT_IDS.has(c) ? c : 'out';
+}
+function safeDay(d) {
+  const n = parseInt(d, 10);
+  return Number.isFinite(n) && n >= 1 && n <= 31 ? n : 1;
+}
+function safeDate(d) {
+  return d ? normalizeStmtDate(d) : todayISO();
+}
+function txt(v, max) {
+  return String(v == null ? '' : v).substring(0, max || 60);
+}
+
+const writeTools = {
+  add_expense: {
+    schema: {
+      type: 'object',
+      properties: {
+        desc: { type: 'string', description: 'descricao curta' },
+        amount: { type: 'number', description: 'valor em euros; o sinal e ignorado (guardado positivo)' },
+        cat: { type: 'string', description: 'categoria: ' + CATS },
+        date: { type: 'string', description: 'data YYYY-MM-DD; por omissao hoje' },
+      },
+      required: ['desc', 'amount'],
+    },
+    description: 'Regista uma despesa nova.',
+    run(args, { actions }) {
+      const exp = {
+        id: uid(),
+        desc: txt(args.desc),
+        amount: Math.abs(Number(args.amount) || 0),
+        cat: safeCat(args.cat),
+        date: safeDate(args.date),
+      };
+      actions.addExpense(exp);
+      return ok({ id: exp.id, ...exp });
+    },
+  },
+
+  add_income: {
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        amount: { type: 'number' },
+        source: { type: 'string', description: 'salary | freelance | dividend | rental | bonus | other' },
+        recurring: { type: 'boolean', description: 'true = todos os meses' },
+        day: { type: 'number', description: 'dia do mes 1-31 quando recurring' },
+        date: { type: 'string', description: 'data YYYY-MM-DD quando NAO e recorrente' },
+      },
+      required: ['name', 'amount'],
+    },
+    description: 'Regista uma receita (salario, freelance, dividendos...).',
+    run(args, { actions }) {
+      const inc = {
+        id: uid(),
+        name: txt(args.name),
+        amount: Math.abs(Number(args.amount) || 0),
+        source: SOURCES.has(args.source) ? args.source : 'other',
+        recurring: args.recurring !== false,
+        day: safeDay(args.day),
+        date: args.date ? normalizeStmtDate(args.date) : undefined,
+        createdAt: Date.now(),
+      };
+      actions.addIncome(inc);
+      return ok({ id: inc.id });
+    },
+  },
+
+  add_goal: {
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        target: { type: 'number', description: 'valor alvo em euros' },
+        current: { type: 'number', description: 'valor ja poupado' },
+        deadline: { type: 'string', description: 'prazo YYYY-MM-DD' },
+      },
+      required: ['name', 'target'],
+    },
+    description: 'Cria uma meta de poupanca.',
+    run(args, { actions }) {
+      const g = {
+        id: uid(),
+        name: txt(args.name),
+        target: Number(args.target) || 0,
+        current: Number(args.current) || 0,
+        deadline: args.deadline || '',
+        color: '#3b6fee',
+        createdAt: Date.now(),
+      };
+      actions.addGoal(g);
+      return ok({ id: g.id });
+    },
+  },
+
+  add_recurring: {
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        amount: { type: 'number' },
+        cat: { type: 'string', description: 'categoria: ' + CATS },
+        day: { type: 'number', description: 'dia do mes 1-31' },
+      },
+      required: ['name', 'amount'],
+    },
+    description: 'Cria uma despesa recorrente (subscricao, mensalidade...).',
+    run(args, { actions }) {
+      const r = {
+        id: uid(),
+        name: txt(args.name),
+        amount: Number(args.amount) || 0,
+        cat: safeCat(args.cat || 'sub'),
+        day: safeDay(args.day),
+        createdAt: Date.now(),
+      };
+      actions.addRecurring(r);
+      return ok({ id: r.id });
+    },
+  },
+
+  add_category: {
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'id curto, minusculas, sem espacos' },
+        nm: { type: 'string', description: 'nome visivel' },
+        lm: { type: 'number', description: 'limite mensal em euros' },
+      },
+      required: ['id', 'nm'],
+    },
+    description: 'Cria uma categoria de despesa nova.',
+    run(args, { actions }) {
+      const id = String(args.id).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
+      if (!id) return { error: 'invalid_args', detail: 'id vazio depois de normalizar' };
+      const cat = { id, nm: txt(args.nm, 30), lm: Number(args.lm) || 0 };
+      actions.addCategory(cat);
+      return ok(cat);
+    },
+  },
+
+  add_rule: {
+    schema: {
+      type: 'object',
+      properties: {
+        pattern: { type: 'string', description: 'texto a procurar na descricao' },
+        cat: { type: 'string', description: 'categoria a aplicar: ' + CATS },
+      },
+      required: ['pattern', 'cat'],
+    },
+    description: 'Cria uma regra de categorizacao automatica.',
+    run(args, { actions }) {
+      const rule = { id: uid(), pattern: txt(args.pattern, 40), cat: safeCat(args.cat) };
+      actions.addRule(rule);
+      return ok({ id: rule.id });
+    },
+  },
+
+  set_budget: {
+    schema: {
+      type: 'object',
+      properties: {
+        cat: { type: 'string', description: 'id da categoria (ver list_categories)' },
+        limit: { type: 'number', description: 'novo limite mensal em euros' },
+      },
+      required: ['cat', 'limit'],
+    },
+    description: 'Define o orcamento mensal de uma categoria.',
+    run(args, { actions }) {
+      const bdg = actions.getState().bdg || [];
+      if (!bdg.some((b) => b.id === args.cat)) return notFound();
+      actions.setBdg(bdg.map((b) => (b.id === args.cat ? { ...b, lm: Number(args.limit) || 0 } : b)));
+      return ok({ cat: args.cat, limit: Number(args.limit) || 0 });
+    },
+  },
+
+  update_balance: {
+    schema: {
+      type: 'object',
+      properties: {
+        account_bank: { type: 'string', description: 'Bankinter | Activobank | Moey | Trade Republic | XTB | Goparity | Raize' },
+        account_type: { type: 'string', description: 'Conta a Ordem | Poupanca | Corretagem | Private Markets | Rend. Fixo | Transacoes | Planos Invest. | P2P Lending' },
+        value: { type: 'number', description: 'saldo em euros' },
+        note: { type: 'string', description: 'nota opcional (ex: total antes de dividir)' },
+      },
+      required: ['account_bank', 'account_type', 'value'],
+    },
+    description: 'Atualiza o saldo de uma conta.',
+    run(args, { actions }) {
+      const st = actions.getState();
+      const key = args.account_bank + '_' + args.account_type;
+      const dyn = { ...(st.dynAccts || {}) };
+      dyn[key] = { v: Number(args.value) || 0, d: todayISO().replace(/-/g, '.'), n: args.note || null };
+      actions.setDynAccts(dyn);
+      return ok({ key, value: dyn[key].v });
+    },
+  },
+
+  add_snapshot: {
+    schema: {
+      type: 'object',
+      properties: {
+        label: { type: 'string', description: 'etiqueta DD.MM' },
+        liq: { type: 'number' }, poup: { type: 'number' }, inv: { type: 'number' },
+        div: { type: 'number' }, xP: { type: 'number' }, xT: { type: 'number' }, tC: { type: 'number' },
+      },
+      required: ['label'],
+    },
+    description: 'Grava um snapshot patrimonial no historico.',
+    run(args, { actions }) {
+      const st = actions.getState();
+      const snap = {
+        l: txt(args.label, 8),
+        liq: Number(args.liq) || 0, poup: Number(args.poup) || 0, inv: Number(args.inv) || 0,
+        div: Number(args.div) || 0, xP: Number(args.xP) || 0, xT: Number(args.xT) || 0, tC: Number(args.tC) || 0,
+      };
+      actions.setDynSnaps([...(st.dynSnaps || []), snap]);
+      return ok(snap);
+    },
+  },
+};
+
 /* ── Registry + execução ─────────────────────────────────────────────── */
 
-export const TOOLS = { ...readTools };
+export const TOOLS = { ...readTools, ...writeTools };
 
 export const TOOL_SCHEMAS = Object.keys(TOOLS).map((name) => ({
   type: 'function',
