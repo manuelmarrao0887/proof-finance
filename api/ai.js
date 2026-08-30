@@ -71,16 +71,60 @@ export function sanitizeRequest(body) {
 }
 
 let _auth = null;
+/* parseServiceAccount — le a FIREBASE_SERVICE_ACCOUNT, que pode chegar em JSON
+   cru ou em base64, e em qualquer dos casos com aspas a volta ou com quebras de
+   linha (conforme como foi colada no painel).
+
+   A versao anterior fazia `raw.startsWith('{') ? raw : base64`. O
+   `Buffer.from(x,'base64')` ignora caracteres invalidos em SILENCIO, portanto
+   um JSON valido com aspas a volta era "descodificado" para binario e o
+   JSON.parse rebentava com "Unexpected token '\ufffd'" — o erro que apanhamos
+   em producao a 2026-08-30, mascarado como sessao invalida.
+
+   A mensagem de erro descreve a FORMA do valor (comprimento, primeiro caracter)
+   e nunca o seu conteudo: e uma credencial. */
+export function parseServiceAccount(rawInput) {
+  let raw = String(rawInput == null ? '' : rawInput).trim();
+  // BOM que sobrevive a um copy-paste de ficheiro.
+  if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1).trim();
+  // Aspas a volta, como o cleanKey faz para a API key.
+  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+    raw = raw.slice(1, -1).trim();
+  }
+  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT nao configurada');
+
+  const shape = 'len=' + raw.length + ' inicio=' + JSON.stringify(raw[0]);
+  let json;
+  if (raw.startsWith('{')) {
+    json = raw;
+  } else {
+    // base64 — tolera quebras de linha e espacos, que o painel costuma inserir.
+    const compact = raw.replace(/\s+/g, '');
+    if (!/^[A-Za-z0-9+/=_-]+$/.test(compact)) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT nao e JSON nem base64 (' + shape + ')');
+    }
+    json = Buffer.from(compact, 'base64').toString('utf8');
+  }
+
+  let svc;
+  try {
+    svc = JSON.parse(json);
+  } catch (e) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT ilegivel: ' + e.message.slice(0, 60) + ' (' + shape + ')');
+  }
+  for (const k of ['project_id', 'client_email', 'private_key']) {
+    if (!svc || !svc[k]) throw new Error('FIREBASE_SERVICE_ACCOUNT sem o campo ' + k + ' (' + shape + ')');
+  }
+  return svc;
+}
+
 async function getFirebaseAuth() {
   if (_auth) return _auth;
   // Import dinâmico: se firebase-admin falhar a carregar, devolvemos erro JSON
   // em vez de a função inteira rebentar no load.
   const { initializeApp, getApps, cert } = await import('firebase-admin/app');
   const { getAuth } = await import('firebase-admin/auth');
-  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT || '').trim();
-  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT nao configurada');
-  const json = raw.startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8');
-  const svc = JSON.parse(json);
+  const svc = parseServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT);
   if (!getApps().length) initializeApp({ credential: cert(svc) });
   _auth = getAuth();
   return _auth;

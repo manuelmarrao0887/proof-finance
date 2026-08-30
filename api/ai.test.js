@@ -6,6 +6,7 @@ import {
   resolveModel,
   capToolCalls,
   sanitizeRequest,
+  parseServiceAccount,
   verifyRequestToken,
 } from './ai.js';
 
@@ -136,5 +137,54 @@ describe('verifyRequestToken', () => {
     const decoded = { email: 'x@y.pt', email_verified: true };
     const getAuth = () => Promise.resolve({ verifyIdToken: () => Promise.resolve(decoded) });
     await expect(verifyRequestToken('bom-token', getAuth)).resolves.toEqual(decoded);
+  });
+});
+
+/* ── parseServiceAccount ──────────────────────────────────────────────────
+   Regressao do incidente de 2026-08-30: a FIREBASE_SERVICE_ACCOUNT vinha com
+   aspas a volta, o ramo `startsWith('{')` falhava, e o Buffer.from(...,'base64')
+   "descodificava" JSON valido para binario em silencio. O JSON.parse rebentava
+   e o proxy respondia 401 a toda a gente. */
+describe('parseServiceAccount', () => {
+  const svc = { project_id: 'p', client_email: 'a@b.c', private_key: '-----BEGIN...' };
+  const json = JSON.stringify(svc);
+
+  it('le JSON cru', () => {
+    expect(parseServiceAccount(json)).toMatchObject(svc);
+  });
+  it('le JSON com aspas a volta (o caso que partiu a producao)', () => {
+    expect(parseServiceAccount('"' + json + '"')).toMatchObject(svc);
+    expect(parseServiceAccount("'" + json + "'")).toMatchObject(svc);
+  });
+  it('le JSON com espacos e quebras de linha a volta', () => {
+    expect(parseServiceAccount('\n  ' + json + '  \n')).toMatchObject(svc);
+  });
+  it('le base64', () => {
+    expect(parseServiceAccount(Buffer.from(json).toString('base64'))).toMatchObject(svc);
+  });
+  it('le base64 partido por quebras de linha', () => {
+    const b64 = Buffer.from(json).toString('base64');
+    const quebrado = b64.replace(/(.{10})/g, '$1\n');
+    expect(parseServiceAccount(quebrado)).toMatchObject(svc);
+  });
+  it('recusa um valor vazio', () => {
+    expect(() => parseServiceAccount('')).toThrow(/nao configurada/);
+    expect(() => parseServiceAccount(null)).toThrow(/nao configurada/);
+  });
+  it('recusa lixo que nao e JSON nem base64, em vez de o descodificar em silencio', () => {
+    expect(() => parseServiceAccount('isto nao e nada @@@')).toThrow(/nao e JSON nem base64/);
+  });
+  it('recusa um JSON valido a que falte um campo obrigatorio', () => {
+    expect(() => parseServiceAccount(JSON.stringify({ project_id: 'p' }))).toThrow(/sem o campo client_email/);
+  });
+  it('nunca poe o conteudo da credencial na mensagem de erro', () => {
+    const segredo = 'CHAVE-SUPER-SECRETA-123';
+    const mau = JSON.stringify({ project_id: 'p', private_key: segredo });
+    try {
+      parseServiceAccount(mau);
+      throw new Error('devia ter rejeitado');
+    } catch (e) {
+      expect(e.message).not.toContain(segredo);
+    }
   });
 });
