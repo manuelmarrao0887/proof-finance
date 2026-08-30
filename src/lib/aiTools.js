@@ -81,7 +81,8 @@ const readTools = {
         return true;
       });
       rows.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
-      const limit = Math.min(Math.max(parseInt(args.limit, 10) || 50, 1), 200);
+      const rawLimit = parseInt(args.limit, 10);
+      const limit = Math.min(Math.max(Number.isFinite(rawLimit) ? rawLimit : 50, 1), 200);
       return ok({
         total: rows.length,
         rows: rows.slice(0, limit).map((e) => ({
@@ -107,7 +108,10 @@ const readTools = {
         cardDebt: c.cardDebt,
         loanOutstanding: c.loan ? c.loan.out : 0,
         byCategory: c.cT,
-        accounts: (c.accts || []).map((a) => ({ name: a.n, category: a.c, value: a.v })),
+        // a.n é uma nota opcional, não a identidade da conta — o nome é
+        // "banco · tipo" (a.b/a.t), como a UI mostra e como update_balance
+        // (Task 4) vai pedir de volta em account_bank/account_type.
+        accounts: (c.accts || []).map((a) => ({ name: a.b + ' · ' + a.t, category: a.c, value: a.v })),
       });
     },
   },
@@ -211,9 +215,14 @@ const readTools = {
         id: group.id,
         name: group.name,
         members: memberIds.map((id) => ({ id, name: nameOf(id), balance: balances[id] || 0 })),
-        entries: entries.map((e) => ({
-          id: e.id, desc: e.desc, amount: e.amount, date: e.date, payerId: e.payerId, kind: e.kind,
-        })),
+        // Uma entrada de grupo é uma despesa (desc/payerId/shares) OU um
+        // acerto (fromId/toId/method) — nunca as duas coisas. Mapear os dois
+        // como se fossem despesa perdia quem pagou a quem num acerto.
+        entries: entries.map((e) =>
+          e.kind === 'settlement'
+            ? { id: e.id, kind: e.kind, amount: e.amount, date: e.date, fromId: e.fromId, toId: e.toId, method: e.method }
+            : { id: e.id, kind: e.kind, amount: e.amount, date: e.date, desc: e.desc, payerId: e.payerId }
+        ),
         settlements: simplifyDebts(balances).map((s) => ({
           from: nameOf(s.from), to: nameOf(s.to), amount: s.amount,
         })),

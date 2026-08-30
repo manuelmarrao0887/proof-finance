@@ -15,8 +15,18 @@ function ctx(overrides = {}) {
     recurring: [{ id: 'r1', name: 'Netflix', amount: 10.99, cat: 'sub', day: 1 }],
     people: [{ id: 'p1', name: 'Ana' }],
     groups: [{ id: 'gr1', name: 'Algarve', memberIds: ['me', 'p1'] }],
-    groupEntries: [],
-    customAccts: [],
+    // Uma despesa e um acerto no mesmo grupo — campos conforme
+    // GroupExpenseSheet.jsx e SettleSheet.jsx gravam de facto via
+    // actions.addGroupEntry (ver STORE_API.md §1, groupEntries).
+    groupEntries: [
+      {
+        id: 'ge1', groupId: 'gr1', kind: 'expense', desc: 'Jantar', amount: 40, date: '2026-08-10',
+        payerId: 'me', shares: [{ personId: 'me', amount: 20 }, { personId: 'p1', amount: 20 }],
+      },
+      { id: 'ge2', groupId: 'gr1', kind: 'settlement', fromId: 'p1', toId: 'me', amount: 20, date: '2026-08-11', method: 'cash' },
+    ],
+    // Conta custom (b/t = identidade, n = nota opcional) — ver lib/finance.js getAccts.
+    customAccts: [{ id: 'a1', bank: 'Activobank', type: 'Conta a Ordem', value: 2500, category: 'Liquidez', currency: 'EUR' }],
     dynAccts: null,
     dynSnaps: [],
     rules: [],
@@ -113,9 +123,23 @@ describe('outras tools de leitura', () => {
     expect(r.data.members.map((m) => m.id)).toContain('p1');
     expect(Array.isArray(r.data.settlements)).toBe(true);
   });
+  it('get_group preserva desc/payerId numa despesa e fromId/toId/method num acerto', () => {
+    const r = execTool('get_group', { group_id: 'gr1' }, ctx());
+    expect(r.ok).toBe(true);
+    const expense = r.data.entries.find((e) => e.id === 'ge1');
+    expect(expense).toMatchObject({ kind: 'expense', desc: 'Jantar', payerId: 'me' });
+    const settlement = r.data.entries.find((e) => e.id === 'ge2');
+    expect(settlement).toMatchObject({ kind: 'settlement', fromId: 'p1', toId: 'me', method: 'cash' });
+    expect(settlement.desc).toBeUndefined();
+    expect(settlement.payerId).toBeUndefined();
+  });
   it('get_overview devolve patrimonio e total de ativos', () => {
     const r = execTool('get_overview', {}, ctx());
     expect(typeof r.data.netWorth).toBe('number');
     expect(typeof r.data.totalAssets).toBe('number');
+  });
+  it('get_overview nomeia a conta por banco e tipo, nao pela nota', () => {
+    const r = execTool('get_overview', {}, ctx());
+    expect(r.data.accounts).toContainEqual({ name: 'Activobank · Conta a Ordem', category: 'Liquidez', value: 2500 });
   });
 });
