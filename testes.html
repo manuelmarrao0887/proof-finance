@@ -353,6 +353,18 @@
    Steps render as an ordered list; single-string steps render as a paragraph.
    ────────────────────────────────────────────────────────────────────────── */
 const GROUPS = [
+  { id: 'T44', title: 'Assistente IA (OpenRouter)', tests: [
+    { id: 'T44.1', title: 'Botão IA nas Quick Actions', steps: ['Abrir o Resumo'], expect: 'As Quick Actions mostram cinco botões; o quinto é "✦ IA". Tocar nele abre a sheet do assistente (AssistantSheet) por cima do Resumo.' },
+    { id: 'T44.2', title: 'Criar despesa por linguagem natural', steps: ['Abrir o assistente (✦ IA)', 'Escrever "gastei 12,50 no Pingo Doce hoje"', 'Enviar'], expect: 'A despesa é criada de imediato (sem pedir confirmação) e o cartão de resposta mostra "Anular".' },
+    { id: 'T44.3', title: 'Anular uma criação', steps: ['A seguir ao teste anterior, tocar em "Anular" no cartão', 'Abrir Despesas'], expect: 'A despesa do Pingo Doce desaparece da lista de Despesas — o Anular restaura só as fatias do store que essa criação tocou, não o estado inteiro.' },
+    { id: 'T44.4', title: 'Pergunta só de leitura', steps: ['Escrever "quanto gastei em restaurantes este mês?"', 'Enviar'], expect: 'Responde com valores (total e/ou detalhe) sem criar nem alterar nenhuma despesa; a lista de Despesas fica exatamente como estava.' },
+    { id: 'T44.5', title: 'Apagar despesa exige confirmação', steps: ['Escrever "apaga a despesa do Pingo Doce"', 'Enviar', 'No cartão que aparece, tocar "Cancelar"', 'Repetir o pedido e desta vez tocar "Confirmar"'], expect: 'O pedido nunca apaga sozinho: mostra sempre um cartão com "Confirmar"/"Cancelar". "Cancelar" fecha o cartão e a despesa continua em Despesas. "Confirmar" apaga de facto — desaparece de Despesas.' },
+    { id: 'T44.6', title: 'Import de extrato continua a funcionar', steps: ['Mais → Assistente IA', 'Importar um PDF de extrato bancário'], expect: 'O painel de import lê e lista as transações do PDF como antes (a troca de provider no chat não mexeu neste fluxo).' },
+    { id: 'T44.7', title: 'Atualizar saldo por print continua a funcionar', steps: ['Atualizar saldo → escolher conta → carregar print de ecrã', 'Confirmar valor e data'], expect: 'Lê o valor do print e grava a leitura de saldo da conta como antes.' },
+    { id: 'T44.8', title: 'Custo por mensagem em USD', steps: ['Enviar qualquer mensagem no assistente', 'Ver o rodapé do cartão de resposta'], expect: 'Mostra o custo dessa mensagem com prefixo "$" (OpenRouter fatura em dólares), tipicamente perto de $0,003 numa mensagem normal.' },
+    { id: 'T44.9', title: 'Email fora da allowlist não tem acesso', steps: ['Iniciar sessão com uma conta Google cujo email NÃO está em ALLOWED_EMAILS', 'Abrir o assistente (✦ IA) e enviar qualquer mensagem'], expect: 'O proxy responde 403 e a mensagem "Sem acesso ao assistente"; o assistente não executa nada (nem lê nem escreve).' },
+    { id: 'T44.10', title: 'ALLOWED_EMAILS vazia fecha tudo (fail-closed)', steps: ['Em ambiente de teste/preview, remover ou esvaziar a env ALLOWED_EMAILS no servidor', 'Iniciar sessão com qualquer conta (mesmo a do dono) e enviar uma mensagem ao assistente'], expect: 'O proxy responde 503 "Assistente nao configurado (ALLOWED_EMAILS)" a toda a gente, incluindo o dono — nunca abre o acesso por omissão de configuração.' },
+  ]},
   { id: 'T43', title: 'Grupos (despesas partilhadas)', tests: [
     { id: 'T43.1', title: 'Criar grupo', steps: ['Grupos, conta ainda sem grupos → "Novo grupo"', 'Preencher o nome e escolher pelo menos uma pessoa nos chips (ou "+ Nova pessoa")', 'Criar grupo'], expect: 'Toast "Grupo criado"; o grupo aparece em "Ativos" com "Tu" + a(s) pessoa(s) escolhida(s) (memberIds sempre com "Tu" em primeiro). Sem nome ou com só "Tu" nos membros, mostra erro ("Dá um nome ao grupo." / "Um grupo precisa de pelo menos mais uma pessoa.") e não grava.' },
     { id: 'T43.2', title: 'Adicionar pessoa', steps: ['Grupos → ícone "Pessoas" no cabeçalho da lista (ou "+ Nova pessoa" dentro de Criar/editar grupo)', 'Escrever o nome', 'Adicionar'], expect: 'A pessoa aparece com um avatar cuja cor vem da paleta cíclica (nunca escolhida à mão). Um nome já usado (mesmo com maiúsculas diferentes) é recusado com "Já tens uma pessoa com esse nome."' },
@@ -1002,10 +1014,10 @@ const SECURITY = [
     fix: 'Corrigido (2026-08): a app deixou de ter key do utilizador — a IA corre por /api/ai (key só no servidor). apiKey saiu de PERSISTED_KEYS/ROOT_KEYS, do backup/restore e da UI; em cada sync é apagada do doc raiz (deleteField).' },
   { sev: 'crit', status: 'fixed', title: 'Key enviada do browser direto para a Anthropic', loc: 'SettingsSheet.jsx testAPI (removido)',
     risk: 'Usava anthropic-dangerous-direct-browser-access. Qualquer XSS lia state.apiKey.',
-    fix: 'Corrigido: botão "Testar" e chamada direta removidos; só o proxy fala com a Anthropic.' },
+    fix: 'Corrigido: botão "Testar" e chamada direta removidos; só o proxy fala com o provider de IA (Anthropic na altura; OpenRouter desde 2026-08).' },
   { sev: 'high', status: 'fixed', title: 'Proxy /api/ai aceitava qualquer conta Google', loc: 'api/ai.js',
     risk: 'O sign-up Google está aberto: um token válido de QUALQUER conta servia para gastar a key (modelo e max_tokens controlados pelo cliente, sem teto).',
-    fix: 'Corrigido (2026-08): allowlist por email (env ALLOWED_EMAILS; fechado por omissão), email_verified obrigatório, whitelist de modelos no servidor, max_tokens com teto (8000), limite de tamanho do pedido, erros internos só no log.' },
+    fix: 'Corrigido (2026-08): allowlist por email (env ALLOWED_EMAILS; fechado por omissão), email_verified obrigatório, cliente não escolhe modelo — desde a troca para OpenRouter só envia um tier (fast/strong) que o servidor resolve —, max_tokens com teto (8000), limite de tamanho do pedido, erros internos só no log.' },
   { sev: 'high', status: 'fixed', title: 'XSS via valores da IA nos cartões de ação', loc: 'views/AIView.jsx actionLabel → info.val (dangerouslySetInnerHTML)',
     risk: 'a.cat / a.source / a.day vinham da IA sem escape e iam para innerHTML.',
     fix: 'Corrigido: esc() em a.cat/a.source; a.day passa por parseInt. lbl vai por JSX (seguro).' },
@@ -1039,13 +1051,16 @@ const SECURITY = [
 ];
 
 const SEC_GOOD = [
-  'Chave Anthropic só no servidor (/api/ai): verifica ID token Firebase, allowlist de emails, modelo e tokens limitados, sem CORS, nenhum erro devolve a key.',
+  'Chave do assistente IA só no servidor (/api/ai) — OPENROUTER_API_KEY desde 2026-08 (ANTHROPIC_API_KEY ainda configurada na Vercel como fallback de transição, a remover depois de validar produção): verifica ID token Firebase, allowlist de emails, modelo e tokens limitados, sem CORS, nenhum erro devolve a key.',
   'Regras Firestore user-scoped, default-deny, raiz E subcoleções, sem acesso cruzado.',
   'Login só Google (sem enumeração por email/password); file:// bloqueado.',
   'renderMD escapa ANTES dos transforms; chrt() escapa labels/cores; ações da IA saneadas por tipo antes de gravar.',
   'Importador Excel determinístico (sem IA) com xlsx 0.20.3; classify-statements só lê BD/ (ignorado pelo git).',
   '.gitignore exclui BD/, PDFs, Print Screens; sem ficheiros de dados nem segredos no histórico git.',
   'Headers: nosniff, X-Frame-Options DENY, Referrer-Policy, HSTS, COOP same-origin-allow-popups (login Google).',
+  'Fail-closed por omissão: sem ALLOWED_EMAILS configurada (ou vazia), o proxy /api/ai devolve 503 "Assistente nao configurado (ALLOWED_EMAILS)" a toda a gente, incluindo o dono — nunca abre o acesso por omissão de configuração. Email fora da allowlist (ou não verificado) leva 403 "Sem acesso ao assistente".',
+  'O cliente nunca escolhe o modelo — só envia um tier (fast/strong); o servidor resolve fast→google/gemini-3.5-flash-lite e strong→google/gemini-3.7-flash. max_tokens preso entre 256 e 8000, corpo do pedido até 3 000 000 caracteres, no máximo 8 tool calls por mensagem do assistente.',
+  'Editar/apagar pela IA nunca aplica sozinho: execTool devolve só uma pré-visualização e não escreve nada sem confirmed === true. O campo confirmed é retirado dos schemas de ferramentas enviados ao modelo (e qualquer confirmed que o modelo invente na mesma é descartado) — só confirmPending, chamado depois de o utilizador tocar em Confirmar, o injeta. Criar aplica de imediato, com Anular no cartão da resposta.',
 ];
 
 const SEC_ACTIONS = [

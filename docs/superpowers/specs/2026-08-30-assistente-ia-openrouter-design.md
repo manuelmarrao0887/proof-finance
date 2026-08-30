@@ -1,7 +1,7 @@
 # Assistente IA sobre OpenRouter — design
 
 **Data:** 2026-08-30
-**Estado:** aprovado em brainstorming, por implementar
+**Estado:** implementado (2026-08-30)
 
 ---
 
