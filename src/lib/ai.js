@@ -1,16 +1,15 @@
 /* ════════════════════════════════════════════════════════════════════════
-   AI / Anthropic Messages API helpers — ported from the original
-   (callAI 1973-2002, prompts 2024-2059, resizeImg/readFileB64/parseExcel
-   1944-1972). Adapted to explicit args (no globals).
+   AI helpers — ported from the original (callAI 1973-2002, prompts
+   2024-2059, resizeImg/readFileB64/parseExcel 1944-1972). Adapted to
+   explicit args (no globals).
 
-   Model: claude-haiku-4-5. Direct browser calls require the dangerous header
-   + HTTPS (CORS fails on file://). The API key is user-supplied.
+   Transporte: /api/ai (proxy OpenRouter, formato OpenAI). O cliente nunca
+   escolhe o modelo, só um tier ('fast'|'strong'); o servidor resolve-o e
+   guarda a key. Ver o bloco de transporte mais abaixo.
    ════════════════════════════════════════════════════════════════════════ */
 
 import * as XLSX from 'xlsx';
 import { getIdToken } from '../firebase/client.js';
-
-const MODEL = 'claude-haiku-4-5';
 
 /* ── Prompt constants (orig 2024-2059, verbatim) ────────────────────────── */
 
@@ -67,106 +66,128 @@ export const AI_IMPORT_PROMPT =
 // Default system prompt the original used (orig 1979).
 export const JSON_SYSTEM = 'Responde APENAS JSON puro. Sem markdown, sem backticks.';
 
-/* ── callAI (orig 1973-2002, adapted) ────────────────────────────────────
-   content: array of Anthropic content blocks for the user message
-            (e.g. [{type:'document',...}] or [{type:'text', text:'...'}, {type:'text', text:PROMPT}]).
-   system:  system prompt string (defaults to JSON_SYSTEM).
-   apiKey:  user-supplied x-api-key.
-   onResult: callback receiving the parsed JSON object, or {error} on failure.
+/* ── Transporte (OpenRouter, formato OpenAI) ───────────────────────────────
+   O proxy /api/ai resolve o modelo a partir do tier; o cliente nunca envia um
+   id de modelo. A tradução de conteúdo vive aqui para que os chamadores
+   antigos (import de extrato, atualizar saldo) continuem a montar blocos no
+   formato Anthropic sem saberem que o provider mudou. */
 
-   NOTE: the original appended the task prompt as a text block to `content`.
-   Callers should do the same (push {type:'text', text: STMT_PROMPT} etc.) so
-   the model receives the instructions. */
-// callAIRaw — como callAI mas devolve o JSON CRU da Anthropic (Promise), sem
-// fazer parsing. Usado por quem precisa de processar a resposta à sua maneira
-// (ex.: o chat do assistente). Vai sempre por /api/ai com o ID-token.
-export function callAIRaw(content, system, model, maxTokens) {
+const DOC_MODELS = new Set(['claude-sonnet-5', 'claude-opus-5', 'strong']);
+
+export function TIER_FOR_MODEL(model) {
+  return DOC_MODELS.has(model) ? 'strong' : 'fast';
+}
+
+function dataUri(source) {
+  const mt = (source && source.media_type) || 'application/octet-stream';
+  const data = (source && source.data) || '';
+  return 'data:' + mt + ';base64,' + data;
+}
+
+export function toOpenAIContent(parts) {
+  if (typeof parts === 'string') return parts;
+  if (!Array.isArray(parts)) return String(parts == null ? '' : parts);
+  return parts.map(function (p) {
+    if (!p || typeof p !== 'object') return { type: 'text', text: String(p == null ? '' : p) };
+    if (p.type === 'image') return { type: 'image_url', image_url: { url: dataUri(p.source) } };
+    if (p.type === 'document')
+      return { type: 'file', file: { filename: p.filename || 'documento.pdf', file_data: dataUri(p.source) } };
+    return { type: 'text', text: p.text || '' };
+  });
+}
+
+const ERRORS = {
+  401: 'Precisas de iniciar sessao para usar a IA.',
+  403: 'Sem acesso ao assistente.',
+  402: 'Sem creditos no OpenRouter.',
+  413: 'Documento demasiado grande para a IA.',
+  429: 'Demasiados pedidos. Tenta daqui a pouco.',
+  503: 'Modelo indisponivel de momento.',
+};
+
+export function chat(messages, opts) {
+  const o = opts || {};
   return getIdToken().then(function (token) {
     if (!token) throw new Error('Precisas de iniciar sessao para usar a IA.');
     return fetch('/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({
-        content: content,
-        system: system || JSON_SYSTEM,
-        model: model || MODEL,
-        max_tokens: maxTokens || 4000,
+        messages: messages,
+        tools: o.tools && o.tools.length ? o.tools : undefined,
+        tier: o.tier || 'fast',
+        max_tokens: o.maxTokens || 4000,
       }),
-    }).then(function (r) {
-      if (!r.ok)
-        return r.text().then(function (b) {
-          throw new Error('API ' + r.status + ': ' + b.substring(0, 150));
-        });
-      return r.json();
-    });
+    })
+      .then(function (r) {
+        if (r.ok) return r.json();
+        // O corpo do upstream nunca é mostrado ao utilizador; só o código.
+        return r.json().then(
+          function (b) {
+            throw new Error(ERRORS[b && b.status] || ERRORS[r.status] || 'Falha no assistente.');
+          },
+          function () {
+            throw new Error(ERRORS[r.status] || 'Falha no assistente.');
+          }
+        );
+      })
+      .catch(function (err) {
+        const msg = err && err.message ? err.message : 'Erro desconhecido';
+        if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') > -1)
+          throw new Error('Erro de rede ao contactar a IA. Tenta novamente.');
+        throw err;
+      });
+  });
+}
+
+function firstText(res) {
+  const c = res && res.choices && res.choices[0];
+  const m = c && c.message;
+  if (!m) return '';
+  if (typeof m.content === 'string') return m.content;
+  if (Array.isArray(m.content))
+    return m.content.map(function (b) { return b && b.text ? b.text : ''; }).join('');
+  return '';
+}
+
+/* callAIRaw — mantém a assinatura e a FORMA de resposta antigas
+   ({content:[{type:'text',text}]}) para os chamadores existentes não mudarem.
+   Por dentro já é OpenRouter. */
+export function callAIRaw(content, system, model, maxTokens) {
+  const messages = [
+    { role: 'system', content: system || JSON_SYSTEM },
+    { role: 'user', content: toOpenAIContent(content) },
+  ];
+  return chat(messages, { tier: TIER_FOR_MODEL(model), maxTokens: maxTokens || 4000 }).then(function (res) {
+    return { content: [{ type: 'text', text: firstText(res) }], usage: res.usage || null };
   });
 }
 
 export function callAI(content, system, _apiKey, onResult) {
-  const cb = typeof onResult === 'function' ? onResult : () => {};
-  // Transport: the key lives on the server. We POST to the Vercel function
-  // /api/ai with the user's Firebase ID-token; the function verifies it and
-  // proxies to the Anthropic Messages API. Response shape is unchanged, so the
-  // parsing below stays identical.
-  getIdToken().then(function (token) {
-    if (!token) {
-      cb({ error: 'Precisas de iniciar sessao para usar a IA.' });
-      return;
-    }
-    fetch('/api/ai', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + token,
-      },
-      body: JSON.stringify({
-        content: content,
-        system: system || JSON_SYSTEM,
-        model: MODEL,
-        max_tokens: 16000,
-      }),
-    })
-      .then(function (r) {
-        if (!r.ok)
-          return r.text().then(function (body) {
-            throw new Error('API ' + r.status + ': ' + body.substring(0, 200));
-          });
-        return r.json();
-      })
+  const cb = typeof onResult === 'function' ? onResult : function () {};
+  // callAI usa 'strong' porque os seus chamadores são sempre documentos
+  // (extrato bancário, recibo, print de saldo).
+  callAIRaw(content, system, 'strong', 16000)
     .then(function (d) {
-      const txt = (d.content || [])
-        .filter(function (i) {
-          return i.type === 'text';
-        })
-        .map(function (i) {
-          return i.text;
-        })
-        .join('');
+      const txt = (d.content || []).map(function (i) { return i.text; }).join('');
       const m = txt.match(/\{[\s\S]*\}/);
       if (!m) throw new Error('Sem JSON.');
       try {
         cb(JSON.parse(m[0]));
       } catch (pe) {
-        // Try to fix truncated JSON (orig 1986-1996)
+        // Tentar reparar JSON truncado (comportamento original).
         let fix = m[0];
         const li = fix.lastIndexOf('},');
         if (li > -1) fix = fix.substring(0, li + 1);
-        let ob = 0,
-          oa = 0;
+        let ob = 0, oa = 0;
         for (let ci = 0; ci < fix.length; ci++) {
           if (fix[ci] === '{') ob++;
           if (fix[ci] === '}') ob--;
           if (fix[ci] === '[') oa++;
           if (fix[ci] === ']') oa--;
         }
-        while (oa > 0) {
-          fix += ']';
-          oa--;
-        }
-        while (ob > 0) {
-          fix += '}';
-          ob--;
-        }
+        while (oa > 0) { fix += ']'; oa--; }
+        while (ob > 0) { fix += '}'; ob--; }
         try {
           cb(JSON.parse(fix));
         } catch (pe2) {
@@ -174,13 +195,9 @@ export function callAI(content, system, _apiKey, onResult) {
         }
       }
     })
-      .catch(function (err) {
-        let msg = err.message || 'Erro desconhecido';
-        if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') > -1)
-          msg = 'Erro de rede ao contactar a IA. Tenta novamente.';
-        cb({ error: msg });
-      });
-  });
+    .catch(function (err) {
+      cb({ error: (err && err.message) || 'Erro desconhecido' });
+    });
 }
 
 /* ── File helpers (orig 1944-1972, verbatim) ─────────────────────────────── */
