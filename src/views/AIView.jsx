@@ -20,6 +20,7 @@ import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useUI } from '../store/ui.jsx';
 import Icon from '../components/Icon.jsx';
+import PendingActionCard from '../components/PendingActionCard.jsx';
 import { fm, fc, uid, normalizeStmtDate, todayISO } from '../lib/format.js';
 import {
   callAI,
@@ -32,10 +33,17 @@ import {
 import { runAssistant, confirmPending, ASSISTANT_SYSTEM } from '../lib/aiChat.js';
 import { esc, renderMD } from '../lib/markdown.js';
 
-/* ── actionLabel (orig 2408-2416). Returns icon (emoji entity string), label,
-   value, tab, color for a given AI action. Icons stay as HTML entities to match
-   the original; rendered via dangerouslySetInnerHTML on the small icon span. ── */
-function actionLabel(a) {
+/* ── actionLabel (orig 2408-2416, ampliada na revisão da Task 12). Devolve
+   icon/lbl/val/tab/color para uma ação da IA — usada tanto pelo histórico do
+   chat (nomes de tools de `WRITE_TOOL_SLICES`, lib/aiTools.js) como pelo
+   painel de import de documentos (vocabulário antigo do AI_IMPORT_PROMPT,
+   por isso 'snapshot' e 'add_snapshot' coexistem). `lbl` é texto simples
+   (React escapa-o); `val` vai por dangerouslySetInnerHTML — qualquer campo
+   controlado pela IA que entre em `val` tem de passar por esc().
+   Exportada para o teste de cobertura em aiView.chat.test.jsx: uma tool de
+   escrita nova sem branch aqui cai no `help` genérico do fim, e o teste
+   falha em vez de deixar o nome bruto da tool aparecer ao utilizador. ── */
+export function actionLabel(a) {
   if (a.type === 'update_balance')
     return {
       icon: 'bank',
@@ -79,13 +87,70 @@ function actionLabel(a) {
       tab: 'Recor.',
       color: 'var(--orange)',
     };
-  if (a.type === 'snapshot')
+  if (a.type === 'snapshot' || a.type === 'add_snapshot')
     return {
       icon: 'chart',
       lbl: 'Snapshot ' + (a.label || ''),
       val: 'Liq ' + fc(a.liq || 0) + ' &middot; Inv ' + fc(a.inv || 0),
       tab: 'Resumo',
       color: 'var(--success)',
+    };
+  if (a.type === 'add_category')
+    return {
+      icon: 'cart',
+      lbl: a.nm || a.id || '',
+      val: a.lm ? 'Limite ' + fm(a.lm) : 'Nova categoria',
+      tab: 'Despesas',
+      color: 'var(--orange)',
+    };
+  if (a.type === 'add_rule')
+    return {
+      icon: 'shield',
+      lbl: 'Regra: ' + (a.pattern || ''),
+      // a.cat é AI-controlado e val é dangerouslySetInnerHTML → escapar.
+      val: '&rarr; ' + esc(a.cat || ''),
+      tab: 'Despesas',
+      color: 'var(--purple)',
+    };
+  if (a.type === 'set_budget')
+    return {
+      icon: 'chart',
+      lbl: 'Orçamento: ' + (a.cat || ''),
+      val: 'Limite ' + fm(a.limit || 0),
+      tab: 'Despesas',
+      color: 'var(--blue)',
+    };
+  if (a.type === 'create_group')
+    return {
+      icon: 'briefcase',
+      lbl: a.name || '',
+      val: 'Novo grupo',
+      tab: 'Grupos',
+      color: 'var(--purple)',
+    };
+  if (a.type === 'add_person')
+    return {
+      icon: 'sparkle',
+      lbl: a.name || '',
+      val: 'Nova pessoa',
+      tab: 'Grupos',
+      color: 'var(--blue)',
+    };
+  if (a.type === 'add_group_expense')
+    return {
+      icon: 'expense',
+      lbl: a.desc || '',
+      val: '-' + fm(Math.abs(a.amount || 0)),
+      tab: 'Grupos',
+      color: 'var(--signal)',
+    };
+  if (a.type === 'settle_group')
+    return {
+      icon: 'transfer',
+      lbl: 'Acerto de contas',
+      val: fm(Math.abs(a.amount || 0)),
+      tab: 'Grupos',
+      color: 'var(--blue)',
     };
   return { icon: 'help', lbl: a.type || 'desconhecido', val: '', tab: '', color: 'var(--text3)' };
 }
@@ -148,10 +213,17 @@ export default function AIView() {
      à espera de confirmação. confirmPending() é o único injector sancionado
      do campo `confirmed`; nunca se chama aqui a tool diretamente nem se
      confirma sozinho — só ao clique explícito em "Confirmar". Cancelar
-     limita-se a descartar o pedido do histórico, sem executar nada. ────── */
+     limita-se a descartar o pedido do histórico, sem executar nada.
+
+     Lê `actions.getState().aiHistory` em vez do `aiHistory` fechado no
+     closure do render: entre o render que desenhou o cartão e o clique pode
+     ter chegado uma sincronização do Firestore em segundo plano — escrever
+     por cima do array fechado no closure reverteria essa sincronização em
+     silêncio (o mesmo padrão que sendAI já segue com actions.getState()). */
   const resolvePending = useCallback(
     (entryIdx, pendIdx, execute) => {
-      const entry = aiHistory[entryIdx];
+      const hist = actions.getState().aiHistory || [];
+      const entry = hist[entryIdx];
       const p = entry && entry.pending && entry.pending[pendIdx];
       if (!p) return;
       if (execute) {
@@ -159,10 +231,10 @@ export default function AIView() {
         toast(r && r.ok ? 'Feito' : 'Não foi possível concluir', r && r.ok ? 'success' : 'error');
       }
       actions.setAiHistory(
-        aiHistory.map((h, i) => (i === entryIdx ? { ...h, pending: h.pending.filter((_, j) => j !== pendIdx) } : h))
+        hist.map((h, i) => (i === entryIdx ? { ...h, pending: h.pending.filter((_, j) => j !== pendIdx) } : h))
       );
     },
-    [aiHistory, actions, toast]
+    [actions, toast]
   );
 
   /* ── aiImportFile (orig 2677-2712). ────────────────────────────────────── */
@@ -608,33 +680,20 @@ export default function AIView() {
                 {h.err && <div style={{ fontSize: 11, color: 'var(--signal)', marginTop: 4 }}>{h.err}</div>}
                 {/* Ações destrutivas por confirmar (runAssistant devolveu-as em
                     `pending` em vez de as executar) — nunca se confirmam
-                    sozinhas: fica aqui o cartão de Confirmar/Cancelar até o
-                    utilizador decidir. */}
+                    sozinhas: fica aqui o mesmo cartão Confirmar/Cancelar da
+                    AssistantSheet (componente partilhado), até o utilizador
+                    decidir. `busy=aiLoading` desativa os botões enquanto há
+                    um pedido em curso, tal como o "Enviar". */}
                 {h.pending &&
                   h.pending.length > 0 &&
                   h.pending.map((p, pi) => (
-                    <div key={pi} className="cs" style={{ padding: 14, marginTop: 10 }}>
-                      <div className="lb" style={{ marginBottom: 6 }}>
-                        {p.preview && p.preview.action === 'delete' ? 'Apagar' : 'Alterar'} &middot; {(p.preview && p.preview.kind) || ''}
-                      </div>
-                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{p.preview && p.preview.label}</div>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button
-                          type="button"
-                          onClick={() => resolvePending(entryIdx, pi, true)}
-                          style={{ flex: 1, padding: '10px 0', border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 12, fontWeight: 600, borderRadius: 999 }}
-                        >
-                          Confirmar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => resolvePending(entryIdx, pi, false)}
-                          style={{ flex: 1, padding: '10px 0', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text2)', fontSize: 12, fontWeight: 600, borderRadius: 999 }}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
+                    <PendingActionCard
+                      key={pi}
+                      preview={p.preview}
+                      busy={aiLoading}
+                      onConfirm={() => resolvePending(entryIdx, pi, true)}
+                      onCancel={() => resolvePending(entryIdx, pi, false)}
+                    />
                   ))}
               </div>
             );

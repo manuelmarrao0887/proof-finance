@@ -10,6 +10,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import Sheet from '../components/Sheet.jsx';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
+import PendingActionCard from '../components/PendingActionCard.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
@@ -224,20 +225,13 @@ export default function AssistantSheet() {
                   />
 
                   {(t.pending || []).map((p, j) => (
-                    <div key={j} className="cs" style={{ padding: 14, marginTop: 10 }}>
-                      <div className="lb" style={{ marginBottom: 6 }}>
-                        {p.preview.action === 'delete' ? 'Apagar' : 'Alterar'} · {p.preview.kind}
-                      </div>
-                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{p.preview.label}</div>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <PrimaryButton onClick={() => confirm(i, j)} disabled={busy} style={{ flex: 1 }}>
-                          Confirmar
-                        </PrimaryButton>
-                        <SecondaryButton onClick={() => cancel(i, j)} disabled={busy} style={{ flex: 1, color: 'var(--text2)' }}>
-                          Cancelar
-                        </SecondaryButton>
-                      </div>
-                    </div>
+                    <PendingActionCard
+                      key={j}
+                      preview={p.preview}
+                      busy={busy}
+                      onConfirm={() => confirm(i, j)}
+                      onCancel={() => cancel(i, j)}
+                    />
                   ))}
 
                   {t.undo && (

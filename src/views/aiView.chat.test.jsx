@@ -6,8 +6,9 @@
    ════════════════════════════════════════════════════════════════════════ */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
+import { WRITE_TOOL_SLICES } from '../lib/aiTools.js';
 
 const runAssistant = vi.fn();
 const confirmPending = vi.fn(() => ({ ok: true, data: {} }));
@@ -19,7 +20,7 @@ vi.mock('../lib/aiChat.js', () => ({
   MAX_ROUNDS: 4,
 }));
 
-import AIView from './AIView.jsx';
+import AIView, { actionLabel } from './AIView.jsx';
 
 beforeEach(() => {
   runAssistant.mockReset();
@@ -139,5 +140,81 @@ describe('AIView — chat', () => {
     fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
     await waitFor(() => expect(screen.queryByRole('button', { name: /confirmar/i })).toBeNull());
     expect(confirmPending).not.toHaveBeenCalled();
+  });
+
+  // Finding 2 da revisão: o cartão de pendente partilhado (PendingActionCard)
+  // tem de desativar Confirmar/Cancelar enquanto há um pedido em curso — o
+  // mesmo guard que a AssistantSheet já tinha e que faltava aqui. Sem o
+  // `busy={aiLoading}` na chamada ao componente partilhado, estes botões
+  // ficariam sempre clicáveis e este teste falharia.
+  it('enquanto processa um novo pedido, Confirmar/Cancelar do pendente anterior ficam desativados', async () => {
+    runAssistant.mockResolvedValueOnce({
+      text: 'Confirmas?',
+      applied: [],
+      pending: [{ name: 'delete_expense', args: { id: 'e1' }, preview: { action: 'delete', kind: 'despesa', label: 'Continente' } }],
+      usage: {},
+    });
+    await renderWithStore(<AIView />);
+    fireEvent.change(screen.getByPlaceholderText(/pergunta|regista|comando/i), { target: { value: 'apaga a do continente' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => screen.getByRole('button', { name: /confirmar/i }));
+
+    // 2º pedido fica pendurado (nunca resolve) para observar aiLoading=true.
+    let resolveSecond;
+    runAssistant.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSecond = resolve;
+        })
+    );
+    fireEvent.change(screen.getByPlaceholderText(/pergunta|regista|comando/i), { target: { value: 'outro pedido' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /confirmar/i })).toBeDisabled());
+    expect(screen.getByRole('button', { name: /cancelar/i })).toBeDisabled();
+
+    // Resolve a promise pendurada para não vazar estado para o teste seguinte.
+    await act(async () => {
+      resolveSecond({ text: 'ok', applied: [], pending: [], usage: {} });
+      await Promise.resolve();
+    });
+  });
+
+  // Finding 1 da revisão: settle_group é uma transferência de dinheiro real
+  // entre pessoas — tem de aparecer no histórico com etiqueta em PT-PT e o
+  // valor do acerto, nunca como a string em bruto do nome da tool.
+  it('settle_group aparece no historico com etiqueta PT-PT e o valor, nunca a string em bruto', async () => {
+    await renderWithStore(<AIView />, {
+      fixture: {
+        aiHistory: [
+          {
+            date: '01/01/2026, 10:00:00',
+            cmd: 'acerta contas com a Ana',
+            analysis: 'Acerto registado.',
+            actions: [{ type: 'settle_group', group_id: 'g1', from_id: 'me', to_id: 'p1', amount: 12.5 }],
+            ok: true,
+            mode: 'chat',
+          },
+        ],
+      },
+    });
+    expect(screen.queryByText('settle_group')).toBeNull();
+    expect(screen.getByText(/12,50/)).toBeInTheDocument();
+  });
+});
+
+// Finding 1 da revisão: actionLabel tinha de reconhecer só 5 nomes de tools
+// (o vocabulário do prompt manual antigo). Agora que o chat passa por
+// runAssistant, res.applied pode trazer qualquer tool de escrita — uma sem
+// branch cai no {icon:'help', lbl: a.type} genérico e mostra o nome bruto da
+// tool (em inglês) ao utilizador. Este teste itera WRITE_TOOL_SLICES (a
+// fonte única do que é uma tool de escrita, lib/aiTools.js) e falha assim
+// que uma tool nova for adicionada lá sem um branch correspondente aqui.
+describe('actionLabel — cobertura das tools de escrita', () => {
+  it('tem um label reconhecido (nao "help") para cada tool em WRITE_TOOL_SLICES', () => {
+    Object.keys(WRITE_TOOL_SLICES).forEach((name) => {
+      const info = actionLabel({ type: name });
+      expect(info.icon, name + ' nao deveria cair no icon "help" generico').not.toBe('help');
+    });
   });
 });
