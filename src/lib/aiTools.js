@@ -605,12 +605,20 @@ const destructiveTools = Object.keys(COLLECTIONS).reduce((acc, key) => {
 
 export const TOOLS = { ...readTools, ...writeTools, ...destructiveTools };
 
+// O `confirmed` existe no schema interno (o validador precisa dele), mas NUNCA
+// e mostrado ao modelo: a confirmacao vem da UI, depois de o utilizador ver a
+// pre-visualizacao. Se o modelo nao sabe que o campo existe, nao o pode forjar.
+function modelParameters(schema) {
+  const { confirmed, ...properties } = schema.properties || {};
+  return { ...schema, properties };
+}
+
 export const TOOL_SCHEMAS = Object.keys(TOOLS).map((name) => ({
   type: 'function',
   function: {
     name,
     description: TOOLS[name].description,
-    parameters: TOOLS[name].schema,
+    parameters: modelParameters(TOOLS[name].schema),
   },
 }));
 

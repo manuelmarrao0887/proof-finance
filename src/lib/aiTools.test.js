@@ -71,6 +71,21 @@ describe('TOOL_SCHEMAS', () => {
     const names = TOOL_SCHEMAS.map((s) => s.function.name);
     expect(new Set(names).size).toBe(names.length);
   });
+  it('nunca expoe "confirmed" ao modelo, em nenhuma tool', () => {
+    TOOL_SCHEMAS.forEach((s) => {
+      expect(s.function.parameters.properties).not.toHaveProperty('confirmed');
+    });
+  });
+  it('o schema interno de uma tool destrutiva mantem "confirmed" (o validador precisa dele)', () => {
+    expect(TOOLS.delete_expense.schema.properties).toHaveProperty('confirmed');
+    expect(TOOLS.update_expense.schema.properties).toHaveProperty('confirmed');
+  });
+  it('esconder "confirmed" do modelo nao quebra o caminho de confirmacao da UI', () => {
+    const c = writeCtx({ addedExp: [{ id: 'e1', desc: 'Continente', amount: 45.67, cat: 'sup', date: '2026-08-28' }] });
+    const r = execTool('delete_expense', { id: 'e1', confirmed: true }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.deleteExpense).toHaveBeenCalledWith('e1');
+  });
 });
 
 describe('execTool — guardas gerais', () => {
@@ -348,6 +363,38 @@ describe('gate das accoes destrutivas', () => {
     expect(execTool('update_goal', { id: 'g1', target: 12000 }, c).pending).toBe(true);
     execTool('delete_goal', { id: 'g1', confirmed: true }, c);
     expect(c.actions.deleteGoal).toHaveBeenCalledWith('g1');
+  });
+
+  // As quatro tools acima so verificam `.pending` para incomes/recurring — um
+  // ponteiro errado em COLLECTIONS (ex.: update_income a chamar deleteIncome)
+  // passaria nesses testes na mesma. Aqui confirmamos o caminho ate ao fim:
+  // a action certa e chamada, com o id certo (e, no update, o patch certo).
+  it('update_income escreve na action certa, com o patch certo, quando confirmado', () => {
+    const c = writeCtx(seed());
+    execTool('update_income', { id: 'i1', amount: 2000, confirmed: true }, c);
+    expect(c.actions.updateIncome).toHaveBeenCalledWith('i1', { amount: 2000 });
+    expect(c.actions.deleteIncome).not.toHaveBeenCalled();
+  });
+
+  it('delete_income apaga na action certa, com o id certo, quando confirmado', () => {
+    const c = writeCtx(seed());
+    execTool('delete_income', { id: 'i1', confirmed: true }, c);
+    expect(c.actions.deleteIncome).toHaveBeenCalledWith('i1');
+    expect(c.actions.updateIncome).not.toHaveBeenCalled();
+  });
+
+  it('update_recurring escreve na action certa, com o patch certo, quando confirmado', () => {
+    const c = writeCtx(seed());
+    execTool('update_recurring', { id: 'r1', amount: 12.99, confirmed: true }, c);
+    expect(c.actions.updateRecurring).toHaveBeenCalledWith('r1', { amount: 12.99 });
+    expect(c.actions.deleteRecurring).not.toHaveBeenCalled();
+  });
+
+  it('delete_recurring apaga na action certa, com o id certo, quando confirmado', () => {
+    const c = writeCtx(seed());
+    execTool('delete_recurring', { id: 'r1', confirmed: true }, c);
+    expect(c.actions.deleteRecurring).toHaveBeenCalledWith('r1');
+    expect(c.actions.updateRecurring).not.toHaveBeenCalled();
   });
 
   it('nenhuma tool de criacao pede confirmacao', () => {
