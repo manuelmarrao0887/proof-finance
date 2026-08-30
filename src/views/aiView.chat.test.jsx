@@ -48,6 +48,31 @@ describe('AIView — chat', () => {
     await waitFor(() => expect(screen.getByText(/Demasiados pedidos/)).toBeInTheDocument());
   });
 
+  /* Revisão final, also-fix 4: runAssistant já não rejeita quando uma volta
+     rebenta a meio — devolve error:true com o que ficou aplicado. A view tem
+     de mostrar isso como ERRO (não como uma análise bem sucedida) e continuar
+     a listar o que chegou a ser escrito, para o utilizador ver o que já lhe
+     mexeu nos dados. */
+  it('uma volta com erro a meio aparece como erro e ainda lista o que foi escrito', async () => {
+    runAssistant.mockResolvedValue({
+      text: 'Erro de rede a falar com o modelo.',
+      applied: [{ name: 'add_expense', args: { desc: 'Café', amount: 1.2, cat: 'rest' }, data: { id: 'e1' } }],
+      pending: [],
+      usage: {},
+      error: true,
+    });
+    await renderWithStore(<AIView />);
+    fireEvent.change(screen.getByPlaceholderText(/pergunta|regista|comando/i), { target: { value: 'cafe 1,20' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+
+    await waitFor(() => expect(screen.getByText(/Erro de rede/)).toBeInTheDocument());
+    // Etiqueta de erro, nunca "Executado"/"Análise".
+    expect(screen.getByText('Erro')).toBeInTheDocument();
+    expect(screen.queryByText('Executado')).toBeNull();
+    // ...e a despesa que chegou a ser escrita continua listada.
+    expect(screen.getByText(/Café/)).toBeInTheDocument();
+  });
+
   // Prova de que a view já não monta o próprio prompt: o system prompt tem
   // de vir do ASSISTANT_SYSTEM partilhado (aqui mockado como uma string
   // reconhecível), nunca de um texto local escrito à mão em AIView.jsx.

@@ -264,6 +264,82 @@ describe('AssistantSheet', () => {
     expect(capturedActions.getState().people.map((p) => p.id).sort()).toEqual(['p0', 'p1']);
   });
 
+  /* Revisão final, must-fix 3: o Shell mantém os modais montados depois de
+     abertos ("Set only grows"), por isso o Anular de uma volta sobrevive a
+     fechar e reabrir a folha. Se, entretanto, o utilizador registar uma
+     despesa à mão noutro ecrã, repor o array antigo apaga esse registo em
+     silêncio. O botão tem de ficar DESATIVADO (não escondido) e explicar
+     porquê. */
+  it('uma escrita feita fora do assistente desativa o Anular, com explicação', async () => {
+    let capturedActions;
+    runAssistant.mockImplementation((cmd, opts) => {
+      opts.actions.addExpense({ id: 'e1', desc: 'Café', amount: 1.2, cat: 'rest', date: '2026-08-28' });
+      return Promise.resolve({
+        text: 'Registei o café.',
+        applied: [{ name: 'add_expense', args: { desc: 'Café', amount: 1.2 }, data: { id: 'e1' } }],
+        pending: [],
+        usage: {},
+      });
+    });
+    await renderWithStore(<AssistantSheet />, {
+      openModal: 'assistant',
+      fixture: { addedExp: [{ id: 'e0', desc: 'Existente', amount: 5, cat: 'out', date: '2026-08-01' }] },
+      onReady: (ctx) => {
+        capturedActions = ctx.actions;
+      },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'cafe' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /anular/i })).toBeEnabled());
+
+    // Outra parte da app escreve na MESMA slice que esta volta escreveu.
+    act(() => {
+      capturedActions.addExpense({ id: 'manual', desc: 'Feita à mão', amount: 9, cat: 'out', date: '2026-08-30' });
+    });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /anular/i })).toBeDisabled());
+    expect(screen.getByText(/já não é possível anular/i)).toBeInTheDocument();
+
+    // E mesmo forçando o clique, nada é reposto: a despesa manual sobrevive.
+    fireEvent.click(screen.getByRole('button', { name: /anular/i }));
+    expect(capturedActions.getState().addedExp.map((x) => x.id).sort()).toEqual(['e0', 'e1', 'manual']);
+  });
+
+  /* Revisão final, also-fix 4: uma volta que rebenta a meio devolve
+     error:true com o que ficou aplicado. A folha mostra o erro E continua a
+     oferecer o Anular do que chegou a ser escrito. */
+  it('uma volta com erro mostra o erro e mantém o Anular do que ficou escrito', async () => {
+    let capturedActions;
+    runAssistant.mockImplementation((cmd, opts) => {
+      opts.actions.addExpense({ id: 'e1', desc: 'Café', amount: 1.2, cat: 'rest', date: '2026-08-28' });
+      return Promise.resolve({
+        text: 'Erro de rede a falar com o modelo.',
+        applied: [{ name: 'add_expense', args: { desc: 'Café', amount: 1.2 }, data: { id: 'e1' } }],
+        pending: [],
+        usage: {},
+        error: true,
+      });
+    });
+    await renderWithStore(<AssistantSheet />, {
+      openModal: 'assistant',
+      fixture: { addedExp: [] },
+      onReady: (ctx) => {
+        capturedActions = ctx.actions;
+      },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'cafe' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(screen.getByText(/Erro de rede/)).toBeInTheDocument();
+    // O Anular do que chegou a ser escrito continua lá — e funciona.
+    const anular = screen.getByRole('button', { name: /anular/i });
+    expect(anular).toBeEnabled();
+    fireEvent.click(anular);
+    await waitFor(() => expect(screen.queryByRole('button', { name: /anular/i })).toBeNull());
+    expect(capturedActions.getState().addedExp).toEqual([]);
+  });
+
   // Cobertura extra (não vem do brief, pedida pela revisão — Minor): um
   // pedido em curso (busy) tem de desativar Confirmar/Cancelar/Anular de
   // voltas anteriores, tal como já desativa o Enviar — nada pode escrever a

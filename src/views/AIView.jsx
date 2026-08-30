@@ -185,16 +185,25 @@ export default function AIView() {
     runAssistant(cmd, {
       state: st,
       actions,
+      // currentUser nao esta no estado do reducer — sem ele as tools de
+      // leitura veem a app em modo de demonstracao (ver aiChat.js).
+      currentUser,
       systemPrompt: ASSISTANT_SYSTEM + '\n\nCONTEXTO:\n' + JSON.stringify(buildAIContext(st)),
     })
       .then((res) => {
+        const applied = res.applied || [];
+        const waiting = res.pending || [];
         actions.pushAiHistory({
           date: new Date().toLocaleString('pt-PT'),
           cmd,
-          analysis: res.text,
-          actions: res.applied.map((a) => ({ type: a.name, ...a.args })),
-          pending: res.pending.map((p) => ({ name: p.name, args: p.args, preview: p.preview })),
-          ok: true,
+          // runAssistant já não rejeita quando uma volta rebenta a meio:
+          // devolve error:true com o que ficou aplicado até aí. A entrada
+          // mostra-se como erro (h.err) mas continua a listar o que chegou a
+          // ser escrito e o que ficou por confirmar — o utilizador tem de ver
+          // o que já lhe mexeu nos dados.
+          ...(res.error ? { err: res.text } : { analysis: res.text, ok: true }),
+          actions: applied.map((a) => ({ type: a.name, ...a.args })),
+          pending: waiting.map((p) => ({ name: p.name, args: p.args, preview: p.preview })),
           mode: 'chat',
         });
         setChat('');
@@ -207,7 +216,7 @@ export default function AIView() {
         });
       })
       .finally(() => setAiLoading(false));
-  }, [chat, aiLoading, actions]);
+  }, [chat, aiLoading, actions, currentUser]);
 
   /* ── resolvePending — Confirmar/Cancelar de uma ação destrutiva que ficou
      à espera de confirmação. confirmPending() é o único injector sancionado

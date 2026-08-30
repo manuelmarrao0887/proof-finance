@@ -3,11 +3,12 @@
 
    Escrever em linguagem natural ("gastei 12 no Pingo Doce", "quanto gastei em
    restaurantes este mês?"). As criações aplicam-se logo, com Anular no cartão
-   da resposta; apagar e editar mostram um cartão de confirmação — só depois
-   de Confirmar é que confirmPending() escreve.
+   da resposta; tudo o que altere ou apague um registo que já existe (incluindo
+   substituir um saldo ou um limite de orçamento) mostra um cartão de
+   confirmação — só depois de Confirmar é que confirmPending() escreve.
    ════════════════════════════════════════════════════════════════════════ */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Sheet from '../components/Sheet.jsx';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 import PendingActionCard from '../components/PendingActionCard.jsx';
@@ -66,13 +67,37 @@ function undoSnapshotFor(applied, before) {
   return snap;
 }
 
+/* ── Guarda do Anular contra escritas feitas FORA do assistente ───────────
+   O Anular repõe arrays INTEIROS. Isso só é seguro enquanto as slices que a
+   volta escreveu continuarem exatamente como ficaram: o Shell mantém os
+   modais montados depois de abertos (components/Shell.jsx, "Set only grows"),
+   por isso um Anular vivo sobrevive a fechar a folha — e entretanto o
+   utilizador pode ter registado uma despesa à mão noutro ecrã. Repor o array
+   antigo apagava esse registo em silêncio.
+
+   Guarda-se a IDENTIDADE (referência) de cada array logo a seguir à escrita e
+   compara-se antes de deixar anular. Comparar por referência chega e não tem
+   falsos positivos: o store nunca muta um array no lugar, substitui-o sempre
+   (ver os atualizadores em store/store.jsx). */
+function sliceRefs(keys, state) {
+  const refs = {};
+  keys.forEach((k) => {
+    refs[k] = state[k];
+  });
+  return refs;
+}
+function refsMatch(refs, state) {
+  return Object.keys(refs).every((k) => refs[k] === state[k]);
+}
+
 export default function AssistantSheet() {
   const { isOpen, close } = useModal('assistant');
-  const { actions } = useStore();
+  const { state, actions, currentUser } = useStore();
   const toast = useToast();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
-  const [turns, setTurns] = useState([]); // {cmd, text, applied, pending, usage, undo, error}
+  // {cmd, text, applied, pending, usage, undo, undoRef, error}
+  const [turns, setTurns] = useState([]);
   // Historial da conversa (formato OpenRouter) para dar contexto às voltas
   // seguintes — não é estado React porque não precisa de re-render por si só.
   const historyRef = useRef([]);
@@ -86,6 +111,9 @@ export default function AssistantSheet() {
     runAssistant(cmd, {
       state: actions.getState(),
       actions,
+      // currentUser nao esta no estado do reducer — sem ele as tools de
+      // leitura veem a app em modo de demonstracao (ver aiChat.js).
+      currentUser,
       history: historyRef.current,
       systemPrompt: ASSISTANT_SYSTEM + '\n\nCONTEXTO:\n' + JSON.stringify(buildAIContext(actions.getState())),
     })
@@ -102,7 +130,7 @@ export default function AssistantSheet() {
           // aplicação mais recente pode oferecer Anular, nunca duas ao mesmo
           // tempo. Um botão Anular parado a reescrever silenciosamente o
           // passado é pior do que não ter Anular nenhum.
-          ...t.map((x) => (applied.length ? { ...x, undo: null } : x)),
+          ...t.map((x) => (applied.length ? { ...x, undo: null, undoRef: null } : x)),
           {
             cmd,
             text: res.text,
@@ -110,27 +138,64 @@ export default function AssistantSheet() {
             pending: res.pending || [],
             usage: res.usage,
             undo: applied.length ? undoSnapshotFor(applied, before) : null,
+            // runAssistant já não rejeita quando uma volta rebenta a meio:
+            // devolve error:true com o que ficou aplicado até aí. A volta
+            // mostra-se como erro, mas o Anular do que chegou a ser escrito
+            // continua disponível.
+            error: !!res.error,
           },
         ]);
         setText('');
       })
       .catch((err) => {
-        setTurns((t) => [...t, { cmd, error: (err && err.message) || 'Falha no assistente.' }]);
+        setTurns((t) => [...t, { cmd, text: (err && err.message) || 'Falha no assistente.', error: true }]);
       })
       .finally(() => setBusy(false));
-  }, [text, busy, actions]);
+  }, [text, busy, actions, currentUser]);
+
+  /* Mede a identidade dos arrays escritos por cada volta, LOGO A SEGUIR à
+     escrita. Corre num efeito e não no .then porque a medição tem de usar o
+     mesmo `state` que a comparação usa no render — o adiantamento interno do
+     store (getState()) produz arrays equivalentes mas com outra identidade, e
+     comparar os dois daria sempre "mudou". Depende também de `turns` porque a
+     volta e a escrita podem chegar em renders diferentes; a guarda `changed`
+     devolve o mesmo array quando não há nada a medir, e o React não
+     re-renderiza. */
+  useEffect(() => {
+    setTurns((t) => {
+      let changed = false;
+      const next = t.map((x) => {
+        if (!x.undo || x.undoRef) return x;
+        changed = true;
+        return { ...x, undoRef: sliceRefs(Object.keys(x.undo), state) };
+      });
+      return changed ? next : t;
+    });
+  }, [state, turns]);
+
+  // Já foi medido E alguma das slices mudou desde então → o "antes" guardado
+  // está obsoleto e repor apagaria trabalho alheio.
+  const undoStale = useCallback((t) => !!(t.undo && t.undoRef) && !refsMatch(t.undoRef, state), [state]);
 
   const undo = useCallback(
     (idx) => {
-      const snap = turns[idx] && turns[idx].undo;
+      const turn = turns[idx];
+      const snap = turn && turn.undo;
       if (!snap) return;
+      // Rede de segurança para além do `disabled` do botão (um clique pode
+      // chegar entre a mudança de estado e o re-render).
+      if (turn.undoRef && !refsMatch(turn.undoRef, state)) {
+        setTurns((t) => t.map((x, i) => (i === idx ? { ...x, undo: null, undoRef: null } : x)));
+        toast('Já não é possível anular: estes dados mudaram entretanto.', 'error');
+        return;
+      }
       // Mesmo caminho (dispatch) de qualquer outra edição — o efeito de
       // auto-persist da store apanha isto tal como apanharia um patch normal.
       actions.patch(snap);
-      setTurns((t) => t.map((x, i) => (i === idx ? { ...x, undo: null, applied: [] } : x)));
+      setTurns((t) => t.map((x, i) => (i === idx ? { ...x, undo: null, undoRef: null, applied: [] } : x)));
       toast('Anulado', 'success');
     },
-    [turns, actions, toast]
+    [turns, actions, toast, state]
   );
 
   const confirm = useCallback(
@@ -149,7 +214,7 @@ export default function AssistantSheet() {
           // Anular parado é mais perigoso: perder a hipótese de anular uma
           // criação não relacionada custa muito menos do que ressuscitar em
           // silêncio um registo que o utilizador acabou de apagar.
-          return r && r.ok ? { ...next, undo: null } : next;
+          return r && r.ok ? { ...next, undo: null, undoRef: null } : next;
         })
       );
     },
@@ -209,46 +274,63 @@ export default function AssistantSheet() {
             Escreve em linguagem natural — "gastei 12 no Pingo Doce", "quanto gastei em restaurantes este mês?".
           </div>
         ) : (
-          turns.map((t, i) => (
-            <div key={i} className="cd fadeUp" style={{ marginBottom: 8, padding: '14px 16px' }}>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{t.cmd}</div>
+          turns.map((t, i) => {
+            const stale = undoStale(t);
+            return (
+              <div key={i} className="cd fadeUp" style={{ marginBottom: 8, padding: '14px 16px' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{t.cmd}</div>
 
-              {t.error ? (
-                <div role="alert" style={{ borderLeft: '3px solid var(--signal)', padding: '8px 12px', borderRadius: 8 }}>
-                  <div className="lb" style={{ color: 'var(--signal)' }}>{t.error}</div>
-                </div>
-              ) : (
-                <>
+                {/* A resposta OU o erro. O que vem a seguir (pendentes, Anular,
+                    custo) desenha-se nos dois casos: uma volta pode ter
+                    falhado a meio e mesmo assim ter escrito qualquer coisa. */}
+                {t.error ? (
+                  <div role="alert" style={{ borderLeft: '3px solid var(--signal)', padding: '8px 12px', borderRadius: 8 }}>
+                    <div className="lb" style={{ color: 'var(--signal)' }}>{t.text}</div>
+                  </div>
+                ) : (
                   <div
                     style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.6 }}
                     dangerouslySetInnerHTML={{ __html: renderMD(t.text) }}
                   />
+                )}
 
-                  {(t.pending || []).map((p, j) => (
-                    <PendingActionCard
-                      key={j}
-                      preview={p.preview}
-                      busy={busy}
-                      onConfirm={() => confirm(i, j)}
-                      onCancel={() => cancel(i, j)}
-                    />
-                  ))}
+                {(t.pending || []).map((p, j) => (
+                  <PendingActionCard
+                    key={j}
+                    preview={p.preview}
+                    busy={busy}
+                    onConfirm={() => confirm(i, j)}
+                    onCancel={() => cancel(i, j)}
+                  />
+                ))}
 
-                  {t.undo && (
-                    <SecondaryButton onClick={() => undo(i)} disabled={busy} style={{ marginTop: 10, color: 'var(--text2)' }}>
+                {t.undo && (
+                  <>
+                    <SecondaryButton
+                      onClick={() => undo(i)}
+                      disabled={busy || stale}
+                      style={{ marginTop: 10, color: 'var(--text2)' }}
+                    >
                       Anular
                     </SecondaryButton>
-                  )}
+                    {/* Desativado, nunca escondido: o utilizador tem de
+                        perceber porque é que já não pode anular. */}
+                    {stale && (
+                      <div className="lb" style={{ marginTop: 6, color: 'var(--text3)' }}>
+                        Estes dados mudaram entretanto — já não é possível anular.
+                      </div>
+                    )}
+                  </>
+                )}
 
-                  {t.usage ? (
-                    <div className="lb" style={{ marginTop: 10, color: 'var(--fg-subtle)' }}>
-                      {'$' + estimateCost(t.usage).toFixed(4)}
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </div>
-          ))
+                {t.usage ? (
+                  <div className="lb" style={{ marginTop: 10, color: 'var(--fg-subtle)' }}>
+                    {'$' + estimateCost(t.usage).toFixed(4)}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })
         )}
       </div>
     </Sheet>
