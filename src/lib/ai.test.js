@@ -127,6 +127,10 @@ describe('buildAIContext', () => {
     expect(typeof c.netWorth).toBe('number');
     expect(typeof c.totalAssets).toBe('number');
   });
+  it('nomeia as contas por banco e tipo, nao pela nota', () => {
+    const c = buildAIContext(state);
+    expect(c.accounts).toContainEqual({ name: 'Bankinter · Conta a Ordem', value: 640 });
+  });
   it('inclui orcamento do mes com gasto', () => {
     const c = buildAIContext(state);
     expect(c.budget.find((b) => b.id === 'sup').spent).toBe(45.2);
