@@ -1,15 +1,18 @@
 /* ════════════════════════════════════════════════════════════════════════
    AIView — React port of the AI tab (orig rAI 2478-2553 + rAIImportPanel
-   2418-2477 + sendAI 2581-2676 + aiImportFile 2677-2712 + applyAIImport
-   2728-2784 + actionLabel 2408-2416 + renderMD 2371-2406).
+   2418-2477 + aiImportFile 2677-2712 + applyAIImport 2728-2784 +
+   actionLabel 2408-2416 + renderMD 2371-2406).
 
    Three states share the view:
-     1. API-key missing  -> prompt to set it in Definições.
+     1. Sem sessão -> pede login (a IA corre no servidor).
      2. Import in flight / pending review -> rAIImportPanel (per-action checkboxes).
      3. Default -> import card + chat textarea + conversation history.
 
-   callAI signature: (content, system, apiKey, onResult). The task prompt is
-   appended as a {type:'text', text:PROMPT} block in `content` (STORE_API §4).
+   O chat (sendAI) já não monta o próprio prompt nem aplica ações à mão: usa
+   runAssistant/confirmPending de lib/aiChat.js, o mesmo motor de tool-calling
+   da AssistantSheet — ver Task 12. O painel de import continua a usar callAI
+   (lib/ai.js) com o signature (content, system, apiKey, onResult); o task
+   prompt vai num bloco {type:'text', text:PROMPT} em `content` (STORE_API §4).
    ════════════════════════════════════════════════════════════════════════ */
 
 import React, { useState, useCallback } from 'react';
@@ -20,21 +23,13 @@ import Icon from '../components/Icon.jsx';
 import { fm, fc, uid, normalizeStmtDate, todayISO } from '../lib/format.js';
 import {
   callAI,
-  callAIRaw,
   AI_IMPORT_PROMPT,
   readFileB64,
   resizeImg,
   parseExcel,
   buildAIContext,
 } from '../lib/ai.js';
-import {
-  compute,
-  getAccts,
-  getAllHist,
-  getByC,
-  getLoan,
-  ln as lnSeed,
-} from '../lib/finance.js';
+import { runAssistant, confirmPending, ASSISTANT_SYSTEM } from '../lib/aiChat.js';
 import { esc, renderMD } from '../lib/markdown.js';
 
 /* ── actionLabel (orig 2408-2416). Returns icon (emoji entity string), label,
@@ -100,67 +95,6 @@ function H({ html, ...rest }) {
   return <span {...rest} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-/* ── buildAIContext (orig 2554-2579) — local because the lib export is a stub.
-   Threads {...state, currentUser} into the finance fns so mode-branching works. */
-function buildAIContextLocal(state, currentUser) {
-  const s = { ...state, currentUser };
-  const C = compute(s);
-  const byCData = getByC(s);
-  const loanData = getLoan(s);
-  const today = todayISO();
-  const monthNames = ['Jan', 'Fev', 'Mar', 'Abr'];
-  const ctx = {
-    today: today,
-    currentMonth: today.slice(0, 7),
-    accounts: getAccts(s).map((a) => ({ bank: a.b, type: a.t, balance: a.v, note: a.n || null, category: a.c })),
-    totalAssets: C.tA,
-    netWorth: C.nW,
-    loan: {
-      capital: loanData.cap,
-      outstanding: loanData.out,
-      payment: loanData.pay,
-      rate: 2.7,
-      nextPayment: '28.' + (new Date().getMonth() + 2).toString().padStart(2, '0'),
-    },
-    incomes: (state.incomes || []).map((i) => ({
-      name: i.name,
-      amount: i.amount,
-      source: i.source,
-      recurring: i.recurring !== false,
-      day: i.day,
-      date: i.date || null,
-    })),
-    recurring: (state.recurring || []).map((r) => ({ name: r.name, amount: r.amount, day: r.day, category: r.cat })),
-    goals: (state.goals || []).map((g) => ({
-      name: g.name,
-      target: g.target,
-      current: g.current,
-      deadline: g.deadline || null,
-      progress: g.target > 0 ? ((g.current / g.target) * 100).toFixed(0) + '%' : '0%',
-    })),
-    budgetCategories: (state.bdg || []).map((b) => ({ id: b.id, name: b.nm, monthlyLimit: b.lm })),
-    historicalExpensesByCategory: {},
-    addedExpenses: (state.addedExp || []).slice(-100).map((x) => ({
-      desc: x.desc,
-      amount: x.amount,
-      category: x.cat,
-      date: x.date,
-      shared: !!x.shared,
-      total: x.total || null,
-      tags: x.tags || null,
-    })),
-    netWorthHistory: getAllHist(s).slice(-12),
-  };
-  Object.keys(byCData).forEach((k) => {
-    const arr = {};
-    byCData[k].forEach((v, i) => {
-      arr[monthNames[i] || 'M' + i] = v;
-    });
-    ctx.historicalExpensesByCategory[k] = arr;
-  });
-  return ctx;
-}
-
 /* ════════════════════════════════════════════════════════════════════════ */
 export default function AIView() {
   const { state, actions, currentUser } = useStore();
@@ -176,186 +110,60 @@ export default function AIView() {
   const apiKey = state.apiKey;
   const aiHistory = state.aiHistory || [];
 
-  /* ── sendAI (orig 2581-2676) — chat / command. ─────────────────────────── */
+  /* sendAI — o chat passa a usar o motor de tool-calling partilhado com a
+     AssistantSheet. O AIView já não monta prompts nem aplica ações à mão. */
   const sendAI = useCallback(() => {
     const cmd = chat.trim();
     if (!cmd || aiLoading) return;
     setAiLoading(true);
-
-    const ctx = buildAIContextLocal(state, currentUser);
-    const today = ctx.today;
-    const dd = today.slice(8, 10) + '.' + today.slice(5, 7);
-    const lnOut = (getLoan({ ...state, currentUser }) || lnSeed).out;
-
-    const sysPrompt =
-      'Es o assistente financeiro PROOF. FINANCE. Tens acesso aos dados do utilizador (em CONTEXTO) e respondes em portugues (PT-PT).\n\n' +
-      'O utilizador pode pedir:\n\n' +
-      'A) PERGUNTA / ANALISE (mostra-me, quais, quantos, procura, compara, lista, analisa, top, sugere, audita)\n' +
-      '   Responde com TEXTO em portugues, usando markdown simples:\n' +
-      '   - **negrito** para destaques\n' +
-      '   - Listas com - item\n' +
-      '   - Tabelas markdown (| col | col |) quando ajuda a leitura\n' +
-      '   - Valores em formato europeu: 1.234,56 EUR\n' +
-      '   - Se a resposta tem dados financeiros, da contexto e conclusoes acionaveis\n' +
-      '   - Conciso (max ~250 palavras), direto, sem preambulos\n\n' +
-      'B) ACAO (registar, adicionar, atualizar, guardar, criar, eliminar, snapshot)\n' +
-      '   Responde APENAS JSON puro (sem markdown):\n' +
-      '   {"actions":[...],"message":"resumo do que fizeste"}\n\n' +
-      '   Tipos de actions:\n' +
-      '   - update_balance: {"type":"update_balance","account_bank":"Bankinter","account_type":"Conta a Ordem","value":584.64,"note":""}\n' +
-      '     account_bank EXACTO: Bankinter, Activobank, Moey, Trade Republic, XTB, Goparity, Raize\n' +
-      '     account_type EXACTO: Conta a Ordem, Poupanca, Corretagem, Private Markets, Rend. Fixo, Transações, Planos Invest., P2P Lending\n' +
-      '     Bankinter: dividir total por 2 (conta partilhada), por o total na note\n' +
-      '   - add_expense: {"type":"add_expense","desc":"...","amount":0.00,"cat":"rest","date":"YYYY-MM-DD","tags":["tag1"]}\n' +
-      '   - add_income: {"type":"add_income","name":"...","amount":0,"source":"salary","recurring":true,"day":25}\n' +
-      '   - add_goal: {"type":"add_goal","name":"...","target":0,"current":0,"deadline":"YYYY-MM-DD"}\n' +
-      '   - add_recurring: {"type":"add_recurring","name":"...","amount":0,"cat":"sub","day":1}\n' +
-      '   - snapshot: {"type":"snapshot","label":"' +
-      dd +
-      '","liq":0,"poup":0,"inv":0,"div":' +
-      lnOut +
-      ',"xP":0,"xT":0,"tC":0}\n\n' +
-      'COMO DECIDIR? Verbos imperativos (adiciona/regista/atualiza/cria/guarda) -> ACAO. Verbos interrogativos ou análise (quanto/quais/lista/mostra/procura/compara/audita/sugere) -> ANALISE.\n\n' +
-      'CONTEXTO (dados atuais do utilizador):\n' +
-      JSON.stringify(ctx).substring(0, 15000);
-
-    // Chat via /api/ai (key no servidor): o comando é o conteúdo do utilizador;
-    // sysPrompt leva as instruções. Devolve o JSON cru da Anthropic.
-    callAIRaw(cmd, sysPrompt, 'claude-haiku-4-5', 4000)
-      .then((d) => {
-        const txt = (d.content || [])
-          .filter((i) => i.type === 'text')
-          .map((i) => i.text)
-          .join('')
-          .trim();
-        let isJSON = false;
-        const jsonMatch = txt.match(/^\s*(\{[\s\S]*\})\s*$/);
-        let res = null;
-        if (jsonMatch) {
-          try {
-            res = JSON.parse(jsonMatch[1]);
-            isJSON = Array.isArray(res.actions);
-          } catch (_e) {
-            /* not JSON */
-          }
-        }
-        let entry;
-        if (isJSON) {
-          // ACTION mode — apply via store actions (read-modify-write on latest).
-          entry = {
-            date: new Date().toLocaleString('pt-PT'),
-            cmd: cmd,
-            actions: res.actions || [],
-            msg: res.message || '',
-            ok: true,
-            mode: 'action',
-          };
-          const st = actions.getState();
-          let dyn = st.dynAccts ? { ...st.dynAccts } : {};
-          let snaps = [...(st.dynSnaps || [])];
-          let exps = [...(st.addedExp || [])];
-          let incs = [...(st.incomes || [])];
-          let gls = [...(st.goals || [])];
-          let recs = [...(st.recurring || [])];
-          let dynTouched = false,
-            snapTouched = false,
-            expTouched = false,
-            incTouched = false,
-            goalTouched = false,
-            recTouched = false;
-          (res.actions || []).forEach((a) => {
-            try {
-              if (a.type === 'update_balance' && a.account_bank && a.account_type) {
-                const key = a.account_bank + '_' + a.account_type;
-                dyn[key] = {
-                  v: Number(a.value) || 0,
-                  d: todayISO().replace(/-/g, '.'),
-                  n: a.note || null,
-                };
-                dynTouched = true;
-              } else if (a.type === 'snapshot' && a.label) {
-                snaps.push({
-                  l: a.label,
-                  liq: Number(a.liq) || 0,
-                  poup: Number(a.poup) || 0,
-                  inv: Number(a.inv) || 0,
-                  div: Number(a.div) || 77555.06,
-                  xP: Number(a.xP) || 0,
-                  xT: Number(a.xT) || 0,
-                  tC: Number(a.tC) || 0,
-                });
-                snapTouched = true;
-              } else if (a.type === 'add_expense' && a.desc) {
-                exps.push({
-                  desc: String(a.desc).substring(0, 60),
-                  amount: Math.abs(Number(a.amount) || 0),
-                  cat: a.cat || 'out',
-                  date: normalizeStmtDate(a.date),
-                  tags: Array.isArray(a.tags) ? a.tags.slice(0, 5) : undefined,
-                });
-                expTouched = true;
-              } else if (a.type === 'add_income' && a.name) {
-                const rec = a.recurring !== false;
-                let day = parseInt(a.day, 10);
-                if (isNaN(day) || day < 1 || day > 31) day = 1;
-                incs.push({
-                  id: uid(),
-                  name: String(a.name).substring(0, 60),
-                  amount: Math.abs(Number(a.amount) || 0),
-                  source: a.source || 'salary',
-                  recurring: rec,
-                  day: day,
-                  date: normalizeStmtDate(a.date),
-                  createdAt: Date.now(),
-                });
-                incTouched = true;
-              } else if (a.type === 'add_goal' && a.name) {
-                gls.push({
-                  id: uid(),
-                  name: String(a.name).substring(0, 60),
-                  target: Number(a.target) || 0,
-                  current: Number(a.current) || 0,
-                  deadline: a.deadline || '',
-                  color: a.color || '#3b6fee',
-                  createdAt: Date.now(),
-                });
-                goalTouched = true;
-              } else if (a.type === 'add_recurring' && a.name) {
-                let rd = parseInt(a.day, 10);
-                if (isNaN(rd) || rd < 1 || rd > 31) rd = 1;
-                recs.push({
-                  id: uid(),
-                  name: String(a.name).substring(0, 60),
-                  amount: Number(a.amount) || 0,
-                  day: rd,
-                  cat: a.cat || 'sub',
-                  createdAt: Date.now(),
-                });
-                recTouched = true;
-              }
-            } catch (_e) {
-              /* skip bad action */
-            }
-          });
-          if (dynTouched) actions.setDynAccts(dyn);
-          if (snapTouched) actions.setDynSnaps(snaps);
-          if (expTouched) actions.setAddedExp(exps);
-          if (incTouched) actions.setIncomes(incs);
-          if (goalTouched) actions.setGoals(gls);
-          if (recTouched) actions.setRecurring(recs);
-        } else {
-          // ANALYSIS mode
-          entry = { date: new Date().toLocaleString('pt-PT'), cmd: cmd, analysis: txt, ok: true, mode: 'analysis' };
-        }
-        actions.pushAiHistory(entry);
-        setAiLoading(false);
+    const st = actions.getState();
+    runAssistant(cmd, {
+      state: st,
+      actions,
+      systemPrompt: ASSISTANT_SYSTEM + '\n\nCONTEXTO:\n' + JSON.stringify(buildAIContext(st)),
+    })
+      .then((res) => {
+        actions.pushAiHistory({
+          date: new Date().toLocaleString('pt-PT'),
+          cmd,
+          analysis: res.text,
+          actions: res.applied.map((a) => ({ type: a.name, ...a.args })),
+          pending: res.pending.map((p) => ({ name: p.name, args: p.args, preview: p.preview })),
+          ok: true,
+          mode: 'chat',
+        });
         setChat('');
       })
       .catch((err) => {
-        actions.pushAiHistory({ date: new Date().toLocaleString('pt-PT'), cmd: cmd, err: err.message });
-        setAiLoading(false);
-      });
-  }, [chat, aiLoading, state, currentUser, apiKey, actions]);
+        actions.pushAiHistory({
+          date: new Date().toLocaleString('pt-PT'),
+          cmd,
+          err: (err && err.message) || 'Falha no assistente.',
+        });
+      })
+      .finally(() => setAiLoading(false));
+  }, [chat, aiLoading, actions]);
+
+  /* ── resolvePending — Confirmar/Cancelar de uma ação destrutiva que ficou
+     à espera de confirmação. confirmPending() é o único injector sancionado
+     do campo `confirmed`; nunca se chama aqui a tool diretamente nem se
+     confirma sozinho — só ao clique explícito em "Confirmar". Cancelar
+     limita-se a descartar o pedido do histórico, sem executar nada. ────── */
+  const resolvePending = useCallback(
+    (entryIdx, pendIdx, execute) => {
+      const entry = aiHistory[entryIdx];
+      const p = entry && entry.pending && entry.pending[pendIdx];
+      if (!p) return;
+      if (execute) {
+        const r = confirmPending({ name: p.name, args: p.args }, { state: actions.getState(), actions });
+        toast(r && r.ok ? 'Feito' : 'Não foi possível concluir', r && r.ok ? 'success' : 'error');
+      }
+      actions.setAiHistory(
+        aiHistory.map((h, i) => (i === entryIdx ? { ...h, pending: h.pending.filter((_, j) => j !== pendIdx) } : h))
+      );
+    },
+    [aiHistory, actions, toast]
+  );
 
   /* ── aiImportFile (orig 2677-2712). ────────────────────────────────────── */
   const aiImportFile = useCallback(
@@ -753,9 +561,10 @@ export default function AIView() {
         <>
           <div className="lb" style={{ marginBottom: 8 }}>Conversa</div>
           {[...aiHistory].reverse().map((h, ri) => {
+            const entryIdx = aiHistory.length - 1 - ri;
             const isAnalysis = h.mode === 'analysis' || h.analysis;
             return (
-              <div key={aiHistory.length - 1 - ri} className="cd fadeUp" style={{ marginBottom: 8, padding: '14px 16px' }}>
+              <div key={entryIdx} className="cd fadeUp" style={{ marginBottom: 8, padding: '14px 16px' }}>
                 <div className="rw" style={{ marginBottom: 8 }}>
                   <span className="m" style={{ fontSize: 10, color: 'var(--text3)' }}>{h.date}</span>
                   {h.err ? (
@@ -797,6 +606,36 @@ export default function AIView() {
                   <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{h.msg}</div>
                 )}
                 {h.err && <div style={{ fontSize: 11, color: 'var(--signal)', marginTop: 4 }}>{h.err}</div>}
+                {/* Ações destrutivas por confirmar (runAssistant devolveu-as em
+                    `pending` em vez de as executar) — nunca se confirmam
+                    sozinhas: fica aqui o cartão de Confirmar/Cancelar até o
+                    utilizador decidir. */}
+                {h.pending &&
+                  h.pending.length > 0 &&
+                  h.pending.map((p, pi) => (
+                    <div key={pi} className="cs" style={{ padding: 14, marginTop: 10 }}>
+                      <div className="lb" style={{ marginBottom: 6 }}>
+                        {p.preview && p.preview.action === 'delete' ? 'Apagar' : 'Alterar'} &middot; {(p.preview && p.preview.kind) || ''}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{p.preview && p.preview.label}</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => resolvePending(entryIdx, pi, true)}
+                          style={{ flex: 1, padding: '10px 0', border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 12, fontWeight: 600, borderRadius: 999 }}
+                        >
+                          Confirmar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => resolvePending(entryIdx, pi, false)}
+                          style={{ flex: 1, padding: '10px 0', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text2)', fontSize: 12, fontWeight: 600, borderRadius: 999 }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
               </div>
             );
           })}
