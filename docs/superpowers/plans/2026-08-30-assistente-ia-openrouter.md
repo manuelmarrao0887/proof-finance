@@ -2004,7 +2004,7 @@ continuarem no store."
     - `usage`: `{ prompt_tokens, completion_tokens, total_tokens }` somado de todas as voltas
   - `confirmPending(call, ctx) -> { ok, data } | { error }` — executa uma chamada pendente com `confirmed: true`. **É o ÚNICO sítio que injeta `confirmed`**; o loop descarta qualquer `confirmed` que venha do modelo. Nada fora deste módulo chama `TOOLS[nome].run()` diretamente — o gate vive em `execTool`.
   - `ASSISTANT_SYSTEM` — o system prompt do assistente, numa constante só (usado pela `AssistantSheet` e pelo `AIView`).
-  - `estimateCost(usage) -> number` — custo em euros do pedido, a partir do preço do tier `fast`.
+  - `estimateCost(usage) -> number` — custo do pedido **em dólares** (o OpenRouter cobra em USD), a partir do preço do tier `fast`. A UI rotula-o como USD; não há conversão para euros.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2110,7 +2110,7 @@ describe('runAssistant', () => {
 });
 
 describe('estimateCost', () => {
-  it('calcula o custo do tier fast em euros', () => {
+  it('calcula o custo do tier fast em dolares', () => {
     // 1M tokens de entrada = 0,30 USD; 1M de saida = 2,50 USD.
     const c = estimateCost({ prompt_tokens: 1_000_000, completion_tokens: 0 });
     expect(c).toBeCloseTo(0.3, 6);
@@ -2643,7 +2643,8 @@ describe('AssistantSheet', () => {
     await openSheet();
     fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'x' } });
     fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
-    await waitFor(() => expect(screen.getByText(/EUR/)).toBeInTheDocument());
+    // O OpenRouter cobra em USD — o rodape mostra dolares, nao euros.
+    await waitFor(() => expect(screen.getByText(/^\$\d/)).toBeInTheDocument());
   });
 
   it('mostra o erro quando o pedido falha', async () => {
@@ -2822,7 +2823,7 @@ export default function AssistantSheet() {
             )}
             {t.usage ? (
               <div className="lb" style={{ fontSize: 10, color: 'var(--text3)' }}>
-                {estimateCost(t.usage).toFixed(4).replace('.', ',')} EUR
+                {'$' + estimateCost(t.usage).toFixed(4)}
               </div>
             ) : null}
           </div>
