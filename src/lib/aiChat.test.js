@@ -212,6 +212,36 @@ describe('runAssistant', () => {
     expect(last).toEqual({ role: 'assistant', content: EMPTY_ANSWER });
   });
 
+  /* Antes desta correcao, `text = msg.content || EMPTY_ANSWER` disparava
+     sempre que a volta final vinha com conteudo vazio — mesmo quando uma
+     volta anterior JA tinha escrito. O utilizador via "tenta outra vez" a
+     seguir a um registo que ja tinha sido gravado, e repetir o pedido
+     duplicava-o. Com `applied` preenchido, a mensagem tem de dizer o que foi
+     feito, nunca convidar a repetir. */
+  it('quando ja escreveu algo e a volta final vem vazia, diz o que foi feito em vez de "tenta outra vez"', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('add_expense', { desc: 'Cafe', amount: 1.2, cat: 'rest' }))
+      .mockResolvedValueOnce({ choices: [{ message: { role: 'assistant', content: '' } }], usage: { total_tokens: 3 } });
+    const c = ctx();
+    const out = await runAssistant('regista um cafe', { ...c, chatFn });
+    expect(c.actions.addExpense).toHaveBeenCalledTimes(1);
+    expect(out.applied).toHaveLength(1);
+    expect(out.text).not.toBe(EMPTY_ANSWER);
+    expect(out.text).not.toMatch(/tenta outra vez/i);
+    expect(out.text).toMatch(/nao devolveu um resumo/i);
+    expect(out.text).toMatch(/despesa/i);
+    // A mensagem devolvida tambem entra no historico, tal como no caso vazio.
+    const last = out.messages[out.messages.length - 1];
+    expect(last).toEqual({ role: 'assistant', content: out.text });
+  });
+
+  it('sem nenhuma escrita, uma resposta vazia continua a devolver EMPTY_ANSWER', async () => {
+    const chatFn = vi.fn(() => Promise.resolve({ choices: [{ message: { role: 'assistant', content: '' } }] }));
+    const out = await runAssistant('ola', { ...ctx(), chatFn });
+    expect(out.applied).toEqual([]);
+    expect(out.text).toBe(EMPTY_ANSWER);
+  });
+
   it('sobrevive a argumentos que nao sao JSON valido', async () => {
     const chatFn = vi.fn()
       .mockResolvedValueOnce({ choices: [{ message: { role: 'assistant', tool_calls: [{ id: 'c1', function: { name: 'add_expense', arguments: '{oops' } }] } }] })

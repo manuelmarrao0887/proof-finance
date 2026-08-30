@@ -273,28 +273,67 @@ function eur(n) {
   return (Number(n) || 0).toFixed(2) + ' EUR';
 }
 
-/* Saneamento de uma despesa — a MESMA função para o caminho de CRIAÇÃO
-   (add_expense) e para o de ALTERAÇÃO (update_expense). Estavam separados e
-   divergiram: o update fazia um Number() nu, e por aí passava um valor
-   negativo (que em vez de somar, subtrai ao total da categoria), uma `cat`
-   inexistente (a despesa fica invisível em qualquer resumo de orçamento), uma
-   `date` que normalizeStmtDate devolve tal e qual quando não a reconhece
-   (lib/format.js) e uma `desc` sem limite de tamanho. Só as chaves presentes
-   em `raw` são tratadas — um patch parcial continua parcial. */
+/* Fábrica de saneadores: uma tabela campo → função dá origem à MESMA rotina
+   (percorrer as chaves presentes em `raw`, aplicar o saneador de cada uma) já
+   usada para despesas — só as chaves presentes em `raw` são tratadas, para um
+   patch parcial (update) continuar parcial. Cada coleção define a sua tabela
+   uma única vez e o resultado serve tanto o caminho de CRIAÇÃO (add_*) como o
+   de ALTERAÇÃO (update_*), para os dois nunca voltarem a divergir. */
+function makeSanitizer(table) {
+  return function sanitize(raw) {
+    const out = {};
+    Object.keys(raw).forEach((k) => {
+      const f = table[k];
+      if (f) out[k] = f(raw[k]);
+    });
+    return out;
+  };
+}
+
+/* Despesa — antes de existir este saneador partilhado, update_expense fazia
+   um Number() nu, e por aí passava um valor negativo (que em vez de somar,
+   subtrai ao total da categoria), uma `cat` inexistente (a despesa fica
+   invisível em qualquer resumo de orçamento), uma `date` que
+   normalizeStmtDate devolve tal e qual quando não a reconhece (lib/format.js)
+   e uma `desc` sem limite de tamanho. */
 const EXPENSE_FIELD_SANITIZERS = {
   desc: (v) => txt(v),
   amount: (v) => Math.abs(Number(v) || 0),
   cat: (v) => safeCat(v),
   date: (v) => safeDate(v),
 };
-function sanitizeExpenseFields(raw) {
-  const out = {};
-  Object.keys(raw).forEach((k) => {
-    const f = EXPENSE_FIELD_SANITIZERS[k];
-    if (f) out[k] = f(raw[k]);
-  });
-  return out;
-}
+const sanitizeExpenseFields = makeSanitizer(EXPENSE_FIELD_SANITIZERS);
+
+// Receita — o mesmo saneamento que add_income já aplicava (valor sempre
+// positivo, dia 1-31); update_income vivia sem eles e podia gravar um saldo
+// negativo ou um dia 999.
+const INCOME_FIELD_SANITIZERS = {
+  name: (v) => txt(v),
+  amount: (v) => Math.abs(Number(v) || 0),
+  day: (v) => safeDay(v),
+};
+const sanitizeIncomeFields = makeSanitizer(INCOME_FIELD_SANITIZERS);
+
+// Recorrente — idem, espelhando add_recurring (valor positivo, categoria
+// conhecida, dia 1-31, nome com limite).
+const RECURRING_FIELD_SANITIZERS = {
+  name: (v) => txt(v),
+  amount: (v) => Math.abs(Number(v) || 0),
+  cat: (v) => safeCat(v),
+  day: (v) => safeDay(v),
+};
+const sanitizeRecurringFields = makeSanitizer(RECURRING_FIELD_SANITIZERS);
+
+// Meta — nome com limite e os dois valores nunca NaN, tal como add_goal.
+// `deadline` fica de fora de propósito: continua uma string livre, sem
+// validação de formato (fora do âmbito desta ronda de correções).
+const GOAL_FIELD_SANITIZERS = {
+  name: (v) => txt(v),
+  target: (v) => Number(v) || 0,
+  current: (v) => Number(v) || 0,
+  deadline: (v) => v,
+};
+const sanitizeGoalFields = makeSanitizer(GOAL_FIELD_SANITIZERS);
 
 // Bancos/tipos válidos para update_balance vêm de ACCT_TEMPLATES (a MESMA
 // lista que getAccts usa para expor dynAccts) — nunca reescrever à mão aqui,
@@ -348,11 +387,12 @@ const writeTools = {
     run(args, { actions }) {
       const inc = {
         id: uid(),
-        name: txt(args.name),
-        amount: Math.abs(Number(args.amount) || 0),
+        // O MESMO saneador de update_income (name/amount/day): ver
+        // INCOME_FIELD_SANITIZERS. source/recurring/date ficam fora — nao sao
+        // campos que update_income aceite (fora do ambito desta correcao).
+        ...sanitizeIncomeFields({ name: args.name, amount: args.amount, day: args.day }),
         source: SOURCES.has(args.source) ? args.source : 'other',
         recurring: args.recurring !== false,
-        day: safeDay(args.day),
         date: args.date ? normalizeStmtDate(args.date) : undefined,
         createdAt: Date.now(),
       };
@@ -376,9 +416,11 @@ const writeTools = {
     run(args, { actions }) {
       const g = {
         id: uid(),
-        name: txt(args.name),
-        target: Number(args.target) || 0,
-        current: Number(args.current) || 0,
+        // O MESMO saneador de update_goal (name/target/current): ver
+        // GOAL_FIELD_SANITIZERS. `deadline` fica de fora aqui tambem — o
+        // default '' e proprio da criacao, o saneador so garante o
+        // passthrough quando o campo vem numa alteracao.
+        ...sanitizeGoalFields({ name: args.name, target: args.target, current: args.current }),
         deadline: args.deadline || '',
         color: '#3b6fee',
         createdAt: Date.now(),
@@ -403,10 +445,10 @@ const writeTools = {
     run(args, { actions }) {
       const r = {
         id: uid(),
-        name: txt(args.name),
-        amount: Math.abs(Number(args.amount) || 0),
-        cat: safeCat(args.cat || 'sub'),
-        day: safeDay(args.day),
+        // O MESMO saneador de update_recurring: ver RECURRING_FIELD_SANITIZERS.
+        // O default de categoria e 'sub' (nao 'out') so na criacao — aplica-se
+        // ANTES do saneador, que so garante que o resultado e um id valido.
+        ...sanitizeRecurringFields({ name: args.name, amount: args.amount, cat: args.cat || 'sub', day: args.day }),
         createdAt: Date.now(),
       };
       actions.addRecurring(r);
@@ -605,6 +647,8 @@ const COLLECTIONS = {
     update: (a) => a.updateIncome,
     remove: (a) => a.deleteIncome,
     label: (x) => x.name + ' · ' + (Number(x.amount) || 0).toFixed(2) + ' EUR',
+    // O MESMO saneador de add_income: ver INCOME_FIELD_SANITIZERS.
+    sanitize: sanitizeIncomeFields,
     fields: { name: { type: 'string' }, amount: { type: 'number' }, day: { type: 'number' } },
   },
   goal: {
@@ -613,6 +657,8 @@ const COLLECTIONS = {
     update: (a) => a.updateGoal,
     remove: (a) => a.deleteGoal,
     label: (x) => x.name + ' · alvo ' + (Number(x.target) || 0).toFixed(2) + ' EUR',
+    // O MESMO saneador de add_goal: ver GOAL_FIELD_SANITIZERS.
+    sanitize: sanitizeGoalFields,
     fields: { name: { type: 'string' }, target: { type: 'number' }, current: { type: 'number' }, deadline: { type: 'string' } },
   },
   recurring: {
@@ -621,6 +667,8 @@ const COLLECTIONS = {
     update: (a) => a.updateRecurring,
     remove: (a) => a.deleteRecurring,
     label: (x) => x.name + ' · ' + (Number(x.amount) || 0).toFixed(2) + ' EUR/mes',
+    // O MESMO saneador de add_recurring: ver RECURRING_FIELD_SANITIZERS.
+    sanitize: sanitizeRecurringFields,
     fields: { name: { type: 'string' }, amount: { type: 'number' }, cat: { type: 'string' }, day: { type: 'number' } },
   },
 };
@@ -628,8 +676,10 @@ const COLLECTIONS = {
 // Campos que nunca são escritos a partir dos argumentos do modelo.
 const RESERVED = new Set(['id', 'confirmed']);
 
-// Coerção genérica para as colecções sem saneador próprio: os campos numéricos
-// passam por Number(), o resto vai como veio (comportamento histórico).
+// Coerção genérica para uma colecção sem saneador próprio (hoje nenhuma:
+// expense/income/goal/recurring têm todas a sua tabela — ver makeSanitizer.
+// Fica como rede de segurança para uma colecção nova que ainda não defina
+// `sanitize`): os campos numéricos passam por Number(), o resto vai como veio.
 const NUMERIC_FIELDS = new Set(['amount', 'target', 'current', 'day']);
 function coerceNumericFields(raw) {
   const out = {};
@@ -665,7 +715,18 @@ function makeUpdateTool(key) {
         if (!RESERVED.has(k) && c.fields[k]) raw[k] = args[k];
       });
       const patch = c.sanitize ? c.sanitize(raw) : coerceNumericFields(raw);
-      return { action: 'update', kind: c.kind, label: c.label(cur), before: cur, after: { ...cur, ...patch }, patch };
+      const after = { ...cur, ...patch };
+      // O cartao partilhado (PendingActionCard) so mostra `label` — se ficasse
+      // so com c.label(cur) o utilizador confirmava as cegas: via o registo
+      // ANTIGO e nunca o valor que estava de facto a aprovar (ex.: um -2000
+      // ja saneado para 2000 na escrita, mas invisivel no cartao). Mesmo
+      // padrao "antes → depois" de update_balance/set_budget, aqui aplicado
+      // ao label completo do registo (as tools desta fabrica podem alterar
+      // varios campos de uma vez, ao contrario das duas tools singulares).
+      const label = cur === after || c.label(cur) === c.label(after)
+        ? c.label(cur)
+        : c.label(cur) + ' → ' + c.label(after);
+      return { action: 'update', kind: c.kind, label, before: cur, after, patch };
     },
     run(args, ctx) {
       const p = this.preview(args, ctx);

@@ -57,6 +57,36 @@ export const EMPTY_ANSWER = 'O modelo nao devolveu resposta. Tenta outra vez.';
 // proxy). Ver runAssistant: o que ja foi escrito NAO se perde.
 const FALLBACK_ERROR = 'Falha no assistente.';
 
+// Nome pt-PT (singular) de cada tool de escrita nao-destrutiva, para resumir
+// `applied` quando o modelo escreve e depois nao devolve texto nenhum.
+const APPLIED_NOUN = {
+  add_expense: 'uma despesa',
+  add_income: 'uma receita',
+  add_goal: 'uma meta',
+  add_recurring: 'uma despesa recorrente',
+  add_category: 'uma categoria',
+  add_rule: 'uma regra',
+  add_snapshot: 'um snapshot',
+  create_group: 'um grupo',
+  add_person: 'uma pessoa',
+  add_group_expense: 'uma despesa de grupo',
+  settle_group: 'um acerto de grupo',
+};
+
+// "tenta outra vez" (EMPTY_ANSWER) so faz sentido quando NADA foi escrito.
+// Quando o modelo ja aplicou escritas nesta conversa (applied nao vazio) e a
+// volta final vem sem texto, convidar a repetir o pedido arriscava duplicar
+// uma escrita que ja tinha ficado gravada — este texto diz o que foi feito
+// em vez disso, sem sugerir repetir.
+function noSummaryAfterWrite(applied) {
+  const items = applied.map((a) => APPLIED_NOUN[a.name] || 'uma alteracao');
+  const list =
+    items.length === 1
+      ? items[0]
+      : items.slice(0, -1).join(', ') + ' e ' + items[items.length - 1];
+  return 'Ja tratei disto: ' + list + '. O modelo nao devolveu um resumo desta vez.';
+}
+
 export function confirmPending(call, ctx) {
   return execTool(call.name, { ...call.args, confirmed: true }, ctx);
 }
@@ -107,7 +137,10 @@ export async function runAssistant(userText, opts) {
       const calls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
 
       if (!calls.length) {
-        const text = msg.content || EMPTY_ANSWER;
+        // EMPTY_ANSWER ("tenta outra vez") so quando NADA foi escrito nesta
+        // conversa — com `applied` ja preenchido, convidar a repetir o pedido
+        // arriscava duplicar uma escrita que ja tinha ficado gravada.
+        const text = msg.content || (applied.length ? noSummaryAfterWrite(applied) : EMPTY_ANSWER);
         return {
           text,
           applied,

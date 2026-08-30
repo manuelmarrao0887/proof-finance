@@ -475,10 +475,59 @@ describe('gate das accoes destrutivas', () => {
     expect(c.actions.updateExpense.mock.calls[0][1].desc).toHaveLength(60);
   });
 
-  it('os campos numericos das outras coleccoes continuam a passar por Number()', () => {
+  it('update_goal continua a converter uma string numerica no alvo', () => {
     const c = writeCtx(seed());
     execTool('update_goal', { id: 'g1', target: '12000', confirmed: true }, c);
     expect(c.actions.updateGoal).toHaveBeenCalledWith('g1', { target: 12000 });
+  });
+
+  /* coerceNumericFields (o fallback generico anterior) so tratava campos
+     NUMERICOS — 'name' passava tal e qual, sem limite: update_goal deixava
+     gravar um nome de qualquer tamanho, ao contrario de add_goal (txt()) e de
+     update_expense (que ja tinha o seu proprio saneador). Agora update_goal
+     usa o MESMO saneador de add_goal (GOAL_FIELD_SANITIZERS), tal como
+     update_expense ja usa o de add_expense. */
+  it('update_goal trunca o nome, tal como add_goal e update_expense', () => {
+    const c = writeCtx(seed());
+    execTool('update_goal', { id: 'g1', name: 'x'.repeat(500), confirmed: true }, c);
+    expect(c.actions.updateGoal.mock.calls[0][1].name).toHaveLength(60);
+  });
+
+  /* update_income vivia sem o saneador de add_income: um valor negativo
+     escrevia direto no estado (subtraindo do total em vez de somar) e um dia
+     fora de 1-31 tambem. Agora e o MESMO saneador dos dois lados
+     (INCOME_FIELD_SANITIZERS) — ver sanitizeIncomeFields. */
+  it('update_income aplica o mesmo saneador de add_income: valor sempre positivo, dia 1-31', () => {
+    const c = writeCtx(seed());
+    execTool('update_income', { id: 'i1', amount: -2000, day: 999, confirmed: true }, c);
+    expect(c.actions.updateIncome).toHaveBeenCalledWith('i1', { amount: 2000, day: 1 });
+  });
+
+  /* Mesma correcao para update_recurring: valor negativo, categoria
+     desconhecida e nome sem limite passavam direto. Agora o MESMO saneador de
+     add_recurring (RECURRING_FIELD_SANITIZERS). */
+  it('update_recurring aplica o mesmo saneador de add_recurring: valor positivo, categoria conhecida, nome limitado', () => {
+    const c = writeCtx(seed());
+    execTool('update_recurring', { id: 'r1', amount: -25, cat: 'inventada', name: 'x'.repeat(500), confirmed: true }, c);
+    const patch = c.actions.updateRecurring.mock.calls[0][1];
+    expect(patch.amount).toBe(25);
+    expect(patch.cat).toBe('out');
+    expect(patch.name).toHaveLength(60);
+  });
+
+  /* O cartao de confirmacao (PendingActionCard) so mostra `label` — se
+     ficasse so com o registo ANTIGO, confirmar uma alteracao para -2000
+     mostrava "Salario · 2000.00 EUR" (o valor ANTIGO, coincidindo por azar
+     com o |amount| do pedido) e nunca deixava ver o valor de facto gravado.
+     Agora o label mostra "antes → depois", com o `after` ja saneado. */
+  it('a pre-visualizacao de uma alteracao mostra o valor novo, saneado, nao so o antigo', () => {
+    const c = writeCtx(seed());
+    const r = execTool('update_income', { id: 'i1', amount: -2000 }, c);
+    expect(r.pending).toBe(true);
+    expect(r.preview.label).toContain('1800.00 EUR');
+    expect(r.preview.label).toContain('2000.00 EUR');
+    expect(r.preview.label).not.toContain('-2000.00 EUR');
+    expect(r.preview.label).toMatch(/→/);
   });
 
   it('cobre as restantes coleccoes', () => {

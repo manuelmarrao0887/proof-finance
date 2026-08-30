@@ -7,6 +7,12 @@
      // fixture: parte do slice persistido a sobrepor aos defaults
      // opts.tab / opts.openModal: navegação inicial do UIProvider
      // opts.preview: true → sem login (Seed não chama setCurrentUser)
+     // opts.strict: true → monta dentro de <React.StrictMode>, o mesmo modo
+     //   que main.jsx usa a sério. Em desenvolvimento o React invoca a
+     //   funcão reducer (e qualquer atualizador funcional passado a
+     //   setField/patch) duas vezes por dispatch, para apanhar reducers
+     //   impuros — só com isto ligado é que um updater não-puro (ex.: gerar
+     //   um id ou mutar o array em vez de devolver um novo) se revela.
 
    O Firebase é mockado nos testes (ver vi.mock em cada ficheiro de teste ou
    em setup): aqui só se assume que loadUserData/syncUserData não tocam na rede.
@@ -40,20 +46,21 @@ function Seed({ fixture, tab, openModal, payload, onReady, children, preview }) 
 
 export async function renderWithStore(element, opts = {}) {
   let utils;
+  const tree = (
+    <StoreProvider>
+      <ToastProvider>
+        <UIProvider>
+          <DeviceProvider>
+            <Seed fixture={opts.fixture} tab={opts.tab} openModal={opts.openModal} payload={opts.payload} onReady={opts.onReady} preview={opts.preview}>
+              {element}
+            </Seed>
+          </DeviceProvider>
+        </UIProvider>
+      </ToastProvider>
+    </StoreProvider>
+  );
   await act(async () => {
-    utils = render(
-      <StoreProvider>
-        <ToastProvider>
-          <UIProvider>
-            <DeviceProvider>
-              <Seed fixture={opts.fixture} tab={opts.tab} openModal={opts.openModal} payload={opts.payload} onReady={opts.onReady} preview={opts.preview}>
-                {element}
-              </Seed>
-            </DeviceProvider>
-          </UIProvider>
-        </ToastProvider>
-      </StoreProvider>
-    );
+    utils = render(opts.strict ? <React.StrictMode>{tree}</React.StrictMode> : tree);
   });
   // Deixa os efeitos de hidratação/lazy assentarem.
   await act(async () => {
