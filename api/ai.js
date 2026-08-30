@@ -24,6 +24,9 @@ export const MAX_TOOL_CALLS = 8;
 export const MAX_BODY_CHARS = 3_000_000; // ~2,2 MB base64 → chega para um extrato
 
 const ROLES = new Set(['system', 'user', 'assistant', 'tool']);
+// Politica de fornecedor aplicada a TODOS os pedidos (ver sanitizeRequest).
+export const PROVIDER_POLICY = { data_collection: 'deny' };
+
 const REFERER = 'https://proof-finance.vercel.app';
 const TITLE = 'PROOF. Finance';
 
@@ -67,6 +70,13 @@ export function sanitizeRequest(body) {
     messages,
     tools,
     max_tokens,
+    // Privacidade: o pedido leva dados financeiros reais (saldos, despesas,
+    // nomes de pessoas e, no import, extratos inteiros). O `data_collection` da
+    // OpenRouter e "allow" por OMISSAO, o que permite encaminhar para
+    // fornecedores que registam prompts e treinam com eles. Negamos sempre, e
+    // aqui: o payload e construido de raiz, portanto um `provider` vindo do
+    // cliente nunca sobrevive.
+    provider: { ...PROVIDER_POLICY },
   };
 }
 

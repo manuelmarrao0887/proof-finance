@@ -188,3 +188,31 @@ describe('parseServiceAccount', () => {
     }
   });
 });
+
+/* ── Privacidade ──────────────────────────────────────────────────────────
+   Os pedidos levam dados financeiros reais do utilizador (saldos, despesas,
+   nomes de pessoas e, no import, extratos inteiros). O `data_collection` da
+   OpenRouter e "allow" por OMISSAO — encaminha para fornecedores que podem
+   registar os prompts e treinar com eles. O proxy tem de o negar sempre, e o
+   cliente nao pode ter voto nisso. */
+describe('sanitizeRequest — privacidade', () => {
+  const base = { messages: [{ role: 'user', content: 'ola' }] };
+
+  it('nega sempre a recolha de dados pelo fornecedor', () => {
+    expect(sanitizeRequest(base).provider).toEqual({ data_collection: 'deny' });
+  });
+
+  it('ignora um bloco provider vindo do cliente — a decisao e do servidor', () => {
+    const out = sanitizeRequest({
+      ...base,
+      provider: { data_collection: 'allow', order: ['qualquer-coisa'], sort: 'price' },
+    });
+    expect(out.provider).toEqual({ data_collection: 'deny' });
+  });
+
+  it('nao deixa passar o provider nem por outro nome de campo', () => {
+    const out = sanitizeRequest({ ...base, provider: 'allow', data_collection: 'allow' });
+    expect(out.provider).toEqual({ data_collection: 'deny' });
+    expect(out.data_collection).toBeUndefined();
+  });
+});
