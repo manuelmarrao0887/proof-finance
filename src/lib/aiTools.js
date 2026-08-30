@@ -485,9 +485,125 @@ const writeTools = {
   },
 };
 
+/* ── Tools destrutivas ───────────────────────────────────────────────────
+   Fábrica: cada coleção tem a mesma forma (encontrar por id, pré-visualizar,
+   escrever só com confirmed). Evita repetir oito vezes o mesmo código. */
+
+const COLLECTIONS = {
+  expense: {
+    kind: 'despesa',
+    slice: 'addedExp',
+    update: (a) => a.updateExpense,
+    remove: (a) => a.deleteExpense,
+    label: (x) => x.desc + ' · ' + (Number(x.amount) || 0).toFixed(2) + ' EUR · ' + (x.date || ''),
+    fields: {
+      desc: { type: 'string' },
+      amount: { type: 'number' },
+      cat: { type: 'string', description: 'categoria: ' + CATS },
+      date: { type: 'string', description: 'data YYYY-MM-DD' },
+    },
+  },
+  income: {
+    kind: 'receita',
+    slice: 'incomes',
+    update: (a) => a.updateIncome,
+    remove: (a) => a.deleteIncome,
+    label: (x) => x.name + ' · ' + (Number(x.amount) || 0).toFixed(2) + ' EUR',
+    fields: { name: { type: 'string' }, amount: { type: 'number' }, day: { type: 'number' } },
+  },
+  goal: {
+    kind: 'meta',
+    slice: 'goals',
+    update: (a) => a.updateGoal,
+    remove: (a) => a.deleteGoal,
+    label: (x) => x.name + ' · alvo ' + (Number(x.target) || 0).toFixed(2) + ' EUR',
+    fields: { name: { type: 'string' }, target: { type: 'number' }, current: { type: 'number' }, deadline: { type: 'string' } },
+  },
+  recurring: {
+    kind: 'recorrente',
+    slice: 'recurring',
+    update: (a) => a.updateRecurring,
+    remove: (a) => a.deleteRecurring,
+    label: (x) => x.name + ' · ' + (Number(x.amount) || 0).toFixed(2) + ' EUR/mes',
+    fields: { name: { type: 'string' }, amount: { type: 'number' }, cat: { type: 'string' }, day: { type: 'number' } },
+  },
+};
+
+// Campos que nunca são escritos a partir dos argumentos do modelo.
+const RESERVED = new Set(['id', 'confirmed']);
+
+function findIn(ctx, slice, id) {
+  return ((ctx.actions.getState() || {})[slice] || []).find((x) => x.id === id) || null;
+}
+
+function makeUpdateTool(key) {
+  const c = COLLECTIONS[key];
+  return {
+    destructive: true,
+    description: 'Altera uma ' + c.kind + ' existente. Usa o id devolvido pelas tools de leitura.',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'id do registo' },
+        ...c.fields,
+        confirmed: { type: 'boolean', description: 'nao preencher: o utilizador e que confirma na app' },
+      },
+      required: ['id'],
+    },
+    preview(args, ctx) {
+      const cur = findIn(ctx, c.slice, args.id);
+      if (!cur) return notFound();
+      const patch = {};
+      Object.keys(args).forEach((k) => {
+        if (!RESERVED.has(k) && c.fields[k]) patch[k] = k === 'amount' || k === 'target' || k === 'current' || k === 'day' ? Number(args[k]) : args[k];
+      });
+      return { action: 'update', kind: c.kind, label: c.label(cur), before: cur, after: { ...cur, ...patch }, patch };
+    },
+    run(args, ctx) {
+      const p = this.preview(args, ctx);
+      if (p.error) return p;
+      c.update(ctx.actions)(args.id, p.patch);
+      return ok({ id: args.id, patch: p.patch });
+    },
+  };
+}
+
+function makeDeleteTool(key) {
+  const c = COLLECTIONS[key];
+  return {
+    destructive: true,
+    description: 'Apaga uma ' + c.kind + '. Usa o id devolvido pelas tools de leitura.',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'id do registo' },
+        confirmed: { type: 'boolean', description: 'nao preencher: o utilizador e que confirma na app' },
+      },
+      required: ['id'],
+    },
+    preview(args, ctx) {
+      const cur = findIn(ctx, c.slice, args.id);
+      if (!cur) return notFound();
+      return { action: 'delete', kind: c.kind, label: c.label(cur), before: cur };
+    },
+    run(args, ctx) {
+      const p = this.preview(args, ctx);
+      if (p.error) return p;
+      c.remove(ctx.actions)(args.id);
+      return ok({ id: args.id, deleted: true });
+    },
+  };
+}
+
+const destructiveTools = Object.keys(COLLECTIONS).reduce((acc, key) => {
+  acc['update_' + key] = makeUpdateTool(key);
+  acc['delete_' + key] = makeDeleteTool(key);
+  return acc;
+}, {});
+
 /* ── Registry + execução ─────────────────────────────────────────────── */
 
-export const TOOLS = { ...readTools, ...writeTools };
+export const TOOLS = { ...readTools, ...writeTools, ...destructiveTools };
 
 export const TOOL_SCHEMAS = Object.keys(TOOLS).map((name) => ({
   type: 'function',
@@ -505,6 +621,13 @@ export function execTool(name, args, ctx) {
   const bad = validate(t.schema, a);
   if (bad) return { error: 'invalid_args', detail: bad };
   try {
+    // Gate destrutivo: primeira chamada só pré-visualiza. O bloqueio vive aqui
+    // e não na UI, para nenhum caminho de chamada o contornar.
+    if (t.destructive && a.confirmed !== true) {
+      const preview = t.preview(a, ctx);
+      if (preview.error) return preview;
+      return { pending: true, preview, call: { name, args: a } };
+    }
     return t.run(a, ctx);
   } catch (e) {
     return { error: 'tool_failed', detail: (e && e.message) || 'erro' };

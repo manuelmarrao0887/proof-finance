@@ -293,3 +293,65 @@ describe('update_balance e add_snapshot', () => {
     expect(arg[1].l).toBe('30.08');
   });
 });
+
+describe('gate das accoes destrutivas', () => {
+  const seed = () => ({
+    addedExp: [{ id: 'e1', desc: 'Continente', amount: 45.67, cat: 'sup', date: '2026-08-28' }],
+    goals: [{ id: 'g1', name: 'Fundo', target: 10000, current: 2500 }],
+    incomes: [{ id: 'i1', name: 'Salario', amount: 1800 }],
+    recurring: [{ id: 'r1', name: 'Netflix', amount: 10.99, cat: 'sub', day: 1 }],
+  });
+
+  it('delete_expense NAO apaga na primeira chamada', () => {
+    const c = writeCtx(seed());
+    const r = execTool('delete_expense', { id: 'e1' }, c);
+    expect(r.pending).toBe(true);
+    expect(r.preview.action).toBe('delete');
+    expect(r.preview.label).toContain('Continente');
+    expect(r.call).toEqual({ name: 'delete_expense', args: { id: 'e1' } });
+    expect(c.actions.deleteExpense).not.toHaveBeenCalled();
+  });
+
+  it('delete_expense apaga com confirmed: true', () => {
+    const c = writeCtx(seed());
+    const r = execTool('delete_expense', { id: 'e1', confirmed: true }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.deleteExpense).toHaveBeenCalledWith('e1');
+  });
+
+  it('delete_expense devolve not_found para id inexistente, sem pedir confirmacao', () => {
+    const c = writeCtx(seed());
+    expect(execTool('delete_expense', { id: 'nao-existe' }, c)).toEqual({ error: 'not_found' });
+    expect(c.actions.deleteExpense).not.toHaveBeenCalled();
+  });
+
+  it('update_expense mostra antes e depois na pre-visualizacao', () => {
+    const c = writeCtx(seed());
+    const r = execTool('update_expense', { id: 'e1', amount: 50 }, c);
+    expect(r.pending).toBe(true);
+    expect(r.preview.before.amount).toBe(45.67);
+    expect(r.preview.after.amount).toBe(50);
+    expect(c.actions.updateExpense).not.toHaveBeenCalled();
+  });
+
+  it('update_expense escreve so os campos enviados, com confirmed', () => {
+    const c = writeCtx(seed());
+    execTool('update_expense', { id: 'e1', amount: 50, confirmed: true }, c);
+    expect(c.actions.updateExpense).toHaveBeenCalledWith('e1', { amount: 50 });
+  });
+
+  it('cobre as restantes coleccoes', () => {
+    const c = writeCtx(seed());
+    expect(execTool('delete_goal', { id: 'g1' }, c).pending).toBe(true);
+    expect(execTool('delete_income', { id: 'i1' }, c).pending).toBe(true);
+    expect(execTool('delete_recurring', { id: 'r1' }, c).pending).toBe(true);
+    expect(execTool('update_goal', { id: 'g1', target: 12000 }, c).pending).toBe(true);
+    execTool('delete_goal', { id: 'g1', confirmed: true }, c);
+    expect(c.actions.deleteGoal).toHaveBeenCalledWith('g1');
+  });
+
+  it('nenhuma tool de criacao pede confirmacao', () => {
+    const c = writeCtx(seed());
+    expect(execTool('add_expense', { desc: 'X', amount: 1 }, c).ok).toBe(true);
+  });
+});
