@@ -1,24 +1,69 @@
-// Vercel Serverless Function — proxy autenticado para a Anthropic Messages API.
+// Vercel Serverless Function — proxy autenticado para a API do OpenRouter
+// (compatível com OpenAI: /v1/chat/completions).
 //
-// A API key da Anthropic vive SÓ aqui (env ANTHROPIC_API_KEY), nunca no browser.
-// Cada pedido tem de trazer um ID-token Firebase válido (Authorization: Bearer
-// <token>), verificado com firebase-admin (env FIREBASE_SERVICE_ACCOUNT = JSON
-// da service account).
+// A key vive SÓ aqui (env OPENROUTER_API_KEY), nunca no browser. Cada pedido
+// tem de trazer um ID-token Firebase válido (Authorization: Bearer <token>),
+// verificado com firebase-admin (env FIREBASE_SERVICE_ACCOUNT).
 //
-// SEGURANÇA (revisão 2026-08):
+// SEGURANÇA:
 //   - O sign-up Google está aberto, portanto "qualquer token válido" não chega:
-//     só os emails em ALLOWED_EMAILS (env, separados por vírgula) podem usar a
-//     key. Sem essa env o proxy recusa tudo (fechado por omissão).
-//   - O cliente NÃO escolhe o modelo (whitelist no servidor) nem pode pedir
-//     max_tokens ilimitado (teto).
+//     só os emails em ALLOWED_EMAILS podem usar a key. Sem essa env o proxy
+//     recusa tudo (fechado por omissão).
+//   - O cliente NÃO escolhe o modelo: envia um `tier` e o servidor resolve.
+//   - Tetos em max_tokens, tamanho do corpo e número de tool_calls por resposta.
 //   - Mensagens de erro internas nunca saem para o cliente (só para o log).
-// Tudo é apanhado em try/catch e devolvido como JSON, para nunca rebentar com
-// FUNCTION_INVOCATION_FAILED.
 
-const MODELS = new Set(['claude-haiku-4-5', 'claude-sonnet-5', 'claude-opus-5']);
-const DEFAULT_MODEL = 'claude-haiku-4-5';
-const MAX_TOKENS_CAP = 8000;
-const MAX_BODY_CHARS = 3_000_000; // ~2,2 MB base64 → chega para um PDF de extrato
+export const MODEL_TIERS = {
+  fast: 'google/gemini-3.5-flash-lite',
+  strong: 'google/gemini-3.7-flash',
+};
+export const DEFAULT_TIER = 'fast';
+export const MAX_TOKENS_CAP = 8000;
+export const MIN_TOKENS = 256;
+export const MAX_TOOL_CALLS = 8;
+export const MAX_BODY_CHARS = 3_000_000; // ~2,2 MB base64 → chega para um extrato
+
+const ROLES = new Set(['system', 'user', 'assistant', 'tool']);
+const REFERER = 'https://proof-finance.vercel.app';
+const TITLE = 'PROOF. Finance';
+
+function bad(status, message) {
+  const e = new Error(message);
+  e.status = status;
+  return e;
+}
+
+// O cliente manda um tier, não um id de modelo. Qualquer coisa fora da tabela
+// cai no tier barato — nunca num modelo caro por engano.
+export function resolveModel(tier) {
+  return MODEL_TIERS[tier] || MODEL_TIERS[DEFAULT_TIER];
+}
+
+// Um modelo em ciclo pode pedir dezenas de tools numa só resposta; cortamos
+// antes de o cliente as executar.
+export function capToolCalls(message, max = MAX_TOOL_CALLS) {
+  if (!message || !Array.isArray(message.tool_calls)) return message;
+  if (message.tool_calls.length <= max) return message;
+  return { ...message, tool_calls: message.tool_calls.slice(0, max) };
+}
+
+export function sanitizeRequest(body) {
+  const b = body && typeof body === 'object' ? body : {};
+  const messages = b.messages;
+  if (!Array.isArray(messages) || messages.length === 0) throw bad(400, 'Sem messages');
+  messages.forEach((m) => {
+    if (!m || !ROLES.has(m.role)) throw bad(400, 'Role invalido');
+  });
+  if (JSON.stringify(messages).length > MAX_BODY_CHARS) throw bad(413, 'Pedido demasiado grande');
+  const parsed = parseInt(b.max_tokens, 10);
+  const max_tokens = Math.min(Math.max(Number.isFinite(parsed) ? parsed : 4000, MIN_TOKENS), MAX_TOKENS_CAP);
+  return {
+    model: resolveModel(b.tier),
+    messages,
+    tools: Array.isArray(b.tools) && b.tools.length ? b.tools : undefined,
+    max_tokens,
+  };
+}
 
 let _auth = null;
 async function getFirebaseAuth() {
@@ -57,6 +102,14 @@ function allowedEmails() {
   );
 }
 
+function cleanKey(v) {
+  let k = (v || '').trim();
+  if ((k.startsWith('"') && k.endsWith('"')) || (k.startsWith("'") && k.endsWith("'"))) {
+    k = k.slice(1, -1).trim();
+  }
+  return k;
+}
+
 export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -83,39 +136,38 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Sem acesso ao assistente' });
     }
 
-    // 2) Key da Anthropic (limpa aspas/espacos).
-    let apiKey = (process.env.ANTHROPIC_API_KEY || '').trim();
-    if ((apiKey.startsWith('"') && apiKey.endsWith('"')) || (apiKey.startsWith("'") && apiKey.endsWith("'"))) {
-      apiKey = apiKey.slice(1, -1).trim();
-    }
-    if (!apiKey) return res.status(503).json({ error: 'Assistente nao configurado (ANTHROPIC_API_KEY)' });
+    // 2) Key do OpenRouter.
+    const apiKey = cleanKey(process.env.OPENROUTER_API_KEY);
+    if (!apiKey) return res.status(503).json({ error: 'Assistente nao configurado (OPENROUTER_API_KEY)' });
 
     // 3) Pedido saneado.
-    const body = readBody(req);
-    const { content, system, model, max_tokens } = body;
-    if (!content) return res.status(400).json({ error: 'Sem content' });
-    if (JSON.stringify(content).length > MAX_BODY_CHARS) return res.status(413).json({ error: 'Pedido demasiado grande' });
-    const chosenModel = MODELS.has(model) ? model : DEFAULT_MODEL;
-    const tokens = Math.min(Math.max(parseInt(max_tokens, 10) || 4000, 256), MAX_TOKENS_CAP);
+    let payload;
+    try {
+      payload = sanitizeRequest(readBody(req));
+    } catch (e) {
+      return res.status(e.status || 400).json({ error: e.message });
+    }
 
     // 4) Proxy.
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'pdfs-2024-09-25',
+        Authorization: 'Bearer ' + apiKey,
+        'HTTP-Referer': REFERER,
+        'X-Title': TITLE,
       },
-      body: JSON.stringify({
-        model: chosenModel,
-        max_tokens: tokens,
-        system: typeof system === 'string' ? system : undefined,
-        messages: [{ role: 'user', content }],
-      }),
+      body: JSON.stringify(payload),
     });
     const data = await r.json();
-    return res.status(r.status).json(data);
+    if (!r.ok) {
+      console.error('[api/ai] upstream', r.status, JSON.stringify(data).slice(0, 300));
+      return res.status(r.status).json({ error: 'upstream', status: r.status });
+    }
+    const choices = Array.isArray(data.choices)
+      ? data.choices.map((c) => ({ ...c, message: capToolCalls(c.message) }))
+      : [];
+    return res.status(200).json({ choices, usage: data.usage || null, model: data.model || payload.model });
   } catch (e) {
     console.error('[api/ai]', e && e.message);
     return res.status(500).json({ error: 'Falha no assistente' });
