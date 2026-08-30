@@ -2002,7 +2002,7 @@ continuarem no store."
     - `applied`: `[{ name, args, data }]`
     - `pending`: `[{ name, args, preview }]`
     - `usage`: `{ prompt_tokens, completion_tokens, total_tokens }` somado de todas as voltas
-  - `confirmPending(call, ctx) -> { ok, data } | { error }` — executa uma chamada pendente com `confirmed: true`.
+  - `confirmPending(call, ctx) -> { ok, data } | { error }` — executa uma chamada pendente com `confirmed: true`. **É o ÚNICO sítio que injeta `confirmed`**; o loop descarta qualquer `confirmed` que venha do modelo. Nada fora deste módulo chama `TOOLS[nome].run()` diretamente — o gate vive em `execTool`.
   - `ASSISTANT_SYSTEM` — o system prompt do assistente, numa constante só (usado pela `AssistantSheet` e pelo `AIView`).
   - `estimateCost(usage) -> number` — custo em euros do pedido, a partir do preço do tier `fast`.
 
@@ -2079,6 +2079,16 @@ describe('runAssistant', () => {
     expect(c.actions.deleteExpense).not.toHaveBeenCalled();
     expect(out.pending).toHaveLength(1);
     expect(out.pending[0].preview.label).toContain('Continente');
+  });
+
+  it('ignora um confirmed vindo do modelo e continua a pedir confirmacao', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('delete_expense', { id: 'e1', confirmed: true }))
+      .mockResolvedValueOnce(say('Confirmas?'));
+    const c = ctx();
+    const out = await runAssistant('apaga ja', { ...c, chatFn });
+    expect(c.actions.deleteExpense).not.toHaveBeenCalled();
+    expect(out.pending).toHaveLength(1);
   });
 
   it('devolve o erro da tool ao modelo em vez de rebentar', async () => {
@@ -2229,7 +2239,14 @@ export async function runAssistant(userText, opts) {
       if (args.__parse_error) {
         result = { error: 'invalid_args', detail: 'argumentos nao sao JSON valido' };
       } else {
-        result = execTool(name, args, ctx);
+        // Barreira de confiança: um `confirmed` que venha do modelo é
+        // DESCARTADO aqui. A confirmação só entra por confirmPending(), que a
+        // UI chama depois de o utilizador ver a pré-visualização. O campo nem
+        // sequer aparece nos schemas enviados ao modelo, mas um modelo pode
+        // sempre inventar um argumento — por isso o corte é aqui, e não numa
+        // instrução em linguagem natural.
+        const { confirmed: _ignored, ...safeArgs } = args;
+        result = execTool(name, safeArgs, ctx);
       }
       if (result && result.pending) {
         pending.push({ name, args, preview: result.preview });
