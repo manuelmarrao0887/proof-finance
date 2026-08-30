@@ -51,10 +51,57 @@ describe('runAssistant', () => {
   });
 
   it('para nas MAX_ROUNDS voltas mesmo que o modelo continue a pedir tools', async () => {
+    // O teto é uma garantia de despesa (nenhum modelo em ciclo queima
+    // creditos sem limite) — o valor em si faz parte do contrato, nao só o
+    // facto de existir um teto.
+    expect(MAX_ROUNDS).toBe(4);
     const chatFn = vi.fn(() => Promise.resolve(callTool('add_expense', { desc: 'loop', amount: 1 })));
     const out = await runAssistant('x', { ...ctx(), chatFn });
     expect(chatFn).toHaveBeenCalledTimes(MAX_ROUNDS);
     expect(out.text).toMatch(/nao consegui concluir/i);
+    // A desistencia fica registada no historico devolvido — um caller que
+    // reenvie `out.messages` como `history` na proxima chamada tem de ver que
+    // o assistente ja avisou o utilizador, e a sequencia continua valida
+    // (a ultima mensagem antes desta e a resposta ao ultimo tool_call, nunca
+    // um tool_calls por responder).
+    const last = out.messages[out.messages.length - 1];
+    expect(last.role).toBe('assistant');
+    expect(last.content).toBe(out.text);
+    expect(out.messages[out.messages.length - 2].role).toBe('tool');
+  });
+
+  it('regista duas tool_calls do mesmo assistant message, cada uma com a sua mensagem tool na ordem certa', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: null,
+              tool_calls: [
+                { id: 'call-a', type: 'function', function: { name: 'add_expense', arguments: JSON.stringify({ desc: 'Cafe', amount: 1.2 }) } },
+                { id: 'call-b', type: 'function', function: { name: 'add_expense', arguments: JSON.stringify({ desc: 'Pao', amount: 0.9 }) } },
+              ],
+            },
+          },
+        ],
+        usage: { prompt_tokens: 20, completion_tokens: 8, total_tokens: 28 },
+      })
+      .mockResolvedValueOnce(say('Registei os dois.'));
+    const c = ctx();
+    const out = await runAssistant('regista cafe e pao', { ...c, chatFn });
+    expect(c.actions.addExpense).toHaveBeenCalledTimes(2);
+    expect(out.text).toBe('Registei os dois.');
+    expect(out.applied).toHaveLength(2);
+
+    const second = chatFn.mock.calls[1][0];
+    // as duas ultimas mensagens antes da chamada seguinte sao as respostas
+    // das tools, na mesma ordem dos tool_calls do assistant message.
+    const toolMsgs = second.slice(-2);
+    expect(toolMsgs[0].role).toBe('tool');
+    expect(toolMsgs[0].tool_call_id).toBe('call-a');
+    expect(toolMsgs[1].role).toBe('tool');
+    expect(toolMsgs[1].tool_call_id).toBe('call-b');
   });
 
   it('junta uma accao destrutiva a pending e nao escreve', async () => {
@@ -97,8 +144,9 @@ describe('runAssistant', () => {
 });
 
 describe('estimateCost', () => {
-  it('calcula o custo do tier fast em euros', () => {
-    // 1M tokens de entrada = 0,30 USD; 1M de saida = 2,50 USD.
+  it('calcula o custo do tier fast em dolares', () => {
+    // OpenRouter cobra em USD, sem conversao para euros — 1M tokens de
+    // entrada = 0,30 USD; 1M de saida = 2,50 USD.
     const c = estimateCost({ prompt_tokens: 1_000_000, completion_tokens: 0 });
     expect(c).toBeCloseTo(0.3, 6);
     const c2 = estimateCost({ prompt_tokens: 0, completion_tokens: 1_000_000 });
@@ -112,7 +160,10 @@ describe('estimateCost', () => {
 
 describe('ASSISTANT_SYSTEM', () => {
   it('diz ao modelo para nao preencher o campo confirmed', () => {
-    expect(ASSISTANT_SYSTEM).toMatch(/confirmed/);
+    // Um simples /confirmed/ passaria mesmo que a instrucao dissesse o
+    // contrario ("preenche sempre confirmed") — tem de verificar a instrucao
+    // real, nao so a presenca da palavra.
+    expect(ASSISTANT_SYSTEM).toMatch(/Nunca preenchas o campo "confirmed"/);
   });
 });
 

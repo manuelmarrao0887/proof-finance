@@ -27,6 +27,9 @@ export const ASSISTANT_SYSTEM = [
   'Respostas curtas e diretas, com markdown simples. Valores em formato europeu (1.234,56 EUR).',
 ].join('\n');
 
+// Custo em DÓLARES (USD) — é assim que o OpenRouter cobra. Não há conversão
+// para euros aqui: precisaria de uma taxa de câmbio ao vivo e o valor é só
+// informativo, não vale o modo de falha extra. A UI mostra-o com prefixo "$".
 export function estimateCost(usage) {
   if (!usage) return 0;
   return (usage.prompt_tokens || 0) * PRICE_IN + (usage.completion_tokens || 0) * PRICE_OUT;
@@ -111,11 +114,18 @@ export async function runAssistant(userText, opts) {
     });
   }
 
+  // Ao esgotar as voltas, a ultima mensagem em `messages` e sempre um
+  // role:'tool' que responde ao ultimo tool_calls do assistant (nunca fica
+  // um tool_call por responder) — por isso e seguro acrescentar aqui uma
+  // mensagem assistant normal com o texto de desistencia. Sem isto, um
+  // caller que reenvie `messages` como `history` na proxima chamada perdia o
+  // registo de que o assistente ja tinha desistido, e podia contradizer-se.
+  const giveUpText = 'Nao consegui concluir o pedido em ' + MAX_ROUNDS + ' passos. Tenta ser mais especifico.';
   return {
-    text: 'Nao consegui concluir o pedido em ' + MAX_ROUNDS + ' passos. Tenta ser mais especifico.',
+    text: giveUpText,
     applied,
     pending,
     usage,
-    messages,
+    messages: [...messages, { role: 'assistant', content: giveUpText }],
   };
 }
