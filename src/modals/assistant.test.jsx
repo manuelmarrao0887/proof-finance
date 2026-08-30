@@ -64,6 +64,33 @@ describe('AssistantSheet', () => {
     expect(runAssistant.mock.calls[0][1].tier).toBe('avancado');
   });
 
+  // Regressao (revisao 2026-08-31): `send` lia `state.aiTier` de uma closure
+  // fechada pelos deps do useCallback ([text, busy, actions, currentUser] —
+  // sem `state`). Como a folha fica montada para sempre depois de aberta
+  // (Shell: modais montam no 1o open e ficam montados), essa closure
+  // guardava o aiTier de quando o texto mudou pela ULTIMA vez — nao o valor
+  // atual. Este teste muda o tier DEPOIS de escrever o texto, sem voltar a
+  // tocar na textarea, para provar que o envio le o tier FRESCO (via
+  // actions.getState()), nao o congelado no fecho de `send`.
+  it('mudar o tier em Definicoes DEPOIS de escrever o texto ainda usa o tier novo ao enviar', async () => {
+    runAssistant.mockResolvedValue({ text: 'ok', applied: [], pending: [], usage: {} });
+    let capturedActions;
+    await renderWithStore(<AssistantSheet />, {
+      openModal: 'assistant',
+      onReady: (ctx) => {
+        capturedActions = ctx.actions;
+      },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'x' } });
+    // Simula "ir a Definicoes e trocar o tier" — sem tocar na textarea outra vez.
+    act(() => {
+      capturedActions.setAiTier('avancado');
+    });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(runAssistant).toHaveBeenCalled());
+    expect(runAssistant.mock.calls[0][1].tier).toBe('avancado');
+  });
+
   it('envia o texto e mostra a resposta', async () => {
     runAssistant.mockResolvedValue({ text: 'Registei o cafe.', applied: [], pending: [], usage: {} });
     await openSheet();

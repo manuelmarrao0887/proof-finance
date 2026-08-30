@@ -108,11 +108,19 @@ export default function AssistantSheet() {
     setBusy(true);
     // Snapshot ANTES de chamar o assistente — é para aqui que o Anular repõe.
     const before = snapshotSlices(actions.getState());
-    // Capturado UMA vez (não relido dentro do .then()): se o utilizador
-    // mudar o tier em Definições enquanto este pedido está no ar, o custo
-    // mostrado tem de refletir o tier em que ESTA volta correu, não o que
-    // está selecionado quando a resposta chega.
-    const tierAtSend = state.aiTier;
+    // Lido de actions.getState() (não do `state` fechado no closure de
+    // `send`): os deps do useCallback abaixo são [text, busy, actions,
+    // currentUser] — sem `state` — e a folha fica montada para sempre depois
+    // de aberta (Shell: modais montam no 1o open e nunca desmontam), por
+    // isso `state` aqui ficaria preso ao valor de quando o texto mudou pela
+    // última vez. Ir a Definições e trocar o tier DEPOIS de escrever o texto,
+    // sem voltar a tocar na textarea, corria no tier antigo em silêncio —
+    // regressão apanhada em revisão (2026-08-31). getState() é sempre fresco
+    // (mesmo princípio do comentário em AIView.jsx sendAI). Capturado UMA vez
+    // aqui (não relido dentro do .then()): o custo mostrado tem de refletir o
+    // tier em que ESTA volta correu, não o que está selecionado quando a
+    // resposta chega.
+    const tierAtSend = actions.getState().aiTier;
     runAssistant(cmd, {
       state: actions.getState(),
       actions,
