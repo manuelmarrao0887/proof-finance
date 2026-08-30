@@ -301,4 +301,138 @@ describe('AssistantSheet', () => {
       await Promise.resolve();
     });
   });
+
+  // Cobertura extra (não vem do brief, pedida pela revisão — ronda 2, Gap 1):
+  // add_group_expense escreve DUAS slices (groupEntries + a despesa pessoal
+  // refletida em addedExp, via store.addGroupEntry/reflectExpenseFor quando
+  // o grupo tem reflectMine). Chama-se a action REAL (não um mock) para o
+  // reflexo em addedExp acontecer de verdade, tal como aconteceria com a
+  // tool real — só assim este teste apanha uma tabela tool->slice
+  // incompleta (o bug real: mapear só para 'groupEntries').
+  it('add_group_expense: anular repõe groupEntries E a despesa pessoal refletida', async () => {
+    let capturedActions;
+    runAssistant.mockImplementation((cmd, opts) => {
+      const entry = {
+        groupId: 'gr1',
+        kind: 'expense',
+        desc: 'Jantar',
+        amount: 40,
+        date: '2026-08-20',
+        payerId: 'me',
+        splitMode: 'equal',
+        shares: [
+          { personId: 'me', amount: 20 },
+          { personId: 'p1', amount: 20 },
+        ],
+        gcat: 'other',
+      };
+      const id = opts.actions.addGroupEntry(entry);
+      return Promise.resolve({
+        text: 'Registei o jantar do grupo.',
+        applied: [{ name: 'add_group_expense', args: { group_id: 'gr1', desc: 'Jantar', amount: 40 }, data: { id, groupId: 'gr1', amount: 40 } }],
+        pending: [],
+        usage: {},
+      });
+    });
+    await renderWithStore(<AssistantSheet />, {
+      openModal: 'assistant',
+      fixture: {
+        addedExp: [{ id: 'e0', desc: 'Existente', amount: 5, cat: 'out', date: '2026-08-01' }],
+        groups: [{ id: 'gr1', name: 'Ferias', memberIds: ['me', 'p1'], reflectMine: true }],
+        people: [{ id: 'p1', name: 'Ana' }],
+        groupEntries: [],
+      },
+      onReady: (ctx) => {
+        capturedActions = ctx.actions;
+      },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'jantar de grupo 40' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /anular/i })).toBeInTheDocument());
+
+    // A escrita real fez as duas coisas: a entrada de grupo e a despesa
+    // pessoal refletida (a minha parte, 20 EUR, é > 0 e o grupo reflete).
+    expect(capturedActions.getState().groupEntries).toHaveLength(1);
+    expect(capturedActions.getState().addedExp).toHaveLength(2);
+    const reflected = capturedActions.getState().addedExp.find((x) => x.id !== 'e0');
+    expect(reflected.groupEntryId).toBe(capturedActions.getState().groupEntries[0].id);
+
+    fireEvent.click(screen.getByRole('button', { name: /anular/i }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: /anular/i })).toBeNull());
+
+    // Anular tem de apagar as DUAS — deixar a despesa refletida para trás
+    // (um mapa tool->slice incompleto) era exatamente o Gap 1.
+    expect(capturedActions.getState().groupEntries).toEqual([]);
+    expect(capturedActions.getState().addedExp).toEqual([
+      { id: 'e0', desc: 'Existente', amount: 5, cat: 'out', date: '2026-08-01' },
+    ]);
+  });
+
+  // Cobertura extra (ronda 2, Gap 2): uma volta puramente de leitura (ex:
+  // "quanto gastei este mês?") não pode apagar o Anular de uma criação
+  // anterior. Depois do fix em aiChat.js, uma volta assim resolve sempre com
+  // applied:[] — é esse o contrato que este teste fixa.
+  it('uma volta só de leitura não invalida o Anular da volta anterior', async () => {
+    runAssistant
+      .mockResolvedValueOnce({
+        text: 'Registei o café.',
+        applied: [{ name: 'add_expense', args: { desc: 'Café', amount: 1.2 }, data: { id: 'e1' } }],
+        pending: [],
+        usage: {},
+      })
+      .mockResolvedValueOnce({
+        text: 'Gastaste 1,20 EUR em café este mês.',
+        applied: [],
+        pending: [],
+        usage: {},
+      });
+    await openSheet();
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'cafe' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /anular/i })).toBeInTheDocument());
+
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'quanto gastei este mes?' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(screen.getByText('Gastaste 1,20 EUR em café este mês.')).toBeInTheDocument());
+
+    // Uma pergunta puramente informativa não pode apagar o Anular da criação.
+    expect(screen.getByRole('button', { name: /anular/i })).toBeInTheDocument();
+  });
+
+  // Cobertura extra (ronda 2, Gap 3): confirmar uma ação pendente (apagar/
+  // editar) tem de invalidar o Anular de TODAS as voltas — não só da que
+  // tinha o pedido pendente. É o mesmo perigo do Gap 1 (undo obsoleto a
+  // reescrever a slice errada), agora no caminho de Confirmar.
+  it('confirmar uma ação pendente limpa o Anular de todas as voltas', async () => {
+    runAssistant
+      .mockResolvedValueOnce({
+        text: 'Registei o café.',
+        applied: [{ name: 'add_expense', args: { desc: 'Café', amount: 1.2 }, data: { id: 'e1' } }],
+        pending: [],
+        usage: {},
+      })
+      .mockResolvedValueOnce({
+        text: 'Confirmas?',
+        applied: [],
+        pending: [{ name: 'delete_expense', args: { id: 'e0' }, preview: { action: 'delete', kind: 'despesa', label: 'Continente' } }],
+        usage: {},
+      });
+    await openSheet();
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'cafe' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /anular/i })).toBeInTheDocument());
+
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'apaga a do continente' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /confirmar/i })).toBeInTheDocument());
+
+    // Antes de confirmar, o Anular da 1ª volta continua vivo — a 2ª volta só
+    // pediu confirmação, ainda não escreveu nada.
+    expect(screen.getByRole('button', { name: /anular/i })).toBeInTheDocument();
+
+    confirmPending.mockReturnValue({ ok: true, data: { deleted: true } });
+    fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: /anular/i })).toBeNull());
+  });
 });

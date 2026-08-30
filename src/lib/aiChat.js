@@ -11,7 +11,7 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 import { chat as defaultChat } from './ai.js';
-import { TOOL_SCHEMAS, execTool } from './aiTools.js';
+import { TOOL_SCHEMAS, execTool, WRITE_TOOL_SLICES } from './aiTools.js';
 
 export const MAX_ROUNDS = 4;
 
@@ -103,7 +103,14 @@ export async function runAssistant(userText, opts) {
       if (result && result.pending) {
         pending.push({ name, args, preview: result.preview });
         result = { status: 'awaiting_user_confirmation', preview: result.preview };
-      } else if (result && result.ok) {
+      } else if (result && result.ok && WRITE_TOOL_SLICES[name]) {
+        // Só tools de ESCRITA entram em `applied` — uma tool de leitura
+        // também devolve {ok:true,data}, mas não mexe em nada. Sem este
+        // filtro, uma volta que só consultou dados (ex: query_expenses antes
+        // de decidir o que fazer) contava como "aplicou algo": a UI perdia o
+        // Anular de uma criação na MESMA volta (nome não reconhecido) e
+        // invalidava o Anular de uma volta anterior só por ter perguntado
+        // algo, sem ter escrito nada.
         applied.push({ name, args, data: result.data });
       }
       messages.push({

@@ -771,6 +771,55 @@ const groupTools = {
   },
 };
 
+/* ── Slices que cada tool de escrita pode tocar ──────────────────────────
+   E a fonte unica desta informacao: a UI (AssistantSheet.jsx) usa-a para
+   saber o que repor no Anular, e o loop (aiChat.js) usa-a para distinguir
+   escritas de leituras ao construir `applied`. Uma tool de escrita nova SEM
+   entrada aqui faz falhar o teste de cobertura em aiTools.test.js — e o que
+   impede esta tabela de divergir das tools (foi assim, sem teste, que
+   add_group_expense ficou mapeada só para 'groupEntries' e o reflexo em
+   'addedExp' passou ao lado).
+
+   Verificado ação a ação contra as actions que cada `run()` chama em
+   store.jsx — incluindo escritas indiretas, não só o `setField` óbvio:
+     - add_group_expense/settle_group chamam ambas actions.addGroupEntry(),
+       que escreve SEMPRE 'groupEntries' e, quando reflectExpenseFor()
+       devolve um movimento (group.reflectMine — default true em addGroup,
+       create_group nunca o define — e a MINHA parte > 0), escreve também
+       'addedExp' com a despesa pessoal refletida (ver store.jsx:565-579).
+       reflectExpenseFor() devolve sempre null para entry.kind==='settlement'
+       (a primeira linha da função, antes de olhar para reflectMine) — por
+       isso settle_group nunca toca 'addedExp'.
+   Tools destrutivas (update_* e delete_*, incl. delete_group_entry) nunca
+   aparecem aqui: nunca entram em `applied` — só escrevem via
+   confirmPending(), fora deste caminho (execTool devolve {pending} sem
+   confirmed:true, nunca {ok}). */
+export const WRITE_TOOL_SLICES = {
+  add_expense: ['addedExp'],
+  add_income: ['incomes'],
+  add_goal: ['goals'],
+  add_recurring: ['recurring'],
+  add_category: ['bdg'],
+  set_budget: ['bdg'],
+  add_rule: ['rules'],
+  update_balance: ['dynAccts'],
+  add_snapshot: ['dynSnaps'],
+  create_group: ['groups'],
+  add_person: ['people'],
+  add_group_expense: ['groupEntries', 'addedExp'],
+  settle_group: ['groupEntries'],
+};
+
+// Nomes das tools de escrita não-destrutivas (as que podem legitimamente
+// aparecer em `applied`) — exportado só para o teste de cobertura em
+// aiTools.test.js confirmar que WRITE_TOOL_SLICES não diverge nem falta nem
+// sobra nada face a writeTools/groupTools. Nada no runtime do assistente usa
+// isto — só o teste.
+export const WRITE_TOOL_NAMES = [
+  ...Object.keys(writeTools),
+  ...Object.keys(groupTools).filter((name) => !groupTools[name].destructive),
+];
+
 /* ── Registry + execução ─────────────────────────────────────────────── */
 
 export const TOOLS = { ...readTools, ...writeTools, ...destructiveTools, ...groupTools };

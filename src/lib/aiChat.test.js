@@ -134,6 +134,43 @@ describe('runAssistant', () => {
     expect(out.pending).toEqual([]);
   });
 
+  it('uma tool de leitura nao entra em applied, mesmo devolvendo {ok:true}', async () => {
+    // query_expenses devolve {ok:true,data} tal como add_expense — sem o
+    // filtro por WRITE_TOOL_SLICES isto contava como "aplicou algo" e a UI
+    // (AssistantSheet) invalidava o Anular de uma volta anterior só por o
+    // modelo ter ido consultar dados antes de responder.
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('query_expenses', {}))
+      .mockResolvedValueOnce(say('Gastaste 45,67 EUR no Continente.'));
+    const out = await runAssistant('quanto gastei?', { ...ctx(), chatFn });
+    expect(out.applied).toEqual([]);
+  });
+
+  it('uma volta que le e cria só conta a criação em applied', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: null,
+              tool_calls: [
+                { id: 'r1', type: 'function', function: { name: 'query_expenses', arguments: '{}' } },
+                { id: 'c1', type: 'function', function: { name: 'add_expense', arguments: JSON.stringify({ desc: 'Cafe', amount: 1.2 }) } },
+              ],
+            },
+          },
+        ],
+        usage: { prompt_tokens: 20, completion_tokens: 8, total_tokens: 28 },
+      })
+      .mockResolvedValueOnce(say('Vi as tuas despesas e registei o cafe.'));
+    const c = ctx();
+    const out = await runAssistant('o que gastei e regista um cafe', { ...c, chatFn });
+    expect(c.actions.addExpense).toHaveBeenCalledTimes(1);
+    expect(out.applied).toHaveLength(1);
+    expect(out.applied[0].name).toBe('add_expense');
+  });
+
   it('sobrevive a argumentos que nao sao JSON valido', async () => {
     const chatFn = vi.fn()
       .mockResolvedValueOnce({ choices: [{ message: { role: 'assistant', tool_calls: [{ id: 'c1', function: { name: 'add_expense', arguments: '{oops' } }] } }] })

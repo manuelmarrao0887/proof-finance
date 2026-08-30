@@ -16,11 +16,17 @@ import { useToast } from '../components/Toast.jsx';
 import { renderMD } from '../lib/markdown.js';
 import { buildAIContext } from '../lib/ai.js';
 import { runAssistant, confirmPending, estimateCost, ASSISTANT_SYSTEM } from '../lib/aiChat.js';
+// WRITE_TOOL_SLICES é a fonte única (lib/aiTools.js) das slices que cada tool
+// de escrita toca — não replicar essa tabela aqui. Um mapa local já divergiu
+// uma vez desta fonte (add_group_expense também reflete em addedExp via
+// addGroupEntry, e o mapa local só sabia de groupEntries), com um teste em
+// aiTools.test.js a impedir que volte a acontecer.
+import { WRITE_TOOL_SLICES } from '../lib/aiTools.js';
 
 // Guarda o estado anterior de todas as slices que uma tool pode tocar — o
 // "antes" de que o Anular precisa. Note-se que isto sozinho NÃO chega: ver
-// SLICE_BY_TOOL/undoSnapshotFor abaixo para o porquê de só se repor as slices
-// que a PRÓPRIA volta tocou, nunca as 11 de uma vez.
+// undoSnapshotFor abaixo para o porquê de só se repor as slices que a
+// PRÓPRIA volta tocou, nunca as 11 de uma vez.
 function snapshotSlices(state) {
   return {
     addedExp: state.addedExp,
@@ -37,40 +43,20 @@ function snapshotSlices(state) {
   };
 }
 
-// Tool -> slice que essa tool escreve, verificado uma a uma contra
-// src/lib/aiTools.js (writeTools + groupTools). As tools destrutivas
-// (update_*/delete_*, incl. delete_group_entry) NUNCA aparecem aqui: nunca
-// entram em `applied` — só escrevem via confirmPending(), fora deste caminho
-// (ver execTool: um tool_call destrutivo sem confirmed:true devolve
-// {pending}, nunca {ok}).
-const SLICE_BY_TOOL = {
-  add_expense: 'addedExp',
-  add_income: 'incomes',
-  add_goal: 'goals',
-  add_recurring: 'recurring',
-  add_category: 'bdg',
-  set_budget: 'bdg',
-  add_rule: 'rules',
-  update_balance: 'dynAccts',
-  add_snapshot: 'dynSnaps',
-  create_group: 'groups',
-  add_person: 'people',
-  add_group_expense: 'groupEntries',
-  settle_group: 'groupEntries',
-};
-
-// Devolve o subconjunto de `before` correspondente às slices que ESTA lista
-// de `applied` tocou — nunca as 11 de uma vez. Sem isto, o Anular de uma
-// volta antiga sobrescreve com um valor obsoleto qualquer slice que uma volta
-// mais recente (ou qualquer outra parte da app, entretanto) tenha alterado,
-// apagando esse trabalho. Uma tool não reconhecida faz devolver null — o
-// Anular fica indisponível em vez de arriscar restaurar a slice errada.
+// Devolve o subconjunto de `before` correspondente à UNIÃO das slices que
+// esta lista de `applied` tocou — nunca as 11 de uma vez. Sem isto, o Anular
+// de uma volta antiga sobrescreve com um valor obsoleto qualquer slice que
+// uma volta mais recente (ou qualquer outra parte da app, entretanto) tenha
+// alterado, apagando esse trabalho. Uma tool não reconhecida em
+// WRITE_TOOL_SLICES faz devolver null — o Anular fica indisponível em vez de
+// arriscar restaurar a slice errada (não deveria acontecer: aiChat.js só
+// deixa entrar em `applied` tools que estão em WRITE_TOOL_SLICES).
 function undoSnapshotFor(applied, before) {
   const keys = new Set();
   for (const a of applied) {
-    const slice = SLICE_BY_TOOL[a.name];
-    if (!slice) return null;
-    keys.add(slice);
+    const slices = WRITE_TOOL_SLICES[a.name];
+    if (!slices) return null;
+    slices.forEach((s) => keys.add(s));
   }
   const snap = {};
   keys.forEach((k) => {
@@ -153,7 +139,17 @@ export default function AssistantSheet() {
       if (r && r.ok) toast('Feito', 'success');
       else toast('Não foi possível concluir', 'error');
       setTurns((t) =>
-        t.map((x, i) => (i === turnIdx ? { ...x, pending: x.pending.filter((_, j) => j !== pendIdx) } : x))
+        t.map((x, i) => {
+          const next = i === turnIdx ? { ...x, pending: x.pending.filter((_, j) => j !== pendIdx) } : x;
+          // Uma eliminação/edição confirmada aqui pode tocar exactamente a
+          // slice que o Anular de QUALQUER volta (mesmo já resolvida) ainda
+          // assume como "antes" — o mesmo perigo do Gap 1, agora no caminho
+          // de Confirmar em vez do de criar. É precisamente quando um
+          // Anular parado é mais perigoso: perder a hipótese de anular uma
+          // criação não relacionada custa muito menos do que ressuscitar em
+          // silêncio um registo que o utilizador acabou de apagar.
+          return r && r.ok ? { ...next, undo: null } : next;
+        })
       );
     },
     [turns, actions, toast]

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { TOOLS, TOOL_SCHEMAS, execTool, ME_ID as TOOLS_ME_ID } from './aiTools.js';
+import { TOOLS, TOOL_SCHEMAS, execTool, ME_ID as TOOLS_ME_ID, WRITE_TOOL_SLICES, WRITE_TOOL_NAMES } from './aiTools.js';
 import { ME_ID } from '../store/store.jsx';
 
 // aiTools.js e um modulo puro (sem Firebase). Este ficheiro de testes importa
@@ -535,5 +535,29 @@ describe('tools de grupos', () => {
     expect(c.actions.deleteGroupEntry).not.toHaveBeenCalled();
     execTool('delete_group_entry', { id: 'ge1', confirmed: true }, c);
     expect(c.actions.deleteGroupEntry).toHaveBeenCalledWith('ge1');
+  });
+});
+
+describe('WRITE_TOOL_SLICES', () => {
+  it('cobre exatamente as tools de escrita nao-destrutivas — nem falta nenhuma, nem sobra nenhuma obsoleta', () => {
+    // Bidirecional: uma tool nova em writeTools/groupTools sem entrada aqui
+    // falha (falta), e uma entrada cuja tool foi removida/renomeada tambem
+    // falha (sobra) — impede exatamente o desvio que causou o Gap 1.
+    expect(new Set(Object.keys(WRITE_TOOL_SLICES))).toEqual(new Set(WRITE_TOOL_NAMES));
+  });
+
+  it('nunca lista uma tool destrutiva (essas nunca entram em `applied`)', () => {
+    Object.keys(WRITE_TOOL_SLICES).forEach((name) => {
+      expect(TOOLS[name]).toBeDefined();
+      expect(TOOLS[name].destructive).not.toBe(true);
+    });
+  });
+
+  it('add_group_expense mapeia para groupEntries E addedExp — addGroupEntry tambem reflete a minha parte', () => {
+    expect(new Set(WRITE_TOOL_SLICES.add_group_expense)).toEqual(new Set(['groupEntries', 'addedExp']));
+  });
+
+  it('settle_group mapeia so para groupEntries — reflectExpenseFor devolve null para settlements', () => {
+    expect(WRITE_TOOL_SLICES.settle_group).toEqual(['groupEntries']);
   });
 });
