@@ -220,6 +220,38 @@ describe('Fluxo: importar Excel do banco (ponta-a-ponta)', () => {
     expect(probe.state.transfers.length).toBe(before.trf); // TRF própria não foi selecionada
   });
 
+  it('liga a despesa importada à recorrente correspondente (recId) e não liga a compra pontual', async () => {
+    // richFixture tem recurring: Ginásio 35,90 (gym) e Internet 39,90 (tel).
+    await renderWithStore(<><ImportStatementSheet /><Probe /></>, { fixture: richFixture(), openModal: 'stmt' });
+
+    const file = bankFile([
+      ['02/07/2026', '02/07/2026', 'DD GINASIO SOLINCA LISBOA', '-35.90', '1,000.00'], // = mensalidade
+      ['03/07/2026', '03/07/2026', 'COMPRA 4174 GINASIO SOLINCA LOJA', '-89.00', '911.00'], // mesmo nome, compra pontual
+      ['04/07/2026', '04/07/2026', 'COMPRA 4174 CONTINENTE LISBOA CONTACTLESS', '-32.10', '878.90'],
+    ]);
+    const input = document.getElementById('stFile');
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    for (let i = 0; i < 20 && !document.body.textContent.includes('transações'); i++) {
+      // eslint-disable-next-line no-await-in-loop
+      await settle();
+    }
+    // Só UMA linha ganha o badge — a de 89€ é o mesmo comerciante mas não é a mensalidade.
+    expect(document.body.textContent.match(/RECORRENTE/g) || []).toHaveLength(1);
+
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: /Importar selecionadas/i })));
+    await settle();
+
+    const imported = probe.state.addedExp.filter((x) => (x.date || '').slice(0, 7) === '2026-07' && x.imported);
+    const gym = imported.find((x) => x.amount === 35.9);
+    const loja = imported.find((x) => x.amount === 89);
+    const cont = imported.find((x) => x.amount === 32.1);
+    expect(gym.recId).toBe('rec-gym'); // materializa a recorrente → projeção deixa de a somar
+    expect(loja.recId).toBeUndefined();
+    expect(cont.recId).toBeUndefined();
+  });
+
   it('corrigir a categoria no preview aprende uma regra permanente', async () => {
     await renderWithStore(<><ImportStatementSheet /><Probe /></>, { fixture: richFixture(), openModal: 'stmt' });
     const rules0 = probe.state.rules.length;

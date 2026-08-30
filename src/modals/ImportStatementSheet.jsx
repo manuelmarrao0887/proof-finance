@@ -34,6 +34,7 @@ import {
   readExcelRows,
 } from '../lib/ai.js';
 import { applyRules } from '../lib/finance.js';
+import { tagRecurringMatches } from '../lib/recurringMatch.js';
 import { parseBankStatement, incomeSource } from '../lib/importBank.js';
 import { guessCategory, rulePatternFor } from '../lib/categorize.js';
 import { listAccounts } from '../lib/balances.js';
@@ -43,7 +44,10 @@ import { listAccounts } from '../lib/balances.js';
 //   - crédito (amount>0): receita (auto-selecionada) OU transferência própria
 // Transferências próprias (isTransfer) nascem desmarcadas com contas De/Para
 // pré-preenchidas. Duplicados (já em addedExp) via expenseKey ficam desmarcados.
-function prepResult(res, dup, acctLabels) {
+// Cada débito é ainda cruzado com as recorrentes do utilizador: se bater certo
+// leva `_recId` e a despesa importada nasce a materializar essa recorrente (ver
+// lib/recurringMatch.js — sem isto a recorrente contava a dobrar na projeção).
+function prepResult(res, dup, acctLabels, recurringList) {
   if (!res || !res.transactions) return { result: res, sel: {} };
   const sel = {};
   const L = acctLabels || [];
@@ -68,7 +72,7 @@ function prepResult(res, dup, acctLabels) {
     const _to = deb ? (L[1] || L[0] || '') : (L[0] || '');
     return { ...t, _id, isDup, _dupKind, _type, _source, _from, _to };
   });
-  return { result: { ...res, transactions }, sel };
+  return { result: { ...res, transactions: tagRecurringMatches(transactions, recurringList) }, sel };
 }
 
 export default function ImportStatementSheet() {
@@ -81,6 +85,14 @@ export default function ImportStatementSheet() {
   const [stSel, setStSel] = useState({}); // { _id: true }
 
   const cats = useMemo(() => sortedCats(state.bdg), [state.bdg]); // FIX 3
+  // id → nome, só para o tooltip do badge RECORRENTE.
+  const recNameById = useMemo(() => {
+    const m = {};
+    (state.recurring || []).forEach((r) => {
+      if (r && r.id) m[r.id] = r.name || '';
+    });
+    return m;
+  }, [state.recurring]);
   const acctLabels = useMemo(
     () => listAccounts({ ...state, currentUser }).map((a) => a.bank + ' · ' + a.type),
     [state, currentUser]
@@ -120,7 +132,7 @@ export default function ImportStatementSheet() {
       const dup = { exact: new Set(existing.map(expenseKey)), dayAmt: new Set(existing.map(dayAmountKey)) };
       const onRes = (res) => {
         setStScanning(false);
-        const { result, sel } = prepResult(res, dup, acctLabels);
+        const { result, sel } = prepResult(res, dup, acctLabels, state.recurring);
         setStResult(result);
         setStSel(sel);
       };
@@ -153,7 +165,7 @@ export default function ImportStatementSheet() {
                 isTransfer: t.isTransfer,
               })),
             };
-            const { result, sel } = prepResult(bankResult, dup, acctLabels);
+            const { result, sel } = prepResult(bankResult, dup, acctLabels, state.recurring);
             setStScanning(false);
             setStResult(result);
             setStSel(sel);
@@ -310,7 +322,14 @@ export default function ImportStatementSheet() {
     let added = 0;
     let skipped = 0;
     if (expRows.length) {
-      const selected = expRows.map((t) => ({ desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date), imported: true }));
+      const selected = expRows.map((t) => {
+        const e = { desc: t.desc, amount: Math.abs(t.amount), cat: t.category || 'out', date: normalizeStmtDate(t.date), imported: true };
+        // Materializa a recorrente: a projeção deixa de somar o valor fixo nesse
+        // mês e a recorrente passa a "já lançada". Só quando há match (campo
+        // opcional, como no AddExpenseSheet).
+        if (t._recId) e.recId = t._recId;
+        return e;
+      });
       const before = (state.addedExp || []).length;
       const merged = dedupeAddedExp([...(state.addedExp || []), ...selected]);
       added = merged.length - before;
@@ -515,6 +534,14 @@ export default function ImportStatementSheet() {
                             )}
                             {t._dupKind === 'maybe' && (
                               <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--warning)', background: 'var(--orange-soft)', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }} title="Mesmo dia e valor de uma despesa já existente (descrição diferente)">POSSÍVEL DUP</span>
+                            )}
+                            {t._recId && !t.isDup && (
+                              <span
+                                style={{ fontSize: 8, fontWeight: 700, color: 'var(--primary)', background: 'var(--elevated)', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }}
+                                title={'Corresponde à recorrente "' + (recNameById[t._recId] || '') + '" — ao importar fica lançada neste mês'}
+                              >
+                                RECORRENTE
+                              </span>
                             )}
                             {t._type === 'transfer' && !t.isDup && (
                               <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--text3)', background: 'var(--elevated)', padding: '1px 5px', borderRadius: 999, whiteSpace: 'nowrap' }}>TRF</span>
