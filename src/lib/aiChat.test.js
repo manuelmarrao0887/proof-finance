@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { runAssistant, confirmPending, estimateCost, ASSISTANT_SYSTEM, MAX_ROUNDS } from './aiChat.js';
+import { runAssistant, confirmPending, estimateCost, ASSISTANT_SYSTEM, MAX_ROUNDS, EMPTY_ANSWER } from './aiChat.js';
 
 function ctx(seed = {}) {
   const state = { addedExp: [{ id: 'e1', desc: 'Continente', amount: 45.67, cat: 'sup', date: '2026-08-28' }], ...seed };
@@ -169,6 +169,47 @@ describe('runAssistant', () => {
     expect(c.actions.addExpense).toHaveBeenCalledTimes(1);
     expect(out.applied).toHaveLength(1);
     expect(out.applied[0].name).toBe('add_expense');
+  });
+
+  /* Atomicidade entre voltas. Se a volta 2 rebentar depois de a volta 1 ja
+     ter escrito, rejeitar a promise deitava fora `applied`: o utilizador via
+     um erro para uma mensagem que JA lhe tinha mexido nos registos, e sem
+     Anular nenhum. runAssistant devolve sempre o que foi aplicado. */
+  it('uma volta que rebenta a meio nao esconde o que ja foi escrito', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('add_expense', { desc: 'Cafe', amount: 1.2 }))
+      .mockRejectedValueOnce(new Error('Erro de rede a falar com o modelo.'));
+    const c = ctx();
+    const out = await runAssistant('regista o cafe', { ...c, chatFn });
+    expect(c.actions.addExpense).toHaveBeenCalledTimes(1);
+    // Nao rejeita: devolve o erro em banda...
+    expect(out.error).toBe(true);
+    expect(out.text).toMatch(/rede/i);
+    // ...com a escrita que chegou a acontecer, para a UI poder oferecer Anular.
+    expect(out.applied).toHaveLength(1);
+    expect(out.applied[0].name).toBe('add_expense');
+  });
+
+  it('uma accao por confirmar sobrevive a uma volta seguinte que rebenta', async () => {
+    const chatFn = vi.fn()
+      .mockResolvedValueOnce(callTool('delete_expense', { id: 'e1' }))
+      .mockRejectedValueOnce(new Error('429'));
+    const out = await runAssistant('apaga a do continente', { ...ctx(), chatFn });
+    expect(out.error).toBe(true);
+    expect(out.pending).toHaveLength(1);
+  });
+
+  it('devolve uma mensagem legivel quando a resposta vem sem choices', async () => {
+    // O proxy respondeu 200 mas o modelo nao devolveu nada: sem isto a UI
+    // desenhava um cartao vazio, sem texto nem erro.
+    const chatFn = vi.fn(() => Promise.resolve({ choices: [], usage: { total_tokens: 3 } }));
+    const out = await runAssistant('x', { ...ctx(), chatFn });
+    expect(out.text).toBe(EMPTY_ANSWER);
+    expect(out.text.trim().length).toBeGreaterThan(0);
+    // A mensagem tambem entra no historico devolvido — um caller que reenvie
+    // `messages` nao pode ficar com um assistant sem conteudo.
+    const last = out.messages[out.messages.length - 1];
+    expect(last).toEqual({ role: 'assistant', content: EMPTY_ANSWER });
   });
 
   it('sobrevive a argumentos que nao sao JSON valido', async () => {

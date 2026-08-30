@@ -136,8 +136,17 @@ read-modify-write inside a handler without stale closures).
 
 ### Generic
 - `patch(partial)` — shallow-merge a partial into state.
-- `setField(key, value)` — set one field.
-- `getState()` — latest state snapshot.
+- `setField(key, value)` — set one field. `value` may be a **functional
+  updater** `(prev) => next`: the transform then runs inside the reducer, on
+  the freshest value of that slice, so two writes to the same slice in the
+  same tick add up instead of the second overwriting the first. Every
+  append/map/filter action uses this form. The updater **must be pure** (React
+  StrictMode invokes the reducer twice) — generate ids and `Date.now()` before
+  the call and close over them.
+- `getState()` — latest state snapshot. `patch`/`setField` fast-forward it
+  synchronously, so a read right after a write (another action, or an AI read
+  tool right after an AI write tool) already sees the new value instead of
+  waiting for React to commit.
 - `persistUser()` — force a debounced save (normally automatic).
 - `loadUser(uid)` — thunk: getDoc → hydrate (guards) → `applyTheme`.
 - `resetUser()` — reset persisted slice to defaults (sign-out).

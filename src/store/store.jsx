@@ -284,7 +284,22 @@ export function hydrateFromDoc(d) {
 /* ── Reducer ─────────────────────────────────────────────────────────────
    Generic `patch` merges a partial; `hydrate` replaces the whole persisted
    slice; `reset` clears to defaults (used on sign-out). Everything else is a
-   thin slice setter expressed via PATCH-style actions. */
+   thin slice setter expressed via PATCH-style actions.
+
+   `setField` aceita DOIS formatos de valor:
+     setField('addedExp', arrayNovo)          // valor literal (como sempre)
+     setField('addedExp', (prev) => [...])    // atualizador funcional
+
+   O atualizador funcional existe porque getState() devolve stateRef.current, e
+   esse ref só é reatribuído no render seguinte: duas escritas na MESMA slice
+   dentro do mesmo tick (ex.: o assistente a registar duas despesas de uma vez,
+   ou dois cliques rápidos) liam ambas o mesmo "antes" e a segunda apagava a
+   primeira. Com a função, a transformação corre DENTRO do reducer, sobre o
+   valor mais recente da slice, e os dois dispatches somam-se.
+
+   O atualizador tem de ser PURO (o React em StrictMode invoca o reducer duas
+   vezes): nunca gerar ids nem Date.now() lá dentro — gerar antes e fechar
+   sobre o valor. */
 function reducer(state, action) {
   switch (action.type) {
     case 'patch':
@@ -293,8 +308,10 @@ function reducer(state, action) {
       return { ...state, ...action.persisted };
     case 'reset':
       return { ...initialState(), em: state.em };
-    case 'setField':
-      return { ...state, [action.key]: action.value };
+    case 'setField': {
+      const next = typeof action.value === 'function' ? action.value(state[action.key]) : action.value;
+      return { ...state, [action.key]: next };
+    }
     default:
       return state;
   }
@@ -427,10 +444,32 @@ export function StoreProvider({ children }) {
   /* ── Action creators ──────────────────────────────────────────────────
      Each mutates a slice via dispatch. Because the auto-persist effect runs
      on persisted-slice changes, callers do NOT need to call persistUser()
-     manually — but it is exposed for parity / explicit flushes. */
+     manually — but it is exposed for parity / explicit flushes.
+
+     patch/setField adiantam também o stateRef ("fast-forward"): sem isso,
+     getState() só via a escrita depois de o React fazer commit, e QUALQUER
+     leitura feita no mesmo tick (outra action a seguir, uma tool de leitura do
+     assistente logo a seguir a uma de escrita) via o estado antigo. É essa
+     leitura antiga que fazia "cria o grupo Férias e lança lá o jantar"
+     responder not_found para o grupo acabado de criar.
+
+     O dispatch continua a levar o VALOR ORIGINAL (função incluída): a verdade
+     é sempre o que o reducer calcula sobre o estado real do React; o stateRef
+     é só um adiantamento, e o render seguinte reescreve-o com o valor
+     oficial (stateRef.current = state). Como o reducer e o adiantamento
+     aplicam a mesma função pura pela mesma ordem, convergem. */
   const actions = useMemo(() => {
-    const patch = (partial) => dispatch({ type: 'patch', partial });
-    const setField = (key, value) => dispatch({ type: 'setField', key, value });
+    const patch = (partial) => {
+      stateRef.current = { ...stateRef.current, ...partial };
+      dispatch({ type: 'patch', partial });
+    };
+    const setField = (key, value) => {
+      stateRef.current = {
+        ...stateRef.current,
+        [key]: typeof value === 'function' ? value(stateRef.current[key]) : value,
+      };
+      dispatch({ type: 'setField', key, value });
+    };
     const getState = () => stateRef.current;
 
     return {
@@ -458,17 +497,16 @@ export function StoreProvider({ children }) {
       setHousing: (h) => setField('housing', h || null),
       setRolloverOn: (b) => setField('rolloverOn', !!b),
       // posições de investimento
-      addPosition: (p) => setField('positions', [...(getState().positions || []), p]),
+      addPosition: (p) => setField('positions', (prev) => [...(prev || []), p]),
       updatePosition: (id, p) =>
-        setField('positions', (getState().positions || []).map((x) => (x.id === id ? { ...x, ...p } : x))),
-      deletePosition: (id) => setField('positions', (getState().positions || []).filter((x) => x.id !== id)),
+        setField('positions', (prev) => (prev || []).map((x) => (x.id === id ? { ...x, ...p } : x))),
+      deletePosition: (id) => setField('positions', (prev) => (prev || []).filter((x) => x.id !== id)),
       // transferências entre contas
-      addTransfer: (t) => setField('transfers', [...(getState().transfers || []), t]),
-      deleteTransfer: (id) => setField('transfers', (getState().transfers || []).filter((x) => x.id !== id)),
-      dismissSub: (key) => setField('dismissedSubs', [...(getState().dismissedSubs || []), key]),
+      addTransfer: (t) => setField('transfers', (prev) => [...(prev || []), t]),
+      deleteTransfer: (id) => setField('transfers', (prev) => (prev || []).filter((x) => x.id !== id)),
+      dismissSub: (key) => setField('dismissedSubs', (prev) => [...(prev || []), key]),
       setAiHistory: (aiHistory) => setField('aiHistory', aiHistory),
-      pushAiHistory: (entry) =>
-        setField('aiHistory', [...(getState().aiHistory || []), entry].slice(-20)),
+      pushAiHistory: (entry) => setField('aiHistory', (prev) => [...(prev || []), entry].slice(-20)),
 
       // expenses (addedExp) — mutated by STABLE id, never array index, so that
       // edits/deletes survive list reordering (clean-imported, remove-month) and
@@ -485,79 +523,85 @@ export function StoreProvider({ children }) {
         const reconciled = orphanedGroupEntries(st.groupEntries, removed);
         if (reconciled) setField('groupEntries', reconciled);
       },
-      addExpense: (exp) =>
-        setField('addedExp', [...(getState().addedExp || []), exp.id ? exp : { ...exp, id: uid() }]),
+      addExpense: (exp) => {
+        // id gerado FORA do atualizador: o reducer tem de ser puro.
+        const row = exp.id ? exp : { ...exp, id: uid() };
+        setField('addedExp', (prev) => [...(prev || []), row]);
+      },
       updateExpense: (id, exp) =>
-        setField(
-          'addedExp',
-          (getState().addedExp || []).map((x) => (x.id === id ? { ...x, ...exp } : x))
-        ),
+        setField('addedExp', (prev) => (prev || []).map((x) => (x.id === id ? { ...x, ...exp } : x))),
       deleteExpense: (id) => {
         const st = getState();
         const removed = (st.addedExp || []).find((x) => x.id === id);
-        setField('addedExp', (st.addedExp || []).filter((x) => x.id !== id));
-        const reconciled = orphanedGroupEntries(st.groupEntries, removed ? [removed] : []);
-        if (reconciled) setField('groupEntries', reconciled);
+        setField('addedExp', (prev) => (prev || []).filter((x) => x.id !== id));
+        // Só reconcilia quando a linha apagada estava mesmo ligada a um grupo —
+        // orphanedGroupEntries devolveria null nos restantes casos.
+        if (removed && removed.groupEntryId) {
+          setField('groupEntries', (prev) => orphanedGroupEntries(prev, [removed]) || prev);
+        }
       },
       // Classify by id, applying the chosen category to every same-beneficiary
       // row (resolves the index fresh against current state — no stale closure).
-      classifyExpense: (id, cat) => {
-        const list = getState().addedExp || [];
-        const idx = list.findIndex((x) => x.id === id);
-        if (idx < 0) return;
-        setField('addedExp', applySameBeneficiaryCategory(list, idx, cat, 'cat'));
-      },
+      classifyExpense: (id, cat) =>
+        setField('addedExp', (prev) => {
+          const list = prev || [];
+          const idx = list.findIndex((x) => x.id === id);
+          return idx < 0 ? list : applySameBeneficiaryCategory(list, idx, cat, 'cat');
+        }),
 
       // ── Grupos: pessoas ──────────────────────────────────────────────
       addPerson: (p) => {
-        const list = getState().people || [];
-        const color = p.color || nextAvatarColor(list);
         // id gerado nunca é anulado por um id vindo do chamador (mesma regra
         // de addExpense): mantém o id se vier definido, senão gera um novo.
+        // uid()/Date.now() ficam FORA do atualizador (reducer puro); só a cor
+        // cíclica depende da lista, e nextAvatarColor é pura.
         const withId = p.id ? p : { ...p, id: uid() };
-        setField('people', [...list, { createdAt: Date.now(), ...withId, color }]);
+        const createdAt = Date.now();
+        setField('people', (prev) => {
+          const list = prev || [];
+          return [...list, { createdAt, ...withId, color: p.color || nextAvatarColor(list) }];
+        });
       },
       updatePerson: (id, partial) =>
-        setField('people', (getState().people || []).map((x) => (x.id === id ? { ...x, ...partial } : x))),
+        setField('people', (prev) => (prev || []).map((x) => (x.id === id ? { ...x, ...partial } : x))),
       deletePerson: (id) => {
         const st = getState();
         const used = (st.groups || []).some((g) => (g.memberIds || []).includes(id));
         if (used) return false; // a UI bloqueia antes; isto é a rede de segurança
-        setField('people', (st.people || []).filter((x) => x.id !== id));
+        setField('people', (prev) => (prev || []).filter((x) => x.id !== id));
         return true;
       },
 
       // ── Grupos ───────────────────────────────────────────────────────
-      addGroup: (g) =>
-        setField('groups', [
-          ...(getState().groups || []),
-          {
-            emoji: '👥',
-            type: 'trip',
-            currency: 'EUR',
-            start: null,
-            end: null,
-            reflectMine: true,
-            archived: false,
-            createdAt: Date.now(),
-            ...g,
-            // id gerado nunca é anulado pelo spread (mesma regra de addExpense);
-            // memberIds sempre inclui ME_ID uma única vez, em primeiro (spec).
-            id: g.id || uid(),
-            memberIds: withMe(g.memberIds),
-          },
-        ]),
+      addGroup: (g) => {
+        const row = {
+          emoji: '👥',
+          type: 'trip',
+          currency: 'EUR',
+          start: null,
+          end: null,
+          reflectMine: true,
+          archived: false,
+          createdAt: Date.now(),
+          ...g,
+          // id gerado nunca é anulado pelo spread (mesma regra de addExpense);
+          // memberIds sempre inclui ME_ID uma única vez, em primeiro (spec).
+          id: g.id || uid(),
+          memberIds: withMe(g.memberIds),
+        };
+        setField('groups', (prev) => [...(prev || []), row]);
+      },
       updateGroup: (id, partial) =>
-        setField('groups', (getState().groups || []).map((x) => (x.id === id ? { ...x, ...partial } : x))),
+        setField('groups', (prev) => (prev || []).map((x) => (x.id === id ? { ...x, ...partial } : x))),
       archiveGroup: (id, archived = true) =>
-        setField('groups', (getState().groups || []).map((x) => (x.id === id ? { ...x, archived } : x))),
+        setField('groups', (prev) => (prev || []).map((x) => (x.id === id ? { ...x, archived } : x))),
       deleteGroup: (id) => {
         const st = getState();
         const linked = new Set((st.groupEntries || []).filter((e) => e.groupId === id).map((e) => e.linkedExpId).filter(Boolean));
-        setField('groups', (st.groups || []).filter((x) => x.id !== id));
-        setField('groupEntries', (st.groupEntries || []).filter((e) => e.groupId !== id));
+        setField('groups', (prev) => (prev || []).filter((x) => x.id !== id));
+        setField('groupEntries', (prev) => (prev || []).filter((e) => e.groupId !== id));
         if (linked.size) {
-          setField('addedExp', (st.addedExp || []).filter((x) => !linked.has(x.id)));
+          setField('addedExp', (prev) => (prev || []).filter((x) => !linked.has(x.id)));
         }
       },
 
@@ -571,11 +615,11 @@ export function StoreProvider({ children }) {
         if (mov) {
           const expId = uid();
           full.linkedExpId = expId;
-          setField('addedExp', [...(st.addedExp || []), { id: expId, ...mov }]);
+          setField('addedExp', (prev) => [...(prev || []), { id: expId, ...mov }]);
         } else {
           full.linkedExpId = null;
         }
-        setField('groupEntries', [...(st.groupEntries || []), full]);
+        setField('groupEntries', (prev) => [...(prev || []), full]);
         return id;
       },
       updateGroupEntry: (id, partial) => {
@@ -609,9 +653,9 @@ export function StoreProvider({ children }) {
       deleteGroupEntry: (id) => {
         const st = getState();
         const entry = (st.groupEntries || []).find((e) => e.id === id);
-        setField('groupEntries', (st.groupEntries || []).filter((e) => e.id !== id));
+        setField('groupEntries', (prev) => (prev || []).filter((e) => e.id !== id));
         if (entry && entry.linkedExpId) {
-          setField('addedExp', (st.addedExp || []).filter((x) => x.id !== entry.linkedExpId));
+          setField('addedExp', (prev) => (prev || []).filter((x) => x.id !== entry.linkedExpId));
         }
       },
       /* Ligar/desligar o reflexo de um grupo inteiro: cria ou apaga os
@@ -641,9 +685,16 @@ export function StoreProvider({ children }) {
 
       // balance readings (balanceLog) — dated balance snapshots per account.
       setBalanceLog: (balanceLog) => setField('balanceLog', balanceLog),
-      addBalanceReading: ({ account, value, date }) => {
+      /* `note` é OPCIONAL e aditivo: sem ele (o caminho manual,
+         BalanceUpdateSheet) a nota anterior da conta mantém-se, exactamente
+         como antes. Com ele (update_balance do assistente) a nota nova
+         substitui a anterior. O resto desta action continua a ler getState()
+         uma vez: o snapshot patrimonial precisa do estado COMBINADO (saldos
+         novos + o resto), coisa que um atualizador por slice não vê. */
+      addBalanceReading: ({ account, value, date, note }) => {
         const st = getState();
         const v = Number(value) || 0;
+        const hasNote = note != null && note !== '';
         const acctKey = account.custom ? account.id : account.bank + '_' + account.type;
         const reading = {
           id: uid(),
@@ -654,19 +705,19 @@ export function StoreProvider({ children }) {
           date,
           createdAt: Date.now(),
         };
-        setField('balanceLog', [...(st.balanceLog || []), reading]);
+        setField('balanceLog', (prev) => [...(prev || []), reading]);
         // Update the live balance so compute()/net worth reflect the new value.
         const dDot = (date || '').replace(/-/g, '.');
         let nextDyn = st.dynAccts ? { ...st.dynAccts } : {};
         let nextCustom = st.customAccts || [];
         if (account.custom) {
           nextCustom = (st.customAccts || []).map((a) =>
-            a.id === account.id ? { ...a, value: v, updated: dDot } : a
+            a.id === account.id ? { ...a, value: v, updated: dDot, ...(hasNote ? { note } : {}) } : a
           );
           setField('customAccts', nextCustom);
         } else {
           const prev = nextDyn[acctKey] || {};
-          nextDyn[acctKey] = { v, d: dDot, n: prev.n || null };
+          nextDyn[acctKey] = { v, d: dDot, n: hasNote ? note : prev.n || null };
           setField('dynAccts', nextDyn);
         }
         // Upsert a patrimonial snapshot for this date so the evolution charts
@@ -683,105 +734,101 @@ export function StoreProvider({ children }) {
 
       // categories (bdg)
       setBdg: (bdg) => setField('bdg', bdg),
-      addCategory: (cat) => setField('bdg', [...(getState().bdg || []), cat]),
+      addCategory: (cat) => setField('bdg', (prev) => [...(prev || []), cat]),
       updateCategory: (id, cat) =>
-        setField('bdg', (getState().bdg || []).map((b) => (b.id === id ? { ...b, ...cat } : b))),
-      deleteCategory: (id) => setField('bdg', (getState().bdg || []).filter((b) => b.id !== id)),
+        setField('bdg', (prev) => (prev || []).map((b) => (b.id === id ? { ...b, ...cat } : b))),
+      deleteCategory: (id) => setField('bdg', (prev) => (prev || []).filter((b) => b.id !== id)),
 
       // goals
       setGoals: (goals) => setField('goals', goals),
-      addGoal: (goal) => setField('goals', [...(getState().goals || []), goal]),
+      addGoal: (goal) => setField('goals', (prev) => [...(prev || []), goal]),
       updateGoal: (id, goal) =>
-        setField('goals', (getState().goals || []).map((g) => (g.id === id ? { ...g, ...goal } : g))),
-      deleteGoal: (id) => setField('goals', (getState().goals || []).filter((g) => g.id !== id)),
+        setField('goals', (prev) => (prev || []).map((g) => (g.id === id ? { ...g, ...goal } : g))),
+      deleteGoal: (id) => setField('goals', (prev) => (prev || []).filter((g) => g.id !== id)),
 
       // recurring
       setRecurring: (recurring) => setField('recurring', recurring),
-      addRecurring: (r) => setField('recurring', [...(getState().recurring || []), r]),
+      addRecurring: (r) => setField('recurring', (prev) => [...(prev || []), r]),
       updateRecurring: (id, r) =>
-        setField('recurring', (getState().recurring || []).map((x) => (x.id === id ? { ...x, ...r } : x))),
-      deleteRecurring: (id) => setField('recurring', (getState().recurring || []).filter((x) => x.id !== id)),
+        setField('recurring', (prev) => (prev || []).map((x) => (x.id === id ? { ...x, ...r } : x))),
+      deleteRecurring: (id) => setField('recurring', (prev) => (prev || []).filter((x) => x.id !== id)),
 
       // incomes
       setIncomes: (incomes) => setField('incomes', incomes),
-      addIncome: (i) => setField('incomes', [...(getState().incomes || []), i]),
+      addIncome: (i) => setField('incomes', (prev) => [...(prev || []), i]),
       updateIncome: (id, i) =>
-        setField('incomes', (getState().incomes || []).map((x) => (x.id === id ? { ...x, ...i } : x))),
-      deleteIncome: (id) => setField('incomes', (getState().incomes || []).filter((x) => x.id !== id)),
+        setField('incomes', (prev) => (prev || []).map((x) => (x.id === id ? { ...x, ...i } : x))),
+      deleteIncome: (id) => setField('incomes', (prev) => (prev || []).filter((x) => x.id !== id)),
 
       // custom accounts
       setCustomAccts: (customAccts) => setField('customAccts', customAccts),
-      addCustomAcct: (a) => setField('customAccts', [...(getState().customAccts || []), a]),
+      addCustomAcct: (a) => setField('customAccts', (prev) => [...(prev || []), a]),
       updateCustomAcct: (id, a) =>
-        setField('customAccts', (getState().customAccts || []).map((x) => (x.id === id ? { ...x, ...a } : x))),
+        setField('customAccts', (prev) => (prev || []).map((x) => (x.id === id ? { ...x, ...a } : x))),
       // Delete a custom account AND purge its balance readings (acctKey === id).
       deleteCustomAcct: (id) => {
-        const st = getState();
-        setField('customAccts', (st.customAccts || []).filter((x) => x.id !== id));
-        setField('balanceLog', (st.balanceLog || []).filter((r) => r.acctKey !== id));
+        setField('customAccts', (prev) => (prev || []).filter((x) => x.id !== id));
+        setField('balanceLog', (prev) => (prev || []).filter((r) => r.acctKey !== id));
       },
       // Settle all manual, unsettled transactions allocated to an account label
       // ("banco · tipo"). Called when the user sets a fresh balance (edit/reading)
       // so those expenses/incomes stop re-adjusting the new base going forward.
       settleAccount: (label) => {
-        const st = getState();
         const ln = normAcct(label);
-        const exp = st.addedExp || [];
-        if (exp.some((x) => !x.imported && !x.settled && normAcct(x.acct) === ln)) {
-          setField(
-            'addedExp',
-            exp.map((x) => (!x.imported && !x.settled && normAcct(x.acct) === ln ? { ...x, settled: true } : x))
-          );
-        }
-        const inc = st.incomes || [];
-        if (inc.some((i) => !i.imported && !i.settled && i.recurring === false && normAcct(i.acct) === ln)) {
-          setField(
-            'incomes',
-            inc.map((i) =>
-              !i.imported && !i.settled && i.recurring === false && normAcct(i.acct) === ln ? { ...i, settled: true } : i
-            )
-          );
-        }
+        // Cada slice devolve o MESMO array quando não há nada a saldar — o
+        // reducer guarda a referência tal e qual, por isso não há re-persist
+        // nem re-render por uma slice intocada (era o que o `if (some(...))`
+        // de fora garantia antes).
+        setField('addedExp', (prev) => {
+          const exp = prev || [];
+          const hit = (x) => !x.imported && !x.settled && normAcct(x.acct) === ln;
+          return exp.some(hit) ? exp.map((x) => (hit(x) ? { ...x, settled: true } : x)) : exp;
+        });
+        setField('incomes', (prev) => {
+          const inc = prev || [];
+          const hit = (i) => !i.imported && !i.settled && i.recurring === false && normAcct(i.acct) === ln;
+          return inc.some(hit) ? inc.map((i) => (hit(i) ? { ...i, settled: true } : i)) : inc;
+        });
         // Saldar o lado da transferência que toca nesta conta (per-side).
-        const trs = st.transfers || [];
-        if (trs.some((t) => (!t.settledFrom && normAcct(t.from) === ln) || (!t.settledTo && normAcct(t.to) === ln))) {
-          setField(
-            'transfers',
-            trs.map((t) => {
-              let n = t;
-              if (!t.settledFrom && normAcct(t.from) === ln) n = { ...n, settledFrom: true };
-              if (!t.settledTo && normAcct(t.to) === ln) n = { ...n, settledTo: true };
-              return n;
-            })
-          );
-        }
+        setField('transfers', (prev) => {
+          const trs = prev || [];
+          const hit = (t) => (!t.settledFrom && normAcct(t.from) === ln) || (!t.settledTo && normAcct(t.to) === ln);
+          if (!trs.some(hit)) return trs;
+          return trs.map((t) => {
+            let n = t;
+            if (!t.settledFrom && normAcct(t.from) === ln) n = { ...n, settledFrom: true };
+            if (!t.settledTo && normAcct(t.to) === ln) n = { ...n, settledTo: true };
+            return n;
+          });
+        });
       },
       // Remove a TEMPLATE account that was activated via a balance reading: drop
       // its dynAccts override AND its balance readings (acctKey === "bank_type").
       removeDynAcct: (key) => {
-        const st = getState();
-        const dyn = st.dynAccts ? { ...st.dynAccts } : {};
-        delete dyn[key];
-        setField('dynAccts', dyn);
-        setField('balanceLog', (st.balanceLog || []).filter((r) => r.acctKey !== key));
+        setField('dynAccts', (prev) => {
+          const dyn = prev ? { ...prev } : {};
+          delete dyn[key];
+          return dyn;
+        });
+        setField('balanceLog', (prev) => (prev || []).filter((r) => r.acctKey !== key));
       },
 
       // rules
       setRules: (rules) => setField('rules', rules),
-      addRule: (r) => setField('rules', [...(getState().rules || []), r]),
-      updateRule: (id, r) => setField('rules', (getState().rules || []).map((x) => (x.id === id ? { ...x, ...r, id } : x))),
-      deleteRule: (id) => setField('rules', (getState().rules || []).filter((x) => x.id !== id)),
+      addRule: (r) => setField('rules', (prev) => [...(prev || []), r]),
+      updateRule: (id, r) => setField('rules', (prev) => (prev || []).map((x) => (x.id === id ? { ...x, ...r, id } : x))),
+      deleteRule: (id) => setField('rules', (prev) => (prev || []).filter((x) => x.id !== id)),
 
       // runtime (NOT persisted) — expense-month index used by monthlySummary
       setEm: (em) => setField('em', em),
       // Desliza a janela de meses (mOff ≤ 0). Ao mudar de janela o mês
       // selecionado passa a ser o último da nova janela (em=3).
       setTaxCfg: (taxCfg) => setField('taxCfg', taxCfg),
-      dismissAnomaly: (id) => {
-        const cur = getState().dismissedAnomalies || [];
-        if (cur.indexOf(id) > -1) return;
-        setField('dismissedAnomalies', [...cur, id]);
-      },
+      dismissAnomaly: (id) =>
+        setField('dismissedAnomalies', (prev) => {
+          const cur = prev || [];
+          return cur.indexOf(id) > -1 ? cur : [...cur, id];
+        }),
       /* Reforça de uma vez todas as metas com reserva mensal definida:
          current += min(monthly, o que falta) e marca lastAlloc com o mês, para
          não reforçar duas vezes no mesmo mês. Devolve o total alocado. */
