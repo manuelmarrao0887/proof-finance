@@ -910,7 +910,7 @@ const readTools = {
     description: 'Orcamento vs gasto real por categoria num mes.',
     run(args, { state }) {
       const month = args.month || currentYm();
-      const m = monthEffectiveLimits(state.addedExp || [], state.bdg || [], month, !!state.rollover);
+      const m = monthEffectiveLimits(state.addedExp || [], state.bdg || [], month, !!state.rolloverOn);
       const categories = (state.bdg || []).map((b) => ({
         id: b.id,
         nm: b.nm,
@@ -2344,7 +2344,7 @@ export function buildAIContext(state) {
   } catch (e) {
     // Estado incompleto (utilizador novo): seguimos com zeros.
   }
-  const lim = monthEffectiveLimits(s.addedExp || [], s.bdg || [], month, !!s.rollover);
+  const lim = monthEffectiveLimits(s.addedExp || [], s.bdg || [], month, !!s.rolloverOn);
   return {
     today,
     month,
@@ -3075,7 +3075,7 @@ Expected: build sem erros.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/views/AIView.jsx src/views/aiView.chat.test.jsx src/lib/aiChat.js src/modals/AssistantSheet.jsx
+git add src/views/AIView.jsx src/views/aiView.chat.test.jsx
 git commit -m "refactor(ia): AIView usa o motor de tool-calling
 
 O chat deixa de montar prompts e de aplicar accoes a mao; passa por
