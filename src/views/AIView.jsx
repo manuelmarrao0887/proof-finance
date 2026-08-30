@@ -11,8 +11,9 @@
    O chat (sendAI) já não monta o próprio prompt nem aplica ações à mão: usa
    runAssistant/confirmPending de lib/aiChat.js, o mesmo motor de tool-calling
    da AssistantSheet — ver Task 12. O painel de import continua a usar callAI
-   (lib/ai.js) com o signature (content, system, apiKey, onResult); o task
-   prompt vai num bloco {type:'text', text:PROMPT} em `content` (STORE_API §4).
+   (lib/ai.js) com a assinatura (content, system, onResult, opts) — o `opts.tier`
+   é o tier escolhido em Definições (state.aiTier); o task prompt vai num bloco
+   {type:'text', text:PROMPT} em `content` (STORE_API §4).
    ════════════════════════════════════════════════════════════════════════ */
 
 import React, { useState, useCallback } from 'react';
@@ -172,7 +173,6 @@ export default function AIView() {
   const [aiImportSel, setAiImportSel] = useState({}); // {idx: true}
   const [chat, setChat] = useState('');
 
-  const apiKey = state.apiKey;
   const aiHistory = state.aiHistory || [];
 
   /* sendAI — o chat passa a usar o motor de tool-calling partilhado com a
@@ -189,6 +189,9 @@ export default function AIView() {
       // leitura veem a app em modo de demonstracao (ver aiChat.js).
       currentUser,
       systemPrompt: ASSISTANT_SYSTEM + '\n\nCONTEXTO:\n' + JSON.stringify(buildAIContext(st)),
+      // Tier escolhido em Definições (SettingsSheet) — aiChat.js é um módulo
+      // puro sem acesso ao store, por isso lê-se aqui e passa-se explícito.
+      tier: st.aiTier,
     })
       .then((res) => {
         const applied = res.applied || [];
@@ -282,6 +285,9 @@ export default function AIView() {
           setAiImportSel(sel);
         }
       };
+      // Tier escolhido em Definições (SettingsSheet) — callAI aplica o chão
+      // mínimo (equilibrado) por dentro, mesmo com economico aqui.
+      const aiOpts = { tier: state.aiTier };
       if (isPDF) {
         readFileB64(file).then((b64) => {
           callAI(
@@ -290,8 +296,8 @@ export default function AIView() {
               { type: 'text', text: AI_IMPORT_PROMPT },
             ],
             undefined,
-            apiKey,
-            handler
+            handler,
+            aiOpts
           );
         });
       } else if (isXLS) {
@@ -304,8 +310,8 @@ export default function AIView() {
           callAI(
             [{ type: 'text', text: 'Dados do ficheiro (' + (file.name || '') + '):\n\n' + csv + '\n\n' + AI_IMPORT_PROMPT }],
             undefined,
-            apiKey,
-            handler
+            handler,
+            aiOpts
           );
         });
       } else {
@@ -316,13 +322,13 @@ export default function AIView() {
               { type: 'text', text: AI_IMPORT_PROMPT },
             ],
             undefined,
-            apiKey,
-            handler
+            handler,
+            aiOpts
           );
         });
       }
     },
-    [apiKey, toast]
+    [state.aiTier, toast]
   );
 
   /* ── selection helpers (orig 2714-2726). ───────────────────────────────── */

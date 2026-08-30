@@ -13,11 +13,25 @@
 //   - Tetos em max_tokens, tamanho do corpo e número de tool_calls por resposta.
 //   - Mensagens de erro internas nunca saem para o cliente (só para o log).
 
+// Tres tiers, do mais barato ao mais caro — todos verificados na API viva da
+// OpenRouter a suportar tools, entrada de imagem e `data_collection: 'deny'`
+// (ver PROVIDER_POLICY). Preco por milhao de tokens, entrada/saida:
 export const MODEL_TIERS = {
-  fast: 'google/gemini-3.5-flash-lite',
-  strong: 'google/gemini-3.7-flash',
+  economico: 'google/gemini-3.5-flash-lite', // 0.30 / 2.50 $
+  equilibrado: 'google/gemini-3.7-flash', // 0.75 / 3.75 $
+  avancado: 'anthropic/claude-haiku-4.5', // 1.00 / 5.00 $
 };
-export const DEFAULT_TIER = 'fast';
+export const DEFAULT_TIER = 'economico';
+
+// Alias LEGADO: um browser a correr o bundle publicado ANTES desta funcao
+// ainda manda 'fast'/'strong' (os dois tiers antigos) enquanto o deploy novo
+// do servidor ja esta no ar — a janela entre o deploy do backend e o
+// utilizador recarregar a app. Sem isto, esse pedido caia no fallback de
+// "tier desconhecido" (DEFAULT_TIER) mesmo quando o utilizador tinha
+// escolhido explicitamente o tier mais caro ('strong'). Mapeia para o tier
+// novo equivalente; nunca para um id de modelo.
+const LEGACY_TIER_ALIASES = { fast: 'economico', strong: 'equilibrado' };
+
 export const MAX_TOKENS_CAP = 8000;
 export const MIN_TOKENS = 256;
 export const MAX_TOOL_CALLS = 8;
@@ -37,9 +51,12 @@ function bad(status, message) {
 }
 
 // O cliente manda um tier, não um id de modelo. Qualquer coisa fora da tabela
-// cai no tier barato — nunca num modelo caro por engano.
+// (incluindo um id de modelo cru) cai no tier barato — nunca num modelo caro
+// por engano. Os aliases legado resolvem-se primeiro; um alias que por
+// alguma razão não estivesse em MODEL_TIERS cairia no mesmo fallback.
 export function resolveModel(tier) {
-  return MODEL_TIERS[tier] || MODEL_TIERS[DEFAULT_TIER];
+  const resolved = LEGACY_TIER_ALIASES[tier] || tier;
+  return MODEL_TIERS[resolved] || MODEL_TIERS[DEFAULT_TIER];
 }
 
 // Um modelo em ciclo pode pedir dezenas de tools numa só resposta; cortamos

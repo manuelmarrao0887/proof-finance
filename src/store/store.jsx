@@ -33,6 +33,16 @@ import { uid } from '../lib/format.js';
 import { applySameBeneficiaryCategory } from '../lib/dedupe.js';
 import { groupCatMeta } from '../lib/split.js';
 
+// Tiers do assistente de IA que o utilizador pode escolher (SettingsSheet),
+// do mais barato ao mais caro. Espelham os tiers de api/ai.js — mas NÃO os
+// importam: api/ (Vercel serverless) e src/ (bundle do cliente) são builds
+// separados, e este array é só o whitelist do lado do cliente para validar
+// o que fica persistido (ver hydrateFromDoc/buildPersistPayload abaixo). O
+// servidor continua a ser a única autoridade sobre que modelo cada tier
+// resolve — mudar aqui não muda o que /api/ai aceita.
+export const AI_TIERS = ['economico', 'equilibrado', 'avancado'];
+const DEFAULT_AI_TIER = 'economico';
+
 // Id reservado do próprio utilizador nos grupos (nunca existe em state.people).
 export const ME_ID = 'me';
 // Paleta dos avatares das pessoas (tokens do sistema visual).
@@ -158,6 +168,7 @@ export function initialPersisted() {
     people: [], // contactos locais para grupos { id, name, color, createdAt }
     groups: [], // grupos de despesas partilhadas { id, name, emoji, type, currency, memberIds, start, end, reflectMine, archived, createdAt }
     groupEntries: [], // despesas e acertos dos grupos (ver lib/split.js)
+    aiTier: DEFAULT_AI_TIER, // tier do assistente escolhido pelo utilizador — ver AI_TIERS
   };
 }
 
@@ -201,6 +212,7 @@ export const PERSISTED_KEYS = [
   'people',
   'groups',
   'groupEntries',
+  'aiTier',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -236,6 +248,9 @@ export function buildPersistPayload(state) {
     people: state.people || [],
     groups: state.groups || [],
     groupEntries: state.groupEntries || [],
+    // Guardado (não só `|| default`): um estado com um tier inválido nunca
+    // deve chegar a escrever lixo no Firestore — só o whitelist AI_TIERS.
+    aiTier: AI_TIERS.includes(state.aiTier) ? state.aiTier : DEFAULT_AI_TIER,
   };
 }
 
@@ -278,6 +293,11 @@ export function hydrateFromDoc(d) {
     people: Array.isArray(d.people) ? d.people : [],
     groups: Array.isArray(d.groups) ? d.groups : [],
     groupEntries: Array.isArray(d.groupEntries) ? d.groupEntries : [],
+    // Guardado contra o whitelist: um tier desconhecido no doc (lixo, campo
+    // corrompido, ou o alias 'fast'/'strong' do SERVIDOR — que nunca é um
+    // tier válido do lado do cliente) cai no default em vez de seguir tal e
+    // qual até ao corpo do pedido a /api/ai.
+    aiTier: AI_TIERS.includes(d.aiTier) ? d.aiTier : DEFAULT_AI_TIER,
   };
 }
 
@@ -496,6 +516,10 @@ export function StoreProvider({ children }) {
       setBalancesHidden: (b) => setField('balancesHidden', !!b),
       setHousing: (h) => setField('housing', h || null),
       setRolloverOn: (b) => setField('rolloverOn', !!b),
+      // Tier do assistente de IA — guardado contra AI_TIERS, tal como a
+      // leitura do Firestore (hydrateFromDoc): um valor fora do whitelist
+      // nunca fica gravado no estado, mesmo que um chamador passe lixo.
+      setAiTier: (t) => setField('aiTier', AI_TIERS.includes(t) ? t : DEFAULT_AI_TIER),
       // posições de investimento
       addPosition: (p) => setField('positions', (prev) => [...(prev || []), p]),
       updatePosition: (id, p) =>

@@ -15,9 +15,18 @@ import { TOOL_SCHEMAS, execTool, WRITE_TOOL_SLICES } from './aiTools.js';
 
 export const MAX_ROUNDS = 4;
 
-// Preço do tier `fast` (google/gemini-3.5-flash-lite), USD por token.
-const PRICE_IN = 0.3 / 1_000_000;
-const PRICE_OUT = 2.5 / 1_000_000;
+// Preço por tier, USD por token (in/out) — verificado na API viva da
+// OpenRouter, mesmos valores de api/ai.js MODEL_TIERS. Um tier mais caro
+// custa 2-3x o economico; sem uma tabela por tier, a estimativa mostrada
+// ficava sempre ao preço barato mesmo quando a conversa corria noutro tier
+// (SettingsSheet já anuncia os três preços lado a lado — mostrar sempre o
+// mesmo número aqui contradizia isso).
+const TIER_PRICES = {
+  economico: { in: 0.3 / 1_000_000, out: 2.5 / 1_000_000 },
+  equilibrado: { in: 0.75 / 1_000_000, out: 3.75 / 1_000_000 },
+  avancado: { in: 1.0 / 1_000_000, out: 5.0 / 1_000_000 },
+};
+const DEFAULT_PRICE_TIER = 'economico';
 
 export const ASSISTANT_SYSTEM = [
   'Es o assistente financeiro da app PROOF. FINANCE. Respondes em portugues de Portugal.',
@@ -30,9 +39,14 @@ export const ASSISTANT_SYSTEM = [
 // Custo em DÓLARES (USD) — é assim que o OpenRouter cobra. Não há conversão
 // para euros aqui: precisaria de uma taxa de câmbio ao vivo e o valor é só
 // informativo, não vale o modo de falha extra. A UI mostra-o com prefixo "$".
-export function estimateCost(usage) {
+// `tier` é o tier em que a volta correu de facto (o chamador guarda-o por
+// turno — ver AssistantSheet — em vez de reler o tier ATUAL da store, que
+// pode já ter mudado desde essa volta). Um tier desconhecido/ausente cai no
+// preço economico, nunca em NaN nem a rebentar.
+export function estimateCost(usage, tier) {
   if (!usage) return 0;
-  return (usage.prompt_tokens || 0) * PRICE_IN + (usage.completion_tokens || 0) * PRICE_OUT;
+  const price = TIER_PRICES[tier] || TIER_PRICES[DEFAULT_PRICE_TIER];
+  return (usage.prompt_tokens || 0) * price.in + (usage.completion_tokens || 0) * price.out;
 }
 
 function addUsage(acc, u) {
@@ -131,7 +145,12 @@ export async function runAssistant(userText, opts) {
      aplicado, com error:true para as duas UIs mostrarem como erro. */
   try {
     for (let round = 0; round < MAX_ROUNDS; round++) {
-      const res = await chatFn(messages, { tools: TOOL_SCHEMAS, tier: 'fast', maxTokens: 2000 });
+      // O tier vem de opts.tier (o chamador lê state.aiTier — ver
+      // AssistantSheet/AIView) em vez de este módulo ir buscá-lo ao store: é
+      // um módulo puro, sem useStore. Sem tier explícito (testes antigos,
+      // chamadores que ainda não passam a opção) cai no mais barato — nunca
+      // num tier mais caro por omissão.
+      const res = await chatFn(messages, { tools: TOOL_SCHEMAS, tier: o.tier || 'economico', maxTokens: 2000 });
       usage = addUsage(usage, res && res.usage);
       const msg = messageOf(res);
       const calls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];

@@ -125,7 +125,9 @@ export default function ImportStatementSheet() {
       setStScanning(true);
       setStResult(null);
       setStSel({});
-      const apiKey = state.apiKey;
+      // Tier escolhido em Definições (SettingsSheet) — callAI aplica o chão
+      // mínimo (equilibrado) por dentro, mesmo com economico aqui.
+      const aiOpts = { tier: state.aiTier };
       // Chaves das despesas já existentes → deteta duplicados no preview.
       // exact = desc+valor+data; dayAmt = dia+valor (apanha desc diferente).
       const existing = (state.addedExp || []);
@@ -144,8 +146,8 @@ export default function ImportStatementSheet() {
               { type: 'text', text: STMT_PROMPT },
             ],
             undefined,
-            apiKey,
-            onRes
+            onRes,
+            aiOpts
           );
         });
       } else if (isXLS) {
@@ -186,8 +188,8 @@ export default function ImportStatementSheet() {
             callAI(
               [{ type: 'text', text: 'Dados do extrato bancário:\n\n' + csv + '\n\n' + STMT_PROMPT }],
               undefined,
-              null,
-              onRes
+              onRes,
+              aiOpts
             );
           });
         });
@@ -199,8 +201,8 @@ export default function ImportStatementSheet() {
               { type: 'text', text: STMT_PROMPT },
             ],
             undefined,
-            apiKey,
-            onRes
+            onRes,
+            aiOpts
           );
         });
       }

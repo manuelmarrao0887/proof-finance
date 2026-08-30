@@ -47,6 +47,8 @@ of runtime fields.
   groupEntries: [],                            // despesa: {id, groupId, kind:'expense', desc, amount, date, payerId,
                                                 //   splitMode, shares:[{personId,amount}], gcat, notes, reflect, linkedExpId, createdAt}
                                                 // acerto:  {id, groupId, kind:'settlement', fromId, toId, amount, date, method, createdAt}
+  aiTier: 'economico',                         // 'economico' | 'equilibrado' | 'avancado' — tier do assistente (SettingsSheet);
+                                                //   guardado contra AI_TIERS ao ler (hydrateFromDoc) e ao escrever (buildPersistPayload)
 }
 ```
 `PERSISTED_KEYS` (exported) é a lista canónica dos campos persistidos.
@@ -235,10 +237,12 @@ customAccts, rules, em, forecastMonths`.
   `keyName='cat'` for `addedExp`, `'category'` for import transactions (FIX 1).
 
 ### `lib/ai.js`
-- `callAI(content, system, apiKey, onResult)` → POST to Anthropic Messages,
-  model `claude-haiku-4-5`, max_tokens 16000, with JSON extraction + truncation
-  repair. `content` is the user message's content-block array; **append the task
-  prompt** as a `{type:'text', text: PROMPT}` block (as the original did).
+- `callAI(content, system, onResult, opts)` → POST via `/api/ai` (OpenRouter),
+  max_tokens 16000, with JSON extraction + truncation repair. `opts.tier` is the
+  user's chosen tier (`state.aiTier`); it passes through `TIER_FOR_MODEL` (floor:
+  never below `'equilibrado'` for documents — see §1). `content` is the user
+  message's content-block array; **append the task prompt** as a
+  `{type:'text', text: PROMPT}` block (as the original did).
 - Prompts: `STMT_PROMPT`, `RCPT_PROMPT`, `AI_IMPORT_PROMPT`, `JSON_SYSTEM`.
 - Files: `resizeImg(file,maxW?)`, `readFileB64(file)`, `parseExcel(file)` (xlsx).
 - `buildAIContext(state)` — **stub**; fill in a later stage (orig 2554).

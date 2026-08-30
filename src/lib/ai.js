@@ -4,8 +4,8 @@
    explicit args (no globals).
 
    Transporte: /api/ai (proxy OpenRouter, formato OpenAI). O cliente nunca
-   escolhe o modelo, só um tier ('fast'|'strong'); o servidor resolve-o e
-   guarda a key. Ver o bloco de transporte mais abaixo.
+   escolhe o modelo, só um tier ('economico'|'equilibrado'|'avancado'); o
+   servidor resolve-o e guarda a key. Ver o bloco de transporte mais abaixo.
    ════════════════════════════════════════════════════════════════════════ */
 
 import * as XLSX from 'xlsx';
@@ -75,10 +75,19 @@ export const JSON_SYSTEM = 'Responde APENAS JSON puro. Sem markdown, sem backtic
    antigos (import de extrato, atualizar saldo) continuem a montar blocos no
    formato Anthropic sem saberem que o provider mudou. */
 
-const DOC_MODELS = new Set(['claude-sonnet-5', 'claude-opus-5', 'strong']);
-
-export function TIER_FOR_MODEL(model) {
-  return DOC_MODELS.has(model) ? 'strong' : 'fast';
+// Chão (floor) para os chamadores de documento (callAI/callAIRaw): extrato
+// bancário, recibo, print de saldo. Um modelo barato a ler um extrato é uma
+// falsa economia — um valor mal lido entra errado nas contas do utilizador.
+// Nunca corre abaixo de 'equilibrado'; só 'avancado', escolhido
+// explicitamente pelo utilizador, sobe acima do chão. `tier` é o tier que o
+// chamador pediria SE não houvesse chão nenhum — nunca um id de modelo (isso
+// já não existe do lado do cliente desde que o servidor passou a resolver
+// três tiers em vez de dois). Qualquer coisa que não seja a string exata
+// 'avancado' — incluindo lixo, um sentinel antigo ou um typo — cai no chão:
+// o chão não pode ser contornado por acidente.
+const DOC_TIER_FLOOR = 'equilibrado';
+export function TIER_FOR_MODEL(tier) {
+  return tier === 'avancado' ? 'avancado' : DOC_TIER_FLOOR;
 }
 
 function dataUri(source) {
@@ -119,7 +128,7 @@ export function chat(messages, opts) {
         body: JSON.stringify({
           messages: messages,
           tools: o.tools && o.tools.length ? o.tools : undefined,
-          tier: o.tier || 'fast',
+          tier: o.tier || 'economico',
           max_tokens: o.maxTokens || 4000,
         }),
       }).then(function (r) {
@@ -173,22 +182,35 @@ function firstText(res) {
 
 /* callAIRaw — mantém a assinatura e a FORMA de resposta antigas
    ({content:[{type:'text',text}]}) para os chamadores existentes não mudarem.
-   Por dentro já é OpenRouter. */
-export function callAIRaw(content, system, model, maxTokens) {
+   Por dentro já é OpenRouter. `tier` passa por TIER_FOR_MODEL (chão mínimo
+   equilibrado) antes de chegar a chat() — nunca é enviado tal e qual. */
+export function callAIRaw(content, system, tier, maxTokens) {
   const messages = [
     { role: 'system', content: system || JSON_SYSTEM },
     { role: 'user', content: toOpenAIContent(content) },
   ];
-  return chat(messages, { tier: TIER_FOR_MODEL(model), maxTokens: maxTokens || 4000 }).then(function (res) {
+  return chat(messages, { tier: TIER_FOR_MODEL(tier), maxTokens: maxTokens || 4000 }).then(function (res) {
     return { content: [{ type: 'text', text: firstText(res) }], usage: res.usage || null };
   });
 }
 
-export function callAI(content, system, _apiKey, onResult) {
+/* callAI — serve sempre documentos (extrato bancário, recibo, print de
+   saldo). A assinatura ANTIGA `(content, system, _apiKey, onResult)` trazia
+   uma 3.ª posição ("_apiKey") morta desde a migração para o proxy /api/ai —
+   nunca lida no corpo da função. Corrigido (revisão 2026-08-31): removida
+   por completo em vez de deixada como placeholder; `onResult` passa para a
+   3.ª posição e um `opts` novo (objeto, para nunca ser ambíguo com uma
+   posição antiga) entra como 4.ª. `opts.tier` é o tier ESCOLHIDO PELO
+   UTILIZADOR (state.aiTier) — quem chama já o lê do store (ver
+   BalanceUpdateSheet/ImportStatementSheet/AIView) e o passa aqui. Passa
+   sempre por TIER_FOR_MODEL (chão mínimo equilibrado) antes de sair para a
+   rede: um utilizador em 'avancado' sobe para 'avancado'; qualquer outra
+   coisa (incluindo 'economico' ou opts em falta) fica em 'equilibrado' —
+   nunca abaixo disso, mesmo sem opts. */
+export function callAI(content, system, onResult, opts) {
+  const o = opts || {};
   const cb = typeof onResult === 'function' ? onResult : function () {};
-  // callAI usa 'strong' porque os seus chamadores são sempre documentos
-  // (extrato bancário, recibo, print de saldo).
-  callAIRaw(content, system, 'strong', 16000)
+  callAIRaw(content, system, o.tier, 16000)
     .then(function (d) {
       const txt = (d.content || []).map(function (i) { return i.text; }).join('');
       const m = txt.match(/\{[\s\S]*\}/);

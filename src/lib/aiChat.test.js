@@ -251,18 +251,72 @@ describe('runAssistant', () => {
   });
 });
 
+/* aiChat.js é um módulo puro (sem useStore) — o tier tem de chegar por
+   `opts.tier`, escolhido pelos chamadores (AssistantSheet/AIView, que leem
+   state.aiTier) em vez de o módulo ir buscá-lo ao store diretamente. Sem
+   isto, `runAssistant` hardcoded 'fast' e o seletor de modelo em
+   SettingsSheet não tinha efeito nenhum na conversa real. */
+describe('runAssistant — tier passado ao chatFn', () => {
+  it('usa o tier vindo de opts.tier', async () => {
+    const chatFn = vi.fn(() => Promise.resolve(say('ok')));
+    await runAssistant('x', { ...ctx(), chatFn, tier: 'avancado' });
+    expect(chatFn.mock.calls[0][1].tier).toBe('avancado');
+  });
+
+  it('sem opts.tier, usa "economico" por omissão (chamadores/testes antigos continuam a funcionar)', async () => {
+    const chatFn = vi.fn(() => Promise.resolve(say('ok')));
+    await runAssistant('x', { ...ctx(), chatFn });
+    expect(chatFn.mock.calls[0][1].tier).toBe('economico');
+  });
+
+  it('o tier é o mesmo em TODAS as voltas de tool-calling, não só na primeira', async () => {
+    const chatFn = vi
+      .fn()
+      .mockResolvedValueOnce(callTool('add_expense', { desc: 'Cafe', amount: 1.2 }))
+      .mockResolvedValueOnce(say('feito'));
+    await runAssistant('x', { ...ctx(), chatFn, tier: 'equilibrado' });
+    expect(chatFn.mock.calls[0][1].tier).toBe('equilibrado');
+    expect(chatFn.mock.calls[1][1].tier).toBe('equilibrado');
+  });
+});
+
+/* estimateCost — a partir de o tier ser escolhível (SettingsSheet), o preço
+   deixou de ser fixo: uma conversa a correr em equilibrado/avancado custa
+   2-3x mais do que economico, e SettingsSheet já anuncia os três preços
+   lado a lado. Um custo mostrado sempre ao preço economico, mesmo quando a
+   conversa correu noutro tier, é um número errado num sítio sobre dinheiro —
+   pior do que não mostrar nada. */
 describe('estimateCost', () => {
-  it('calcula o custo do tier fast em dolares', () => {
+  it('tier economico (ou omitido — era o único tier antes desta funcionalidade)', () => {
     // OpenRouter cobra em USD, sem conversao para euros — 1M tokens de
     // entrada = 0,30 USD; 1M de saida = 2,50 USD.
-    const c = estimateCost({ prompt_tokens: 1_000_000, completion_tokens: 0 });
+    const c = estimateCost({ prompt_tokens: 1_000_000, completion_tokens: 0 }, 'economico');
     expect(c).toBeCloseTo(0.3, 6);
-    const c2 = estimateCost({ prompt_tokens: 0, completion_tokens: 1_000_000 });
+    const c2 = estimateCost({ prompt_tokens: 0, completion_tokens: 1_000_000 }, 'economico');
     expect(c2).toBeCloseTo(2.5, 6);
+    // sem tier — tem de cair no mesmo preço que 'economico', não noutro.
+    expect(estimateCost({ prompt_tokens: 1_000_000, completion_tokens: 0 })).toBeCloseTo(0.3, 6);
   });
-  it('devolve 0 sem usage', () => {
+  it('tier equilibrado — preço diferente do economico, não o mesmo número reciclado', () => {
+    const c = estimateCost({ prompt_tokens: 1_000_000, completion_tokens: 0 }, 'equilibrado');
+    expect(c).toBeCloseTo(0.75, 6);
+    const c2 = estimateCost({ prompt_tokens: 0, completion_tokens: 1_000_000 }, 'equilibrado');
+    expect(c2).toBeCloseTo(3.75, 6);
+  });
+  it('tier avancado — o mais caro dos três', () => {
+    const c = estimateCost({ prompt_tokens: 1_000_000, completion_tokens: 0 }, 'avancado');
+    expect(c).toBeCloseTo(1.0, 6);
+    const c2 = estimateCost({ prompt_tokens: 0, completion_tokens: 1_000_000 }, 'avancado');
+    expect(c2).toBeCloseTo(5.0, 6);
+  });
+  it('um tier desconhecido cai num default são (economico), nunca rebenta nem dá NaN', () => {
+    const c = estimateCost({ prompt_tokens: 1_000_000, completion_tokens: 0 }, 'modelo-inventado');
+    expect(c).toBeCloseTo(0.3, 6);
+  });
+  it('devolve 0 sem usage, seja qual for o tier', () => {
     expect(estimateCost(null)).toBe(0);
     expect(estimateCost({})).toBe(0);
+    expect(estimateCost(null, 'avancado')).toBe(0);
   });
 });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   MODEL_TIERS,
+  DEFAULT_TIER,
   MAX_TOKENS_CAP,
   MAX_TOOL_CALLS,
   resolveModel,
@@ -11,17 +12,37 @@ import {
 } from './ai.js';
 
 describe('resolveModel', () => {
-  it('resolve os dois tiers conhecidos', () => {
-    expect(resolveModel('fast')).toBe('google/gemini-3.5-flash-lite');
-    expect(resolveModel('strong')).toBe('google/gemini-3.7-flash');
+  it('resolve os tres tiers conhecidos aos ids exatos verificados na OpenRouter', () => {
+    // Os ids sao o contrato: qualquer troca silenciosa de modelo (ex: um
+    // typo ao editar MODEL_TIERS) tem de rebentar este teste, nao só
+    // confirmar "e uma string nao vazia".
+    expect(resolveModel('economico')).toBe('google/gemini-3.5-flash-lite');
+    expect(resolveModel('equilibrado')).toBe('google/gemini-3.7-flash');
+    expect(resolveModel('avancado')).toBe('anthropic/claude-haiku-4.5');
   });
-  it('cai em fast para tier desconhecido, vazio ou ausente', () => {
-    expect(resolveModel('gpt-5')).toBe(MODEL_TIERS.fast);
-    expect(resolveModel('')).toBe(MODEL_TIERS.fast);
-    expect(resolveModel(undefined)).toBe(MODEL_TIERS.fast);
+  it('cai no tier economico para tier desconhecido, vazio ou ausente', () => {
+    expect(resolveModel('gpt-5')).toBe(MODEL_TIERS.economico);
+    expect(resolveModel('')).toBe(MODEL_TIERS.economico);
+    expect(resolveModel(undefined)).toBe(MODEL_TIERS.economico);
+    expect(DEFAULT_TIER).toBe('economico');
   });
   it('nao aceita um id de modelo cru vindo do cliente', () => {
-    expect(resolveModel('google/gemini-3.7-flash')).toBe(MODEL_TIERS.fast);
+    expect(resolveModel('google/gemini-3.7-flash')).toBe(MODEL_TIERS.economico);
+    expect(resolveModel('anthropic/claude-haiku-4.5')).toBe(MODEL_TIERS.economico);
+  });
+
+  // Regressao de deploy: um browser com o bundle ANTERIOR a esta funcao ainda
+  // manda 'fast'/'strong' (os dois tiers antigos) enquanto o deploy novo do
+  // servidor ja esta no ar. Sem este alias, esse pedido caia no tier
+  // economico (fallback de "desconhecido") mesmo quando o utilizador tinha
+  // escolhido 'strong' — uma troca de modelo silenciosa a meio do deploy.
+  describe('aliases legado (fast/strong)', () => {
+    it('fast mapeia para o tier economico novo', () => {
+      expect(resolveModel('fast')).toBe(MODEL_TIERS.economico);
+    });
+    it('strong mapeia para o tier equilibrado novo', () => {
+      expect(resolveModel('strong')).toBe(MODEL_TIERS.equilibrado);
+    });
   });
 });
 
@@ -42,9 +63,17 @@ describe('sanitizeRequest', () => {
   const base = { messages: [{ role: 'user', content: 'ola' }] };
 
   it('devolve o modelo do tier e as mensagens', () => {
-    const out = sanitizeRequest({ ...base, tier: 'strong' });
-    expect(out.model).toBe(MODEL_TIERS.strong);
+    const out = sanitizeRequest({ ...base, tier: 'avancado' });
+    expect(out.model).toBe(MODEL_TIERS.avancado);
     expect(out.messages).toEqual(base.messages);
+  });
+  // O cliente nunca escolhe o modelo — só um tier. Um `model` vindo do corpo
+  // tem de ser ignorado por completo: sem este teste, um sanitizeRequest que
+  // por engano lesse `body.model` passaria despercebido (o "id de modelo cru"
+  // só é testado em resolveModel, isolado do pedido completo).
+  it('ignora um `model` vindo do cliente — só o tier decide', () => {
+    const out = sanitizeRequest({ ...base, tier: 'economico', model: 'anthropic/claude-haiku-4.5' });
+    expect(out.model).toBe(MODEL_TIERS.economico);
   });
   it('limita max_tokens ao teto', () => {
     expect(sanitizeRequest({ ...base, max_tokens: 99999 }).max_tokens).toBe(MAX_TOKENS_CAP);

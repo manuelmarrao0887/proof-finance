@@ -50,6 +50,18 @@ const THEME_OPTIONS = [
   },
 ];
 
+// Tiers do assistente que o utilizador pode escolher, do mais barato ao mais
+// caro — espelha AI_TIERS/api/ai.js MODEL_TIERS (o servidor é sempre a
+// autoridade sobre o que cada nome resolve; isto é só a apresentação PT-PT).
+// Custo por mensagem é uma estimativa aproximada (conversa curta, tool-
+// calling típico), não uma medição — serve para o utilizador comparar os
+// três níveis entre si.
+const AI_TIER_OPTIONS = [
+  { id: 'economico', label: 'Económico', model: 'Gemini 3.5 Flash Lite', cost: '~$0,003 / mensagem' },
+  { id: 'equilibrado', label: 'Equilibrado', model: 'Gemini 3.7 Flash', cost: '~$0,007 / mensagem' },
+  { id: 'avancado', label: 'Avançado', model: 'Claude Haiku 4.5', cost: '~$0,010 / mensagem' },
+];
+
 export default function SettingsSheet() {
   const { state, actions, currentUser } = useStore();
   const { resetUser } = useAuth();
@@ -58,6 +70,7 @@ export default function SettingsSheet() {
   const toast = useToast();
 
   const curTheme = state.theme || 'system';
+  const curTier = state.aiTier || 'economico';
 
   /* ── sign-out (orig doLogout): signOutUser() then resetUser(). ──────────── */
   const onSignOut = useCallback(() => {
@@ -237,8 +250,51 @@ export default function SettingsSheet() {
             configurar aqui. (A key do utilizador guardada em claro foi removida:
             ver revisão de segurança 2026-08.) ── */}
       <div className="lb" style={{ marginBottom: 10 }}>Assistente IA</div>
-      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 20, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14, lineHeight: 1.5 }}>
         O assistente e o scanner de recibos correm através de um serviço seguro da app — não precisas de nenhuma chave. Se estiverem indisponíveis, é configuração do lado do servidor.
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        {AI_TIER_OPTIONS.map((t) => {
+          const on = curTier === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => actions.setAiTier(t.id)}
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: on ? '2px solid var(--blue)' : '1px solid var(--border)',
+                background: on ? 'var(--blue-soft)' : 'var(--surface)',
+                color: on ? 'var(--blue)' : 'var(--fg)',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+                marginBottom: 8,
+                fontFamily: 'inherit',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 13, fontWeight: 600 }}>{t.label}</span>
+                <span className="m" style={{ display: 'block', fontSize: 11, fontWeight: 400, color: on ? 'var(--blue)' : 'var(--text3)', marginTop: 2 }}>
+                  {t.model} &middot; {t.cost}
+                </span>
+              </span>
+              {on && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 20, lineHeight: 1.5 }}>
+        A importação de documentos (extratos, recibos, prints de saldo) usa sempre, pelo menos, o nível Equilibrado — um valor mal lido entra errado nas tuas contas, por isso a precisão importa mais do que a poupança nesses casos, mesmo com o Económico escolhido acima.
       </div>
 
       {/* ── Automacao ── */}

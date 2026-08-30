@@ -108,6 +108,11 @@ export default function AssistantSheet() {
     setBusy(true);
     // Snapshot ANTES de chamar o assistente — é para aqui que o Anular repõe.
     const before = snapshotSlices(actions.getState());
+    // Capturado UMA vez (não relido dentro do .then()): se o utilizador
+    // mudar o tier em Definições enquanto este pedido está no ar, o custo
+    // mostrado tem de refletir o tier em que ESTA volta correu, não o que
+    // está selecionado quando a resposta chega.
+    const tierAtSend = state.aiTier;
     runAssistant(cmd, {
       state: actions.getState(),
       actions,
@@ -116,6 +121,9 @@ export default function AssistantSheet() {
       currentUser,
       history: historyRef.current,
       systemPrompt: ASSISTANT_SYSTEM + '\n\nCONTEXTO:\n' + JSON.stringify(buildAIContext(actions.getState())),
+      // Tier escolhido em Definições (SettingsSheet) — aiChat.js é um módulo
+      // puro sem acesso ao store, por isso lê-se aqui e passa-se explícito.
+      tier: tierAtSend,
     })
       .then((res) => {
         // Só user/assistant com conteúdo entram no histórico seguinte — os
@@ -137,6 +145,10 @@ export default function AssistantSheet() {
             applied,
             pending: res.pending || [],
             usage: res.usage,
+            // Guardado por turno para o rodapé de custo (estimateCost) usar o
+            // preço do tier em que ESTA volta correu, não o tier atualmente
+            // selecionado (que pode ter mudado desde então).
+            tier: tierAtSend,
             undo: applied.length ? undoSnapshotFor(applied, before) : null,
             // runAssistant já não rejeita quando uma volta rebenta a meio:
             // devolve error:true com o que ficou aplicado até aí. A volta
@@ -325,7 +337,7 @@ export default function AssistantSheet() {
 
                 {t.usage ? (
                   <div className="lb" style={{ marginTop: 10, color: 'var(--fg-subtle)' }}>
-                    {'$' + estimateCost(t.usage).toFixed(4)}
+                    {'$' + estimateCost(t.usage, t.tier).toFixed(4)}
                   </div>
                 ) : null}
               </div>

@@ -5,7 +5,7 @@ vi.mock('../firebase/client.js', () => ({
 }));
 
 import { getIdToken } from '../firebase/client.js';
-import { toOpenAIContent, chat, callAIRaw, TIER_FOR_MODEL, buildAIContext } from './ai.js';
+import { toOpenAIContent, chat, callAI, callAIRaw, TIER_FOR_MODEL, buildAIContext } from './ai.js';
 
 function mockFetchOnce(payload, ok = true, status = 200) {
   global.fetch = vi.fn(() =>
@@ -51,14 +51,36 @@ describe('toOpenAIContent', () => {
   });
 });
 
-describe('TIER_FOR_MODEL', () => {
-  it('manda modelos de documento para strong', () => {
-    expect(TIER_FOR_MODEL('claude-sonnet-5')).toBe('strong');
-    expect(TIER_FOR_MODEL('claude-opus-5')).toBe('strong');
+/* TIER_FOR_MODEL — chão (floor) para os chamadores de documento (extrato
+   bancário, recibo, print de saldo via callAI/callAIRaw). Um modelo barato a
+   ler um extrato é uma falsa economia: um valor mal lido entra errado nas
+   contas do utilizador. Regra: nunca abaixo de 'equilibrado'; só 'avancado'
+   escolhido explicitamente sobe acima do chão — o argumento é o tier que o
+   chamador pediria SE não houvesse chão nenhum, nunca um id de modelo. */
+describe('TIER_FOR_MODEL — chão mínimo para documentos', () => {
+  it('utilizador em economico -> chão sobe para equilibrado (as 3 combinações do contrato)', () => {
+    expect(TIER_FOR_MODEL('economico')).toBe('equilibrado');
   });
-  it('manda o resto para fast', () => {
-    expect(TIER_FOR_MODEL('claude-haiku-4-5')).toBe('fast');
-    expect(TIER_FOR_MODEL(undefined)).toBe('fast');
+  it('utilizador em equilibrado -> fica em equilibrado (já está no chão)', () => {
+    expect(TIER_FOR_MODEL('equilibrado')).toBe('equilibrado');
+  });
+  it('utilizador em avancado -> sobe acima do chão, fica em avancado', () => {
+    expect(TIER_FOR_MODEL('avancado')).toBe('avancado');
+  });
+  it('sem tier (undefined/vazio) cai no chão, nunca em economico', () => {
+    expect(TIER_FOR_MODEL(undefined)).toBe('equilibrado');
+    expect(TIER_FOR_MODEL('')).toBe('equilibrado');
+  });
+  // "implementa de forma que o chão não possa ser contornado": só a string
+  // EXATA 'avancado' sobe acima do chão — um id de modelo cru, um sentinel
+  // antigo ('strong'/'claude-opus-5') ou um typo têm todos de cair no chão,
+  // nunca escapar por acidente para um valor que a tabela do servidor não
+  // reconheça (e que resolveria em economico do lado do servidor).
+  it('nada além da string exata "avancado" contorna o chão', () => {
+    expect(TIER_FOR_MODEL('strong')).toBe('equilibrado');
+    expect(TIER_FOR_MODEL('claude-opus-5')).toBe('equilibrado');
+    expect(TIER_FOR_MODEL('avancadoX')).toBe('equilibrado');
+    expect(TIER_FOR_MODEL('AVANCADO')).toBe('equilibrado');
   });
 });
 
@@ -76,6 +98,13 @@ describe('chat', () => {
     expect(body.tools).toHaveLength(1);
     expect(body.max_tokens).toBe(1000);
     expect(out.usage.total_tokens).toBe(5);
+  });
+
+  it('sem opts.tier, manda o tier economico (nunca um alias legado)', async () => {
+    mockFetchOnce({ choices: [{ message: { content: 'ok' } }], usage: { total_tokens: 5 } });
+    await chat([{ role: 'user', content: 'ola' }]);
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.tier).toBe('economico');
   });
 
   it('traduz erros conhecidos do upstream para PT', async () => {
@@ -163,6 +192,53 @@ describe('callAIRaw (compatibilidade)', () => {
     const body = JSON.parse(global.fetch.mock.calls[0][1].body);
     expect(body.messages[0]).toEqual({ role: 'system', content: 'as instrucoes' });
     expect(body.messages[1].role).toBe('user');
+  });
+});
+
+/* callAI — os chamadores de documento (BalanceUpdateSheet, ImportStatementSheet,
+   painel de import do AIView) passam o tier do utilizador em opts.tier. Antes
+   desta correção, `callAI(content, system, _apiKey, onResult)` não tinha
+   nenhuma posição para o tier — `_apiKey` era a 3.ª posição, sempre ignorada
+   — e callAIRaw recebia sempre `undefined`, portanto TIER_FOR_MODEL nunca via
+   'avancado': um utilizador que escolhesse Avançado em Definições não tinha
+   NENHUMA melhoria na leitura de extratos/recibos/prints, o oposto do que o
+   seletor promete. Cada teste espera pelo callback (onResult) para garantir
+   que o pedido HTTP já foi feito antes de inspecionar o corpo. */
+describe('callAI — tier chega ao pedido, com o chão para documentos', () => {
+  function runCallAI(opts) {
+    mockFetchOnce({ choices: [{ message: { content: '{"ok":true}' } }] });
+    return new Promise((resolve) => {
+      callAI('conteudo', 'sys', (res) => resolve(res), opts);
+    });
+  }
+
+  it('utilizador em avancado -> o pedido leva avancado (nao fica preso no chão)', async () => {
+    await runCallAI({ tier: 'avancado' });
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.tier).toBe('avancado');
+  });
+
+  it('utilizador em economico -> o pedido leva equilibrado (chão dos documentos)', async () => {
+    await runCallAI({ tier: 'economico' });
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.tier).toBe('equilibrado');
+  });
+
+  it('utilizador em equilibrado -> o pedido leva equilibrado', async () => {
+    await runCallAI({ tier: 'equilibrado' });
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.tier).toBe('equilibrado');
+  });
+
+  it('sem opts (chamador que ainda nao sabe o tier) continua a usar o chão', async () => {
+    await runCallAI(undefined);
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.tier).toBe('equilibrado');
+  });
+
+  it('a callback recebe o JSON extraido, como antes', async () => {
+    const res = await runCallAI({ tier: 'avancado' });
+    expect(res).toEqual({ ok: true });
   });
 });
 

@@ -40,6 +40,18 @@ describe('AIView — chat', () => {
     await waitFor(() => expect(screen.getByText(/45,20/)).toBeInTheDocument());
   });
 
+  // Mesmo requisito da AssistantSheet: o seletor de modelo em SettingsSheet
+  // só funciona no separador Assistente IA se este view ler state.aiTier e
+  // passá-lo ao motor partilhado — aiChat.js não tem acesso ao store.
+  it('passa o tier escolhido pelo utilizador (state.aiTier) ao runAssistant', async () => {
+    runAssistant.mockResolvedValue({ text: 'ok', applied: [], pending: [], usage: {} });
+    await renderWithStore(<AIView />, { fixture: { aiTier: 'equilibrado' } });
+    fireEvent.change(screen.getByPlaceholderText(/pergunta|regista|comando/i), { target: { value: 'x' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(runAssistant).toHaveBeenCalledTimes(1));
+    expect(runAssistant.mock.calls[0][1].tier).toBe('equilibrado');
+  });
+
   it('mostra o erro sem rebentar a view', async () => {
     runAssistant.mockRejectedValue(new Error('Demasiados pedidos. Tenta daqui a pouco.'));
     await renderWithStore(<AIView />);

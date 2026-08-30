@@ -66,7 +66,6 @@ export default function BalanceUpdateSheet() {
             { type: 'text', text: BALANCE_PROMPT },
           ],
           undefined,
-          state.apiKey,
           (res) => {
             const parsed = parseBalanceResult(res);
             if (parsed.error) {
@@ -76,11 +75,14 @@ export default function BalanceUpdateSheet() {
               setValue(String(parsed.value).replace('.', ','));
             }
             setStep('confirm');
-          }
+          },
+          // Tier escolhido em Definições (SettingsSheet) — callAI aplica o
+          // chão mínimo (equilibrado) por dentro, mesmo com economico aqui.
+          { tier: state.aiTier }
         );
       });
     },
-    [account, state.apiKey]
+    [account, state.aiTier]
   );
 
   const confirm = useCallback(() => {

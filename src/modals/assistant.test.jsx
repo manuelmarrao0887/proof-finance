@@ -5,11 +5,24 @@ import { renderWithStore } from '../test/renderWithStore.jsx';
 
 const runAssistant = vi.fn();
 const confirmPending = vi.fn(() => ({ ok: true, data: { deleted: true } }));
+// Preços por tier (mock, não os reais de aiChat.js) — só para distinguir nos
+// testes qual tier a folha passou a estimateCost(t.usage, t.tier). Se a
+// folha esquecer de passar t.tier (voltar a `estimateCost(t.usage)`), o
+// segundo argumento chega undefined e todos os tiers mostram o mesmo custo
+// (o de 'economico', aqui).
+const MOCK_PRICE = {
+  economico: { in: 3e-7, out: 2.5e-6 },
+  equilibrado: { in: 6e-7, out: 5e-6 },
+  avancado: { in: 1e-6, out: 8e-6 },
+};
 // O mock tem de exportar TUDO o que a AssistantSheet importa do modulo.
 vi.mock('../lib/aiChat.js', () => ({
   runAssistant: (...a) => runAssistant(...a),
   confirmPending: (...a) => confirmPending(...a),
-  estimateCost: (u) => ((u && u.prompt_tokens) || 0) * 3e-7 + ((u && u.completion_tokens) || 0) * 2.5e-6,
+  estimateCost: (u, tier) => {
+    const p = MOCK_PRICE[tier] || MOCK_PRICE.economico;
+    return ((u && u.prompt_tokens) || 0) * p.in + ((u && u.completion_tokens) || 0) * p.out;
+  },
   ASSISTANT_SYSTEM: 'sistema-de-teste',
   MAX_ROUNDS: 4,
 }));
@@ -36,6 +49,19 @@ describe('AssistantSheet', () => {
   it('a conversa é anunciada a leitores de ecrã (aria-live=polite)', async () => {
     const { container } = await openSheet();
     expect(container.querySelector('[aria-live="polite"]')).not.toBeNull();
+  });
+
+  // O seletor de modelo (SettingsSheet) só tem efeito se a folha lê
+  // state.aiTier e o passa ao motor de tool-calling — aiChat.js é um módulo
+  // puro e não pode ir buscá-lo ao store sozinho. Fixture com um tier não-
+  // default prova que a folha lê o STORE, não uma constante local.
+  it('passa o tier escolhido pelo utilizador (state.aiTier) ao runAssistant', async () => {
+    runAssistant.mockResolvedValue({ text: 'ok', applied: [], pending: [], usage: {} });
+    await renderWithStore(<AssistantSheet />, { openModal: 'assistant', fixture: { aiTier: 'avancado' } });
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'x' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(runAssistant).toHaveBeenCalled());
+    expect(runAssistant.mock.calls[0][1].tier).toBe('avancado');
   });
 
   it('envia o texto e mostra a resposta', async () => {
@@ -110,6 +136,23 @@ describe('AssistantSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
     // O OpenRouter cobra em USD — o rodape mostra dolares, nao euros.
     await waitFor(() => expect(screen.getByText(/^\$\d/)).toBeInTheDocument());
+  });
+
+  // O custo mostrado tem de refletir o tier em que a volta correu de facto
+  // (state.aiTier no momento do envio), não o tier economico sempre — sem
+  // isto, escolher Avançado em Definições não muda nada no rodapé do cartão.
+  it('o custo mostrado usa o tier escolhido pelo utilizador, não sempre o economico', async () => {
+    runAssistant.mockResolvedValue({
+      text: 'ok', applied: [], pending: [],
+      usage: { prompt_tokens: 1000, completion_tokens: 0 },
+    });
+    await renderWithStore(<AssistantSheet />, { openModal: 'assistant', fixture: { aiTier: 'avancado' } });
+    fireEvent.change(screen.getByPlaceholderText(/pergunta ou regista/i), { target: { value: 'x' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    // 1000 * MOCK_PRICE.avancado.in (1e-6) = $0.0010 — o preço economico
+    // (3e-7) daria $0.0003. Um valor errado aqui prova que t.tier não chegou
+    // a estimateCost.
+    await waitFor(() => expect(screen.getByText('$0.0010')).toBeInTheDocument());
   });
 
   it('mostra o erro quando o pedido falha', async () => {
