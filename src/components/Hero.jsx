@@ -18,6 +18,15 @@ export default function Hero() {
   const C = compute(s);
   const newU = isNewUser(s);
 
+  // Saldos protegidos: mascarar os montantes (número grande + linha
+  // Ativos/Dívida), mas manter o chip de % e o sparkline — nenhum dos dois
+  // revela um valor em euros, só a tendência. Mesmo idioma das outras views
+  // (state.balancesHidden), com um helper por formatador (fm vs fc) para não
+  // alterar o formato quando visível.
+  const hidden = !!state.balancesHidden;
+  const mv = (v) => (hidden ? '••••' : fm(v));
+  const mc = (v) => (hidden ? '••••' : fc(v));
+
   // Delta percentage relative to the base net worth (orig 2894-2896).
   const lastH = C.hist[C.hist.length - 1] || { liq: 0, poup: 0, inv: 0, div: 0 };
   const baseNW = lastH.liq + lastH.poup + lastH.inv - C.aD || 1;
@@ -87,11 +96,11 @@ export default function Hero() {
             zIndex: 1,
           }}
         >
-          {fm(C.nW)}
+          {mv(C.nW)}
         </div>
         <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, position: 'relative', zIndex: 1 }}>
-          Ativos {fc(gross)}
-          {C.debt > 0 ? ' · Dívida ' + fc(C.debt) : ''}
+          Ativos {mc(gross)}
+          {C.debt > 0 ? ' · Dívida ' + mc(C.debt) : ''}
         </div>
         {nwSeries.length > 1 && (
           <svg
