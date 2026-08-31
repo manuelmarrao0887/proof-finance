@@ -34,10 +34,19 @@ export default function AssistantFab() {
   // canto do viewport, não ao canto da coluna da app — por isso o wrapper
   // fixed replica o mesmo clamp/centragem, e o botão fica absoluto dentro
   // dele. Em modo desktop a shell ocupa a largura toda, por isso sem clamp.
+  //
+  // `top:0; bottom:0` é obrigatório aqui, não decorativo: um elemento
+  // position:fixed sem top/bottom cai no algoritmo de "static position" —
+  // como o único filho é position:absolute (não contribui para a altura do
+  // pai), a altura colapsa a 0 e o wrapper fica onde calhar no fluxo normal
+  // em vez de ancorado ao viewport. Sem isto o botão renderiza fora do ecrã
+  // (confirmado com getBoundingClientRect a ~2600px do topo em 390×844).
   const wrapStyle = {
     position: 'fixed',
+    top: 0,
     left: 0,
     right: 0,
+    bottom: 0,
     maxWidth: isDesktop ? 'none' : '480px',
     margin: '0 auto',
     pointerEvents: 'none',

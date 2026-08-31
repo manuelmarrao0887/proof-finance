@@ -11,11 +11,14 @@
    montagem/desmontagem ao estado dos modais (é isso que garante estabilidade
    quando um sheet abre/fecha). Estes testes replicam essa garantia. */
 import React from 'react';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { cleanup, act, screen, fireEvent } from '@testing-library/react';
 import { renderWithStore, captureConsole } from '../test/renderWithStore.jsx';
 import { richFixture } from '../test/fixtures.js';
-import { useUI } from '../store/ui.jsx';
+import { useUI, VALID_TABS } from '../store/ui.jsx';
 
 vi.mock('../firebase/client.js', () => ({
   auth: null, db: null, IS_FILE: false, initError: null,
@@ -41,13 +44,20 @@ vi.mock('../lib/lock.js', () => ({
 
 import Shell from './Shell.jsx';
 
-// Espelha VALID_TABS de ../store/ui.jsx — não está exportado de lá (só MODALS
-// está) e este ficheiro não pode tocar em ui.jsx (outra sessão trabalha nele
-// em paralelo). Ver o mesmo padrão em shell.nav.test.jsx. Manter sincronizado
-// se a lista de tabs mudar.
-const VALID_TABS = ['overview', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax'];
-
 const FAB_LABEL = 'Abrir assistente de IA';
+const IGNORE = [/not wrapped in act/i];
+const realMsgs = (list) => list.filter((m) => !IGNORE.some((re) => re.test(m)));
+
+// Lê o z-index real de .sheet-overlay em tokens.css em vez de o fixar a 150
+// — se a folha de estilos mudar, este teste falha em vez de ficar obsoleto.
+function readSheetOverlayZIndex() {
+  const dir = path.dirname(fileURLToPath(import.meta.url));
+  const css = fs.readFileSync(path.resolve(dir, '../styles/tokens.css'), 'utf8');
+  const m = css.match(/\.sheet-overlay\{[^}]*z-index:\s*(\d+)/);
+  if (!m) throw new Error('Não encontrei z-index de .sheet-overlay em tokens.css — a regra mudou de forma.');
+  return Number(m[1]);
+}
+const SHEET_OVERLAY_Z = readSheetOverlayZIndex();
 
 // Espera que os chunks lazy (views/modais) resolvam — mesmo padrão do
 // shell.nav.test.jsx (era flaky com um número fixo de ticks).
@@ -130,6 +140,11 @@ describe('AssistantFab — botão flutuante do assistente (presente em toda a ap
     } finally {
       cap.restore();
     }
+    // Abrir/fechar o sheet não deve gerar avisos do React (keys, act, props
+    // inválidas) — confirmaria uma desmontagem/remontagem mal-feita mesmo
+    // quando a asserção de identidade acima, por alguma razão, não a apanhasse.
+    expect(realMsgs(cap.errors)).toEqual([]);
+    expect(realMsgs(cap.warns)).toEqual([]);
   });
 
   it('nunca é descendente de um elemento com a classe "fadeUp" (guarda estrutural)', async () => {
@@ -147,13 +162,30 @@ describe('AssistantFab — botão flutuante do assistente (presente em toda a ap
     expect(sawAncestors).toBe(true); // garante que o loop realmente correu
   });
 
-  it('o wrapper fica sempre abaixo do sheet-overlay (z-index 70 < 150)', async () => {
+  it('o wrapper fica sempre abaixo do sheet-overlay (z-index 70 < valor real de .sheet-overlay)', async () => {
     await renderWithStore(<Shell />, { fixture: richFixture() });
     await settle();
     const btn = screen.getByRole('button', { name: FAB_LABEL });
     const wrap = btn.parentElement;
     expect(wrap.style.zIndex).toBe('70');
-    expect(Number(wrap.style.zIndex)).toBeLessThan(150);
+    expect(Number(wrap.style.zIndex)).toBeLessThan(SHEET_OVERLAY_Z);
+  });
+
+  it('o wrapper cobre o viewport (position:fixed com top/bottom, não só left/right)', async () => {
+    // Um fixed sem top/bottom colapsa a altura a 0 (o único filho é
+    // position:absolute e não contribui para a altura do pai) e cai no
+    // algoritmo de "static position" — o wrapper (e o botão lá dentro)
+    // rendeririam fora do ecrã. Ver AssistantFab.jsx.
+    await renderWithStore(<Shell />, { fixture: richFixture() });
+    await settle();
+    const btn = screen.getByRole('button', { name: FAB_LABEL });
+    const wrap = btn.parentElement;
+    expect(wrap.style.position).toBe('fixed');
+    expect(wrap.style.top).toBe('0px');
+    expect(wrap.style.bottom).toBe('0px');
+    expect(wrap.style.left).toBe('0px');
+    expect(wrap.style.right).toBe('0px');
+    expect(btn.style.position).toBe('absolute');
   });
 
   it('layout mobile: afasta-se da bottom nav e usa a coluna de 480px', async () => {
@@ -162,6 +194,9 @@ describe('AssistantFab — botão flutuante do assistente (presente em toda a ap
     await settle();
     const btn = screen.getByRole('button', { name: FAB_LABEL });
     const wrap = btn.parentElement;
+    expect(wrap.style.position).toBe('fixed');
+    expect(wrap.style.top).toBe('0px');
+    expect(btn.style.position).toBe('absolute');
     expect(btn.style.bottom).toMatch(/--nav-h/);
     expect(wrap.style.maxWidth).toBe('480px');
   });
@@ -172,6 +207,9 @@ describe('AssistantFab — botão flutuante do assistente (presente em toda a ap
     await settle();
     const btn = screen.getByRole('button', { name: FAB_LABEL });
     const wrap = btn.parentElement;
+    expect(wrap.style.position).toBe('fixed');
+    expect(wrap.style.top).toBe('0px');
+    expect(btn.style.position).toBe('absolute');
     expect(btn.style.bottom).not.toMatch(/--nav-h/);
     expect(wrap.style.maxWidth === 'none' || wrap.style.maxWidth === '').toBe(true);
   });

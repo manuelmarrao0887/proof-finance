@@ -5,6 +5,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { cleanup, act, screen } from '@testing-library/react';
 import { renderWithStore, captureConsole } from '../test/renderWithStore.jsx';
 import { richFixture, emptyFixture } from '../test/fixtures.js';
+import { VALID_TABS } from '../store/ui.jsx';
 
 vi.mock('../firebase/client.js', () => ({
   auth: null, db: null, IS_FILE: false, initError: null,
@@ -30,7 +31,9 @@ vi.mock('../lib/lock.js', () => ({
 
 import Shell from './Shell.jsx';
 
-const TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax'];
+// Lista real de ../store/ui.jsx (antes estava copiada à mão aqui e tinha
+// derivado — faltava 'groups', pelo que esta suite nunca exercia essa tab).
+const TABS = VALID_TABS;
 const MODALS = ['action', 'more', 'add', 'income', 'goal', 'rec', 'acct', 'transfer', 'cardpay', 'stmt', 'settings', 'position', 'housing', 'rules', 'cat', 'patchNotes', 'lock'];
 const IGNORE = [/not wrapped in act/i];
 const realErrors = (list) => list.filter((m) => !IGNORE.some((re) => re.test(m)));
