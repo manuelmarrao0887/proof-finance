@@ -11,6 +11,7 @@ import { isNewUser } from '../lib/finance.js';
 import { useDevice } from '../store/device.jsx';
 import Sidebar from './Sidebar.jsx';
 import DeviceToggle from './DeviceToggle.jsx';
+import AssistantFab from './AssistantFab.jsx';
 
 import Hero from './Hero.jsx';
 import ContextStrip from './ContextStrip.jsx';
@@ -291,6 +292,7 @@ export default function Shell() {
             </main>
           </div>
         </div>
+        <AssistantFab />
         {modals}
       </div>
     );
@@ -312,6 +314,7 @@ export default function Shell() {
 
       <BottomNav tab={tab} onTab={goTab} onPlus={() => open('action')} onMore={() => open('more')} />
 
+      <AssistantFab />
       {modals}
     </div>
   );
