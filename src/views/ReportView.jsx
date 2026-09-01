@@ -46,14 +46,16 @@ export default function ReportView() {
   return (
     <div className="fadeUp" style={{ padding: '0 20px calc(40px + var(--safe-bottom))' }}>
       {/* Seletor de mês */}
-      <div className="ms-bar" style={{ marginBottom: 16, overflowX: 'auto' }}>
+      {/* ms-wrap: grelha 3xN em vez de uma tira com scroll horizontal — os 6
+          meses somavam 456px de conteúdo e não cabiam em nenhum telemóvel. */}
+      <div className="ms-bar ms-wrap" style={{ marginBottom: 16 }}>
         {months.map((m) => (
           <button
             key={m.ym}
             type="button"
             className={'ms' + (ym === m.ym ? ' on' : '')}
             onClick={() => setYm(m.ym)}
-            style={{ whiteSpace: 'nowrap', padding: '8px 12px' }}
+            style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
           >
             {m.label}
           </button>

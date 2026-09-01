@@ -107,6 +107,7 @@ html[data-theme="dark"]{
 /* NOTE (scroll fix): original line 99 put `overscroll-behavior-y:none;touch-action:manipulation`
    on html,body which trapped the mouse wheel. Removed here; scoped to .scroll-body below.
    Body keeps overflow-x:hidden but scrolls vertically normally. */
+html{scrollbar-gutter:stable}
 html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-weight:400;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100vh;min-height:100svh;overflow-x:hidden;transition:background 0.3s,color 0.3s;text-rendering:optimizeLegibility;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{padding-left:var(--safe-left);padding-right:var(--safe-right);user-select:none;-webkit-user-select:none}
 input,textarea,[contenteditable]{user-select:text;-webkit-user-select:text}
@@ -140,8 +141,8 @@ select option{background:var(--bg2);color:var(--text)}
 .cd{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
 .cs{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;border-left:3px solid var(--danger);box-shadow:var(--shadow)}
 .rw{display:flex;justify-content:space-between;align-items:center}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .tab-bar{display:flex;padding:3px;margin:0 20px 20px;background:var(--elevated);border:1px solid var(--border);border-radius:14px;gap:2px}
 .tb{flex:1;padding:9px 4px;border:none;border-radius:11px;background:transparent;font-size:11px;font-weight:500;color:var(--fg-muted);white-space:nowrap;transition:all 0.2s;letter-spacing:0.04em;font-family:var(--mono);text-transform:uppercase}
 .tb.on{background:var(--primary);color:#fff;border:none;box-shadow:0 2px 6px rgba(59,111,238,0.30)}
@@ -150,6 +151,10 @@ select option{background:var(--bg2);color:var(--text)}
 .bar{height:4px;background:var(--elevated);overflow:hidden;margin-top:8px;border-radius:2px}
 .bar-fill{height:100%;border-radius:2px;transition:width 0.5s ease-out;background:var(--primary)}
 .ms-bar{display:flex;padding:3px;margin-bottom:16px;background:var(--elevated);border:1px solid var(--border);border-radius:14px;gap:2px}
+/* Variante que quebra para várias linhas em vez de gerar scroll horizontal
+   (o seletor de meses do Relatório tinha 456px de conteúdo num ecrã de 320). */
+.ms-bar.ms-wrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+.ms-bar.ms-wrap .ms{padding:8px 4px}
 .ms{flex:1;padding:8px 0;border:none;border-radius:11px;font-size:12px;font-weight:500;background:transparent;color:var(--fg-muted);transition:all 0.2s;font-family:var(--mono);letter-spacing:0.04em}
 .ms.on{background:var(--primary);color:#fff;border:none;box-shadow:0 2px 6px rgba(59,111,238,0.30)}
 .hero{position:relative;background:var(--grad-hero);border-radius:24px;padding:24px;color:#fff;overflow:hidden;box-shadow:var(--shadow-hero)}
@@ -216,9 +221,9 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .toast.undo{background:var(--fg);color:var(--bg);padding:8px 8px 8px 18px;border-radius:999px;display:flex;align-items:center;gap:14px;pointer-events:auto}
 .toast.undo button{background:var(--bg);color:var(--fg);border:none;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
 /* Action sheet */
-.sheet-overlay{position:fixed;inset:0;background:rgba(11,18,32,0.40);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:150;display:flex;flex-direction:column;justify-content:flex-end;animation:fadeIn 0.2s ease-out}
+.sheet-overlay{position:fixed;inset:0;background:rgba(11,18,32,0.40);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:150;display:flex;flex-direction:column;justify-content:flex-end;animation:fadeIn 0.2s ease-out;overscroll-behavior:contain;overflow:hidden}
 html[data-theme="dark"] .sheet-overlay{background:rgba(0,0,0,0.55)}
-.sheet-panel{background:var(--bg);border:1px solid var(--border);border-bottom:none;border-radius:18px 18px 0 0;padding:14px 16px calc(20px + var(--safe-bottom));animation:slideUp 0.3s var(--ease-ios);max-height:90vh;overflow:auto}
+.sheet-panel{background:var(--bg);border:1px solid var(--border);border-bottom:none;border-radius:18px 18px 0 0;padding:14px 16px calc(20px + var(--safe-bottom));animation:slideUp 0.3s var(--ease-ios);max-height:90vh;max-height:90dvh;overflow:auto;overscroll-behavior:contain}
 .sheet-grip{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto 14px}
 .sheet-item{width:100%;display:flex;align-items:center;gap:14px;padding:14px 14px;border:none;background:transparent;color:var(--fg);border-radius:14px;text-align:left;font-family:inherit}
 .sheet-item:hover{background:var(--surface)}
@@ -268,7 +273,7 @@ html[data-theme="dark"] .sheet-overlay{background:rgba(0,0,0,0.55)}
 .dnav-add{margin:8px 0;background:var(--grad-hero);color:#fff;justify-content:center;box-shadow:var(--shadow-hero)}
 .dnav-add:hover{color:#fff;opacity:0.95}
 .dspacer{flex:1}
-.dcontent{flex:1;min-width:0;height:100svh;overflow-y:auto}
+.dcontent{flex:1;min-width:0;height:100svh;overflow-y:auto;scrollbar-gutter:stable}
 .dmain{max-width:1140px;margin:0 auto;padding:24px 32px 64px}
 .dnarrow{max-width:760px;margin:0 auto}
 .dtophead{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:0 4px}

@@ -701,6 +701,11 @@ const GROUPS = [
     { id: 'T14.9', title: 'Tema segue o sistema', steps: ['Mudar iPhone para modo escuro/claro'], expect: 'A app e a cor da status bar acompanham (theme-color claro/escuro).' },
     { id: 'T14.10', title: 'Sheets respeitam a safe area', steps: ['Abrir um sheet (nova despesa) num iPhone com home indicator'], expect: 'O botão de ação e o fundo do sheet ficam acima do home indicator.' },
     { id: 'T14.11', title: 'Landscape legível', steps: ['Rodar o iPhone para horizontal'], expect: 'Layout continua legível e operável; sem conteúdo cortado pelos cantos/notch.' },
+    { id: 'T14.12', title: 'O fundo não faz scroll por trás de um popup', steps: ['Fazer scroll a meio de uma página', 'Abrir uma sheet (+, Mais, Definições, Assistente)', 'Tentar fazer scroll com o dedo/roda sobre a zona escurecida'], expect: 'O conteúdo de trás fica parado. Ao fechar a sheet, a página está exatamente onde estava (antes saltava, ex.: 250 → 650px).' },
+    { id: 'T14.13', title: 'Abrir um popup não desformata a página', steps: ['Reparar na largura/posição do conteúdo', 'Abrir e fechar uma sheet'], expect: 'Nada muda de largura nem se desloca lateralmente ao abrir/fechar (a goteira da barra de scroll está sempre reservada — scrollbar-gutter:stable).' },
+    { id: 'T14.14', title: 'Sheets não passam do ecrã visível no iPhone', steps: ['Safari com a barra de endereço visível', 'Abrir uma sheet alta (Definições, Importar extrato, Assistente)'], expect: 'O rodapé da sheet (botões Guardar/Cancelar) fica sempre visível — a altura usa dvh, não vh, por isso não conta com a barra de endereço recolhida.' },
+    { id: 'T14.15', title: 'Sem scroll horizontal em ecrãs pequenos (320px)', steps: ['Chrome DevTools a 320px de largura (ou iPhone SE)', 'Percorrer as 15 tabs', 'Abrir os 23 popups'], expect: 'Nenhum ecrã ou popup faz scroll lateral. Pontos que falhavam: seletor de meses do Relatório, grelha de categorias da Nova Despesa, par de datas Início/Fim no Grupo.' },
+    { id: 'T14.16', title: 'Seletor de meses do Relatório', steps: ['Mais → Relatórios num telemóvel'], expect: 'Os 6 meses aparecem numa grelha de 3 colunas (2 linhas), todos visíveis sem arrastar para o lado.' },
   ]},
 ];
 

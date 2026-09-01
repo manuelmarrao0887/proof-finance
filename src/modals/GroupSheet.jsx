@@ -314,8 +314,10 @@ export default function GroupSheet() {
         ))}
       </select>
 
+      {/* minWidth:0 — sem isto os <input type=date> impõem a largura intrínseca
+          deles e a linha passava dos 320px de ecrã (scroll horizontal). */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Início (opcional)</div>
           <input
             type="date"
@@ -325,7 +327,7 @@ export default function GroupSheet() {
             style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 14 }}
           />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Fim (opcional)</div>
           <input
             type="date"

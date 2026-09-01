@@ -811,7 +811,7 @@ function AIImportPanel({ aiImport, aiImportSel, onToggle, onSelectAll, onCancel,
           </div>
 
           {/* Action list */}
-          <div style={{ maxHeight: '50vh', overflow: 'auto' }}>
+          <div style={{ maxHeight: '50dvh', overflow: 'auto' }}>
             {actList.map((a, i) => {
               const info = actionLabel(a);
               const sel = !!aiImportSel[i];

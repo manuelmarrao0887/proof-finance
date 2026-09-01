@@ -10,6 +10,7 @@
 import React, { useEffect } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI, useModal } from '../store/ui.jsx';
+import { lockScroll, unlockScroll } from '../lib/scrollLock.js';
 
 const Chevron = (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fg-subtle)" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
@@ -37,6 +38,13 @@ export default function MoreMenu() {
   const { state } = useStore();
   const ui = useUI();
   const { isOpen, close } = useModal('more');
+
+  // Trava o scroll do fundo enquanto o menu está aberto (ver lib/scrollLock.js).
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    lockScroll();
+    return unlockScroll;
+  }, [isOpen]);
 
   // Escape-to-close while open (a11y).
   useEffect(() => {

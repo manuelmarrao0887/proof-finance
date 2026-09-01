@@ -196,14 +196,14 @@ export default function CalendarView() {
 
       {/* Calendar grid */}
       <div className="cd" style={{ padding: 14, marginBottom: 16 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 6 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,minmax(0,1fr))', gap: 2, marginBottom: 6 }}>
           {DOW.map((dn, i) => (
             <div key={i} style={{ textAlign: 'center', fontSize: 11, color: 'var(--text3)', fontWeight: 700, padding: '4px 0' }}>
               {dn}
             </div>
           ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2 }}>{cells}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,minmax(0,1fr))', gap: 2 }}>{cells}</div>
       </div>
 
       {/* Selected day details */}

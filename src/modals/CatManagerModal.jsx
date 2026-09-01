@@ -110,7 +110,7 @@ export default function CatManagerModal() {
     <Sheet open={isOpen} onClose={onClose} title="Gerir categorias">
       {/* List (FIX 3 — alphabetical) */}
       <div className="lb" style={{ marginBottom: 8 }}>{'Categorias (' + cats.length + ')'}</div>
-      <div style={{ maxHeight: '40vh', overflow: 'auto', marginBottom: 18, border: '1px solid var(--border)', borderRadius: 'var(--r2)' }}>
+      <div style={{ maxHeight: '40dvh', overflow: 'auto', marginBottom: 18, border: '1px solid var(--border)', borderRadius: 'var(--r2)' }}>
         {cats.map((b, i) => {
           const inUse = isInUse(b.id, state);
           return (

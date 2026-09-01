@@ -28,6 +28,15 @@ vi.mock('../firebase/data.js', () => ({
 
 afterEach(cleanup);
 
+// A lista de despesas mostra o MÊS CORRENTE. Uma data fixa ("2026-08-12")
+// deixa de aparecer assim que o mês vira e os testes passam a falhar sem que
+// nada de código tenha mudado — por isso a data é sempre do mês de hoje,
+// como já faz o richFixture (test/fixtures.js).
+const thisMonth = (dd) => {
+  const n = new Date();
+  return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
+};
+
 // `onReady` (renderWithStore) só entrega o `ui` do momento do mount — o efeito
 // que o chama só corre uma vez. Para ler tab/modais DEPOIS de uma interação
 // precisamos de algo que se atualize a cada render; este espião fá-lo através
@@ -95,7 +104,7 @@ describe('integração com o resto da app', () => {
       ...richFixture(),
       addedExp: [
         ...(richFixture().addedExp || []),
-        { id: 'exp-linked', desc: 'Airbnb', amount: 100, cat: 'cas', date: '2026-08-12', groupEntryId: 'ge-1' },
+        { id: 'exp-linked', desc: 'Airbnb', amount: 100, cat: 'cas', date: thisMonth(12), groupEntryId: 'ge-1' },
       ],
     };
     await renderWithStore(<ExpensesView />, { fixture, tab: 'expenses' });
@@ -111,7 +120,7 @@ describe('integração com o resto da app', () => {
       ...richFixture(),
       addedExp: [
         ...(richFixture().addedExp || []),
-        { id: 'exp-linked', desc: 'Airbnb', amount: 100, cat: 'cas', date: '2026-08-12', groupEntryId: 'ge-1' },
+        { id: 'exp-linked', desc: 'Airbnb', amount: 100, cat: 'cas', date: thisMonth(12), groupEntryId: 'ge-1' },
       ],
     };
     await renderWithStore(
@@ -134,7 +143,7 @@ describe('integração com o resto da app', () => {
       ...richFixture(),
       addedExp: [
         ...(richFixture().addedExp || []),
-        { id: 'exp-orphan', desc: 'Estadia', amount: 50, cat: 'cas', date: '2026-08-12', groupEntryId: 'ge-does-not-exist' },
+        { id: 'exp-orphan', desc: 'Estadia', amount: 50, cat: 'cas', date: thisMonth(12), groupEntryId: 'ge-does-not-exist' },
       ],
     };
     await renderWithStore(

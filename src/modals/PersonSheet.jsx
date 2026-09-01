@@ -135,7 +135,7 @@ export default function PersonSheet() {
       <div className="lb" style={{ marginBottom: 8 }}>{'Pessoas (' + people.length + ')'}</div>
       <div
         style={{
-          maxHeight: '40vh',
+          maxHeight: '40dvh',
           overflow: 'auto',
           marginBottom: 18,
           border: '1px solid var(--border)',

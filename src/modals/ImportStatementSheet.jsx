@@ -464,7 +464,7 @@ export default function ImportStatementSheet() {
                 </div>
               </div>
             )}
-            <div style={{ maxHeight: '50vh', overflow: 'auto', marginBottom: 16 }}>
+            <div style={{ maxHeight: '50dvh', overflow: 'auto', marginBottom: 16 }}>
               {/* FIX 2: iterate in original array order with a stable _id key; never sort. */}
               {stResult.transactions.map((t, i) => {
                 const sel = !!stSel[t._id];

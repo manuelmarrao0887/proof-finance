@@ -316,7 +316,7 @@ export default function GroupExpenseSheet() {
       <div className="lb" style={{ marginBottom: 8 }}>
         Categoria
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, marginBottom: 16 }}>
         {GROUP_CATS.map((c) => {
           const on = draft.gcat === c.id;
           return (

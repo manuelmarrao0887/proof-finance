@@ -233,7 +233,9 @@ export default function AddExpenseSheet() {
     <Sheet open={isOpen} onClose={onClose} title={isEdit ? 'Editar despesa' : d.recId ? 'Registar recorrente' : 'Nova despesa'} footer={footer}>
       {/* Categoria — grelha de ícones (estilo Finany), alfabética (FIX 3) */}
       <div className="lb" style={{ marginBottom: 8 }}>Categoria</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+      {/* minmax(0,1fr) e não 1fr: o chão de 1fr é min-content, por isso nomes
+          longos ("Combustível") empurravam a grelha para lá do ecrã a 320px. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8, marginBottom: 16 }}>
         {cats.map((b) => {
           const on = d.cat === b.id;
           return (
@@ -247,6 +249,7 @@ export default function AddExpenseSheet() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: 5,
+                minWidth: 0,
                 padding: '10px 4px',
                 borderRadius: 14,
                 border: '1px solid ' + (on ? 'var(--primary)' : 'var(--border)'),
@@ -255,7 +258,9 @@ export default function AddExpenseSheet() {
               }}
             >
               <CategoryIcon id={b.id} size={34} />
-              <span style={{ fontSize: 11, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15 }}>
+              {/* minWidth:0 + hyphens: "Supermercado" (77px) não cabia numa
+                  célula de 65px a 320px e empurrava a grelha para fora. */}
+              <span style={{ fontSize: 11, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15, minWidth: 0, maxWidth: '100%', overflowWrap: 'anywhere', hyphens: 'auto' }}>
                 {b.nm}
               </span>
             </button>

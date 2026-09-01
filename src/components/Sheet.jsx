@@ -14,6 +14,7 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { lockScroll, unlockScroll } from '../lib/scrollLock.js';
 
 export default function Sheet({ open, onClose, title, children, footer }) {
   const panelRef = useRef(null);
@@ -28,6 +29,15 @@ export default function Sheet({ open, onClose, title, children, footer }) {
   const close = useCallback(() => {
     if (typeof onClose === 'function') onClose();
   }, [onClose]);
+
+  // Trava o scroll do conteúdo por trás enquanto a sheet está aberta. Sem
+  // isto a roda do rato / o dedo sobre o backdrop continuava a fazer scroll ao
+  // fundo e, ao fechar, a página aparecia noutro sítio (ver lib/scrollLock.js).
+  useEffect(() => {
+    if (!open) return undefined;
+    lockScroll();
+    return unlockScroll;
+  }, [open]);
 
   // Keyboard a11y: Escape to close + a minimal focus trap (Tab/Shift+Tab cycle).
   useEffect(() => {
@@ -139,7 +149,9 @@ export default function Sheet({ open, onClose, title, children, footer }) {
   const scrollStyle = {
     overflowY: 'auto',
     overscrollBehavior: 'contain',
-    maxHeight: 'calc(90vh - 120px)',
+    // dvh (não vh): no iOS o vh conta com a barra de endereço recolhida e a
+    // sheet ficava mais alta do que o ecrã visível, cortando o rodapé.
+    maxHeight: 'calc(90dvh - 120px)',
     flex: '1 1 auto',
   };
 
