@@ -285,3 +285,31 @@ html[data-theme="dark"] .sheet-overlay{background:rgba(0,0,0,0.55)}
 .dtoggle button{flex:1;border:none;background:transparent;color:var(--fg-muted);font-size:11px;font-weight:600;padding:7px 6px;border-radius:11px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;letter-spacing:0.02em}
 .dtoggle button.on{background:var(--primary);color:#fff}
 .dtoggle button svg{width:14px;height:14px}
+
+/* ── Logos de marcas, iniciais, avatares, cartão-objeto, tiles (spec 2026-09-02) ── */
+.brand{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.brand svg{display:block}
+.initial{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;font-weight:800;font-family:var(--font)}
+.cat{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0}
+.mlogo{position:relative;display:inline-flex;flex-shrink:0}
+.mlogo-badge{position:absolute;right:-4px;bottom:-4px;box-shadow:0 0 0 2px var(--surface)}
+.avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;font-weight:700;color:#fff;overflow:hidden;background:var(--primary)}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.avatar-stack{display:inline-flex;align-items:center}
+.avatar-stack .avatar{box-shadow:0 0 0 2px var(--surface)}
+.avatar-stack .avatar+.avatar{margin-left:-8px}
+.ccard{border-radius:18px;padding:16px;background:linear-gradient(135deg,#1B1F2E 0%,#2D3453 100%);color:#fff;position:relative;min-height:150px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 16px 30px -18px rgba(0,0,0,.7);margin-bottom:12px}
+.ccard-num{font-size:14px;letter-spacing:.2em;opacity:.8;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 10px 10px;display:flex;flex-direction:column;gap:5px;align-items:flex-start;min-width:0;position:relative;overflow:hidden}
+.tile b{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em;font-family:var(--mono)}
+.tile span{font-size:10.5px;color:var(--fg-subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tile-bar{position:absolute;top:0;left:12px;right:12px;height:3px;border-radius:0 0 3px 3px}
+.sugg{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sugg button{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border:1px solid var(--border);border-radius:999px;font-size:11px;font-weight:600;background:var(--bg);color:var(--fg);cursor:pointer;min-height:32px}
+.day-lb{font-size:10.5px;font-weight:700;color:var(--fg-subtle);letter-spacing:.07em;text-transform:uppercase;margin:12px 4px 6px;font-family:var(--mono)}
+.icon-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.icon-grid button{display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--fg-muted);cursor:pointer;padding:0;min-height:40px}
+.icon-grid button[aria-pressed="true"]{border-color:var(--primary);color:var(--primary);background:var(--blue-soft)}
+.sync-chip.compact{padding:4px 6px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

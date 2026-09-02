@@ -8,10 +8,11 @@ import React from 'react';
 import Icon from './Icon.jsx';
 import { catMeta } from '../lib/categories.js';
 
-export default function CategoryIcon({ id, size = 40, style }) {
+export default function CategoryIcon({ id, size = 40, style, className }) {
   const meta = catMeta(id);
   return (
     <div
+      className={className}
       style={{
         width: size,
         height: size,
