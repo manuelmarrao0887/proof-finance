@@ -70,7 +70,7 @@ export const BRANDS = {
   traderepublic: { name: 'Trade Republic', group: 'bank', bg: '#111', fg: '#fff', node: T('TR', 9.5, 800), match: ['trade republic', 'traderepublic'] },
   xtb: { name: 'XTB', group: 'bank', bg: '#D5232B', fg: '#fff', node: T('xtb', 8.4, 900), match: ['xtb'] },
   degiro: { name: 'DEGIRO', group: 'bank', bg: '#009DE0', fg: '#fff', node: T('D', 14, 900), match: ['degiro'] },
-  t212: { name: 'Trading 212', group: 'bank', bg: '#00A3E0', fg: '#fff', node: T('212', 7.8, 900), match: ['trading', 'trading212', 't212'] },
+  t212: { name: 'Trading 212', group: 'bank', bg: '#00A3E0', fg: '#fff', node: T('212', 7.8, 900), match: ['trading 212', 'trading212', 't212'] },
   // ── redes de cartão ──
   mastercard: { name: 'Mastercard', group: 'network', bg: 'transparent', fg: '#fff', match: ['mastercard'], node: (<><circle cx="9" cy="12" r="6.6" fill="#EB001B" /><circle cx="15" cy="12" r="6.6" fill="#F79E1B" fillOpacity="0.92" /></>) },
   visa: { name: 'Visa', group: 'network', bg: '#1A1F71', fg: '#fff', node: T('VISA', 7.2, 900, { fontStyle: 'italic' }), match: ['visa'] },
@@ -101,9 +101,13 @@ export function normalizeMerchant(text) {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z]+/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
     .split(' ')
-    .filter((w) => w && !NOISE.has(w))
+    // descarta tokens vazios, ruído e números de referência tipo extrato
+    // (4+ dígitos seguidos, ex.: "4174"), mas mantém dígitos curtos que
+    // fazem parte do nome da marca (ex.: "212" em "Trading 212") e
+    // tokens alfanuméricos como "n26" e "t212".
+    .filter((w) => w && !NOISE.has(w) && !/^\d{4,}$/.test(w))
     .join(' ')
     .trim();
 }

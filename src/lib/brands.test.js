@@ -12,6 +12,14 @@ describe('brands: pack', () => {
       expect(Array.isArray(b.match) && b.match.length > 0, id).toBe(true);
     });
   });
+
+  it('todos os aliases são alcançáveis via resolveBrand', () => {
+    Object.entries(BRANDS).forEach(([id, b]) => {
+      b.match.forEach((alias) => {
+        expect(resolveBrand(alias), id + ':' + alias).toBe(id);
+      });
+    });
+  });
 });
 
 describe('brands: normalizeMerchant', () => {
@@ -21,6 +29,7 @@ describe('brands: normalizeMerchant', () => {
     expect(normalizeMerchant('Pagamento MB WAY Galp Alvalade')).toBe('galp alvalade');
     expect(normalizeMerchant('')).toBe('');
     expect(normalizeMerchant(null)).toBe('');
+    expect(normalizeMerchant('N26 Bank')).toBe('n26 bank');
   });
 });
 
@@ -48,6 +57,13 @@ describe('brands: resolveBrand', () => {
   it('BPI não é BP', () => {
     expect(resolveBrand('BPI')).toBe('bpi');
     expect(resolveBrand('BP ALVALADE')).toBe('bp');
+  });
+  it('mantém dígitos que fazem parte do nome da marca (N26, Trading 212)', () => {
+    expect(resolveBrand('N26 Bank')).toBe('n26');
+    expect(resolveBrand('Trading 212')).toBe('t212');
+    expect(resolveBrand('trading212')).toBe('t212');
+    expect(resolveBrand('T212')).toBe('t212');
+    expect(resolveBrand('Silva Trading Lda')).toBeNull();
   });
 });
 
