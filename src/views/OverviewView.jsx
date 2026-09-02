@@ -39,6 +39,7 @@ import { fm, fc, uid } from '../lib/format.js';
 import { upcomingRecurring } from '../lib/reminders.js';
 import { dailyAllowance, savingsPulse, buildInsights, monthPlan, monthForecast } from '../lib/pulse.js';
 import { monthClosing } from '../lib/closing.js';
+import { BankLogo } from '../components/MerchantLogo.jsx';
 
 const MONTHS_LONG = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -513,9 +514,12 @@ export default function OverviewView() {
                   className="rw"
                   style={{ padding: '9px 0', borderTop: i > 0 ? '1px solid var(--border)' : '1px solid var(--border)' }}
                 >
-                  <span style={{ fontSize: 13, fontWeight: 500, minWidth: 0 }}>
-                    {a.b}
-                    <span style={{ color: 'var(--text3)', fontWeight: 400 }}> · {a.t}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                    <BankLogo bank={a.b} size={32} />
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.b}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text3)' }}>{a.t}</span>
+                    </span>
                   </span>
                   <span className="m" style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{mv(a.v)}</span>
                 </div>

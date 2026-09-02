@@ -7,6 +7,7 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fm, fmDateShort } from '../lib/format.js';
+import { BankLogo } from '../components/MerchantLogo.jsx';
 
 export default function TransfersView() {
   const { state, actions } = useStore();
@@ -43,8 +44,10 @@ export default function TransfersView() {
             <div className="rw">
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <BankLogo bank={t.from} size={22} />
                   <span>{t.from}</span>
                   <span style={{ color: 'var(--text3)' }}>→</span>
+                  <BankLogo bank={t.to} size={22} />
                   <span>{t.to}</span>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{fmDateShort(t.date)}{t.note ? ' · ' + t.note : ''}</div>

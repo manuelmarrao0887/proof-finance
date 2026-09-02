@@ -6,8 +6,9 @@
 import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
-import { fm, fc } from '../lib/format.js';
+import { fc } from '../lib/format.js';
 import { totalValue, totalPL, totalPLPct, withAllocation, portfolioWarnings } from '../lib/investments.js';
+import { AssetLogo } from '../components/MerchantLogo.jsx';
 
 export default function InvestmentsView() {
   const { state } = useStore();
@@ -61,22 +62,25 @@ export default function InvestmentsView() {
       ) : (
         rows.map((p) => (
           <button key={p.id} type="button" onClick={() => open('position', { id: p.id })} className="cd" style={{ width: '100%', textAlign: 'left', marginBottom: 8, padding: '14px 16px', display: 'block', border: '1px solid var(--border)', cursor: 'pointer' }}>
-            <div className="rw">
-              <span style={{ minWidth: 0 }}>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>{p.asset}</span>
-                {p.broker ? <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 6 }}>{p.broker}</span> : null}
-              </span>
-              <span className="m" style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}>{mv(p.value)}</span>
-            </div>
-            <div className="rw" style={{ marginTop: 4 }}>
-              <span className="m" style={{ fontSize: 11, color: 'var(--text3)' }}>{p.qty} @ {fm(p.avgPrice)} → {fm(p.currentPrice)}</span>
-              {!hidden && (
-                <span className="m" style={{ fontSize: 11, fontWeight: 700, color: p.pl >= 0 ? 'var(--success)' : 'var(--signal)' }}>
-                  {(p.pl >= 0 ? '+' : '') + fc(p.pl)} ({(p.pl >= 0 ? '+' : '') + p.plPct.toFixed(1)}%)
+            <div className="rw" style={{ gap: 10 }}>
+              <AssetLogo ticker={p.asset} size={40} />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, display: 'block' }}>{p.asset}</span>
+                <span style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
+                  {p.qty} un.
+                  {p.broker ? <span className="chip" style={{ padding: '0 7px', fontSize: 10, background: 'var(--elevated)', color: 'var(--text2)', border: 'none' }}>{p.broker}</span> : null}
                 </span>
-              )}
+              </span>
+              <span style={{ textAlign: 'right', flexShrink: 0 }}>
+                <span className="m" style={{ fontSize: 14, fontWeight: 700, display: 'block' }}>{mv(p.value)}</span>
+                {!hidden && (
+                  <span className="chip" style={{ marginTop: 3, padding: '1px 7px', fontSize: 10, fontWeight: 700, border: 'none', background: p.pl >= 0 ? 'var(--success-soft)' : 'var(--signal-soft)', color: p.pl >= 0 ? 'var(--success)' : 'var(--signal)' }}>
+                    {(p.pl >= 0 ? '+' : '') + p.plPct.toFixed(1) + '%'}
+                  </span>
+                )}
+              </span>
             </div>
-            <div className="bar" style={{ height: 5, marginTop: 8 }}>
+            <div className="bar" style={{ height: 5, marginTop: 10 }}>
               <div className="bar-fill" style={{ width: Math.min(p.pct, 100) + '%', background: 'var(--secondary)' }} />
             </div>
             <div className="m" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>{p.pct.toFixed(0)}% da carteira</div>
