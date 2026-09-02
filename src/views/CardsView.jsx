@@ -11,6 +11,7 @@ import { useToast } from '../components/Toast.jsx';
 import { fm, fmDateShort } from '../lib/format.js';
 import { getAcctsLive, normAcct, CARD_CAT } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
+import MerchantLogo from '../components/MerchantLogo.jsx';
 
 export default function CardsView() {
   const { state, actions, currentUser } = useStore();
@@ -151,8 +152,9 @@ export default function CardsView() {
                 <div style={{ fontSize: 12, color: 'var(--text3)' }}>Ainda sem despesas neste cartão.</div>
               ) : (
                 exps.map((x) => (
-                  <div key={x.id} className="rw" style={{ padding: '8px 0', borderTop: '1px solid var(--border)' }}>
-                    <div style={{ minWidth: 0 }}>
+                  <div key={x.id} className="rw" style={{ padding: '8px 0', borderTop: '1px solid var(--border)', gap: 10 }}>
+                    <MerchantLogo text={x.desc} cat={x.cat} size={32} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.desc}</div>
                       <div style={{ fontSize: 10, color: 'var(--text3)' }}>{catName(x.cat)} · {fmDateShort(x.date)}{x.imported ? ' · importada' : ''}</div>
                     </div>

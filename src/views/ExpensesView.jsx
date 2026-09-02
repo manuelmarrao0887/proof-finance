@@ -32,6 +32,7 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { fm, normalizeStmtDate, fmDateShort } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
+import MerchantLogo from '../components/MerchantLogo.jsx';
 import { dedupeAddedExp } from '../lib/dedupe.js';
 import { monthEffectiveLimits } from '../lib/budget.js';
 import { windowLabels, windowMonthKeys, monthKeyAt, categorySeries, seriesTrend } from '../lib/months.js';
@@ -248,7 +249,7 @@ export default function ExpensesView() {
             return (
               <div key={x.id} className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
                 <div className="rw" style={{ gap: 12 }}>
-                  <CategoryIcon id={x.cat} size={40} />
+                  <MerchantLogo text={x.desc} cat={x.cat} size={40} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>
                       {x.desc}
@@ -580,7 +581,7 @@ export default function ExpensesView() {
             return (
               <div key={r.id} className="cd" style={{ marginBottom: 8, padding: '10px 14px' }}>
                 <div className="rw" style={{ gap: 12 }}>
-                  <CategoryIcon id={r.cat} size={36} />
+                  <MerchantLogo text={r.name} cat={r.cat} size={36} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
                     <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
@@ -708,8 +709,9 @@ export default function ExpensesView() {
                     {aTxn.map((x, i) => {
                       return (
                         <div key={'a' + x.id} style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
-                          <div className="rw">
-                            <span style={{ fontSize: 12, color: 'var(--text)' }}>
+                          <div className="rw" style={{ gap: 8 }}>
+                            <MerchantLogo text={x.desc} cat={x.cat} size={26} />
+                            <span style={{ fontSize: 12, color: 'var(--text)', flex: 1, minWidth: 0 }}>
                               {x.desc}
                               {x.shared && (
                                 <span style={{ fontSize: 11, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 5px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>

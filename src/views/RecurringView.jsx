@@ -14,6 +14,7 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fc, fm } from '../lib/format.js';
+import MerchantLogo from '../components/MerchantLogo.jsx';
 
 export default function RecurringView() {
   const { state, actions } = useStore();
@@ -86,7 +87,8 @@ export default function RecurringView() {
 
         return (
           <div key={r.id} className="cd fadeUp" style={{ marginBottom: 10, padding: '14px 18px' }}>
-            <div className="rw">
+            <div className="rw" style={{ gap: 12 }}>
+              <MerchantLogo text={r.name} cat={r.cat} size={40} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                   {r.name}
