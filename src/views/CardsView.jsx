@@ -11,7 +11,7 @@ import { useToast } from '../components/Toast.jsx';
 import { fm, fmDateShort } from '../lib/format.js';
 import { getAcctsLive, normAcct, CARD_CAT } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
-import MerchantLogo from '../components/MerchantLogo.jsx';
+import MerchantLogo, { BankLogo, BrandMark } from '../components/MerchantLogo.jsx';
 
 export default function CardsView() {
   const { state, actions, currentUser } = useStore();
@@ -69,42 +69,46 @@ export default function CardsView() {
             .filter((t) => normAcct(t.to) === normAcct(cardLabel))
             .slice()
             .sort((x, y) => (y.date || '').localeCompare(x.date || ''));
+          // last4/network vivem no customAcct; getAcctsLive não os propaga.
+          const raw = (state.customAccts || []).find((x) => x.id === a.id) || {};
+          const last4 = raw.last4 || '';
+          const network = raw.network || '';
 
           return (
             <div key={a.id || cardLabel} className="cd" style={{ marginBottom: 16, padding: 16 }}>
-              {/* Cabeçalho */}
-              <div className="rw" style={{ marginBottom: 12 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.b}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>{a.t}</div>
+              {/* O cartão como objeto: logo do banco, número mascarado, rede e dívida. */}
+              <div className="ccard" aria-label={'Cartão ' + a.b}>
+                <div className="rw">
+                  <BankLogo bank={a.b} size={30} />
+                  <span style={{ fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.7 }}>Crédito</span>
                 </div>
-                <button type="button" onClick={() => open('acct', { id: a.id })} aria-label="Editar cartão" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', borderRadius: 999, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>
+                <div className="ccard-num">•••• •••• •••• {last4 || '••••'}</div>
+                <div className="rw" style={{ alignItems: 'flex-end' }}>
+                  <div>
+                    <div className="lb" style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)' }}>Dívida atual</div>
+                    <div className="m" style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', color: '#fff' }}>{mv(used)}</div>
+                  </div>
+                  {network ? <BrandMark id={network} size={36} /> : null}
+                </div>
+              </div>
+
+              {/* Plafond e ações */}
+              <div className="rw" style={{ marginBottom: 6 }}>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {plafond > 0 ? mv(used) + ' de ' + mv(plafond) + ' de plafond' : 'Sem plafond definido — edita o cartão'}
+                  {over && <span style={{ color: 'var(--signal)', fontWeight: 600 }}> · plafond excedido</span>}
+                </div>
+                <button type="button" onClick={() => open('acct', { id: a.id })} aria-label="Editar cartão" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', borderRadius: 999, padding: '4px 10px', fontSize: 11, cursor: 'pointer', flexShrink: 0 }}>
                   Editar
                 </button>
               </div>
-
-              {/* Dívida / disponível */}
-              <div className="rw" style={{ marginBottom: 6, alignItems: 'flex-end' }}>
-                <div>
-                  <div className="lb" style={{ fontSize: 10 }}>Dívida atual</div>
-                  <div className="m" style={{ fontSize: 20, fontWeight: 700, color: used > 0 ? 'var(--signal)' : 'var(--success)' }}>{mv(used)}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div className="lb" style={{ fontSize: 10 }}>Disponível</div>
-                  <div className="m" style={{ fontSize: 14, fontWeight: 600, color: over ? 'var(--signal)' : 'var(--text)' }}>{mv(available)}</div>
-                </div>
-              </div>
-
-              {/* Barra plafond */}
-              <div style={{ height: 8, borderRadius: 999, background: 'var(--bg3)', overflow: 'hidden', marginBottom: 4 }}>
+              <div style={{ height: 8, borderRadius: 999, background: 'var(--bg3)', overflow: 'hidden', marginBottom: 6 }}>
                 <div style={{ height: '100%', width: pct + '%', background: over ? 'var(--signal)' : pct > 80 ? 'var(--warning)' : 'var(--primary)', transition: 'width .3s' }} />
               </div>
-              <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 14 }}>
-                {plafond > 0 ? mv(used) + ' de ' + mv(plafond) + ' de plafond' : 'Sem plafond definido — edita o cartão'}
-                {over && <span style={{ color: 'var(--signal)', fontWeight: 600 }}> · plafond excedido</span>}
+              <div className="rw" style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 14 }}>
+                <span>Disponível {mv(available)}</span>
+                <span>{a.t}</span>
               </div>
-
-              {/* Ações */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
                 <button
                   type="button"
