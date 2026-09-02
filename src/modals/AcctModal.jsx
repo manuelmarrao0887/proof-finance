@@ -21,7 +21,7 @@ const ACCT_CATEGORIES = ['Liquidez', 'Poupanca', 'Investimentos', 'Cripto', 'Imo
 const ACCT_TYPES = ['Conta a Ordem', 'Poupanca', 'Corretagem', 'Planos de Investimento', 'P2P Lending', 'Rend. Fixo', 'Crypto Wallet', 'Cartão de Crédito', 'Imobiliario', 'Outros'];
 const CURRENCIES = ['EUR', 'USD', 'GBP', 'BRL', 'CHF'];
 
-const EMPTY = { id: null, bank: '', type: 'Conta a Ordem', category: 'Liquidez', value: '', currency: 'EUR', note: '', plafond: '' };
+const EMPTY = { id: null, bank: '', type: 'Conta a Ordem', category: 'Liquidez', value: '', currency: 'EUR', note: '', plafond: '', last4: '', network: '' };
 
 export default function AcctModal() {
   const { state, actions, currentUser } = useStore();
@@ -51,6 +51,8 @@ export default function AcctModal() {
           currency: a.currency || 'EUR',
           note: a.note || '',
           plafond: a.plafond != null ? String(a.plafond).replace('.', ',') : '',
+          last4: a.last4 || '',
+          network: a.network || '',
         });
         return;
       }
@@ -90,10 +92,13 @@ export default function AcctModal() {
       // introduz à mão. Guarda o plafond; value fica 0.
       let plafond = parseFloat((draft.plafond || '0').replace(',', '.'));
       if (isNaN(plafond) || plafond < 0) plafond = 0;
+      // Só dígitos, e só os últimos 4 (o utilizador pode colar o número todo).
+      const last4 = String(draft.last4 || '').replace(/\D/g, '').slice(-4);
+      const network = draft.network === 'mastercard' || draft.network === 'visa' ? draft.network : '';
       if (draft.id) {
-        actions.updateCustomAcct(draft.id, { bank, type, category: cat, value: 0, currency: cur, note, plafond, updated: today });
+        actions.updateCustomAcct(draft.id, { bank, type, category: cat, value: 0, currency: cur, note, plafond, last4, network, updated: today });
       } else {
-        actions.addCustomAcct({ id: uid(), bank, type, category: cat, value: 0, currency: cur, note, plafond, updated: today, createdAt: Date.now() });
+        actions.addCustomAcct({ id: uid(), bank, type, category: cat, value: 0, currency: cur, note, plafond, last4, network, updated: today, createdAt: Date.now() });
       }
       close();
       toast(draft.id ? 'Cartão atualizado' : 'Cartão adicionado', 'success');
@@ -183,6 +188,30 @@ export default function AcctModal() {
           {isEdit && (
             <> Dívida atual: <b style={{ color: 'var(--text)' }}>{fm(cardDebt)}</b> · disponível ~{fm(Math.max(0, (parseFloat((draft.plafond || '0').replace(',', '.')) || 0) - cardDebt))}.</>
           )}
+        </div>
+      )}
+      {isCard && (
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+          <div style={{ flex: 1 }}>
+            <label className="lb" style={labelStyle} htmlFor="acLast4">Últimos 4 dígitos</label>
+            <input
+              id="acLast4"
+              value={draft.last4}
+              onChange={(e) => set('last4', e.target.value.replace(/\D/g, '').slice(-4))}
+              placeholder="2872"
+              inputMode="numeric"
+              maxLength={4}
+              style={{ ...inputStyle, marginBottom: 0, fontFamily: 'var(--mono)', letterSpacing: '0.2em' }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="lb" style={labelStyle} htmlFor="acNet">Rede</label>
+            <select id="acNet" value={draft.network} onChange={(e) => set('network', e.target.value)} style={{ ...selectStyle, marginBottom: 0 }}>
+              <option value="">Sem rede</option>
+              <option value="mastercard">Mastercard</option>
+              <option value="visa">Visa</option>
+            </select>
+          </div>
         </div>
       )}
 
