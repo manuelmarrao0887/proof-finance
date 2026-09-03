@@ -46,7 +46,7 @@ function initialsOf(name, id) {
 // Cartão de um grupo na lista: emoji, nome, resumo e saldo (ou "acertado").
 // `btnRef` deixa GroupsView reganhar o foco neste cartão ao voltar do
 // detalhe (ver useEffect de foco em GroupsView, mais abaixo).
-function GroupCard({ group, totals, settled, onOpen, btnRef }) {
+function GroupCard({ group, totals, settled, onOpen, btnRef, nameOf, colorOf }) {
   const memberCount = (group.memberIds || []).length;
   const hasRange = !!(group.start && group.end);
   const saldoColor = totals.owedToMe > 0 ? 'var(--success)' : totals.owedByMe > 0 ? 'var(--signal)' : 'var(--text3)';
@@ -63,6 +63,7 @@ function GroupCard({ group, totals, settled, onOpen, btnRef }) {
       type="button"
       onClick={onOpen}
       className="cd"
+      aria-label={group.name + ' · ' + memberCount + ' pessoas'}
       style={{
         width: '100%',
         display: 'block',
@@ -76,14 +77,21 @@ function GroupCard({ group, totals, settled, onOpen, btnRef }) {
     >
       <span className="rw">
         <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">
+          <span className="cat" style={{ width: 40, height: 40, background: 'var(--elevated)', fontSize: 20 }} aria-hidden="true">
             {group.emoji || '👥'}
           </span>
           <span style={{ minWidth: 0 }}>
             <span style={{ fontSize: 14, fontWeight: 700, display: 'block' }}>{group.name}</span>
-            <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-              {memberCount} pessoas · {fm(totals.total)}
-              {hasRange ? ' · ' + fmDateShort(group.start) + ' – ' + fmDateShort(group.end) : ''}
+            <span style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              <span className="avatar-stack">
+                {(group.memberIds || []).slice(0, 4).map((id) => (
+                  <MemberAvatar key={id} id={id} nameOf={nameOf} colorOf={colorOf} size={18} />
+                ))}
+              </span>
+              <span>
+                {fm(totals.total)}
+                {hasRange ? ' · ' + fmDateShort(group.start) + ' – ' + fmDateShort(group.end) : ''}
+              </span>
             </span>
           </span>
         </span>
@@ -103,25 +111,16 @@ function GroupCard({ group, totals, settled, onOpen, btnRef }) {
 
 // Avatar circular com iniciais: cor da pessoa como fundo, nome como aria-label
 // (role="img" para o leitor de ecrã anunciar o nome em vez de "Tu"/iniciais soltas).
+// Classe "avatar" partilhada com components/Avatar.jsx — permite o empilhamento
+// (.avatar-stack .avatar+.avatar) quando vários MemberAvatar aparecem em fila.
 function MemberAvatar({ id, nameOf, colorOf, size = 30 }) {
   return (
     <span
+      className="avatar"
       role="img"
       aria-label={nameOf(id)}
       title={nameOf(id)}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: colorOf(id),
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: size * 0.36,
-        fontWeight: 700,
-        flexShrink: 0,
-      }}
+      style={{ width: size, height: size, background: colorOf(id), fontSize: size * 0.36 }}
     >
       {initialsOf(nameOf(id), id)}
     </span>
@@ -238,10 +237,16 @@ function BalanceBar({ id, balance, maxAbsCents, nameOf, colorOf }) {
 }
 
 // Linha do plano de acertos (simplifyDebts): quem deve pagar a quem + botão.
-function SettleRow({ debt, nameOf, onSettle, disabled }) {
+function SettleRow({ debt, nameOf, colorOf, onSettle, disabled }) {
   return (
     <div className="cd rw" style={{ marginBottom: 8, padding: '12px 16px' }}>
-      <span style={{ fontSize: 13, fontWeight: 600 }}>{nameOf(debt.from)} → {nameOf(debt.to)}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+        <MemberAvatar id={debt.from} nameOf={nameOf} colorOf={colorOf} size={24} />
+        <span>{nameOf(debt.from)}</span>
+        <span style={{ color: 'var(--text3)' }}>→</span>
+        <MemberAvatar id={debt.to} nameOf={nameOf} colorOf={colorOf} size={24} />
+        <span>{nameOf(debt.to)}</span>
+      </span>
       <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span className="m" style={{ fontSize: 13, fontWeight: 700 }}>{fm(debt.amount)}</span>
         <button
@@ -433,6 +438,7 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
                 key={debt.from + '→' + debt.to}
                 debt={debt}
                 nameOf={nameOf}
+                colorOf={colorOf}
                 onSettle={() => open('settle', { groupId: group.id, from: debt.from, to: debt.to, amount: debt.amount })}
                 disabled={isDemo}
               />
@@ -651,6 +657,8 @@ export default function GroupsView() {
               settled={false}
               onOpen={() => setOpenId(d.group.id)}
               btnRef={(el) => { cardRefs.current[d.group.id] = el; }}
+              nameOf={nameOf}
+              colorOf={colorOf}
             />
           ))}
         </>
@@ -669,6 +677,8 @@ export default function GroupsView() {
               settled
               onOpen={() => setOpenId(d.group.id)}
               btnRef={(el) => { cardRefs.current[d.group.id] = el; }}
+              nameOf={nameOf}
+              colorOf={colorOf}
             />
           ))}
         </>

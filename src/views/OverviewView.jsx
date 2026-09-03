@@ -40,6 +40,7 @@ import { upcomingRecurring } from '../lib/reminders.js';
 import { dailyAllowance, savingsPulse, buildInsights, monthPlan, monthForecast } from '../lib/pulse.js';
 import { monthClosing } from '../lib/closing.js';
 import { BankLogo } from '../components/MerchantLogo.jsx';
+import { AvatarStack } from '../components/Avatar.jsx';
 
 const MONTHS_LONG = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -117,6 +118,13 @@ export default function OverviewView() {
     if (owedToMe <= 0 && owedByMe <= 0) return null; // tudo acertado — nada a mostrar
     return { owedToMe, owedByMe };
   }, [state.people, state.groups, state.groupEntries, preview]);
+
+  // Pessoas dos grupos ativos (sem o próprio), para a faixa de Grupos.
+  const groupPeople = useMemo(() => {
+    const ids = new Set();
+    (state.groups || []).filter((g) => !g.archived).forEach((g) => (g.memberIds || []).forEach((id) => id !== ME_ID && ids.add(id)));
+    return (state.people || []).filter((p) => ids.has(p.id)).map((p) => ({ id: p.id, name: p.name, color: p.color }));
+  }, [state.groups, state.people]);
 
   /* Todos os cálculos do Resumo dependem só de (state, currentUser). Sem memo
      corriam de novo a cada render — com centenas de despesas nota-se ao abrir
@@ -260,7 +268,10 @@ export default function OverviewView() {
         >
           <span className="rw">
             <div className="lb">Grupos</div>
-            <span style={{ fontSize: 11, color: 'var(--text3)' }}>ver</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AvatarStack items={groupPeople} size={22} max={4} />
+              <span style={{ fontSize: 11, color: 'var(--text3)' }}>ver</span>
+            </span>
           </span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 6 }}>
             {groupsSummary.owedToMe > 0 && (
