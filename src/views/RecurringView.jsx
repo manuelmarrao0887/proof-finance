@@ -116,8 +116,11 @@ export default function RecurringView() {
           if (b.id === r.cat) bI = b;
         });
         const nextDay = parseInt(r.day) || 1;
-        let next = new Date(now.getFullYear(), now.getMonth(), nextDay);
-        if (next < now) next = new Date(now.getFullYear(), now.getMonth() + 1, nextDay);
+        // Dia 29-31 não existe em todos os meses: encosta ao último dia do mês
+        // (uma cobrança marcada para 31 sai a 30 em abril, não a 1 de maio).
+        const atMonth = (y, m) => new Date(y, m, Math.min(nextDay, new Date(y, m + 1, 0).getDate()));
+        let next = atMonth(now.getFullYear(), now.getMonth());
+        if (next < now) next = atMonth(now.getFullYear(), now.getMonth() + 1);
         const dleft = Math.ceil((next - now) / 86400000);
 
         return (

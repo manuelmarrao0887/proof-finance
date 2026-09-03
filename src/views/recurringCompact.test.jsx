@@ -44,4 +44,21 @@ describe('Recorrentes compacto', () => {
     await renderWithStore(<RecurringView />, { fixture: fx });
     expect(screen.queryByRole('button', { name: /^Adicionar / })).toBeNull();
   });
+  it('uma recorrente marcada para o dia 31 encosta ao último dia dos meses curtos', async () => {
+    // Só a Date é fingida (não o setTimeout): renderWithStore usa
+    // setTimeout(…, 0) internamente para deixar os efeitos assentar, e isso
+    // teria de ficar à espera de um timer que nunca avança com timers 100%
+    // falsos.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 3, 10)); // 10 de abril de 2026 (30 dias)
+    try {
+      const fx = richFixture();
+      fx.recurring = [{ id: 'r31', name: 'Renda', amount: 700, day: 31, cat: 'cas' }];
+      await renderWithStore(<RecurringView />, { fixture: fx });
+      expect(screen.getByText('30 abr')).toBeTruthy();
+      expect(screen.queryByText('1 mai')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
