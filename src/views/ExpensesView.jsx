@@ -30,9 +30,10 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
-import { fm, normalizeStmtDate, fmDateShort } from '../lib/format.js';
+import { fm, normalizeStmtDate, fmDateShort, todayISO } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import MerchantLogo from '../components/MerchantLogo.jsx';
+import Icon from '../components/Icon.jsx';
 import { dedupeAddedExp } from '../lib/dedupe.js';
 import { monthEffectiveLimits } from '../lib/budget.js';
 import { windowLabels, windowMonthKeys, monthKeyAt, categorySeries, seriesTrend } from '../lib/months.js';
@@ -62,6 +63,29 @@ const EditIcon = () => (
     <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
   </svg>
 );
+
+// "Hoje" / "Ontem" / "20 ago" para os cabeçalhos de dia da pesquisa.
+function dayLabel(iso, todayIso) {
+  if (!iso) return '—';
+  if (iso === todayIso) return 'Hoje';
+  const t = new Date(todayIso);
+  t.setDate(t.getDate() - 1);
+  const y = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+  if (iso === y) return 'Ontem';
+  return fmDateShort(iso);
+}
+// Agrupa linhas já ordenadas (mais recente primeiro) por dia, aproveitando a
+// adjacência: como `sorted` vem newest-first, basta comparar com o último grupo.
+function groupByDay(rows) {
+  const out = [];
+  rows.forEach((row) => {
+    const d = row.x.date || '';
+    const last = out[out.length - 1];
+    if (last && last.date === d) last.items.push(row);
+    else out.push({ date: d, items: [row] });
+  });
+  return out;
+}
 
 export default function ExpensesView() {
   const { state, actions, currentUser } = useStore();
@@ -244,60 +268,65 @@ export default function ExpensesView() {
             <div style={{ fontSize: 13 }}>{'Sem resultados para "' + searchQuery + '"'}</div>
           </div>
         ) : (
-          sorted.map(({ x }) => {
-            const b = bdg.find((bb) => bb.id === x.cat);
-            return (
-              <div key={x.id} className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
-                <div className="rw" style={{ gap: 12 }}>
-                  <MerchantLogo text={x.desc} cat={x.cat} size={40} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>
-                      {x.desc}
-                      {x.shared && (
-                        <span style={{ fontSize: 11, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 5px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
-                          /{x.split || 2}
-                        </span>
-                      )}
-                      {x.groupEntryId && (
-                        <span className="chip" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', border: 'none', padding: '1px 8px', fontSize: 10, marginLeft: 4 }}>
-                          grupo
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-                      {(b ? b.nm : '-') + ' · ' + (x.date || '') + (x.acct ? ' · ' + x.acct : '')}
-                    </div>
-                    {x.tags && x.tags.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-                        {x.tags.map((t) => {
-                          const on = tagFilter.indexOf(t) > -1;
-                          return (
-                            <button
-                              key={t}
-                              type="button"
-                              onClick={(ev) => {
-                                ev.stopPropagation();
-                                toggleTagFilter(t);
-                              }}
-                              style={{ fontSize: 11, background: on ? 'var(--fg)' : 'var(--elevated)', color: on ? 'var(--bg)' : 'var(--fg-muted)', padding: '2px 8px', borderRadius: 999, fontWeight: 500, border: '1px solid ' + (on ? 'var(--fg)' : 'var(--border)'), fontFamily: 'var(--mono)', cursor: 'pointer' }}
-                            >
-                              #{t}
-                            </button>
-                          );
-                        })}
+          groupByDay(sorted).map((g) => (
+            <div key={g.date || 'sem-data'}>
+              <div className="day-lb">{dayLabel(g.date, todayISO())}</div>
+              {g.items.map(({ x }) => {
+                const b = bdg.find((bb) => bb.id === x.cat);
+                return (
+                  <div key={x.id} className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
+                    <div className="rw" style={{ gap: 12 }}>
+                      <MerchantLogo text={x.desc} cat={x.cat} size={40} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>
+                          {x.desc}
+                          {x.shared && (
+                            <span style={{ fontSize: 11, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 5px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
+                              /{x.split || 2}
+                            </span>
+                          )}
+                          {x.groupEntryId && (
+                            <span className="chip" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', border: 'none', padding: '1px 8px', fontSize: 10, marginLeft: 4 }}>
+                              grupo
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                          {(b ? b.nm : '-') + (x.acct ? ' · ' + x.acct : '')}
+                        </div>
+                        {x.tags && x.tags.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                            {x.tags.map((t) => {
+                              const on = tagFilter.indexOf(t) > -1;
+                              return (
+                                <button
+                                  key={t}
+                                  type="button"
+                                  onClick={(ev) => {
+                                    ev.stopPropagation();
+                                    toggleTagFilter(t);
+                                  }}
+                                  style={{ fontSize: 11, background: on ? 'var(--fg)' : 'var(--elevated)', color: on ? 'var(--bg)' : 'var(--fg-muted)', padding: '2px 8px', borderRadius: 999, fontWeight: 500, border: '1px solid ' + (on ? 'var(--fg)' : 'var(--border)'), fontFamily: 'var(--mono)', cursor: 'pointer' }}
+                                >
+                                  #{t}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{fm(x.amount)}</div>
+                        <button type="button" onClick={() => openExpEdit(x)} className="icon-btn" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Editar despesa">
+                          <EditIcon />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{fm(x.amount)}</div>
-                    <button type="button" onClick={() => openExpEdit(x)} className="icon-btn" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Editar despesa">
-                      <EditIcon />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })
+                );
+              })}
+            </div>
+          ))
         )}
       </div>
     );
@@ -655,8 +684,13 @@ export default function ExpensesView() {
                   <span style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                     {r.nm}
                     {r.carried ? (
-                      <span style={{ fontSize: 9, fontWeight: 700, color: r.carried > 0 ? 'var(--success)' : 'var(--signal)', background: r.carried > 0 ? 'var(--success-soft)' : 'var(--signal-soft)', padding: '1px 6px', borderRadius: 999 }}>
-                        {(r.carried > 0 ? '+' : '') + fm(r.carried)} transitado
+                      <span
+                        title={'Transitado do mês anterior: ' + (r.carried > 0 ? '+' : '') + fm(r.carried)}
+                        aria-label={'Transitado do mês anterior: ' + (r.carried > 0 ? '+' : '') + fm(r.carried)}
+                        style={{ fontSize: 9, fontWeight: 700, color: r.carried > 0 ? 'var(--success)' : 'var(--signal)', background: r.carried > 0 ? 'var(--success-soft)' : 'var(--signal-soft)', padding: '1px 6px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                      >
+                        <Icon name="recurring" size={9} />
+                        {(r.carried > 0 ? '+' : '') + fm(r.carried)}
                       </span>
                     ) : null}
                   </span>
