@@ -45,7 +45,8 @@ export function AvatarStack({ items, size = 26, max = 4 }) {
   return (
     <span className="avatar-stack">
       {shown.map((p, i) => (
-        <Avatar key={p.id || p.name || i} name={p.name} photoURL={p.photoURL} color={p.color} size={size} />
+        // key única mesmo sem id: nomes repetidos partilham índice, por isso combinamos nome + índice
+        <Avatar key={p.id != null ? p.id : p.name + '-' + i} name={p.name} photoURL={p.photoURL} color={p.color} size={size} />
       ))}
       {extra > 0 && (
         <span

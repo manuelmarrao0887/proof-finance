@@ -51,4 +51,16 @@ describe('AvatarStack', () => {
     const { container } = render(<AvatarStack items={[]} />);
     expect(container.firstChild).toBeNull();
   });
+  it('itens com o mesmo nome e sem id não geram keys duplicadas', () => {
+    const errors = [];
+    const orig = console.error;
+    console.error = (...a) => errors.push(a.map(String).join(' '));
+    try {
+      render(<AvatarStack items={[{ name: 'Ana' }, { name: 'Ana' }, { name: 'Rita' }]} />);
+    } finally {
+      console.error = orig;
+    }
+    expect(errors.filter((e) => /key/i.test(e))).toEqual([]);
+    expect(screen.getAllByRole('img', { name: 'Ana' }).length).toBe(2);
+  });
 });
