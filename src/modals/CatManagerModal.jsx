@@ -19,8 +19,13 @@ import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fc } from '../lib/format.js';
-import { sortedCats } from '../lib/categories.js';
+import Icon from '../components/Icon.jsx';
+import CategoryIcon from '../components/CategoryIcon.jsx';
+import { sortedCats, PICKER_ICONS, PICKER_COLORS } from '../lib/categories.js';
 import { byC } from '../lib/finance.js';
+
+// Draft em branco (id/nm/lm + icon/color do seletor visual).
+const BLANK = { id: '', nm: '', lm: '', icon: '', color: '' };
 
 // In-use check (orig 1828) — preview spend (byC) OR an expense OR a recurring.
 function isInUse(id, state) {
@@ -35,8 +40,9 @@ export default function CatManagerModal() {
   const { state, actions } = useStore();
   const toast = useToast();
 
-  // Draft mirrors the original catDraft ({id,nm,lm}; editId present when editing).
-  const [draft, setDraft] = useState({ id: '', nm: '', lm: '' });
+  // Draft mirrors the original catDraft ({id,nm,lm}; editId present when editing)
+  // + icon/color do seletor visual (Task 14).
+  const [draft, setDraft] = useState(BLANK);
   const isEdit = !!draft.editId;
 
   const cats = useMemo(() => sortedCats(state.bdg), [state.bdg]); // FIX 3
@@ -44,14 +50,14 @@ export default function CatManagerModal() {
   if (!isOpen) return null;
 
   const onClose = () => {
-    setDraft({ id: '', nm: '', lm: '' });
+    setDraft(BLANK);
     close();
   };
 
   const editCat = (id) => {
     const b = (state.bdg || []).find((x) => x.id === id);
     if (!b) return;
-    setDraft({ editId: b.id, id: b.id, nm: b.nm, lm: String(b.lm || 0) });
+    setDraft({ editId: b.id, id: b.id, nm: b.nm, lm: String(b.lm || 0), icon: b.icon || '', color: b.color || '' });
   };
 
   const saveCat = () => {
@@ -63,8 +69,8 @@ export default function CatManagerModal() {
     }
     if (isNaN(lm) || lm < 0) lm = 0;
     if (draft.editId) {
-      actions.updateCategory(draft.editId, { nm, lm });
-      setDraft({ id: '', nm: '', lm: '' });
+      actions.updateCategory(draft.editId, { nm, lm, icon: draft.icon || '', color: draft.color || '' });
+      setDraft(BLANK);
       toast('Categoria atualizada', 'success');
     } else {
       // Generate id from name (orig 1867-1868): a-z0-9, max 8 chars, de-duped.
@@ -79,8 +85,8 @@ export default function CatManagerModal() {
         newId = newId.substring(0, 7) + n;
         n++;
       }
-      actions.addCategory({ id: newId, nm, lm });
-      setDraft({ id: '', nm: '', lm: '' });
+      actions.addCategory({ id: newId, nm, lm, icon: draft.icon || '', color: draft.color || '' });
+      setDraft(BLANK);
       toast('Categoria criada', 'success');
     }
   };
@@ -91,7 +97,7 @@ export default function CatManagerModal() {
       return;
     }
     actions.deleteCategory(id);
-    if (draft.editId === id) setDraft({ id: '', nm: '', lm: '' });
+    if (draft.editId === id) setDraft(BLANK);
     toast('Categoria eliminada', 'success');
   };
 
@@ -114,7 +120,8 @@ export default function CatManagerModal() {
         {cats.map((b, i) => {
           const inUse = isInUse(b.id, state);
           return (
-            <div key={b.id} className="rw" style={{ padding: '10px 14px', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+            <div key={b.id} className="rw" style={{ padding: '10px 14px', gap: 10, borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+              <CategoryIcon id={b.id} size={30} bdg={cats} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{b.nm}</div>
                 <div className="m" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 1 }}>
@@ -166,6 +173,27 @@ export default function CatManagerModal() {
             />
           </div>
         </div>
+        <div className="lb" style={{ marginBottom: 8 }}>Ícone</div>
+        <div className="icon-grid">
+          {PICKER_ICONS.map((ic) => (
+            <button key={ic} type="button" aria-label={'Ícone ' + ic} aria-pressed={draft.icon === ic} onClick={() => setDraft((p) => ({ ...p, icon: ic }))}>
+              <Icon name={ic} size={18} />
+            </button>
+          ))}
+        </div>
+        <div className="lb" style={{ marginBottom: 8 }}>Cor</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+          {PICKER_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-label={'Cor ' + c}
+              aria-pressed={draft.color === c}
+              onClick={() => setDraft((p) => ({ ...p, color: c }))}
+              style={{ width: 30, height: 30, borderRadius: '50%', background: c, border: draft.color === c ? '3px solid var(--text)' : '3px solid transparent', padding: 0, cursor: 'pointer' }}
+            />
+          ))}
+        </div>
         <button
           type="button"
           onClick={saveCat}
@@ -176,7 +204,7 @@ export default function CatManagerModal() {
         {isEdit && (
           <button
             type="button"
-            onClick={() => setDraft({ id: '', nm: '', lm: '' })}
+            onClick={() => setDraft(BLANK)}
             style={{ width: '100%', padding: '8px 0', border: 'none', background: 'transparent', color: 'var(--text2)', fontSize: 11, fontWeight: 600, marginTop: 4 }}
           >
             Cancelar edicao
