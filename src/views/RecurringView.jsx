@@ -14,7 +14,41 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { fc, fm } from '../lib/format.js';
-import MerchantLogo from '../components/MerchantLogo.jsx';
+import MerchantLogo, { BrandMark } from '../components/MerchantLogo.jsx';
+import StatTiles from '../components/StatTiles.jsx';
+import Icon from '../components/Icon.jsx';
+import { resolveBrand } from '../lib/brands.jsx';
+
+const MONTHS_SHORT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+// Marcas que quase toda a gente tem; aparecem como sugestão quando a lista é curta.
+const SUGGESTIONS = [
+  { id: 'netflix', name: 'Netflix', cat: 'sub' },
+  { id: 'spotify', name: 'Spotify', cat: 'sub' },
+  { id: 'edp', name: 'EDP', cat: 'cas' },
+  { id: 'meo', name: 'MEO', cat: 'tel' },
+  { id: 'vodafone', name: 'Vodafone', cat: 'tel' },
+  { id: 'nos', name: 'NOS', cat: 'tel' },
+];
+
+function Suggestions({ recurring, open }) {
+  const have = new Set(recurring.map((r) => resolveBrand(r.name)).filter(Boolean));
+  const list = SUGGESTIONS.filter((s) => !have.has(s.id));
+  if (recurring.length >= 3 || list.length === 0) return null;
+  return (
+    <div className="cd" style={{ marginBottom: 12, padding: '14px 16px' }}>
+      <div className="lb" style={{ marginBottom: 4 }}>Costumas ter?</div>
+      <div style={{ fontSize: 11, color: 'var(--text3)' }}>Toca para adicionar com o nome e a categoria já preenchidos.</div>
+      <div className="sugg">
+        {list.map((s) => (
+          <button key={s.id} type="button" aria-label={'Adicionar ' + s.name} onClick={() => open('rec', { prefill: { name: s.name, cat: s.cat } })}>
+            <BrandMark id={s.id} size={20} radius={6} title={s.name} />
+            {s.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function RecurringView() {
   const { state, actions } = useStore();
@@ -43,6 +77,7 @@ export default function RecurringView() {
             visao clara do gasto mensal fixo.
           </div>
         </div>
+        <Suggestions recurring={recurring} open={open} />
       </div>
     );
   }
@@ -64,16 +99,16 @@ export default function RecurringView() {
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
-      <div className="cd" style={{ marginBottom: 16, padding: '18px 20px', background: 'var(--primary)', color: '#fff', boxShadow: 'var(--shadow-hero)' }}>
-        <div className="lb" style={{ marginBottom: 6, color: 'rgba(255,255,255,0.85)' }}>Custo Mensal Fixo</div>
-        <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em' }}>{fc(total)}</div>
-        <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
-          {fc(yearly)} por ano &middot; {recurring.length} {recurring.length === 1 ? 'subscrição' : 'subscrições'}
-          {paidThisMonth.size > 0 && (
-            <> &middot; falta pagar {fc(pendingTotal)} este mês</>
-          )}
-        </div>
+      <div style={{ marginBottom: 12 }}>
+        <StatTiles
+          items={[
+            { key: 'mes', value: fc(total), label: 'por mês' },
+            { key: 'ano', value: fc(yearly), label: 'por ano' },
+            { key: 'pend', value: fc(pendingTotal), label: 'por pagar', color: pendingTotal > 0 ? 'var(--warning)' : 'var(--success)' },
+          ]}
+        />
       </div>
+      <Suggestions recurring={recurring} open={open} />
 
       {sorted.map((r) => {
         let bI = null;
@@ -98,11 +133,12 @@ export default function RecurringView() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3 }}>
-                  {bI ? bI.nm : '—'} &middot; dia {nextDay}
-                  {paidThisMonth.has(r.id)
-                    ? ' · já lançada este mês'
-                    : ' · ' + (dleft === 0 ? 'hoje' : dleft === 1 ? 'amanhã' : 'daqui a ' + dleft + ' dias')}
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>{bI ? bI.nm : '—'}</span>
+                  <span aria-hidden="true">·</span>
+                  <Icon name="calendar" size={11} />
+                  <span>{next.getDate() + ' ' + MONTHS_SHORT[next.getMonth()]}</span>
+                  {!paidThisMonth.has(r.id) && dleft <= 3 && <span style={{ color: 'var(--warning)', fontWeight: 700 }}>{dleft === 0 ? 'hoje' : dleft === 1 ? 'amanhã' : 'em ' + dleft + ' dias'}</span>}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

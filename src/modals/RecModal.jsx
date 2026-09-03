@@ -59,6 +59,11 @@ export default function RecModal() {
         return;
       }
     }
+    const prefill = payload && typeof payload === 'object' && payload.prefill ? payload.prefill : null;
+    if (prefill) {
+      setDraft({ ...EMPTY, name: prefill.name || '', cat: prefill.cat || 'sub' });
+      return;
+    }
     setDraft(EMPTY);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, payload]);
