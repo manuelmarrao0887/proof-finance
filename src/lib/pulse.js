@@ -9,6 +9,7 @@
    Todas aceitam `now` (Date) para testes determinísticos.
    ════════════════════════════════════════════════════════════════════════ */
 
+import { fm } from './format.js';
 import { getAcctsLive, cardUsage, CARD_CAT } from './finance.js';
 import { upcomingTaxEvents } from './taxpt.js';
 import { savingsOpportunities } from './savings.js';
@@ -139,15 +140,14 @@ export function buildInsights(state, now) {
   //    pode estar mesmo a custar dinheiro por engano → topo da lista.
   findAnomalies(state, d, { limit: 2 }).forEach((a) => {
     const x = a.expense || {};
-    const eur = (v) => (Math.round(v * 100) / 100).toFixed(2).replace('.', ',') + ' €';
     out.push({
       id: 'anom-' + a.id,
       tone: 'alert',
       title: a.kind === 'duplicate' ? 'Cobrança repetida' : 'Fora do padrão',
       detail:
         a.kind === 'duplicate'
-          ? (x.desc || '') + ' · ' + eur(a.amount) + ' duas vezes'
-          : (x.desc || '') + ' · ' + eur(a.amount) + ' · ' + (a.ratio || 0).toFixed(1) + '× o habitual (' + eur(a.avg || 0) + ')',
+          ? (x.desc || '') + ' · ' + fm(a.amount) + ' duas vezes'
+          : (x.desc || '') + ' · ' + fm(a.amount) + ' · ' + (a.ratio || 0).toFixed(1) + '× o habitual (' + fm(a.avg || 0) + ')',
       long: a.title + ' — ' + a.detail,
       subject: { desc: x.desc || '', cat: x.cat || '', amount: a.amount },
       dismissId: a.id, // permite ao utilizador dizer "está certo"

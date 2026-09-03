@@ -47,8 +47,10 @@ export const BRANDS = {
   amazon: { name: 'Amazon', group: 'merchant', bg: '#232F3E', fg: '#fff', match: ['amazon', 'amzn', 'amazon prime'], node: (<>{T('a', 13, 800)}<path d="M6.5 17c3.5 2.1 8 2.1 11 0" fill="none" stroke="#FF9900" strokeWidth="1.8" strokeLinecap="round" /></>) },
   apple: { name: 'Apple', group: 'asset', bg: '#000', fg: '#fff', match: ['apple', 'itunes', 'app store'], node: (
     <><path d="M15.6 12.5c0-2 1.6-2.9 1.7-3-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6.1 1 8.1.7 1 1.5 2.1 2.5 2 1 0 1.4-.6 2.6-.6s1.6.6 2.6.6c1.1 0 1.8-1 2.4-2 .8-1.1 1.1-2.2 1.1-2.3 0 0-2.1-.8-2.1-3.2z" fill="currentColor" /><path d="M13.5 6.6c.5-.7.9-1.6.8-2.5-.8 0-1.7.5-2.3 1.2-.5.6-.9 1.5-.8 2.4.9.1 1.8-.4 2.3-1.1z" fill="currentColor" /></>) },
-  google: { name: 'Google', group: 'asset', bg: '#fff', fg: '#4285F4', node: T('G', 14, 900), match: ['google', 'youtube', 'google play'] },
-  microsoft: { name: 'Microsoft', group: 'asset', bg: '#fff', fg: '#000', match: ['microsoft', 'xbox'], node: (
+  // Cinzento muito claro em vez de branco puro: a única aresta do .brand é um
+  // anel interior ténue e o tile desaparecia sobre a superfície do tema claro.
+  google: { name: 'Google', group: 'asset', bg: '#F2F3F5', fg: '#4285F4', node: T('G', 14, 900), match: ['google', 'youtube', 'google play'] },
+  microsoft: { name: 'Microsoft', group: 'asset', bg: '#F2F3F5', fg: '#000', match: ['microsoft', 'xbox'], node: (
     <><rect x="5" y="5" width="6.4" height="6.4" fill="#F25022" /><rect x="12.6" y="5" width="6.4" height="6.4" fill="#7FBA00" /><rect x="5" y="12.6" width="6.4" height="6.4" fill="#00A4EF" /><rect x="12.6" y="12.6" width="6.4" height="6.4" fill="#FFB900" /></>) },
   zara: { name: 'Zara', group: 'merchant', bg: '#000', fg: '#fff', node: T('ZARA', 6.4, 700, { fontFamily: 'Georgia, serif', letterSpacing: 0.4 }), match: ['zara'] },
   worten: { name: 'Worten', group: 'merchant', bg: '#E30613', fg: '#fff', node: T('W', 14, 900), match: ['worten'] },
@@ -112,15 +114,26 @@ export function normalizeMerchant(text) {
     .trim();
 }
 
+/* Aliases muito curtos ("nos", "bp", "visa") também são palavras correntes em
+   português — "Jantar NOS Aliados", "Taxa de VISA consulado" — e um alias solto
+   no meio da frase dava a marca errada. Para estes exige-se um sinal mais
+   forte: só valem se forem a descrição normalizada inteira ou o seu primeiro
+   token (nos extratos o nome da marca vem sempre à cabeça). Aliases mais
+   longos mantêm a procura por token em qualquer posição. */
+const SHORT_ALIAS_MAX = 4;
+
 // Alias mais longo ganha (ex.: "uber eats" antes de "uber").
 export function resolveBrand(text) {
   const n = normalizeMerchant(text);
   if (!n) return null;
   const padded = ' ' + n + ' ';
+  const first = n.split(' ')[0];
   let best = null;
   Object.keys(BRANDS).forEach((id) => {
     BRANDS[id].match.forEach((alias) => {
-      if (padded.indexOf(' ' + alias + ' ') > -1 && (!best || alias.length > best.len)) best = { id, len: alias.length };
+      const hit =
+        alias.length <= SHORT_ALIAS_MAX ? n === alias || first === alias : padded.indexOf(' ' + alias + ' ') > -1;
+      if (hit && (!best || alias.length > best.len)) best = { id, len: alias.length };
     });
   });
   return best ? best.id : null;

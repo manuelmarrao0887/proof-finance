@@ -74,9 +74,16 @@ export default function InvestmentsView() {
               <span style={{ textAlign: 'right', flexShrink: 0 }}>
                 <span className="m" style={{ fontSize: 14, fontWeight: 700, display: 'block' }}>{mv(p.value)}</span>
                 {!hidden && (
-                  <span className="chip" style={{ marginTop: 3, padding: '1px 7px', fontSize: 10, fontWeight: 700, border: 'none', background: p.pl >= 0 ? 'var(--success-soft)' : 'var(--signal-soft)', color: p.pl >= 0 ? 'var(--success)' : 'var(--signal)' }}>
-                    {(p.pl >= 0 ? '+' : '') + p.plPct.toFixed(1) + '%'}
-                  </span>
+                  <>
+                    {/* O ganho/perda em euros — a percentagem sozinha não diz
+                        quanto dinheiro está em jogo. Escondido com os saldos. */}
+                    <span className="m" style={{ display: 'block', fontSize: 11, fontWeight: 700, marginTop: 2, color: p.pl >= 0 ? 'var(--success)' : 'var(--signal)' }}>
+                      {(p.pl >= 0 ? '+' : '') + fc(p.pl)}
+                    </span>
+                    <span className="chip" style={{ marginTop: 3, padding: '1px 7px', fontSize: 10, fontWeight: 700, border: 'none', background: p.pl >= 0 ? 'var(--success-soft)' : 'var(--signal-soft)', color: p.pl >= 0 ? 'var(--success)' : 'var(--signal)' }}>
+                      {(p.pl >= 0 ? '+' : '') + p.plPct.toFixed(1) + '%'}
+                    </span>
+                  </>
                 )}
               </span>
             </div>

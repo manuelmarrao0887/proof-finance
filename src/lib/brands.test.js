@@ -58,6 +58,16 @@ describe('brands: resolveBrand', () => {
     expect(resolveBrand('BPI')).toBe('bpi');
     expect(resolveBrand('BP ALVALADE')).toBe('bp');
   });
+  it('aliases curtos não disparam no meio de prosa portuguesa', () => {
+    // "nos"/"visa" são palavras correntes: só valem como frase inteira ou
+    // primeiro token da descrição.
+    expect(resolveBrand('Jantar nos Aliados')).toBeNull();
+    expect(resolveBrand('Taxa de visa consulado')).toBeNull();
+    expect(resolveBrand('Almoço na esplanada')).toBeNull();
+    expect(resolveBrand('NOS')).toBe('nos');
+    expect(resolveBrand('NOS Comunicações')).toBe('nos');
+    expect(resolveBrand('VISA')).toBe('visa');
+  });
   it('mantém dígitos que fazem parte do nome da marca (N26, Trading 212)', () => {
     expect(resolveBrand('N26 Bank')).toBe('n26');
     expect(resolveBrand('Trading 212')).toBe('t212');

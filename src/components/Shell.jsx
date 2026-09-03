@@ -167,7 +167,9 @@ function Header({ theme, onToggleTheme, syncStatus, user }) {
     <header className="app-header" style={{ padding: 'calc(8px + var(--safe-top)) 20px 16px' }}>
       <div className="rw">
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 10, margin: 0, fontSize: 17, lineHeight: 1.2, minWidth: 0 }}>
-          <Avatar name={label} photoURL={user && user.photoURL} size={36} />
+          {/* Decorativo: o <h1> é o único da página e o nome acessível já sai
+              do "Olá, …" ao lado — sem isto anunciava o email inteiro. */}
+          <Avatar name={label} photoURL={user && user.photoURL} size={36} decorative />
           <span style={{ minWidth: 0 }}>
             <span style={{ display: 'block', fontSize: 10.5, fontWeight: 600, color: 'var(--fg-subtle)', letterSpacing: '0.04em' }}>
               {MONTHS_PT[now.getMonth()] + ' ' + now.getFullYear()}

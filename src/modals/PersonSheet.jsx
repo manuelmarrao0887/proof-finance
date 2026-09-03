@@ -17,34 +17,15 @@ import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore, nextAvatarColor } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
+import Avatar from '../components/Avatar.jsx';
 
 const EMPTY_DRAFT = { editId: null, name: '' };
 
-function initials(name) {
-  return (name || '?').trim().slice(0, 2).toUpperCase();
-}
-
-function Avatar({ name, color, size = 30 }) {
-  return (
-    <span
-      aria-hidden="true"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: color || 'var(--fg-subtle)',
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: size * 0.36,
-        fontWeight: 700,
-        flexShrink: 0,
-      }}
-    >
-      {initials(name)}
-    </span>
-  );
+/* Avatar decorativo (o nome está sempre escrito ao lado) sobre o componente
+   partilhado — antes havia aqui uma cópia com outra regra de iniciais, e a
+   mesma pessoa aparecia "MA" aqui e "MM" no cabeçalho. */
+function PersonAvatar({ name, color, size = 30 }) {
+  return <Avatar name={name} color={color || 'var(--fg-subtle)'} size={size} decorative />;
 }
 
 export default function PersonSheet() {
@@ -152,7 +133,7 @@ export default function PersonSheet() {
               style={{ padding: '10px 14px', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                <Avatar name={p.name} color={p.color} />
+                <PersonAvatar name={p.name} color={p.color} />
                 <span style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</span>
               </span>
               <div style={{ display: 'flex', gap: 4 }}>
@@ -189,7 +170,7 @@ export default function PersonSheet() {
       <div className="cd" style={{ padding: '14px 16px', background: 'var(--bg3)' }}>
         <div className="lb" style={{ marginBottom: 8 }}>{isEdit ? 'Editar pessoa' : 'Nova pessoa'}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Avatar name={draft.name} color={previewColor} />
+          <PersonAvatar name={draft.name} color={previewColor} />
           <div style={{ flex: 1 }}>
             <input
               value={draft.name}

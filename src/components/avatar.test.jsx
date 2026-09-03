@@ -38,6 +38,17 @@ describe('Avatar', () => {
     expect(img.getAttribute('alt')).toBe('');
     expect(screen.getByRole('img', { name: 'Manuel' })).toBeTruthy();
   });
+  it('decorative sai da árvore de acessibilidade (sem role nem aria-label)', () => {
+    const { container } = render(<Avatar name="manuel@example.com" decorative />);
+    expect(screen.queryByRole('img')).toBeNull();
+    const el = container.firstChild;
+    expect(el.getAttribute('aria-hidden')).toBe('true');
+    expect(el.getAttribute('aria-label')).toBeNull();
+  });
+  it('initials sobrepõe-se ao cálculo automático', () => {
+    const { container } = render(<Avatar name="Tu" initials="Tu" />);
+    expect(container.firstChild.textContent).toBe('Tu');
+  });
 });
 
 describe('AvatarStack', () => {

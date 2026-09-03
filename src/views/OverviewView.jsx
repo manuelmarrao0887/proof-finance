@@ -106,8 +106,10 @@ export default function OverviewView() {
   //    getGroupsData() troca para o grupo de exemplo em preview sem dados
   //    próprios — a MESMA fonte que a vista de Grupos usa, para este
   //    indicador nunca dessincronizar da lista.
+  const groupsData = useMemo(() => getGroupsData(state, preview), [state.people, state.groups, state.groupEntries, preview]);
+
   const groupsSummary = useMemo(() => {
-    const { groups, groupEntries } = getGroupsData(state, preview);
+    const { groups, groupEntries } = groupsData;
     const activeGroups = groups.filter((g) => !g.archived);
     if (!activeGroups.length) return null;
     let owedToMe = 0;
@@ -120,14 +122,17 @@ export default function OverviewView() {
     });
     if (owedToMe <= 0 && owedByMe <= 0) return null; // tudo acertado — nada a mostrar
     return { owedToMe, owedByMe };
-  }, [state.people, state.groups, state.groupEntries, preview]);
+  }, [groupsData]);
 
-  // Pessoas dos grupos ativos (sem o próprio), para a faixa de Grupos.
+  /* Pessoas dos grupos ativos (sem o próprio), para a faixa de Grupos. Sai do
+     MESMO getGroupsData() do indicador acima: em preview sem dados próprios as
+     pessoas têm de ser as do grupo de exemplo, senão o cartão mostrava saldos
+     de demo com a pilha de avatares vazia. */
   const groupPeople = useMemo(() => {
     const ids = new Set();
-    (state.groups || []).filter((g) => !g.archived).forEach((g) => (g.memberIds || []).forEach((id) => id !== ME_ID && ids.add(id)));
-    return (state.people || []).filter((p) => ids.has(p.id)).map((p) => ({ id: p.id, name: p.name, color: p.color }));
-  }, [state.groups, state.people]);
+    (groupsData.groups || []).filter((g) => !g.archived).forEach((g) => (g.memberIds || []).forEach((id) => id !== ME_ID && ids.add(id)));
+    return (groupsData.people || []).filter((p) => ids.has(p.id)).map((p) => ({ id: p.id, name: p.name, color: p.color }));
+  }, [groupsData]);
 
   /* Todos os cálculos do Resumo dependem só de (state, currentUser). Sem memo
      corriam de novo a cada render — com centenas de despesas nota-se ao abrir
@@ -471,7 +476,13 @@ export default function OverviewView() {
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: tone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ins.title}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={ins.long || ins.detail}>
+                    {/* Duas linhas em vez de uma: num telemóvel o texto mais
+                        longo (rácio da anomalia) cabia só no title, e num PWA
+                        de toque não há hover para o ler. */}
+                    <div
+                      style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                      title={ins.long || ins.detail}
+                    >
                       {ins.detail}
                     </div>
                   </div>

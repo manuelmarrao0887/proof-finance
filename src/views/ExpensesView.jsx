@@ -283,7 +283,7 @@ export default function ExpensesView() {
                 return (
                   <div key={x.id} className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
                     <div className="rw" style={{ gap: 12 }}>
-                      <MerchantLogo text={x.desc} cat={x.cat} size={40} />
+                      <MerchantLogo text={x.desc} cat={x.cat} size={40} bdg={bdg} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 600 }}>
                           {x.desc}
@@ -617,7 +617,7 @@ export default function ExpensesView() {
             return (
               <div key={r.id} className="cd" style={{ marginBottom: 8, padding: '10px 14px' }}>
                 <div className="rw" style={{ gap: 12 }}>
-                  <MerchantLogo text={r.name} cat={r.cat} size={36} />
+                  <MerchantLogo text={r.name} cat={r.cat} size={36} bdg={bdg} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
                     <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
@@ -751,7 +751,7 @@ export default function ExpensesView() {
                       return (
                         <div key={'a' + x.id} style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
                           <div className="rw" style={{ gap: 8 }}>
-                            <MerchantLogo text={x.desc} cat={x.cat} size={26} />
+                            <MerchantLogo text={x.desc} cat={x.cat} size={26} bdg={bdg} />
                             <span style={{ fontSize: 12, color: 'var(--text)', flex: 1, minWidth: 0 }}>
                               {x.desc}
                               {x.shared && (

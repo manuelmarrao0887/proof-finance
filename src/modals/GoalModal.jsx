@@ -17,7 +17,7 @@ import { useStore } from '../store/store.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
-import { GOAL_ICONS } from '../lib/categories.js';
+import { GOAL_ICONS, ICON_LABELS, COLOR_LABELS } from '../lib/categories.js';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 const COLORS = ['#3b6fee', '#3fc97a', '#f5a623', '#7b5fe0', '#f25555', '#12b3a6'];
@@ -169,7 +169,7 @@ export default function GoalModal() {
       <div className="lb" style={{ marginBottom: 8 }}>Ícone</div>
       <div className="icon-grid">
         {GOAL_ICONS.map((ic) => (
-          <button key={ic} type="button" aria-label={'Ícone ' + ic} aria-pressed={draft.icon === ic} onClick={() => set('icon', ic)}>
+          <button key={ic} type="button" aria-label={'Ícone ' + (ICON_LABELS[ic] || ic)} aria-pressed={draft.icon === ic} onClick={() => set('icon', ic)}>
             <Icon name={ic} size={18} />
           </button>
         ))}
@@ -182,7 +182,7 @@ export default function GoalModal() {
             key={c}
             type="button"
             onClick={() => set('color', c)}
-            aria-label={'Cor ' + c}
+            aria-label={'Cor ' + (COLOR_LABELS[c] || c)}
             style={{
               width: 36,
               height: 36,

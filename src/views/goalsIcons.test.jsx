@@ -41,9 +41,24 @@ describe('Metas com ícone', () => {
     expect(screen.queryByText('Progresso global')).toBeNull();
     expect(screen.queryByText(/Não chega para o prazo/)).toBeNull();
   });
+  it('o chip "atrasada" é um botão que abre a explicação do risco numa linha visível', async () => {
+    // A frase vivia só no title de um <span> — sem hover num telemóvel não havia
+    // como a ler.
+    await renderWithStore(<GoalsView />, { fixture: richFixture() });
+    const chip = screen.getByRole('button', { name: 'atrasada' });
+    expect(chip.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText(/Não chega para o prazo/)).toBeNull();
+    await act(async () => { fireEvent.click(chip); });
+    expect(chip.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText(/Não chega para o prazo/)).toBeTruthy();
+    // "no ritmo" não tem risco: continua um span sem botão.
+    expect(screen.queryByRole('button', { name: 'no ritmo' })).toBeNull();
+    await act(async () => { fireEvent.click(chip); });
+    expect(screen.queryByText(/Não chega para o prazo/)).toBeNull();
+  });
   it('o modal grava o ícone escolhido', async () => {
     await renderWithStore(<><GoalModal /><Probe /></>, { fixture: richFixture(), openModal: 'goal', payload: { id: 'g2' } });
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Ícone shieldCheck' })); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Ícone escudo' })); });
     await act(async () => { fireEvent.click(screen.getByText('Guardar alterações')); });
     const g2 = JSON.parse(screen.getByTestId('probe').textContent).find((g) => g.id === 'g2');
     expect(g2.icon).toBe('shieldCheck');

@@ -21,7 +21,7 @@ import { useToast } from '../components/Toast.jsx';
 import { fc } from '../lib/format.js';
 import Icon from '../components/Icon.jsx';
 import CategoryIcon from '../components/CategoryIcon.jsx';
-import { sortedCats, PICKER_ICONS, PICKER_COLORS } from '../lib/categories.js';
+import { sortedCats, PICKER_ICONS, PICKER_COLORS, ICON_LABELS, COLOR_LABELS } from '../lib/categories.js';
 import { byC } from '../lib/finance.js';
 
 // Draft em branco (id/nm/lm + icon/color do seletor visual).
@@ -176,7 +176,7 @@ export default function CatManagerModal() {
         <div className="lb" style={{ marginBottom: 8 }}>Ícone</div>
         <div className="icon-grid">
           {PICKER_ICONS.map((ic) => (
-            <button key={ic} type="button" aria-label={'Ícone ' + ic} aria-pressed={draft.icon === ic} onClick={() => setDraft((p) => ({ ...p, icon: ic }))}>
+            <button key={ic} type="button" aria-label={'Ícone ' + (ICON_LABELS[ic] || ic)} aria-pressed={draft.icon === ic} onClick={() => setDraft((p) => ({ ...p, icon: ic }))}>
               <Icon name={ic} size={18} />
             </button>
           ))}
@@ -187,7 +187,7 @@ export default function CatManagerModal() {
             <button
               key={c}
               type="button"
-              aria-label={'Cor ' + c}
+              aria-label={'Cor ' + (COLOR_LABELS[c] || c)}
               aria-pressed={draft.color === c}
               onClick={() => setDraft((p) => ({ ...p, color: c }))}
               style={{ width: 30, height: 30, borderRadius: '50%', background: c, border: draft.color === c ? '3px solid var(--text)' : '3px solid transparent', padding: 0, cursor: 'pointer' }}

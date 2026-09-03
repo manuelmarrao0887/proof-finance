@@ -33,8 +33,15 @@ afterEach(() => cleanup());
 describe('Shell: cabeçalho com avatar e saudação', () => {
   it('sauda pelo nome derivado do email de teste e mostra o avatar', async () => {
     setViewportWidth(500);
-    await renderWithStore(<Shell />, { fixture: richFixture() });
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('Olá, Test');
-    expect(screen.getByRole('img', { name: 'test@example.com' })).toBeTruthy();
+    const { container } = await renderWithStore(<Shell />, { fixture: richFixture() });
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1.textContent).toContain('Olá, Test');
+    // O avatar existe mas é decorativo: o <h1> é o único da página e não pode
+    // anunciar o email do utilizador como nome acessível.
+    const av = container.querySelector('.app-header .avatar');
+    expect(av).toBeTruthy();
+    expect(av.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.queryByRole('img', { name: 'test@example.com' })).toBeNull();
+    expect(h1.getAttribute('aria-label')).toBeNull();
   });
 });

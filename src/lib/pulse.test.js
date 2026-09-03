@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { dailyAllowance, savingsPulse, buildInsights, monthPlan, monthForecast } from './pulse.js';
+import { fm } from './format.js';
 
 // 10 de julho de 2026 (julho tem 31 dias → faltam 22 dias, incluindo hoje).
 const NOW = new Date(2026, 6, 10);
@@ -124,6 +125,26 @@ describe('buildInsights', () => {
     const card = ins.find((i) => i.id.startsWith('card-'));
     expect(card).toBeTruthy();
     expect(card.tone).toBe('alert');
+  });
+
+  it('o valor da anomalia usa o mesmo formato de euros do resto da app', () => {
+    // Antes havia um eur() local: sem separador de milhares e com espaço
+    // normal antes do €, em vez do fm() usado no resto da app.
+    const s = {
+      ...BASE,
+      addedExp: [
+        ...BASE.addedExp,
+        { id: 'x1', desc: 'Oficina', amount: 20, cat: 'car', date: '2026-07-01' },
+        { id: 'x2', desc: 'Oficina', amount: 20, cat: 'car', date: '2026-07-02' },
+        { id: 'd1', desc: 'Estofos', amount: 12345.5, cat: 'cas', date: '2026-07-07' },
+        { id: 'd2', desc: 'Estofos', amount: 12345.5, cat: 'cas', date: '2026-07-08' },
+      ],
+    };
+    const anom = buildInsights(s, NOW).find((i) => i.id.startsWith('anom-'));
+    expect(anom).toBeTruthy();
+    expect(anom.detail).toContain(fm(12345.5));
+    expect(anom.detail).not.toContain('12345,50'); // sem separador de milhares
+    expect(anom.detail).not.toContain('50 €'); // espaço normal antes do €
   });
 
   it('máximo 3 insights, alertas primeiro', () => {

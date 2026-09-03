@@ -21,6 +21,7 @@ import { computeBalances, simplifyDebts, groupTotals, isSettled, groupCatMeta, s
 import { getGroupsData } from '../lib/finance.js';
 import { fm, fmDateShort } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
+import Avatar from '../components/Avatar.jsx';
 
 // Os três separadores do detalhe do grupo.
 const SEGMENTS = [
@@ -36,11 +37,6 @@ function nameOfFactory(people) {
 // Cor do avatar (o próprio utilizador usa a cor da marca).
 function colorOfFactory(people) {
   return (id) => (id === ME_ID ? 'var(--primary)' : (people.find((p) => p.id === id) || {}).color || 'var(--fg-subtle)');
-}
-// Iniciais para o avatar: "Tu" para o próprio, 2 letras para os outros.
-function initialsOf(name, id) {
-  if (id === ME_ID) return 'Tu';
-  return (name || '?').trim().slice(0, 2).toUpperCase();
 }
 
 // Cartão de um grupo na lista: emoji, nome, resumo e saldo (ou "acertado").
@@ -63,7 +59,6 @@ function GroupCard({ group, totals, settled, onOpen, btnRef, nameOf, colorOf }) 
       type="button"
       onClick={onOpen}
       className="cd"
-      aria-label={group.name + ' · ' + memberCount + ' pessoas'}
       style={{
         width: '100%',
         display: 'block',
@@ -88,6 +83,9 @@ function GroupCard({ group, totals, settled, onOpen, btnRef, nameOf, colorOf }) 
                   <MemberAvatar key={id} id={id} nameOf={nameOf} colorOf={colorOf} size={18} />
                 ))}
               </span>
+              {/* Nº de pessoas só para o leitor de ecrã: um aria-label no botão
+                  substituiria o nome acessível inteiro e calaria o saldo. */}
+              <span className="vh">{memberCount} pessoas</span>
               <span>
                 {fm(totals.total)}
                 {hasRange ? ' · ' + fmDateShort(group.start) + ' – ' + fmDateShort(group.end) : ''}
@@ -109,22 +107,12 @@ function GroupCard({ group, totals, settled, onOpen, btnRef, nameOf, colorOf }) 
   );
 }
 
-// Avatar circular com iniciais: cor da pessoa como fundo, nome como aria-label
-// (role="img" para o leitor de ecrã anunciar o nome em vez de "Tu"/iniciais soltas).
-// Classe "avatar" partilhada com components/Avatar.jsx — permite o empilhamento
-// (.avatar-stack .avatar+.avatar) quando vários MemberAvatar aparecem em fila.
+// Avatar circular com iniciais, sobre o componente partilhado (o nome vai em
+// aria-label, para o leitor de ecrã anunciar a pessoa em vez das iniciais
+// soltas). Antes havia aqui uma cópia com outra regra de iniciais — "Manuel
+// Marrão" dava "MA" nos grupos e "MM" no cabeçalho.
 function MemberAvatar({ id, nameOf, colorOf, size = 30 }) {
-  return (
-    <span
-      className="avatar"
-      role="img"
-      aria-label={nameOf(id)}
-      title={nameOf(id)}
-      style={{ width: size, height: size, background: colorOf(id), fontSize: size * 0.36 }}
-    >
-      {initialsOf(nameOf(id), id)}
-    </span>
-  );
+  return <Avatar name={nameOf(id)} color={colorOf(id)} size={size} initials={id === ME_ID ? 'Tu' : undefined} />;
 }
 
 // Quanto é que esta despesa muda a minha posição: positivo = emprestei

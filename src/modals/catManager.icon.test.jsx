@@ -33,8 +33,8 @@ describe('CatManagerModal: ícone e cor', () => {
     await renderWithStore(<><CatManagerModal /><Probe /></>, { fixture: richFixture(), openModal: 'cat' });
     await act(async () => {
       fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Viagens' } });
-      fireEvent.click(screen.getByRole('button', { name: 'Ícone plane' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Cor #f5a623' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Ícone avião' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Cor laranja' }));
     });
     await act(async () => {
       fireEvent.click(screen.getByText('Adicionar'));
@@ -46,7 +46,7 @@ describe('CatManagerModal: ícone e cor', () => {
   });
   it('o seletor marca o ícone escolhido com aria-pressed', async () => {
     await renderWithStore(<CatManagerModal />, { fixture: richFixture(), openModal: 'cat' });
-    const btn = screen.getByRole('button', { name: 'Ícone gift' });
+    const btn = screen.getByRole('button', { name: 'Ícone presente' });
     await act(async () => { fireEvent.click(btn); });
     expect(btn.getAttribute('aria-pressed')).toBe('true');
   });

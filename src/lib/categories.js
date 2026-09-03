@@ -45,3 +45,47 @@ export function catMeta(id, item) {
 export const PICKER_ICONS = ['food', 'cart', 'bag', 'home', 'landmark', 'sparkle', 'shield', 'paw', 'health', 'phone', 'car', 'dumbbell', 'fuel', 'briefcase', 'ticket', 'transfer', 'person', 'gift', 'plane', 'umbrella', 'graduation', 'piggy', 'recurring', 'dots'];
 export const PICKER_COLORS = ['#3b6fee', '#3fc97a', '#f5a623', '#7b5fe0', '#f25555', '#12b3a6', '#f25592', '#6b7280'];
 export const GOAL_ICONS = ['goal', 'umbrella', 'shieldCheck', 'car', 'plane', 'home', 'gift', 'graduation', 'piggy'];
+
+/* Rótulos em português para os botões dos seletores: os nomes internos são em
+   inglês ("shieldCheck") e as cores são hexadecimais — um leitor de ecrã
+   soletrava "Cor cardinal 3 b 6 f e e" a quem fala português. Cobre todos os
+   nomes de PICKER_ICONS e GOAL_ICONS. */
+export const ICON_LABELS = {
+  food: 'refeição',
+  cart: 'carrinho',
+  bag: 'saco',
+  home: 'casa',
+  landmark: 'banco',
+  sparkle: 'brilho',
+  shield: 'escudo',
+  shieldCheck: 'escudo',
+  paw: 'pata',
+  health: 'saúde',
+  phone: 'telemóvel',
+  car: 'carro',
+  dumbbell: 'halteres',
+  fuel: 'combustível',
+  briefcase: 'pasta',
+  ticket: 'bilhete',
+  transfer: 'transferência',
+  person: 'pessoa',
+  gift: 'presente',
+  plane: 'avião',
+  umbrella: 'guarda-sol',
+  graduation: 'formatura',
+  piggy: 'mealheiro',
+  recurring: 'recorrente',
+  dots: 'reticências',
+  goal: 'meta',
+};
+
+export const COLOR_LABELS = {
+  '#3b6fee': 'azul',
+  '#3fc97a': 'verde',
+  '#f5a623': 'laranja',
+  '#7b5fe0': 'roxo',
+  '#f25555': 'vermelho',
+  '#12b3a6': 'turquesa',
+  '#f25592': 'rosa',
+  '#6b7280': 'cinzento',
+};

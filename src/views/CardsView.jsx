@@ -157,7 +157,7 @@ export default function CardsView() {
               ) : (
                 exps.map((x) => (
                   <div key={x.id} className="rw" style={{ padding: '8px 0', borderTop: '1px solid var(--border)', gap: 10 }}>
-                    <MerchantLogo text={x.desc} cat={x.cat} size={32} />
+                    <MerchantLogo text={x.desc} cat={x.cat} size={32} bdg={cats} />
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.desc}</div>
                       <div style={{ fontSize: 10, color: 'var(--text3)' }}>{catName(x.cat)} · {fmDateShort(x.date)}{x.imported ? ' · importada' : ''}</div>

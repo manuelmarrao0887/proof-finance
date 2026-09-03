@@ -11,7 +11,7 @@
      the original cap: never exceed target*1.5 → snap to target).
    ════════════════════════════════════════════════════════════════════════ */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
@@ -29,6 +29,10 @@ export default function GoalsView() {
   // Metas cuja reserva mensal não chega para cumprir o prazo.
   const atRisk = goalsAtRisk(goals);
   const riskById = Object.fromEntries(atRisk.map((r) => [r.id, r]));
+  /* Meta cuja explicação de risco está aberta. A frase vivia só no `title` do
+     chip — num PWA de toque não há hover, por isso o chip com risco passa a
+     botão que a mostra numa linha visível dentro do cartão. */
+  const [openRisk, setOpenRisk] = useState(null);
   // Mês corrente 'YYYY-MM' — marca as metas já reforçadas pelo plano do mês.
   const thisMonth = (() => {
     const d = new Date();
@@ -106,6 +110,19 @@ export default function GoalsView() {
         const R = 28;
         const C2 = 2 * Math.PI * R;
 
+        const risk = riskById[g.id];
+        const done = pctAbs >= 100;
+        // `done` dá 'concluída' — a condição do tone precisa dos dois casos.
+        const stateLabel = done ? 'concluída' : risk ? 'atrasada' : g.monthly > 0 ? 'no ritmo' : 'a começar';
+        const tone = done || stateLabel === 'no ritmo' ? 'var(--success)' : risk ? 'var(--warning)' : 'var(--text3)';
+        const riskText = risk
+          ? 'Não chega para o prazo: precisas de ' + fc(risk.needed) + '/mês' + (risk.monthly > 0 ? ' (+' + fc(risk.gap) + ')' : '') + ' nos próximos ' + risk.monthsLeft + (risk.monthsLeft === 1 ? ' mês' : ' meses') + '.'
+          : undefined;
+        const chipStyle = { border: 'none', background: 'color-mix(in srgb, ' + tone + ' 14%, transparent)', color: tone, fontWeight: 700, padding: '3px 9px', flexShrink: 0 };
+        // id do painel; só vai a aria-controls enquanto ele existe no DOM.
+        const riskId = 'goal-risk-' + g.id;
+        const riskOpen = !!risk && openRisk === g.id;
+
         return (
           <div key={g.id} className="cd fadeUp" style={{ marginBottom: 12, padding: 18, position: 'relative', overflow: 'hidden' }}>
             <div className="rw" style={{ marginBottom: 12, gap: 10 }}>
@@ -120,20 +137,23 @@ export default function GoalsView() {
                   </div>
                 )}
               </div>
-              {(() => {
-                const risk = riskById[g.id];
-                const done = pctAbs >= 100;
-                const label = done ? 'concluída' : risk ? 'atrasada' : g.monthly > 0 ? 'no ritmo' : 'a começar';
-                const tone = done || label === 'no ritmo' ? 'var(--success)' : risk ? 'var(--warning)' : 'var(--text3)';
-                const title = risk
-                  ? 'Não chega para o prazo: precisas de ' + fc(risk.needed) + '/mês' + (risk.monthly > 0 ? ' (+' + fc(risk.gap) + ')' : '') + ' nos próximos ' + risk.monthsLeft + (risk.monthsLeft === 1 ? ' mês' : ' meses') + '.'
-                  : undefined;
-                return (
-                  <span className="chip" title={title} style={{ border: 'none', background: 'color-mix(in srgb, ' + tone + ' 14%, transparent)', color: tone, fontWeight: 700, padding: '3px 9px', flexShrink: 0 }}>
-                    {label}
-                  </span>
-                );
-              })()}
+              {risk ? (
+                <button
+                  type="button"
+                  className="chip"
+                  onClick={() => setOpenRisk(riskOpen ? null : g.id)}
+                  title={riskText}
+                  aria-expanded={riskOpen}
+                  aria-controls={riskOpen ? riskId : undefined}
+                  style={{ ...chipStyle, cursor: 'pointer' }}
+                >
+                  {stateLabel}
+                </button>
+              ) : (
+                <span className="chip" style={chipStyle}>
+                  {stateLabel}
+                </span>
+              )}
               <button type="button" onClick={() => open('goal', { id: g.id })} className="icon-btn" style={{ width: 32, height: 32, flexShrink: 0 }} aria-label="Editar meta">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 20h9" />
@@ -188,8 +208,15 @@ export default function GoalsView() {
               </div>
             </div>
 
+            {/* Explicação do risco, aberta pelo chip "atrasada". */}
+            {riskOpen && (
+              <div id={riskId} style={{ fontSize: 11, color: 'var(--warning)', marginTop: 12, fontWeight: 600, lineHeight: 1.4 }}>
+                {riskText}
+              </div>
+            )}
+
             {/* Quick add buttons */}
-            <div style={{ display: 'flex', gap: 6, marginTop: 14, marginLeft: 8 }}>
+            <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
               {QUICK_ADD.map((amt) => (
                 <button
                   key={amt}

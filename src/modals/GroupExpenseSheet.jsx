@@ -26,6 +26,7 @@ import { useToast } from '../components/Toast.jsx';
 import { fm, todayISO } from '../lib/format.js';
 import { resolveShares, GROUP_CATS, groupCatMeta, toCents, fromCents } from '../lib/split.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
+import Avatar from '../components/Avatar.jsx';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 const MODES = [
@@ -47,41 +48,20 @@ function parseNum(v) {
   return isNaN(n) ? 0 : n;
 }
 
-// Mesmas fórmulas de GroupsView.jsx (não exportadas de lá — replicadas aqui,
-// como PersonSheet.jsx já replica o seu próprio Avatar/initials). 'me' é
-// sempre "Tu".
+// Mesmas fórmulas de GroupsView.jsx (não exportadas de lá — replicadas aqui).
+// 'me' é sempre "Tu".
 function nameOfFactory(people) {
   return (id) => (id === ME_ID ? 'Tu' : (people.find((p) => p.id === id) || {}).name || '—');
 }
 function colorOfFactory(people) {
   return (id) => (id === ME_ID ? 'var(--primary)' : (people.find((p) => p.id === id) || {}).color || 'var(--fg-subtle)');
 }
-function initialsOf(name, id) {
-  if (id === ME_ID) return 'Tu';
-  return (name || '?').trim().slice(0, 2).toUpperCase();
-}
 
-function Avatar({ name, color, id, size = 26 }) {
-  return (
-    <span
-      aria-hidden="true"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: color,
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: size * 0.36,
-        fontWeight: 700,
-        flexShrink: 0,
-      }}
-    >
-      {initialsOf(name, id)}
-    </span>
-  );
+/* Avatar decorativo (o nome está escrito ao lado) sobre o componente
+   partilhado, para as iniciais serem as mesmas em toda a app. O próprio
+   utilizador continua a mostrar "Tu" por override explícito. */
+function MemberAvatar({ name, color, id, size = 26 }) {
+  return <Avatar name={name} color={color} size={size} initials={id === ME_ID ? 'Tu' : undefined} decorative />;
 }
 
 // Draft em branco para uma despesa nova: todos os membros do grupo
@@ -506,7 +486,7 @@ export default function GroupExpenseSheet() {
                     </svg>
                   )}
                 </span>
-                <Avatar name={nameOf(id)} color={colorOf(id)} id={id} />
+                <MemberAvatar name={nameOf(id)} color={colorOf(id)} id={id} />
                 <span
                   style={{
                     fontSize: 13,

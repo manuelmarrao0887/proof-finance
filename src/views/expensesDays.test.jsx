@@ -3,6 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { screen, cleanup, fireEvent, act } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
 import { richFixture } from '../test/fixtures.js';
+import { initialPersisted } from '../store/store.jsx';
 import ExpensesView, { dayLabel as dayLabelForTest } from './ExpensesView.jsx';
 
 vi.mock('../firebase/client.js', () => ({
@@ -39,5 +40,21 @@ describe('Despesas: pesquisa agrupada por dia', () => {
     expect(dayLabelForTest('2026-03-01', '2026-03-01')).toBe('Hoje');
     expect(dayLabelForTest('2026-02-28', '2026-03-01')).toBe('Ontem'); // fronteira de mês
     expect(dayLabelForTest('2025-12-31', '2026-01-01')).toBe('Ontem'); // fronteira de ano
+  });
+
+  it('a linha de resultados usa a cor de uma categoria personalizada', async () => {
+    // Sem bdg no MerchantLogo, o CategoryIcon caía no cinzento por defeito.
+    const fx = richFixture();
+    fx.bdg = initialPersisted().bdg.concat([{ id: 'viagens', nm: 'Viagens', lm: 200, icon: 'plane', color: '#f5a623' }]);
+    fx.addedExp = fx.addedExp.concat([
+      { id: 'viag1', desc: 'Bilhete comboio Porto', amount: 22.5, cat: 'viagens', date: fx.addedExp[0].date },
+    ]);
+    const { container } = await renderWithStore(<ExpensesView />, { fixture: fx });
+    await act(async () => {
+      fireEvent.change(screen.getAllByPlaceholderText(/Pesquisar/)[0], { target: { value: 'Bilhete comboio' } });
+    });
+    const row = screen.getByText('Bilhete comboio Porto').closest('.cd');
+    expect(row).toBeTruthy();
+    expect(row.querySelector('.rw > div').style.color).toBe('rgb(245, 166, 35)');
   });
 });

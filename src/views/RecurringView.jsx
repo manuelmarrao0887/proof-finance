@@ -126,7 +126,7 @@ export default function RecurringView() {
         return (
           <div key={r.id} className="cd fadeUp" style={{ marginBottom: 10, padding: '14px 18px' }}>
             <div className="rw" style={{ gap: 12 }}>
-              <MerchantLogo text={r.name} cat={r.cat} size={40} />
+              <MerchantLogo text={r.name} cat={r.cat} size={40} bdg={bdg} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                   {r.name}

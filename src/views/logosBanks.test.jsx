@@ -3,6 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { screen, cleanup } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
 import { richFixture } from '../test/fixtures.js';
+import { fc } from '../lib/format.js';
 import OverviewView from './OverviewView.jsx';
 import TransfersView from './TransfersView.jsx';
 import InvestmentsView from './InvestmentsView.jsx';
@@ -24,6 +25,9 @@ vi.mock('../firebase/data.js', () => ({
 
 afterEach(() => cleanup());
 
+// getByText normaliza espaços: troca o espaço inseparável do fc() por um normal.
+const plain = (t) => t.replace(/\u00a0/g, ' ');
+
 describe('logos de bancos e ativos', () => {
   it('Resumo: cada conta de liquidez/poupança tem o logo do banco', async () => {
     await renderWithStore(<OverviewView />, { fixture: richFixture() });
@@ -42,5 +46,18 @@ describe('logos de bancos e ativos', () => {
     expect(screen.getByRole('img', { name: 'Microsoft' })).toBeTruthy();
     expect(screen.getAllByText('XTB').length).toBe(3);
     expect(screen.queryByText(/20 @/)).toBeNull();
+    // O ganho/perda em euros continua na linha, ao lado do chip de percentagem.
+    // (o espaço antes do € é inseparável — getByText normaliza-o para simples)
+    expect(screen.getByText(plain('+' + fc(200)))).toBeTruthy();
+    expect(screen.getByText('+10.0%')).toBeTruthy();
+    expect(screen.getByText(plain(fc(-250)))).toBeTruthy();
+  });
+  it('Investimentos: com saldos escondidos não mostra o P/L em euros nem a percentagem', async () => {
+    const fx = richFixture();
+    fx.balancesHidden = true;
+    await renderWithStore(<InvestmentsView />, { fixture: fx });
+    expect(screen.queryByText(plain('+' + fc(200)))).toBeNull();
+    expect(screen.queryByText('+10.0%')).toBeNull();
+    expect(screen.getAllByText('••••').length).toBeGreaterThan(0);
   });
 });

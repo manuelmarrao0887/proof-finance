@@ -23,16 +23,21 @@ export function greetingName(user) {
   return '';
 }
 
-export default function Avatar({ name, photoURL, color, size = 32 }) {
+/* `decorative`: o avatar não acrescenta nada ao que já está escrito ao lado
+   (o cabeçalho já diz "Olá, <nome>"), por isso fica fora da árvore de
+   acessibilidade em vez de emprestar o seu `name` — que ali é o email — ao
+   nome acessível do <h1>. `initials` permite forçar as iniciais quando quem
+   chama já tem uma regra própria (ex.: "Tu" para o próprio utilizador). */
+export default function Avatar({ name, photoURL, color, size = 32, decorative, initials }) {
+  const a11y = decorative ? { 'aria-hidden': 'true' } : { role: 'img', 'aria-label': name || 'Utilizador' };
   return (
     <span
       className="avatar"
-      role="img"
-      aria-label={name || 'Utilizador'}
+      {...a11y}
       title={name || undefined}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.38), background: color || 'var(--primary)' }}
     >
-      {photoURL ? <img src={photoURL} alt="" referrerPolicy="no-referrer" /> : initialsFrom(name)}
+      {photoURL ? <img src={photoURL} alt="" referrerPolicy="no-referrer" /> : initials || initialsFrom(name)}
     </span>
   );
 }
