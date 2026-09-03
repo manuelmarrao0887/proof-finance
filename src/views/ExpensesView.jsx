@@ -649,7 +649,7 @@ export default function ExpensesView() {
         return (
           <div key={r.id} style={{ marginBottom: 4 }}>
             <button type="button" className="exp-btn" style={{ alignItems: 'center', gap: 12 }} onClick={() => setXExp(isE ? null : r.id)}>
-              <CategoryIcon id={r.id} size={40} />
+              <CategoryIcon id={r.id} size={40} bdg={bdg} />
               <div style={{ flex: 1 }}>
                 <div className="rw">
                   <span style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>

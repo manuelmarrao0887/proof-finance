@@ -23,6 +23,8 @@ import { applyRules } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
 import { listAccounts } from '../lib/balances.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
+import MerchantLogo from '../components/MerchantLogo.jsx';
+import { resolveBrand } from '../lib/brands.jsx';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 // Fresh draft for a brand-new expense (orig addData default 417 / reset 2364).
@@ -257,7 +259,7 @@ export default function AddExpenseSheet() {
                 cursor: 'pointer',
               }}
             >
-              <CategoryIcon id={b.id} size={34} />
+              <CategoryIcon id={b.id} size={34} bdg={cats} />
               {/* minWidth:0 + hyphens: "Supermercado" (77px) não cabia numa
                   célula de 65px a 320px e empurrava a grelha para fora. */}
               <span style={{ fontSize: 11, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15, minWidth: 0, maxWidth: '100%', overflowWrap: 'anywhere', hyphens: 'auto' }}>
@@ -270,13 +272,20 @@ export default function AddExpenseSheet() {
 
       {/* Descrição */}
       <div className="lb" style={{ marginBottom: 6 }}>Descrição</div>
-      <input
-        value={d.desc}
-        onChange={(e) => set('desc', e.target.value)}
-        placeholder="Ex: Pingo Doce"
-        aria-label="Descrição"
-        style={{ ...inputStyle, fontSize: 15, marginBottom: errors.desc ? 0 : 14 }}
-      />
+      <div style={{ position: 'relative', marginBottom: errors.desc ? 0 : 14 }}>
+        {resolveBrand(d.desc) && (
+          <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', display: 'inline-flex' }}>
+            <MerchantLogo text={d.desc} size={26} />
+          </span>
+        )}
+        <input
+          value={d.desc}
+          onChange={(e) => set('desc', e.target.value)}
+          placeholder="Ex: Pingo Doce"
+          aria-label="Descrição"
+          style={{ ...inputStyle, fontSize: 15, marginBottom: 0, paddingLeft: resolveBrand(d.desc) ? 46 : 16 }}
+        />
+      </div>
       {errText(errors.desc)}
       {errors.desc && <div style={{ height: 14 }} />}
 
