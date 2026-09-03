@@ -8,8 +8,9 @@ import React from 'react';
 import Icon from './Icon.jsx';
 import { catMeta } from '../lib/categories.js';
 
-export default function CategoryIcon({ id, size = 40, style, className }) {
-  const meta = catMeta(id);
+export default function CategoryIcon({ id, size = 40, style, className, bdg }) {
+  const item = Array.isArray(bdg) ? bdg.find((b) => b.id === id) : null;
+  const meta = catMeta(id, item);
   return (
     <div
       className={className}

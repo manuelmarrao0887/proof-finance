@@ -28,11 +28,20 @@ export const CAT_META = {
   cmb: { icon: 'fuel', color: '#f25555' },
   neg: { icon: 'briefcase', color: '#3b6fee' },
   laz: { icon: 'ticket', color: '#f5a623' },
-  comp: { icon: 'cart', color: '#12b3a6' },
+  comp: { icon: 'bag', color: '#12b3a6' },
   trf: { icon: 'transfer', color: '#6b7280' },
   out: { icon: 'dots', color: '#9aa3b5' },
 };
 
-export function catMeta(id) {
-  return CAT_META[id] || { icon: 'dots', color: '#9aa3b5' };
+// Meta visual: defaults por id, com override opcional do próprio item (icon/color
+// escolhidos pelo utilizador em categorias personalizadas).
+export function catMeta(id, item) {
+  const base = CAT_META[id] || { icon: 'dots', color: '#9aa3b5' };
+  if (!item) return base;
+  return { icon: item.icon || base.icon, color: item.color || base.color };
 }
+
+// Seletores (gestor de categorias e modal de meta).
+export const PICKER_ICONS = ['food', 'cart', 'bag', 'home', 'landmark', 'sparkle', 'shield', 'paw', 'health', 'phone', 'car', 'dumbbell', 'fuel', 'briefcase', 'ticket', 'transfer', 'person', 'gift', 'plane', 'umbrella', 'graduation', 'piggy', 'recurring', 'dots'];
+export const PICKER_COLORS = ['#3b6fee', '#3fc97a', '#f5a623', '#7b5fe0', '#f25555', '#12b3a6', '#f25592', '#6b7280'];
+export const GOAL_ICONS = ['goal', 'umbrella', 'shieldCheck', 'car', 'plane', 'home', 'gift', 'graduation', 'piggy'];
