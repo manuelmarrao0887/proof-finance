@@ -12,15 +12,17 @@
 
 import React, { useState, useEffect } from 'react';
 import Sheet from '../components/Sheet.jsx';
+import Icon from '../components/Icon.jsx';
 import { useStore } from '../store/store.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
+import { GOAL_ICONS } from '../lib/categories.js';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
 
 const COLORS = ['#3b6fee', '#3fc97a', '#f5a623', '#7b5fe0', '#f25555', '#12b3a6'];
 
-const EMPTY = { id: null, name: '', target: '', current: '', deadline: '', monthly: '', color: '#3b6fee' };
+const EMPTY = { id: null, name: '', target: '', current: '', deadline: '', monthly: '', color: '#3b6fee', icon: 'goal' };
 
 const inputStyle = {
   width: '100%',
@@ -66,6 +68,7 @@ export default function GoalModal() {
           deadline: g.deadline || '',
           monthly: g.monthly ? String(g.monthly) : '',
           color: g.color || '#3b6fee',
+          icon: g.icon || 'goal',
         });
         return;
       }
@@ -94,9 +97,9 @@ export default function GoalModal() {
     }
     if (isNaN(c) || c < 0) c = 0;
     if (draft.id) {
-      actions.updateGoal(draft.id, { name: n, target: t, current: c, deadline: d, monthly: mo, color: draft.color });
+      actions.updateGoal(draft.id, { name: n, target: t, current: c, deadline: d, monthly: mo, color: draft.color, icon: draft.icon || 'goal' });
     } else {
-      actions.addGoal({ id: uid(), name: n, target: t, current: c, deadline: d, monthly: mo, color: draft.color || '#3b6fee', createdAt: Date.now() });
+      actions.addGoal({ id: uid(), name: n, target: t, current: c, deadline: d, monthly: mo, color: draft.color || '#3b6fee', icon: draft.icon || 'goal', createdAt: Date.now() });
     }
     close();
     toast(draft.id ? 'Meta atualizada' : 'Meta criada', 'success');
@@ -161,6 +164,15 @@ export default function GoalModal() {
           <div className="lb" style={{ marginBottom: 6 }}>Reservar/mês (opcional)</div>
           <input value={draft.monthly} onChange={(e) => set('monthly', e.target.value)} placeholder="200" inputMode="decimal" aria-label="Reservar por mês" style={numStyle} />
         </div>
+      </div>
+
+      <div className="lb" style={{ marginBottom: 8 }}>Ícone</div>
+      <div className="icon-grid">
+        {GOAL_ICONS.map((ic) => (
+          <button key={ic} type="button" aria-label={'Ícone ' + ic} aria-pressed={draft.icon === ic} onClick={() => set('icon', ic)}>
+            <Icon name={ic} size={18} />
+          </button>
+        ))}
       </div>
 
       <div className="lb" style={{ marginBottom: 8 }}>Cor</div>

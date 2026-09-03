@@ -4,8 +4,8 @@
 
    - Empty state when no goals.
    - Global progress card (sum of targets/currents).
-   - Per-goal card: colour strip, deadline, progress ring, current/target,
-     ~monthly suggestion, and quick-add buttons (+10/+50/+100/+500).
+   - Per-goal card: tile de ícone, chip de estado, deadline, progress ring,
+     current/target, ~monthly suggestion, and quick-add buttons (+10/+50/+100/+500).
    - Edit opens the goal modal via useUI().open('goal', { id }).
    - Quick-add writes through actions.updateGoal (read-modify-write, matching
      the original cap: never exceed target*1.5 → snap to target).
@@ -15,6 +15,7 @@ import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
+import Icon from '../components/Icon.jsx';
 import { fc } from '../lib/format.js';
 import { monthsToTarget, etaDate, ymLabel, goalsAtRisk } from '../lib/goals.js';
 
@@ -77,13 +78,7 @@ export default function GoalsView() {
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
       {/* Global progress */}
       <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-        <div className="rw" style={{ marginBottom: 10 }}>
-          <div className="lb">Progresso global</div>
-          <div className="m" style={{ fontSize: 13, fontWeight: 700 }}>
-            {overall.toFixed(0)}%
-          </div>
-        </div>
-        <div className="bar" style={{ height: 8 }}>
+        <div className="bar" style={{ height: 8 }} role="img" aria-label={'Progresso global ' + overall.toFixed(0) + '%'}>
           <div className="bar-fill" style={{ width: Math.min(overall, 100) + '%', background: 'var(--primary)' }} />
         </div>
         <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
@@ -113,34 +108,33 @@ export default function GoalsView() {
 
         return (
           <div key={g.id} className="cd fadeUp" style={{ marginBottom: 12, padding: 18, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: c }} />
-            <div className="rw" style={{ marginBottom: 12, marginLeft: 8 }}>
-              <div style={{ flex: 1 }}>
+            <div className="rw" style={{ marginBottom: 12, gap: 10 }}>
+              <span className="cat goal-icon" style={{ width: 40, height: 40, background: c + '22', color: c }} aria-hidden="true">
+                <Icon name={g.icon || 'goal'} size={20} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em' }}>{g.name}</div>
                 {g.deadline && (
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: daysLeft != null && daysLeft < 30 ? 'var(--orange)' : 'var(--text3)',
-                      marginTop: 2,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {daysLeft != null
-                      ? daysLeft > 0
-                        ? daysLeft + ' dias restantes'
-                        : 'Prazo passado'
-                      : g.deadline}
+                  <div style={{ fontSize: 11, color: daysLeft != null && daysLeft < 30 ? 'var(--orange)' : 'var(--text3)', marginTop: 2, fontWeight: 500 }}>
+                    {daysLeft != null ? (daysLeft > 0 ? daysLeft + ' dias restantes' : 'Prazo passado') : g.deadline}
                   </div>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => open('goal', { id: g.id })}
-                className="icon-btn"
-                style={{ width: 32, height: 32 }}
-                aria-label="Editar meta"
-              >
+              {(() => {
+                const risk = riskById[g.id];
+                const done = pctAbs >= 100;
+                const label = done ? 'concluída' : risk ? 'atrasada' : g.monthly > 0 ? 'no ritmo' : 'a começar';
+                const tone = done || label === 'no ritmo' ? 'var(--success)' : risk ? 'var(--warning)' : 'var(--text3)';
+                const title = risk
+                  ? 'Não chega para o prazo: precisas de ' + fc(risk.needed) + '/mês' + (risk.monthly > 0 ? ' (+' + fc(risk.gap) + ')' : '') + ' nos próximos ' + risk.monthsLeft + (risk.monthsLeft === 1 ? ' mês' : ' meses') + '.'
+                  : undefined;
+                return (
+                  <span className="chip" title={title} style={{ border: 'none', background: 'color-mix(in srgb, ' + tone + ' 14%, transparent)', color: tone, fontWeight: 700, padding: '3px 9px', flexShrink: 0 }}>
+                    {label}
+                  </span>
+                );
+              })()}
+              <button type="button" onClick={() => open('goal', { id: g.id })} className="icon-btn" style={{ width: 32, height: 32, flexShrink: 0 }} aria-label="Editar meta">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 20h9" />
                   <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
@@ -148,7 +142,7 @@ export default function GoalsView() {
               </button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginLeft: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               {/* Ring */}
               <div className="ring-wrap">
                 <svg width="72" height="72" viewBox="0 0 72 72">
@@ -191,13 +185,6 @@ export default function GoalsView() {
                     Sugestão: ~ {fc(monthly)}/mês para o prazo
                   </div>
                 ) : null}
-                {riskById[g.id] && (
-                  <div style={{ fontSize: 11, color: 'var(--warning)', marginTop: 6, fontWeight: 600, lineHeight: 1.4 }}>
-                    Não chega para o prazo: precisas de {fc(riskById[g.id].needed)}/mês
-                    {riskById[g.id].monthly > 0 && ' (+' + fc(riskById[g.id].gap) + ')'} nos próximos{' '}
-                    {riskById[g.id].monthsLeft} {riskById[g.id].monthsLeft === 1 ? 'mês' : 'meses'}.
-                  </div>
-                )}
               </div>
             </div>
 
