@@ -65,12 +65,17 @@ const EditIcon = () => (
 );
 
 // "Hoje" / "Ontem" / "20 ago" para os cabeçalhos de dia da pesquisa.
-function dayLabel(iso, todayIso) {
+// O ISO é partido em números: `new Date('2026-01-15')` seria lido como
+// meia-noite UTC e, num fuso negativo (Açores, UTC−1), "ontem" caía no dia
+// errado.
+export function dayLabel(iso, todayIso) {
   if (!iso) return '—';
   if (iso === todayIso) return 'Hoje';
-  const t = new Date(todayIso);
+  const p = String(todayIso || '').split('-');
+  const t = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
   t.setDate(t.getDate() - 1);
-  const y = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+  const y =
+    t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
   if (iso === y) return 'Ontem';
   return fmDateShort(iso);
 }
@@ -187,6 +192,8 @@ export default function ExpensesView() {
     const searchAvg = activeMonths ? searchSeries.reduce((a, b) => a + b, 0) / activeMonths : 0;
     // Sorted by date desc (orig 1056) — keyed by expense identity so reconciles in place.
     const sorted = [...matches].sort((a, b) => (b.x.date || '').localeCompare(a.x.date || ''));
+    // Calculado uma única vez (não a cada grupo) para os cabeçalhos "Hoje"/"Ontem".
+    const today = todayISO();
 
     return (
       <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
@@ -270,7 +277,7 @@ export default function ExpensesView() {
         ) : (
           groupByDay(sorted).map((g) => (
             <div key={g.date || 'sem-data'}>
-              <div className="day-lb">{dayLabel(g.date, todayISO())}</div>
+              <div className="day-lb">{dayLabel(g.date, today)}</div>
               {g.items.map(({ x }) => {
                 const b = bdg.find((bb) => bb.id === x.cat);
                 return (
