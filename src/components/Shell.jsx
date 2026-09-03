@@ -12,6 +12,7 @@ import { useDevice } from '../store/device.jsx';
 import Sidebar from './Sidebar.jsx';
 import DeviceToggle from './DeviceToggle.jsx';
 import AssistantFab from './AssistantFab.jsx';
+import Avatar, { greetingName } from './Avatar.jsx';
 
 import Hero from './Hero.jsx';
 import ContextStrip from './ContextStrip.jsx';
@@ -130,10 +131,12 @@ function SyncChip({ status }) {
   if (status === 'idle') return null;
   const label =
     status === 'saving' ? 'A guardar' : status === 'saved' ? 'Guardado' : status === 'error' ? 'Erro' : '';
+  // "Guardado" fica só para leitores de ecrã — visualmente só o ponto conta.
+  const quiet = status === 'saved';
   return (
-    <span className={'sync-chip ' + status} id="syncChip">
+    <span className={'sync-chip ' + status + (quiet ? ' compact' : '')} id="syncChip" title={label}>
       <span className="sync-dot" />
-      <span className="sync-label">{label}</span>
+      <span className={'sync-label' + (quiet ? ' vh' : '')}>{label}</span>
     </span>
   );
 }
@@ -151,20 +154,30 @@ function ViewFallback() {
   );
 }
 
-function Header({ theme, onToggleTheme, syncStatus }) {
+const MONTHS_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+function Header({ theme, onToggleTheme, syncStatus, user }) {
   const isDark =
     theme === 'dark' ||
     (theme === 'system' && document.documentElement.getAttribute('data-theme') === 'dark');
+  const now = new Date();
+  const name = greetingName(user);
+  const label = (user && (user.displayName || user.email)) || 'Utilizador';
   return (
     <header className="app-header" style={{ padding: 'calc(8px + var(--safe-top)) 20px 16px' }}>
       <div className="rw">
-        <h1 style={{ display: 'flex', alignItems: 'baseline', gap: 8, margin: 0, fontSize: 20, lineHeight: 1.2 }}>
-          <span style={{ fontWeight: 600, letterSpacing: '-0.02em' }}>Proof.</span>
-          <span style={{ fontWeight: 400, color: 'var(--fg-muted)', letterSpacing: '-0.02em' }}>
-            Finance
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: 10, margin: 0, fontSize: 17, lineHeight: 1.2, minWidth: 0 }}>
+          <Avatar name={label} photoURL={user && user.photoURL} size={36} />
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: 10.5, fontWeight: 600, color: 'var(--fg-subtle)', letterSpacing: '0.04em' }}>
+              {MONTHS_PT[now.getMonth()] + ' ' + now.getFullYear()}
+            </span>
+            <span style={{ fontWeight: 700, letterSpacing: '-0.02em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {name ? 'Olá, ' + name : 'Proof. Finance'}
+            </span>
           </span>
         </h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <SyncChip status={syncStatus} />
           <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Mudar tema">
             {isDark ? Icon.sun : Icon.moon}
@@ -302,7 +315,7 @@ export default function Shell() {
   return (
     <div className="fadeIn">
       {canToggle && <DeviceToggle />}
-      <Header theme={state.theme} onToggleTheme={toggleTheme} syncStatus={syncStatus} />
+      <Header theme={state.theme} onToggleTheme={toggleTheme} syncStatus={syncStatus} user={currentUser} />
 
       <main className="has-bnav scroll-body" style={{ minHeight: '60svh' }}>
         {tab === 'overview' ? <Hero /> : <ContextStrip tab={tab} />}
