@@ -118,6 +118,8 @@ export function findAnomalies(state, now, opts) {
         '× maior — confirma o valor.',
       expense: x,
       amount: v,
+      avg,
+      ratio,
     });
   });
 

@@ -39,7 +39,10 @@ import { fm, fc, uid } from '../lib/format.js';
 import { upcomingRecurring } from '../lib/reminders.js';
 import { dailyAllowance, savingsPulse, buildInsights, monthPlan, monthForecast } from '../lib/pulse.js';
 import { monthClosing } from '../lib/closing.js';
-import { BankLogo } from '../components/MerchantLogo.jsx';
+import MerchantLogo, { BankLogo } from '../components/MerchantLogo.jsx';
+import CategoryIcon from '../components/CategoryIcon.jsx';
+import StatTiles from '../components/StatTiles.jsx';
+import { catMeta } from '../lib/categories.js';
 import { AvatarStack } from '../components/Avatar.jsx';
 
 const MONTHS_LONG = [
@@ -241,6 +244,7 @@ export default function OverviewView() {
   };
   const allowTone = allow && allow.perDay < 0 ? 'var(--signal)' : allow && allow.left < allow.income * 0.15 ? 'var(--warning)' : 'var(--success)';
   const INS_COLOR = { alert: 'var(--signal)', warn: 'var(--warning)', good: 'var(--success)', info: 'var(--primary)' };
+  const INS_ICON = { alert: 'bell', warn: 'bell', good: 'check', info: 'sparkle' };
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
@@ -305,14 +309,22 @@ export default function OverviewView() {
             </span>
             <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, marginBottom: 2 }}>gastos</span>
           </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.5 }}>
-            {closing.rate != null && (
-              <>Poupaste {hidden ? '••••' : fc(closing.saved)} ({Math.round(closing.rate)}% do rendimento). </>
-            )}
-            {closing.top.length > 0 && (
-              <>Onde foi: {closing.top.map((t) => t.name + ' ' + (hidden ? '••••' : fc(t.value))).join(' · ')}.</>
-            )}
-          </div>
+          {closing.rate != null && (
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>
+              Poupaste {hidden ? '••••' : fc(closing.saved)} ({Math.round(closing.rate)}% do rendimento)
+            </div>
+          )}
+          {closing.top.length > 0 && (
+            <StatTiles
+              items={closing.top.map((t) => ({
+                key: t.cat,
+                icon: <CategoryIcon id={t.cat} size={24} bdg={state.bdg} />,
+                value: hidden ? '••••' : fc(t.value),
+                label: t.name,
+                color: catMeta(t.cat, (state.bdg || []).find((b) => b.id === t.cat)).color,
+              }))}
+            />
+          )}
         </div>
       )}
 
@@ -445,34 +457,44 @@ export default function OverviewView() {
       {/* ── Insights automáticos (gerados localmente, sem IA) ── */}
       {!newU && insights.length > 0 && (
         <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {insights.map((ins) => (
-            <div
-              key={ins.id}
-              className="cd"
-              style={{ padding: '12px 14px', borderLeft: '3px solid ' + (INS_COLOR[ins.tone] || 'var(--primary)') }}
-            >
-              <div className="rw" style={{ marginBottom: 2, gap: 8, alignItems: 'flex-start' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: INS_COLOR[ins.tone] || 'var(--text)', minWidth: 0 }}>
-                  {ins.title}
+          {insights.map((ins) => {
+            const tone = INS_COLOR[ins.tone] || 'var(--primary)';
+            return (
+              <div key={ins.id} className="cd" style={{ padding: '10px 12px', borderLeft: '3px solid ' + tone }}>
+                <div className="rw" style={{ gap: 10, alignItems: 'center' }}>
+                  {ins.subject ? (
+                    <MerchantLogo text={ins.subject.desc} cat={ins.subject.cat} size={36} bdg={state.bdg} />
+                  ) : (
+                    <span className="cat" style={{ width: 36, height: 36, background: 'color-mix(in srgb, ' + tone + ' 14%, transparent)', color: tone }} aria-hidden="true">
+                      <Icon name={INS_ICON[ins.tone] || 'sparkle'} size={18} />
+                    </span>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: tone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ins.title}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={ins.long || ins.detail}>
+                      {ins.detail}
+                    </div>
+                  </div>
+                  {/* Avisos de despesa suspeita podem ser falsos positivos → dispensar. */}
+                  {ins.dismissId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        actions.dismissAnomaly(ins.dismissId);
+                        toast('Aviso dispensado', 'success');
+                      }}
+                      aria-label="Está certo, dispensar aviso"
+                      title="Está certo"
+                      className="icon-btn"
+                      style={{ width: 32, height: 32, color: 'var(--success)', flexShrink: 0 }}
+                    >
+                      <Icon name="check" size={16} />
+                    </button>
+                  )}
                 </div>
-                {/* Avisos de despesa suspeita podem ser falsos positivos → dispensar. */}
-                {ins.dismissId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      actions.dismissAnomaly(ins.dismissId);
-                      toast('Aviso dispensado', 'success');
-                    }}
-                    aria-label="Está certo, dispensar aviso"
-                    style={{ flexShrink: 0, background: 'none', border: '1px solid var(--border)', color: 'var(--text3)', borderRadius: 999, padding: '2px 9px', fontSize: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                  >
-                    Está certo
-                  </button>
-                )}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{ins.detail}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
