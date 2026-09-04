@@ -230,6 +230,47 @@ describe('add_expense', () => {
   });
 });
 
+describe('add_expense com conta', () => {
+  function ctxWithAccts() {
+    const c = writeCtx();
+    c.state.customAccts = [
+      { id: 'a1', bank: 'Activobank', type: 'Conta a Ordem', value: 1000, category: 'Liquidez', currency: 'EUR' },
+      { id: 'cc', bank: 'Revolut', type: 'Cartão de Crédito', value: 0, category: 'Cartão de crédito', plafond: 500, currency: 'EUR' },
+    ];
+    c.state.currentUser = { uid: 'u' }; // fora de preview, listAccounts lê customAccts
+    return c;
+  }
+  it('"pago pelo Activobank" liga à conta existente', () => {
+    const c = ctxWithAccts();
+    const r = execTool('add_expense', { desc: 'Restaurante X', amount: 15, cat: 'rest', acct: 'Activobank' }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.addExpense.mock.calls[0][0].acct).toBe('Activobank · Conta a Ordem');
+    expect(r.data.acct).toBe('Activobank · Conta a Ordem');
+  });
+  it('conta desconhecida → despesa sem conta, sem erro', () => {
+    const c = ctxWithAccts();
+    const r = execTool('add_expense', { desc: 'Café', amount: 2, acct: 'Millennium' }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.addExpense.mock.calls[0][0].acct).toBeUndefined();
+  });
+  it('conta ambígua → erro com opções, nada é escrito', () => {
+    const c = ctxWithAccts();
+    c.state.customAccts.push({ id: 'r2', bank: 'Revolut', type: 'Poupanca', value: 10, category: 'Outros', currency: 'EUR' });
+    c.state.customAccts[1].category = 'Outros';
+    const r = execTool('add_expense', { desc: 'Café', amount: 2, acct: 'Revolut' }, c);
+    expect(r.error).toBe('ambiguous_account');
+    expect(r.detail).toMatch(/Revolut · Cartão de Crédito/);
+    expect(c.actions.addExpense).not.toHaveBeenCalled();
+  });
+  it('update_expense também aceita acct', () => {
+    const c = ctxWithAccts();
+    c.state.addedExp = [{ id: 'e1', desc: 'Café', amount: 2, cat: 'rest', date: '2026-09-01' }];
+    const r = execTool('update_expense', { id: 'e1', acct: 'activobank', confirmed: true }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.updateExpense.mock.calls[0][1].acct).toBe('Activobank · Conta a Ordem');
+  });
+});
+
 describe('add_income / add_goal / add_recurring', () => {
   it('add_income normaliza o dia para 1-31', () => {
     const c = writeCtx();

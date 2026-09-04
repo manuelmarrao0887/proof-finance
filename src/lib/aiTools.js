@@ -17,6 +17,8 @@ import { compute, getGroupsData, accts as ACCT_TEMPLATES } from './finance.js';
 import { monthEffectiveLimits } from './budget.js';
 import { computeBalances, simplifyDebts, resolveShares, GROUP_CATS } from './split.js';
 import { uid, todayISO, normalizeStmtDate } from './format.js';
+import { resolveAccountRef } from './accounts.js';
+import { listAccounts } from './balances.js';
 
 const CATS = 'rest,sup,cas,emp,seg,ani,sau,tel,car,sub,gym,cmb,neg,laz,trf,out';
 
@@ -301,6 +303,10 @@ const EXPENSE_FIELD_SANITIZERS = {
   amount: (v) => Math.abs(Number(v) || 0),
   cat: (v) => safeCat(v),
   date: (v) => safeDate(v),
+  // Guarda o texto tal como o modelo o passou (nome do banco ou "Banco ·
+  // Tipo"); resolveAcctArg é que o troca pelo rótulo canónico de uma conta
+  // existente antes de chegar a addExpense/updateExpense.
+  acct: (v) => (v === undefined ? undefined : txt(v, 80)),
 };
 const sanitizeExpenseFields = makeSanitizer(EXPENSE_FIELD_SANITIZERS);
 
@@ -345,6 +351,16 @@ function uniq(arr) {
 const ACCT_BANKS = uniq(ACCT_TEMPLATES.map((a) => a.b));
 const ACCT_TYPES = uniq(ACCT_TEMPLATES.map((a) => a.t));
 
+// Conta nomeada pelo utilizador → rótulo de uma conta existente, ou erro
+// amigável quando há várias. Devolve { acct } (pode ser undefined) ou { error }.
+function resolveAcctArg(args, ctx) {
+  if (!args.acct) return { acct: undefined };
+  const r = resolveAccountRef(args.acct, listAccounts(ctx.state || {}));
+  if (!r) return { acct: undefined };
+  if (r.ambiguous) return { error: 'ambiguous_account', detail: 'Qual conta? ' + r.ambiguous.join(' | ') };
+  return { acct: r.label };
+}
+
 const writeTools = {
   add_expense: {
     schema: {
@@ -354,18 +370,27 @@ const writeTools = {
         amount: { type: 'number', description: 'valor em euros; o sinal e ignorado (guardado positivo)' },
         cat: { type: 'string', description: 'categoria: ' + CATS },
         date: { type: 'string', description: 'data YYYY-MM-DD; por omissao hoje' },
+        acct: {
+          type: 'string',
+          description:
+            'conta que pagou: nome do banco ou rótulo "Banco · Tipo" tal como aparece em accounts no contexto (ex.: "Activobank", "Revolut · Cartão de Crédito"); omitir se o utilizador não disser',
+        },
       },
       required: ['desc', 'amount'],
     },
     description: 'Regista uma despesa nova.',
-    run(args, { actions }) {
+    run(args, ctx) {
+      const ra = resolveAcctArg(args, ctx);
+      if (ra.error) return ra;
       // As quatro chaves vão sempre (mesmo indefinidas) para o saneador
-      // aplicar os defaults: cat -> 'out', date -> hoje.
+      // aplicar os defaults: cat -> 'out', date -> hoje. `acct` só entra
+      // quando resolveAcctArg encontrou uma conta existente.
       const exp = {
         id: uid(),
         ...sanitizeExpenseFields({ desc: args.desc, amount: args.amount, cat: args.cat, date: args.date }),
+        ...(ra.acct ? { acct: ra.acct } : {}),
       };
-      actions.addExpense(exp);
+      ctx.actions.addExpense(exp);
       return ok({ id: exp.id, ...exp });
     },
   },
@@ -639,6 +664,7 @@ const COLLECTIONS = {
       amount: { type: 'number' },
       cat: { type: 'string', description: 'categoria: ' + CATS },
       date: { type: 'string', description: 'data YYYY-MM-DD' },
+      acct: { type: 'string', description: 'conta que pagou (nome do banco ou "Banco · Tipo")' },
     },
   },
   income: {
@@ -731,8 +757,22 @@ function makeUpdateTool(key) {
     run(args, ctx) {
       const p = this.preview(args, ctx);
       if (p.error) return p;
-      c.update(ctx.actions)(args.id, p.patch);
-      return ok({ id: args.id, patch: p.patch });
+      // `acct` só existe em c.fields de 'expense' — para as outras colecções
+      // patch.acct nunca está definido e este bloco não faz nada. O texto
+      // bruto (já saneado por EXPENSE_FIELD_SANITIZERS) ainda não é um
+      // rótulo de conta: resolve-o da MESMA forma que add_expense antes de
+      // escrever. Conta desconhecida remove o campo (não apaga um acct já
+      // gravado); ambígua devolve o mesmo erro amigável, sem escrever nada.
+      let patch = p.patch;
+      if (patch.acct !== undefined) {
+        const ra = resolveAcctArg({ acct: patch.acct }, ctx);
+        if (ra.error) return ra;
+        patch = { ...patch };
+        if (ra.acct) patch.acct = ra.acct;
+        else delete patch.acct;
+      }
+      c.update(ctx.actions)(args.id, patch);
+      return ok({ id: args.id, patch });
     },
   };
 }
