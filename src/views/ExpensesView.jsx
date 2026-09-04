@@ -693,12 +693,12 @@ export default function ExpensesView() {
                     {r.nm}
                     {r.carried ? (
                       <span
-                        title={'Transitado do mês anterior: ' + (hidden ? '••••' : (r.carried > 0 ? '+' : '') + fm(r.carried))}
-                        aria-label={'Transitado do mês anterior: ' + (hidden ? '••••' : (r.carried > 0 ? '+' : '') + fm(r.carried))}
+                        title={'Transitado do mês anterior: ' + mask(r.carried, hidden, (v) => (v > 0 ? '+' : '') + fm(v))}
+                        aria-label={'Transitado do mês anterior: ' + mask(r.carried, hidden, (v) => (v > 0 ? '+' : '') + fm(v))}
                         style={{ fontSize: 9, fontWeight: 700, color: r.carried > 0 ? 'var(--success)' : 'var(--signal)', background: r.carried > 0 ? 'var(--success-soft)' : 'var(--signal-soft)', padding: '1px 6px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 3 }}
                       >
                         <Icon name="recurring" size={9} />
-                        {hidden ? '••••' : (r.carried > 0 ? '+' : '') + fm(r.carried)}
+                        {mask(r.carried, hidden, (v) => (v > 0 ? '+' : '') + fm(v))}
                       </span>
                     ) : null}
                   </span>

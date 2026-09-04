@@ -59,3 +59,31 @@ describe('saldos ocultos em todas as vistas', () => {
     });
   }
 });
+
+// Fix round 1 — as barras "Podes gastar" (gasto+fixas vs rendimento) e "Plano
+// do mês" (Fixas/Metas/Livre) desenhavam segmentos proporcionais reais mesmo
+// com balancesHidden — a largura de cada `<div>` revelava a distribuição do
+// orçamento sem passar por texto nenhum, por isso o teste de texto acima
+// nunca apanhava a fuga. As duas barras partilham o mesmo estilo-base
+// (background: 'var(--bg3)', display: 'flex', overflow: 'hidden') — quando
+// ocultas devem colapsar para uma única faixa neutra (var(--elevated)), tal
+// como a barra de alocação da Hero.
+describe('Overview — barras não revelam proporção quando oculto', () => {
+  it('"Podes gastar" e "Plano do mês" colapsam para uma faixa única sem segmentos proporcionais', async () => {
+    const { container } = await renderWithStore(<OverviewView />, {
+      fixture: { ...richFixture(), balancesHidden: true },
+    });
+    const bars = Array.from(container.querySelectorAll('div')).filter(
+      (el) => el.style.display === 'flex' && el.style.overflow === 'hidden' && el.style.background === 'var(--bg3)'
+    );
+    // As duas barras (Podes gastar + Plano do mês) têm de estar presentes com
+    // esta fixture — senão o teste passaria vazio sem testar nada.
+    expect(bars.length).toBe(2);
+    bars.forEach((bar) => {
+      // Antes da correção: 2 e 3 filhos respetivamente, cada um com uma
+      // largura % proporcional ao gasto/plano real. Depois: no máximo 1 filho
+      // (a faixa neutra), sem geometria que denuncie a distribuição.
+      expect(bar.children.length).toBeLessThanOrEqual(1);
+    });
+  });
+});

@@ -251,7 +251,7 @@ export default function OverviewView() {
   const closing = useMemo(() => (!newU ? monthClosing(s) : null), [s, newU]);
   const applyPlan = () => {
     const total = actions.allocateGoals(plan.monthKey);
-    toast(total > 0 ? 'Reservado ' + fm(total) + ' para as metas' : 'Nada a reservar', total > 0 ? 'success' : 'error');
+    toast(total > 0 ? 'Reservado ' + mask(total, hidden, fm) + ' para as metas' : 'Nada a reservar', total > 0 ? 'success' : 'error');
   };
   const allowTone = allow && allow.perDay < 0 ? 'var(--signal)' : allow && allow.left < allow.income * 0.15 ? 'var(--warning)' : 'var(--success)';
   const INS_COLOR = { alert: 'var(--signal)', warn: 'var(--warning)', good: 'var(--success)', info: 'var(--primary)' };
@@ -310,7 +310,7 @@ export default function OverviewView() {
             <div className="lb">Fecho de {closing.monthName}</div>
             {closing.deltaPct != null && (
               <span className="m" style={{ fontSize: 11, fontWeight: 700, color: closing.better ? 'var(--success)' : 'var(--warning)' }}>
-                {hidden ? '••' : (closing.deltaPct > 0 ? '+' : '') + Math.round(closing.deltaPct)}% vs média
+                {hidden ? maskPct(closing.deltaPct, hidden) : (closing.deltaPct > 0 ? '+' : '') + Math.round(closing.deltaPct) + '%'} vs média
               </span>
             )}
           </div>
@@ -322,7 +322,7 @@ export default function OverviewView() {
           </div>
           {closing.rate != null && (
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>
-              Poupaste {mask(closing.saved, hidden, fc)} ({hidden ? '••' : Math.round(closing.rate)}% do rendimento)
+              Poupaste {mask(closing.saved, hidden, fc)} ({maskPct(closing.rate, hidden)} do rendimento)
             </div>
           )}
           {closing.top.length > 0 && (
@@ -363,8 +363,14 @@ export default function OverviewView() {
               </div>
               {/* Barra: gasto + fixas por pagar vs rendimento */}
               <div style={{ height: 6, borderRadius: 999, background: 'var(--bg3)', overflow: 'hidden', display: 'flex' }}>
-                <div style={{ width: Math.min(100, (allow.spent / Math.max(1, allow.income)) * 100) + '%', background: 'var(--primary)' }} />
-                <div style={{ width: Math.min(100, (allow.pendingFixed / Math.max(1, allow.income)) * 100) + '%', background: 'var(--warning)', opacity: 0.55 }} />
+                {hidden ? (
+                  <div style={{ width: '100%', background: 'var(--elevated)' }} />
+                ) : (
+                  <>
+                    <div style={{ width: Math.min(100, (allow.spent / Math.max(1, allow.income)) * 100) + '%', background: 'var(--primary)' }} />
+                    <div style={{ width: Math.min(100, (allow.pendingFixed / Math.max(1, allow.income)) * 100) + '%', background: 'var(--warning)', opacity: 0.55 }} />
+                  </>
+                )}
               </div>
               {forecast && forecast.ready && (
                 <div
@@ -426,9 +432,15 @@ export default function OverviewView() {
           </div>
           {/* Barra de envelopes: fixas · metas · livre */}
           <div style={{ height: 10, borderRadius: 999, overflow: 'hidden', display: 'flex', marginBottom: 10, background: 'var(--bg3)' }}>
-            <div style={{ width: Math.max(0, (plan.fixedTotal / plan.income) * 100) + '%', background: 'var(--warning)' }} />
-            <div style={{ width: Math.max(0, (plan.goalsTotal / plan.income) * 100) + '%', background: 'var(--purple, #7b5fe0)' }} />
-            <div style={{ width: Math.max(0, (Math.max(0, plan.free) / plan.income) * 100) + '%', background: 'var(--success)' }} />
+            {hidden ? (
+              <div style={{ width: '100%', background: 'var(--elevated)' }} />
+            ) : (
+              <>
+                <div style={{ width: Math.max(0, (plan.fixedTotal / plan.income) * 100) + '%', background: 'var(--warning)' }} />
+                <div style={{ width: Math.max(0, (plan.goalsTotal / plan.income) * 100) + '%', background: 'var(--purple, #7b5fe0)' }} />
+                <div style={{ width: Math.max(0, (Math.max(0, plan.free) / plan.income) * 100) + '%', background: 'var(--success)' }} />
+              </>
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
             {[
@@ -619,7 +631,7 @@ export default function OverviewView() {
                 Saldo
               </div>
               <div className="m" style={{ fontSize: 15, fontWeight: 600, color: ms.saved >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 4 }}>
-                {hidden ? '••••' : (ms.saved >= 0 ? '+' : '') + fc(ms.saved)}
+                {mask(ms.saved, hidden, (v) => (v >= 0 ? '+' : '') + fc(v))}
               </div>
             </div>
           </div>
@@ -796,7 +808,7 @@ export default function OverviewView() {
             <div className="rw" style={{ marginBottom: 12 }}>
               <div className="lb">Projeção {forecastMonths} meses</div>
               <div className={'chip ' + (lastBal >= cf.startBalance ? 'up-solid' : 'down-solid')}>
-                {hidden ? '••••' : (lastBal >= cf.startBalance ? '+' : '') + fc(lastBal - cf.startBalance)}
+                {mask(lastBal - cf.startBalance, hidden, (v) => (v >= 0 ? '+' : '') + fc(v))}
               </div>
             </div>
             <div className="ms-bar" style={{ marginBottom: 14 }}>

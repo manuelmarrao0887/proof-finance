@@ -180,16 +180,16 @@ export default function CalendarView() {
       <div className="g3" style={{ marginBottom: 16 }}>
         <div className="cd" style={{ padding: 12 }}>
           <div className="lb" style={{ fontSize: 11 }}>Receita</div>
-          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--success)', marginTop: 2 }}>{hidden ? '••••' : '+' + fc(totalIn)}</div>
+          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--success)', marginTop: 2 }}>{mask(totalIn, hidden, (v) => '+' + fc(v))}</div>
         </div>
         <div className="cd" style={{ padding: 12 }}>
           <div className="lb" style={{ fontSize: 11 }}>Despesa</div>
-          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--signal)', marginTop: 2 }}>{hidden ? '••••' : '-' + fc(totalOut)}</div>
+          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--signal)', marginTop: 2 }}>{mask(totalOut, hidden, (v) => '-' + fc(v))}</div>
         </div>
         <div className="cd" style={{ padding: 12, borderLeft: '3px solid ' + (net >= 0 ? 'var(--success)' : 'var(--signal)') }}>
           <div className="lb" style={{ fontSize: 11 }}>Net</div>
           <div className="m" style={{ fontSize: 14, fontWeight: 800, color: net >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 2 }}>
-            {hidden ? '••••' : (net >= 0 ? '+' : '') + fc(net)}
+            {mask(net, hidden, (v) => (v >= 0 ? '+' : '') + fc(v))}
           </div>
         </div>
       </div>
@@ -227,7 +227,7 @@ export default function CalendarView() {
                 <span style={{ fontSize: 13 }}>{ev.name}</span>
               </div>
               <span className="m" style={{ fontSize: 13, fontWeight: 600, color: ev.color }}>
-                {hidden ? '••••' : (ev.amount > 0 ? '+' : '') + fm(ev.amount)}
+                {mask(ev.amount, hidden, (v) => (v > 0 ? '+' : '') + fm(v))}
               </span>
             </div>
           ))}

@@ -175,7 +175,7 @@ export default function IncomesView() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)' }}>{hidden ? '••••' : '+' + fm(i.amount || 0)}</div>
+                  <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)' }}>{mask(i.amount || 0, hidden, (v) => '+' + fm(v))}</div>
                   <button
                     type="button"
                     onClick={() => open('income', { id: i.id })}
