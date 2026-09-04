@@ -1,0 +1,13 @@
+# 03 — Veredicto
+
+**REDESIGN.** Total 12/30, abaixo do limiar de 20, com os três princípios load-bearing (útil, compreensível, honesto) a 1. As fundações técnicas são boas e ficam; a arquitetura de informação do primeiro ecrã, o fluxo de registar despesa e a reconciliação dos números têm de nascer de novo a partir do propósito, não de um retoque.
+
+Porquê redesign e não refine: não é um ecrã feio. É o Resumo a responder à pergunta errada (quanto valho, em vez de quanto posso gastar), a ação mais frequente a esconder o campo mais importante, e uma app financeira a mostrar dois patrimónios, dois totais de mês e três taxas de poupança sem explicar. Isso é estrutura, não polimento.
+
+## Os cinco movimentos de maior alavanca
+
+1. **#2 Útil, #10 Mínimo — Resumo com uma tese.** "Podes gastar" passa a hero (primeiro pixel, sem gradiente a competir), seguido de no máximo 4 blocos: hoje/ritmo, plano do mês, o insight nº1, Disponível. Património, alocação, saúde financeira, fundo de emergência, projeção e contas por categoria saem para "Património" (Gráficos) e "Análise" (Relatório). Evidência: H1.1 (y≈763), H8.1 (14 blocos, 3 546 px), G.5, k.5, `weight` 2.8–2.9.
+2. **#2 Útil — Nova despesa em 5 segundos.** Ordem: valor (teclado numérico, campo grande, focado ao abrir) → categoria (6 mais usadas + "mais", por frequência) → descrição com autocomplete de marca → guardar. Nada abaixo da dobra é obrigatório. Evidência: H5.1 (valor invisível), e.1 (`sortedCats` alfabético), H5.2, B.9.
+3. **#6 Honesto, #8 Minucioso — um número, uma fórmula.** Uma função por indicador (património, investimentos, total do mês, taxa de poupança) usada por todas as vistas e pela ContextStrip; base e período declarados ao lado de cada percentagem; `NaN`, texto invisível e modo oculto parcial corrigidos. Evidência: h.1–h.7, f.2, d.3, H9.1, H9.2, g.1–g.4, `01-evidence.md` verificações.
+4. **#3 Estético, #4 Compreensível — um sistema, não uma coleção.** Escala de espaçamento (4/8/12/16/24/32) e de tipo (11/13/15/17/22/28/34) em tokens; uma semântica de saída de dinheiro (sinal + neutro; vermelho só para alerta); um padrão de navegação temporal; título em cada ecrã e "voltar" real nos 12 destinos de "Mais". Evidência: `visual` A1–A3, H4.2, H4.3, H6.1, H6.2.
+5. **#8 Minucioso — reversível por defeito.** Confirmação in-app com o valor em causa e "Anular" (o `.toast.undo` já existe) em todas as ações de dinheiro; apagar sem confirmação deixa de existir; alvos de 44 px; botões desativados até o formulário ser válido. Evidência: H3.2, H3.3, `web-guidelines` AddExpenseSheet:194, GoalModal:108, `visual` A7, A8.
