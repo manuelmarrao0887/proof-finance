@@ -25,7 +25,9 @@ import { listAccounts } from '../lib/balances.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import MerchantLogo from '../components/MerchantLogo.jsx';
 import { resolveBrand } from '../lib/brands.jsx';
-import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
+import { PrimaryButton } from '../components/Buttons.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 
 // Fresh draft for a brand-new expense (orig addData default 417 / reset 2364).
 function freshDraft() {
@@ -193,10 +195,10 @@ export default function AddExpenseSheet() {
 
   const remove = () => {
     if (!isEdit) return;
-    if (typeof confirm === 'function' && !confirm('Remover esta despesa? ' + (d.desc || '') + ' · ' + (d.amount || '') + ' €')) return;
+    const snap = snapshotSlices(actions.getState(), ['addedExp']);
     actions.deleteExpense(editId);
     close();
-    toast('Despesa eliminada', 'success');
+    toast('Despesa eliminada', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
   };
 
   const inputStyle = {
@@ -225,9 +227,7 @@ export default function AddExpenseSheet() {
         {isEdit ? 'Guardar alterações' : d.recId ? 'Registar despesa' : 'Adicionar despesa'}
       </PrimaryButton>
       {isEdit && (
-        <SecondaryButton onClick={remove} style={{ marginTop: 8 }}>
-          Eliminar despesa
-        </SecondaryButton>
+        <ConfirmButton label="Eliminar despesa" confirmLabel="Confirmar eliminação" onConfirm={remove} style={{ marginTop: 8 }} />
       )}
     </>
   );

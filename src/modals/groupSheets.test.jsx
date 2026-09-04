@@ -90,8 +90,11 @@ describe('PersonSheet', () => {
       onReady: ({ actions }) => { actionsRef = actions; },
     });
 
-    // Ana (p-ana) está no grupo "Férias Algarve" da fixture.
+    // Ana (p-ana) está no grupo "Férias Algarve" da fixture. Eliminar é um
+    // ConfirmButton de dois toques (Task 8): o 1o arma, só o 2o chama
+    // deletePerson (que o store bloqueia por Ana estar em uso).
     fireEvent.click(screen.getByRole('button', { name: 'Eliminar Ana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
 
     expect(screen.getByText('Ana está em grupos — tira essa pessoa do grupo antes de apagar.')).toBeTruthy();
     expect(actionsRef.getState().people.some((p) => p.name === 'Ana')).toBe(true);
@@ -289,14 +292,21 @@ describe('GroupSheet', () => {
     expect(toggle.checked).toBe(true);
 
     // Só "Airbnb" tem linkedExpId (o acerto da fixture nunca teria um) — N = 1.
-    window.confirm = vi.fn(() => false);
+    // Clicar no switch já não aplica de imediato (Task 8): só arma a
+    // explicação inline + o ConfirmButton — nada muda enquanto não se
+    // confirma, e "Cancelar" descarta o pedido sem tocar em reflectMine.
     fireEvent.click(toggle);
-    expect(window.confirm).toHaveBeenCalledWith('Isto vai apagar 1 movimento das tuas Despesas.');
+    expect(screen.getByText('Isto vai apagar 1 movimento das tuas Despesas.')).toBeTruthy();
     expect(actionsRef.getState().groups.find((g) => g.id === 'g-ferias').reflectMine).toBe(true);
 
-    window.confirm = vi.fn(() => true);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(screen.queryByText('Isto vai apagar 1 movimento das tuas Despesas.')).toBeNull();
+    expect(actionsRef.getState().groups.find((g) => g.id === 'g-ferias').reflectMine).toBe(true);
+
+    // Repete e desta vez confirma (dois toques no mesmo ConfirmButton).
     fireEvent.click(toggle);
-    expect(window.confirm).toHaveBeenCalledWith('Isto vai apagar 1 movimento das tuas Despesas.');
+    fireEvent.click(screen.getByRole('button', { name: 'Desligar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
     expect(actionsRef.getState().groups.find((g) => g.id === 'g-ferias').reflectMine).toBe(false);
     expect(screen.getByText('Movimentos removidos das tuas Despesas')).toBeTruthy();
   });
@@ -306,7 +316,6 @@ describe('GroupSheet', () => {
     fixture.groups = fixture.groups.map((g) => (g.id === 'g-ferias' ? { ...g, reflectMine: false } : g));
 
     let actionsRef;
-    window.confirm = vi.fn(() => true);
     await renderWithStore(<GroupSheet />, {
       fixture,
       openModal: 'group',
@@ -318,8 +327,10 @@ describe('GroupSheet', () => {
     expect(toggle.checked).toBe(false);
 
     fireEvent.click(toggle);
+    expect(screen.getByText('Isto vai criar 1 movimento nas tuas Despesas.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Ligar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
 
-    expect(window.confirm).toHaveBeenCalledWith('Isto vai criar 1 movimento nas tuas Despesas.');
     expect(actionsRef.getState().groups.find((g) => g.id === 'g-ferias').reflectMine).toBe(true);
   });
 
@@ -338,10 +349,11 @@ describe('GroupSheet', () => {
     const before = actionsRef.getState().addedExp.length;
 
     const toggle = screen.getByLabelText('Refletir a minha parte nas Despesas');
-    window.confirm = vi.fn(() => true);
     fireEvent.click(toggle);
+    expect(screen.getByText('Isto vai apagar 0 movimentos das tuas Despesas.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Desligar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
 
-    expect(window.confirm).toHaveBeenCalledWith('Isto vai apagar 0 movimentos das tuas Despesas.');
     expect(actionsRef.getState().addedExp.length).toBe(before); // nada para apagar, e nada apagado
   });
 });

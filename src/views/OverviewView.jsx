@@ -22,6 +22,8 @@ import { useUI } from '../store/ui.jsx';
 import Icon from '../components/Icon.jsx';
 import QuickActions from '../components/QuickActions.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { useConfirm } from '../components/ConfirmSheet.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 import {
   compute,
   monthlySummary,
@@ -99,6 +101,7 @@ export default function OverviewView() {
   const { state, actions, currentUser, preview } = useStore();
   const { open, goTab } = useUI();
   const toast = useToast();
+  const confirm = useConfirm();
   const [xCat, setXCat] = useState(null); // expanded account category (orig global xCat)
 
   // ── Grupos: quanto os amigos te devem / quanto deves (soma dos grupos não
@@ -951,13 +954,17 @@ export default function OverviewView() {
                           <button
                             type="button"
                             onClick={() => {
-                              if (
-                                typeof confirm === 'function' &&
-                                !confirm('Remover a conta ' + a.b + ' · ' + a.t + '? As leituras de saldo desta conta também são removidas.')
-                              )
-                                return;
-                              if (a.custom) actions.deleteCustomAcct(a.id);
-                              else actions.removeDynAcct(a.b + '_' + a.t);
+                              confirm({
+                                title: 'Remover conta',
+                                message: a.b + ' · ' + a.t + '. As leituras de saldo desta conta também são removidas.',
+                                amount: a.v,
+                                onConfirm: () => {
+                                  const snap = snapshotSlices(actions.getState(), ['customAccts', 'dynAccts', 'balanceLog']);
+                                  if (a.custom) actions.deleteCustomAcct(a.id);
+                                  else actions.removeDynAcct(a.b + '_' + a.t);
+                                  toast('Conta removida', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
+                                },
+                              });
                             }}
                             className="icon-btn"
                             style={{ width: 28, height: 28, color: 'var(--danger)' }}

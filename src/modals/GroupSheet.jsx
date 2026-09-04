@@ -23,6 +23,8 @@ import { useStore, ME_ID } from '../store/store.jsx';
 import { useUI, useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 
 const EMOJIS = ['🏖️', '🏠', '🎂', '🍽️', '✈️', '⛰️', '🎿', '👥'];
 const TYPES = [
@@ -84,9 +86,13 @@ export default function GroupSheet() {
   const { isOpen, payload, close } = useModal('group');
   const toast = useToast();
   const [draft, setDraft] = useState(EMPTY);
+  // Valor (true/false) do toggle "Refletir" ainda por confirmar — null =
+  // nada pendente. Ver requestReflectToggle/applyReflectToggle.
+  const [reflectPending, setReflectPending] = useState(null);
 
   useEffect(() => {
     if (!isOpen) return;
+    setReflectPending(null);
     const id = payload && typeof payload === 'object' ? payload.id : null;
     if (id) {
       const g = (state.groups || []).find((x) => x.id === id);
@@ -142,20 +148,31 @@ export default function GroupSheet() {
     }
   }
 
-  function handleReflectToggle(on) {
+  // O toggle já não aplica de imediato num grupo existente: o clique só
+  // "arma" (mostra a explicação com a contagem, inline, mais o ConfirmButton
+  // — Task 8, fim do confirm() nativo); só o segundo toque no ConfirmButton
+  // chama setGroupReflect. Sem entradas ligadas ao grupo (grupo novo, ainda
+  // sem draft.id), continua a aplicar-se logo — não há nada para confirmar.
+  function requestReflectToggle(on) {
     if (!draft.id) {
       set('reflectMine', on);
       return;
     }
+    if (on === draft.reflectMine) return;
+    setReflectPending(on);
+  }
+  function reflectMsg(on) {
     const count = reflectableCount(entriesForGroup, on);
     const noun = count === 1 ? 'movimento' : 'movimentos';
-    const msg = on
-      ? `Isto vai criar ${count} ${noun} nas tuas Despesas.`
-      : `Isto vai apagar ${count} ${noun} das tuas Despesas.`;
-    if (typeof confirm === 'function' && !confirm(msg)) return;
+    return on ? `Isto vai criar ${count} ${noun} nas tuas Despesas.` : `Isto vai apagar ${count} ${noun} das tuas Despesas.`;
+  }
+  function applyReflectToggle() {
+    if (reflectPending == null) return;
+    const on = reflectPending;
     actions.setGroupReflect(draft.id, on);
     set('reflectMine', on);
     toast(on ? 'Despesas do grupo refletidas nas tuas Despesas' : 'Movimentos removidos das tuas Despesas', 'success');
+    setReflectPending(null);
   }
 
   function saveGroup() {
@@ -195,19 +212,20 @@ export default function GroupSheet() {
     toast(next ? 'Grupo arquivado' : 'Grupo reativado', 'success');
   }
 
+  // Contagem mostrada ANTES do ConfirmButton (era o texto do confirm()
+  // nativo — fica inline agora, ConfirmButton só faz o dois-toques).
+  const deleteGroupCount = entriesForGroup.length;
+  const deleteGroupLinkedCount = entriesForGroup.filter((e) => e.linkedExpId).length;
   function handleDeleteGroup() {
     if (!draft.id) return;
-    const count = entriesForGroup.length;
-    const linkedCount = entriesForGroup.filter((e) => e.linkedExpId).length;
-    let msg = 'Vais apagar "' + draft.name + '" e ' + count + (count === 1 ? ' movimento' : ' movimentos') + ' do grupo';
-    if (linkedCount > 0) {
-      msg += ' (incluindo ' + linkedCount + (linkedCount === 1 ? ' movimento' : ' movimentos') + ' nas tuas Despesas)';
-    }
-    msg += '. Não é possível desfazer. Continuar?';
-    if (typeof confirm === 'function' && !confirm(msg)) return;
+    // deleteGroup (store.jsx) apaga groups + groupEntries e, quando há
+    // movimentos refletidos (linkedExpId), também addedExp — as 3 fatias têm
+    // de ir no snapshot ou o Anular ressuscita entradas de grupo a apontar
+    // para despesas que ficaram apagadas.
+    const snap = snapshotSlices(actions.getState(), ['groups', 'groupEntries', 'addedExp']);
     actions.deleteGroup(draft.id);
     close();
-    toast('Grupo eliminado', 'success');
+    toast('Grupo eliminado', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
   }
 
   const inputStyle = {
@@ -226,14 +244,21 @@ export default function GroupSheet() {
     <>
       <PrimaryButton onClick={saveGroup}>{isEdit ? 'Guardar alterações' : 'Criar grupo'}</PrimaryButton>
       {isEdit && (
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <SecondaryButton onClick={handleArchiveToggle} style={{ flex: 1, color: 'var(--text2)' }}>
-            {draft.archived ? 'Reativar' : 'Arquivar'}
-          </SecondaryButton>
-          <SecondaryButton onClick={handleDeleteGroup} style={{ flex: 1 }}>
-            Apagar grupo
-          </SecondaryButton>
-        </div>
+        <>
+          {deleteGroupCount > 0 && (
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
+              {'Apagar remove ' + deleteGroupCount + (deleteGroupCount === 1 ? ' movimento' : ' movimentos') + ' do grupo'
+                + (deleteGroupLinkedCount > 0 ? ' (incluindo ' + deleteGroupLinkedCount + (deleteGroupLinkedCount === 1 ? ' movimento' : ' movimentos') + ' nas tuas Despesas)' : '')
+                + '. Não é possível desfazer.'}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <SecondaryButton onClick={handleArchiveToggle} style={{ flex: 1, color: 'var(--text2)' }}>
+              {draft.archived ? 'Reativar' : 'Arquivar'}
+            </SecondaryButton>
+            <ConfirmButton label="Apagar grupo" confirmLabel="Confirmar" onConfirm={handleDeleteGroup} style={{ flex: 1 }} />
+          </div>
+        </>
       )}
     </>
   );
@@ -412,7 +437,7 @@ export default function GroupSheet() {
             type="checkbox"
             checked={draft.reflectMine}
             aria-label="Refletir a minha parte nas Despesas"
-            onChange={(e) => handleReflectToggle(e.target.checked)}
+            onChange={(e) => requestReflectToggle(e.target.checked)}
             style={{ opacity: 0, width: 0, height: 0 }}
           />
           <span
@@ -441,6 +466,23 @@ export default function GroupSheet() {
           </span>
         </label>
       </div>
+      {reflectPending != null && (
+        <div style={{ padding: '10px 14px', background: 'var(--bg3)', borderRadius: 'var(--r2)', marginBottom: 4 }}>
+          <p style={{ fontSize: 11, color: 'var(--text3)', margin: '0 0 8px' }}>{reflectMsg(reflectPending)}</p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <ConfirmButton
+              label={reflectPending ? 'Ligar' : 'Desligar'}
+              confirmLabel="Confirmar"
+              danger={!reflectPending}
+              onConfirm={applyReflectToggle}
+              style={{ flex: 1 }}
+            />
+            <SecondaryButton onClick={() => setReflectPending(null)} style={{ flex: 1, color: 'var(--text2)' }}>
+              Cancelar
+            </SecondaryButton>
+          </div>
+        </div>
+      )}
     </Sheet>
   );
 }

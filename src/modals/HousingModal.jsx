@@ -8,7 +8,9 @@ import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
+import { PrimaryButton } from '../components/Buttons.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 
 const num = (s) => parseFloat(String(s == null ? '' : s).replace(',', '.')) || 0;
 const str = (v) => (v == null || v === '' ? '' : String(v).replace('.', ','));
@@ -72,10 +74,10 @@ export default function HousingModal() {
   };
 
   const removeHousing = () => {
-    if (typeof confirm === 'function' && !confirm('Remover os dados do crédito à habitação?')) return;
+    const snap = snapshotSlices(actions.getState(), ['housing']);
     actions.setHousing(null);
     close();
-    toast('Removido', 'success');
+    toast('Removido', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
   };
 
   const inputStyle = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 12, fontSize: 16, boxSizing: 'border-box', fontFamily: 'var(--mono)' };
@@ -97,7 +99,7 @@ export default function HousingModal() {
   const footer = (
     <>
       <PrimaryButton onClick={save}>Guardar</PrimaryButton>
-      {state.housing && <SecondaryButton onClick={removeHousing}>Remover</SecondaryButton>}
+      {state.housing && <ConfirmButton label="Remover" confirmLabel="Confirmar remoção" onConfirm={removeHousing} />}
     </>
   );
 

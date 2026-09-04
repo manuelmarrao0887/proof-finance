@@ -24,25 +24,21 @@ import { runAssistant, confirmPending, estimateCost, ASSISTANT_SYSTEM, toolCtx }
 // addGroupEntry, e o mapa local só sabia de groupEntries), com um teste em
 // aiTools.test.js a impedir que volte a acontecer.
 import { WRITE_TOOL_SLICES } from '../lib/aiTools.js';
+import { snapshotSlices as snapshotSlicesLib, SLICES } from '../lib/snapshot.js';
 
 // Guarda o estado anterior de todas as slices que uma tool pode tocar — o
 // "antes" de que o Anular precisa. Note-se que isto sozinho NÃO chega: ver
 // undoSnapshotFor abaixo para o porquê de só se repor as slices que a
-// PRÓPRIA volta tocou, nunca as 11 de uma vez.
+// PRÓPRIA volta tocou, nunca todas de uma vez.
+//
+// SLICES (lib/snapshot.js) não inclui 'dynSnaps' — nenhuma das outras 12
+// views/modais que usam snapshotSlices() mexe nele, só a tool add_snapshot
+// do assistente (WRITE_TOOL_SLICES.add_snapshot = ['dynSnaps']). Sem o
+// acrescentar aqui, o Anular de um "guarda este print" ficava sempre a
+// tentar repor `undefined` nessa fatia — perdia-se dynSnaps em silêncio.
+const ASSISTANT_SLICES = [...SLICES, 'dynSnaps'];
 function snapshotSlices(state) {
-  return {
-    addedExp: state.addedExp,
-    incomes: state.incomes,
-    goals: state.goals,
-    recurring: state.recurring,
-    bdg: state.bdg,
-    rules: state.rules,
-    dynAccts: state.dynAccts,
-    dynSnaps: state.dynSnaps,
-    people: state.people,
-    groups: state.groups,
-    groupEntries: state.groupEntries,
-  };
+  return snapshotSlicesLib(state, ASSISTANT_SLICES);
 }
 
 // Devolve o subconjunto de `before` correspondente à UNIÃO das slices que
@@ -219,7 +215,13 @@ export default function AssistantSheet() {
     [turns, actions, toast, state]
   );
 
-  const confirm = useCallback(
+  // Nome diferente de "confirm" de propósito: um identificador local chamado
+  // `confirm` esconde o confirm() nativo do browser neste âmbito — a mesma
+  // classe de risco que o Task 8 eliminou dos sítios de eliminação; aqui
+  // nunca chamava o nativo, mas o shadow ficava a um erro de digitação de
+  // distância, e colidia com o grep de fim de tarefa que garante que não
+  // sobra nenhum confirm() por vestir.
+  const confirmPendingAction = useCallback(
     (turnIdx, pendIdx) => {
       const p = turns[turnIdx].pending[pendIdx];
       // toolCtx junta currentUser ao ctx — sem isso isPreviewMode(state) dá
@@ -324,7 +326,7 @@ export default function AssistantSheet() {
                     key={j}
                     preview={p.preview}
                     busy={busy}
-                    onConfirm={() => confirm(i, j)}
+                    onConfirm={() => confirmPendingAction(i, j)}
                     onCancel={() => cancel(i, j)}
                   />
                 ))}

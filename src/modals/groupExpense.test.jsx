@@ -135,7 +135,7 @@ describe('GroupExpenseSheet', () => {
     ).toBeTruthy();
   });
 
-  it('apagar despesa pede confirmação e remove-a do grupo', async () => {
+  it('apagar despesa pede confirmação (dois toques, ConfirmButton) e remove-a do grupo', async () => {
     const fixture = richFixture();
     const entry = fixture.groupEntries[0];
     let actionsRef;
@@ -146,9 +146,12 @@ describe('GroupExpenseSheet', () => {
       onReady: ({ actions }) => { actionsRef = actions; },
     });
 
+    // Primeiro toque só arma o botão — nada apagado ainda.
     fireEvent.click(screen.getByRole('button', { name: /apagar despesa/i }));
+    expect(actionsRef.getState().groupEntries.find((e) => e.id === entry.id)).toBeTruthy();
 
-    expect(window.confirm).toHaveBeenCalled();
+    // Segundo toque (mesmo botão, agora "Confirmar") apaga mesmo.
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
     expect(actionsRef.getState().groupEntries.find((e) => e.id === entry.id)).toBeUndefined();
   });
 });

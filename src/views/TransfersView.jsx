@@ -6,6 +6,8 @@ import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { useConfirm } from '../components/ConfirmSheet.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 import { fm, fmDateShort } from '../lib/format.js';
 import { BankLogo } from '../components/MerchantLogo.jsx';
 
@@ -13,14 +15,22 @@ export default function TransfersView() {
   const { state, actions } = useStore();
   const { open } = useUI();
   const toast = useToast();
+  const confirm = useConfirm();
   const transfers = (state.transfers || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const hidden = !!state.balancesHidden;
   const mv = (v) => (hidden ? '••••' : fm(v));
 
-  const remove = (id) => {
-    if (typeof confirm === 'function' && !confirm('Remover esta transferência? Os saldos das contas voltam ao anterior.')) return;
-    actions.deleteTransfer(id);
-    toast('Transferência removida', 'success');
+  const remove = (t) => {
+    confirm({
+      title: 'Remover transferência',
+      message: t.from + ' → ' + t.to + ' · ' + fmDateShort(t.date) + '. Os saldos das contas voltam ao anterior.',
+      amount: t.amount,
+      onConfirm: () => {
+        const snap = snapshotSlices(actions.getState(), ['transfers', 'customAccts', 'dynAccts']);
+        actions.deleteTransfer(t.id);
+        toast('Transferência removida', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
+      },
+    });
   };
 
   return (
@@ -54,7 +64,7 @@ export default function TransfersView() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span className="m" style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}>{mv(t.amount)}</span>
-                <button type="button" onClick={() => remove(t.id)} aria-label="Remover transferência" style={{ background: 'none', border: 'none', color: 'var(--signal)', cursor: 'pointer', padding: 4 }}>
+                <button type="button" onClick={() => remove(t)} aria-label="Remover transferência" style={{ background: 'none', border: 'none', color: 'var(--signal)', cursor: 'pointer', padding: 4 }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                 </button>
               </div>

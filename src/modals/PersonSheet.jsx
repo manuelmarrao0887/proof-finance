@@ -18,6 +18,8 @@ import { useModal } from '../store/ui.jsx';
 import { useStore, nextAvatarColor } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import Avatar from '../components/Avatar.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 
 const EMPTY_DRAFT = { editId: null, name: '' };
 
@@ -87,7 +89,7 @@ export default function PersonSheet() {
   };
 
   const removePerson = (p) => {
-    if (typeof confirm === 'function' && !confirm('Apagar ' + p.name + '?')) return;
+    const snap = snapshotSlices(actions.getState(), ['people']);
     const ok = actions.deletePerson(p.id);
     if (!ok) {
       toast(p.name + ' está em grupos — tira essa pessoa do grupo antes de apagar.', 'error');
@@ -97,7 +99,7 @@ export default function PersonSheet() {
       setDraft(EMPTY_DRAFT);
       setError('');
     }
-    toast('Pessoa eliminada', 'success');
+    toast('Pessoa eliminada', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
   };
 
   const inputStyle = {
@@ -149,18 +151,12 @@ export default function PersonSheet() {
                     <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => removePerson(p)}
-                  className="icon-btn"
-                  style={{ width: 28, height: 28, color: 'var(--signal)' }}
-                  aria-label={'Eliminar ' + p.name}
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                  </svg>
-                </button>
+                <ConfirmButton
+                  label={'Eliminar ' + p.name}
+                  confirmLabel="Confirmar"
+                  onConfirm={() => removePerson(p)}
+                  style={{ width: 'auto', padding: '6px 10px', fontSize: 11 }}
+                />
               </div>
             </div>
           ))

@@ -22,6 +22,7 @@ import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
 import { fm, uid, normalizeStmtDate } from '../lib/format.js';
 import { sortedCats } from '../lib/categories.js';
 import { applySameBeneficiaryCategory, normalizeDesc, dedupeAddedExp, expenseKey, dayAmountKey } from '../lib/dedupe.js';
@@ -314,11 +315,10 @@ export default function ImportStatementSheet() {
       }
     }
 
-    // Duplicados selecionados (só despesas têm deteção por expenseKey).
-    const dupSel = expRows.filter((t) => t.isDup).length;
-    if (dupSel > 0 && typeof confirm === 'function') {
-      if (!confirm(dupSel + ' das selecionadas já existem (duplicadas). Importar na mesma?')) return;
-    }
+    // Duplicados selecionados (só despesas têm deteção por expenseKey) — o
+    // aviso já foi mostrado e confirmado (dois toques) ANTES desta função ser
+    // chamada, ver o botão "Importar selecionadas"/ConfirmButton mais abaixo
+    // (Task 8, fim do confirm() nativo).
 
     // ── Despesas ──
     let added = 0;
@@ -408,6 +408,10 @@ export default function ImportStatementSheet() {
     const selIds = stResult && stResult.transactions ? stResult.transactions.filter((t) => stSel[t._id]) : [];
     const selCount = selIds.length;
     const selTotal = selIds.reduce((s, t) => s + Math.abs(t.amount), 0);
+    // Duplicados entre as SELECIONADAS (mesma condição de doImportStmt) — se
+    // > 0, "Importar selecionadas" vira um ConfirmButton de dois toques em
+    // vez de um confirm() nativo (Task 8).
+    const selDupCount = selIds.filter((t) => t._type === 'expense' && t.isDup).length;
 
     body = (
       <>
@@ -643,22 +647,32 @@ export default function ImportStatementSheet() {
               <div className="lb">{selCount + ' Seleccionadas'}</div>
               <div className="lb" style={{ color: 'var(--text)' }}>{fm(selTotal)}</div>
             </div>
-            <button
-              type="button"
-              onClick={doImportStmt}
-              style={{
-                width: '100%',
-                padding: '14px 0',
-                border: 'none',
-                background: selCount > 0 ? 'var(--primary)' : 'var(--bg3)',
-                color: selCount > 0 ? '#fff' : 'var(--text3)',
-                fontSize: 14,
-                fontWeight: 600,
-                borderRadius: 999,
-              }}
-            >
-              Importar selecionadas
-            </button>
+            {selCount > 0 && selDupCount > 0 ? (
+              <ConfirmButton
+                label={'Importar mesmo assim (' + selDupCount + ' duplicada' + (selDupCount === 1 ? '' : 's') + ')'}
+                confirmLabel="Confirmar importação"
+                danger={false}
+                onConfirm={doImportStmt}
+                style={{ width: '100%', padding: '14px 0', fontSize: 14, borderRadius: 999 }}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={doImportStmt}
+                style={{
+                  width: '100%',
+                  padding: '14px 0',
+                  border: 'none',
+                  background: selCount > 0 ? 'var(--primary)' : 'var(--bg3)',
+                  color: selCount > 0 ? '#fff' : 'var(--text3)',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  borderRadius: 999,
+                }}
+              >
+                Importar selecionadas
+              </button>
+            )}
           </>
         )}
       </>

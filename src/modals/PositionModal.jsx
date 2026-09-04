@@ -9,7 +9,9 @@ import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
-import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
+import { PrimaryButton } from '../components/Buttons.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 
 const num = (s) => parseFloat(String(s == null ? '' : s).replace(',', '.')) || 0;
 const str = (v) => (v == null || v === '' ? '' : String(v).replace('.', ','));
@@ -47,10 +49,10 @@ export default function PositionModal() {
   };
   const remove = () => {
     if (!d.id) return;
-    if (typeof confirm === 'function' && !confirm('Remover esta posição?')) return;
+    const snap = snapshotSlices(actions.getState(), ['positions']);
     actions.deletePosition(d.id);
     close();
-    toast('Posição removida', 'success');
+    toast('Posição removida', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
   };
 
   const input = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 12, fontSize: 16, boxSizing: 'border-box', fontFamily: 'var(--mono)' };
@@ -62,7 +64,7 @@ export default function PositionModal() {
   );
 
   return (
-    <Sheet open={isOpen} onClose={close} title={d.id ? 'Editar posição' : 'Nova posição'} footer={<><PrimaryButton onClick={save}>Guardar</PrimaryButton>{d.id && <SecondaryButton onClick={remove}>Remover</SecondaryButton>}</>}>
+    <Sheet open={isOpen} onClose={close} title={d.id ? 'Editar posição' : 'Nova posição'} footer={<><PrimaryButton onClick={save}>Guardar</PrimaryButton>{d.id && <ConfirmButton label="Remover" confirmLabel="Confirmar remoção" onConfirm={remove} />}</>}>
       {field('Ativo (nome/ticker)', 'asset', 'AAPL, VWCE, BTC…')}
       {field('Corretora (opcional)', 'broker', 'XTB, Trade Republic…')}
       <div style={{ display: 'flex', gap: 10 }}>

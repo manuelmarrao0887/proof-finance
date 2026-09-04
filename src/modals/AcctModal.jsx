@@ -15,7 +15,9 @@ import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid, todayISO, fm } from '../lib/format.js';
 import { getAcctsLive, cardUsage, CARD_CAT } from '../lib/finance.js';
-import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
+import { PrimaryButton } from '../components/Buttons.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 
 const ACCT_CATEGORIES = ['Liquidez', 'Poupanca', 'Investimentos', 'Cripto', 'Imobiliario', CARD_CAT, 'Outros'];
 const ACCT_TYPES = ['Conta a Ordem', 'Poupanca', 'Corretagem', 'Planos de Investimento', 'P2P Lending', 'Rend. Fixo', 'Crypto Wallet', 'Cartão de Crédito', 'Imobiliario', 'Outros'];
@@ -119,12 +121,12 @@ export default function AcctModal() {
 
   const deleteAcct = () => {
     if (!draft.id) return;
-    // Original used scheduleUndo (toast-based undo); React port deletes after a
-    // confirm (no undo host yet).
-    if (!confirm('Eliminar esta conta?')) return;
+    // Original used scheduleUndo (toast-based undo) — o toast "Anular" (Task
+    // 8, src/lib/snapshot.js) é agora o mesmo mecanismo, via actions.patch.
+    const snap = snapshotSlices(actions.getState(), ['customAccts', 'balanceLog']);
     actions.deleteCustomAcct(draft.id);
     close();
-    toast('Conta eliminada', 'success');
+    toast('Conta eliminada', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
   };
 
   if (!isOpen) return null;
@@ -224,9 +226,7 @@ export default function AcctModal() {
         {isEdit ? 'Guardar alterações' : 'Adicionar conta'}
       </PrimaryButton>
       {isEdit && (
-        <SecondaryButton onClick={deleteAcct} style={{ color: 'var(--danger)', marginTop: 8 }}>
-          Eliminar conta
-        </SecondaryButton>
+        <ConfirmButton label="Eliminar conta" confirmLabel="Confirmar eliminação" onConfirm={deleteAcct} style={{ marginTop: 8 }} />
       )}
     </Sheet>
   );

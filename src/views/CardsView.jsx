@@ -8,6 +8,8 @@ import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { useConfirm } from '../components/ConfirmSheet.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 import { fm, fmDateShort } from '../lib/format.js';
 import { getAcctsLive, normAcct, CARD_CAT } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
@@ -17,6 +19,7 @@ export default function CardsView() {
   const { state, actions, currentUser } = useStore();
   const { open } = useUI();
   const toast = useToast();
+  const confirm = useConfirm();
   const hidden = !!state.balancesHidden;
   const mv = (v) => (hidden ? '••••' : fm(v));
 
@@ -30,10 +33,17 @@ export default function CardsView() {
 
   const label = (a) => a.b + ' · ' + a.t;
 
-  const deleteExp = (id) => {
-    if (typeof confirm === 'function' && !confirm('Remover esta despesa do cartão?')) return;
-    actions.deleteExpense(id);
-    toast('Despesa removida', 'success');
+  const deleteExp = (x) => {
+    confirm({
+      title: 'Remover despesa',
+      message: (x.desc || '') + ' · ' + fmDateShort(x.date),
+      amount: x.amount,
+      onConfirm: () => {
+        const snap = snapshotSlices(actions.getState(), ['addedExp']);
+        actions.deleteExpense(x.id);
+        toast('Despesa removida', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
+      },
+    });
   };
 
   return (
@@ -164,7 +174,7 @@ export default function CardsView() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                       <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>-{mv(Math.abs(x.amount))}</span>
-                      <button type="button" onClick={() => deleteExp(x.id)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', cursor: 'pointer', padding: 2 }}>
+                      <button type="button" onClick={() => deleteExp(x)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', cursor: 'pointer', padding: 2 }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                       </button>
                     </div>

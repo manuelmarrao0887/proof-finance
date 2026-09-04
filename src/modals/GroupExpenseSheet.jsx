@@ -7,7 +7,7 @@
    inline por campo, o toggle partilhado) e de src/modals/GroupSheet.jsx
    (convenções já estabelecidas nesta feature: nameOf/colorOf locais — não
    exportados de GroupsView.jsx, replicados aqui como em PersonSheet.jsx —,
-   confirm() antes de apagar). useModal('gexp'):
+   ConfirmButton — dois toques — antes de apagar, Task 8). useModal('gexp'):
      - payload `{ groupId }`        -> despesa nova nesse grupo;
      - payload = a entry (tem `.id`) -> edição; o id é sempre relido de
        state.groupEntries (nunca confiado ao payload em si), pela mesma razão
@@ -27,7 +27,9 @@ import { fm, todayISO } from '../lib/format.js';
 import { resolveShares, GROUP_CATS, groupCatMeta, toCents, fromCents } from '../lib/split.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import Avatar from '../components/Avatar.jsx';
-import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
+import { PrimaryButton } from '../components/Buttons.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 
 const MODES = [
   { id: 'equal', label: 'Igual' },
@@ -272,20 +274,17 @@ export default function GroupExpenseSheet() {
 
   function remove() {
     if (!isEdit) return;
-    const msg = 'Vais apagar "' + editEntry.desc + '". Não é possível desfazer. Continuar?';
-    if (typeof confirm === 'function' && !confirm(msg)) return;
+    const snap = snapshotSlices(actions.getState(), ['groupEntries', 'addedExp']);
     actions.deleteGroupEntry(editEntry.id);
     close();
-    toast('Despesa eliminada', 'success');
+    toast('Despesa eliminada', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
   }
 
   const footer = (
     <>
       <PrimaryButton onClick={submit}>{isEdit ? 'Guardar alterações' : 'Guardar'}</PrimaryButton>
       {isEdit && (
-        <SecondaryButton onClick={remove} style={{ marginTop: 8 }}>
-          Apagar despesa
-        </SecondaryButton>
+        <ConfirmButton label="Apagar despesa" confirmLabel="Confirmar" onConfirm={remove} style={{ marginTop: 8 }} />
       )}
     </>
   );

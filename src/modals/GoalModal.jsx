@@ -18,7 +18,9 @@ import { useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { uid } from '../lib/format.js';
 import { GOAL_ICONS, ICON_LABELS, COLOR_LABELS } from '../lib/categories.js';
-import { PrimaryButton, SecondaryButton } from '../components/Buttons.jsx';
+import { PrimaryButton } from '../components/Buttons.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
+import { snapshotSlices } from '../lib/snapshot.js';
 
 const COLORS = ['#3b6fee', '#3fc97a', '#f5a623', '#7b5fe0', '#f25555', '#12b3a6'];
 
@@ -107,10 +109,10 @@ export default function GoalModal() {
 
   function deleteGoal() {
     if (!draft.id) return;
-    if (typeof confirm === 'function' && !confirm('Eliminar a meta "' + draft.name + '"? O valor poupado não é devolvido a nenhuma conta.')) return;
+    const snap = snapshotSlices(actions.getState(), ['goals']);
     actions.deleteGoal(draft.id);
     close();
-    toast('Meta eliminada', 'success');
+    toast('Meta eliminada', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
   }
 
   if (!isOpen) return null;
@@ -121,9 +123,14 @@ export default function GoalModal() {
         {isEdit ? 'Guardar alterações' : 'Criar meta'}
       </PrimaryButton>
       {isEdit && (
-        <SecondaryButton onClick={deleteGoal} style={{ marginTop: 8 }}>
-          Eliminar meta
-        </SecondaryButton>
+        <>
+          <ConfirmButton label="Eliminar meta" confirmLabel="Confirmar eliminação" onConfirm={deleteGoal} style={{ marginTop: 8 }} />
+          {parseFloat((String(draft.current) || '0').replace(',', '.')) > 0 && (
+            <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', marginTop: 4 }}>
+              O valor poupado não é devolvido a nenhuma conta.
+            </div>
+          )}
+        </>
       )}
     </>
   );
