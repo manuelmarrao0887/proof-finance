@@ -32,6 +32,7 @@ export const MODALS = [
   'gexp',           // criar/editar despesa de grupo
   'settle',         // registar acerto de contas num grupo
   'assistant',      // chat do assistente de IA
+  'confirm',        // ConfirmSheet — substitui confirm() nativo nas views
 ]
 
 export const VALID_TABS = ['overview', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax']

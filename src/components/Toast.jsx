@@ -25,13 +25,19 @@ export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const idRef = useRef(0);
 
-  const toast = useCallback((msg, type) => {
-    const id = ++idRef.current;
-    setToasts((list) => [...list, { id, msg, type }]);
-    setTimeout(() => {
-      setToasts((list) => list.filter((t) => t.id !== id));
-    }, 2400);
+  const dismiss = useCallback((id) => {
+    setToasts((list) => list.filter((t) => t.id !== id));
   }, []);
+
+  // toast(msg, type, opts) — opts.action = { label, onClick } mostra um botão
+  // no toast (ex.: "Anular") em vez de o deixar apenas informativo; dura
+  // 6000ms nesse caso (2400ms nos toasts normais) para dar tempo de reagir.
+  const toast = useCallback((msg, type, opts = {}) => {
+    const id = ++idRef.current;
+    const action = opts.action || null;
+    setToasts((list) => [...list, { id, msg, type, action }]);
+    setTimeout(() => dismiss(id), opts.duration || (action ? 6000 : 2400));
+  }, [dismiss]);
 
   return (
     <ToastContext.Provider value={toast}>
@@ -40,13 +46,18 @@ export function ToastProvider({ children }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={'toast' + (t.type ? ' ' + t.type : '')}
+            className={'toast' + (t.type ? ' ' + t.type : '') + (t.action ? ' undo' : '')}
             role={t.type === 'error' ? 'alert' : 'status'}
             aria-live={t.type === 'error' ? 'assertive' : 'polite'}
           >
             {t.type === 'success' && <SuccessIcon />}
             {t.type === 'error' && <ErrorIcon />}
             <span>{t.msg}</span>
+            {t.action && (
+              <button type="button" onClick={() => { t.action.onClick(); dismiss(t.id); }}>
+                {t.action.label}
+              </button>
+            )}
           </div>
         ))}
       </div>
