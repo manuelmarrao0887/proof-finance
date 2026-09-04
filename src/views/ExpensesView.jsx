@@ -30,7 +30,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
-import { fm, normalizeStmtDate, fmDateShort, todayISO } from '../lib/format.js';
+import { fm, mask, maskPct, normalizeStmtDate, fmDateShort, todayISO } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import MerchantLogo from '../components/MerchantLogo.jsx';
 import Icon from '../components/Icon.jsx';
@@ -97,6 +97,7 @@ export default function ExpensesView() {
   const ui = useUI();
   const toast = useToast();
   const s = useMemo(() => ({ ...state, currentUser }), [state, currentUser]);
+  const hidden = !!state.balancesHidden;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [acctFilter, setAcctFilter] = useState(''); // '' = todas as contas
@@ -261,13 +262,13 @@ export default function ExpensesView() {
         <div className="rw" style={{ marginBottom: 10, padding: '0 4px' }}>
           <div className="lb">{matches.length + ' resultado' + (matches.length === 1 ? '' : 's')}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {activeMonths > 1 && (
+            {!hidden && activeMonths > 1 && (
               <>
                 <Sparkline values={searchSeries} width={44} height={16} />
-                <span className="m" style={{ fontSize: 10, color: 'var(--text3)' }}>~{fm(searchAvg)}/mês</span>
+                <span className="m" style={{ fontSize: 10, color: 'var(--text3)' }}>~{mask(searchAvg, hidden, fm)}/mês</span>
               </>
             )}
-            <div className="m" style={{ fontSize: 13, fontWeight: 600 }}>{fm(tot)}</div>
+            <div className="m" style={{ fontSize: 13, fontWeight: 600 }}>{mask(tot, hidden, fm)}</div>
           </div>
         </div>
         {sorted.length === 0 ? (
@@ -323,7 +324,7 @@ export default function ExpensesView() {
                         )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{fm(x.amount)}</div>
+                        <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{mask(x.amount, hidden, fm)}</div>
                         <button type="button" onClick={() => openExpEdit(x)} className="icon-btn" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Editar despesa">
                           <EditIcon />
                         </button>
@@ -407,7 +408,7 @@ export default function ExpensesView() {
     const pct = Math.round((dToday.getDate() / dEnd) * 100);
     partialNote = (
       <div className="m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
-        {ms[3] + ' parcial · ' + pct + '% do mês'}
+        {ms[3] + ' parcial · ' + maskPct(pct, hidden) + ' do mês'}
       </div>
     );
   } else if (em === 3 && preview) {
@@ -594,12 +595,12 @@ export default function ExpensesView() {
         <div className="rw">
           <div>
             <div className="lb">{isQ ? (preview ? 'Despesas Q1' : 'Despesas 3M (últimos 3 meses)') : 'DESPESAS ' + ms[em]}</div>
-            <div className="m" style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{fm(tE)}</div>
+            <div className="m" style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{mask(tE, hidden, fm)}</div>
           </div>
           {!isQ && em < 3 && salP[em] != null && (
             <div style={{ textAlign: 'right' }}>
               <div className="lb">Salário</div>
-              <div className="m" style={{ fontSize: 18, fontWeight: 600, color: 'var(--success)', marginTop: 4 }}>{fm(salP[em])}</div>
+              <div className="m" style={{ fontSize: 18, fontWeight: 600, color: 'var(--success)', marginTop: 4 }}>{mask(salP[em], hidden, fm)}</div>
             </div>
           )}
         </div>
@@ -621,7 +622,7 @@ export default function ExpensesView() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
                     <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-                      {(b ? b.nm : '-') + ' · dia ' + (r.day || '?') + ' · ' + fm(r.amount)}
+                      {(b ? b.nm : '-') + ' · dia ' + (r.day || '?') + ' · ' + mask(r.amount, hidden, fm)}
                     </div>
                   </div>
                   <button
@@ -692,18 +693,18 @@ export default function ExpensesView() {
                     {r.nm}
                     {r.carried ? (
                       <span
-                        title={'Transitado do mês anterior: ' + (r.carried > 0 ? '+' : '') + fm(r.carried)}
-                        aria-label={'Transitado do mês anterior: ' + (r.carried > 0 ? '+' : '') + fm(r.carried)}
+                        title={'Transitado do mês anterior: ' + (hidden ? '••••' : (r.carried > 0 ? '+' : '') + fm(r.carried))}
+                        aria-label={'Transitado do mês anterior: ' + (hidden ? '••••' : (r.carried > 0 ? '+' : '') + fm(r.carried))}
                         style={{ fontSize: 9, fontWeight: 700, color: r.carried > 0 ? 'var(--success)' : 'var(--signal)', background: r.carried > 0 ? 'var(--success-soft)' : 'var(--signal-soft)', padding: '1px 6px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 3 }}
                       >
                         <Icon name="recurring" size={9} />
-                        {(r.carried > 0 ? '+' : '') + fm(r.carried)}
+                        {hidden ? '••••' : (r.carried > 0 ? '+' : '') + fm(r.carried)}
                       </span>
                     ) : null}
                   </span>
                   <div>
-                    <span className="m" style={{ fontSize: 13, fontWeight: 600 }}>{fm(r.val)}</span>
-                    <span className="m" style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>/ {fm(r.lm)}</span>
+                    <span className="m" style={{ fontSize: 13, fontWeight: 600 }}>{mask(r.val, hidden, fm)}</span>
+                    <span className="m" style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>/ {mask(r.lm, hidden, fm)}</span>
                   </div>
                 </div>
                 <div className="bar">
@@ -711,8 +712,8 @@ export default function ExpensesView() {
                 </div>
                 <div className="rw" style={{ marginTop: 4 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className="m" style={{ fontSize: 11, color: ov ? 'var(--signal)' : 'var(--text3)' }}>{r.pct.toFixed(0)}%</span>
-                    {r.series && (
+                    <span className="m" style={{ fontSize: 11, color: ov ? 'var(--signal)' : 'var(--text3)' }}>{maskPct(r.pct, hidden)}</span>
+                    {!hidden && r.series && (
                       <>
                         <Sparkline values={r.series} color={r.trend > 25 ? 'var(--signal)' : r.trend < -25 ? 'var(--success)' : 'var(--text3)'} />
                         {r.trend != null && Math.abs(r.trend) >= 25 && (
@@ -724,9 +725,9 @@ export default function ExpensesView() {
                     )}
                   </span>
                   {ov ? (
-                    <span className="m" style={{ fontSize: 11, color: 'var(--signal)' }}>+{fm(r.val - r.lm)}</span>
+                    <span className="m" style={{ fontSize: 11, color: 'var(--signal)' }}>+{mask(r.val - r.lm, hidden, fm)}</span>
                   ) : (
-                    <span className="m" style={{ fontSize: 11, color: 'var(--success)' }}>Resta {fm(r.lm - r.val)}</span>
+                    <span className="m" style={{ fontSize: 11, color: 'var(--success)' }}>Resta {mask(r.lm - r.val, hidden, fm)}</span>
                   )}
                 </div>
               </div>
@@ -738,7 +739,7 @@ export default function ExpensesView() {
                 {hTxn.map((t, i) => (
                   <div key={'h' + i} className="rw" style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
                     <span style={{ fontSize: 12, color: 'var(--text2)' }}>{t[0]}</span>
-                    <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>{fm(t[1])}</span>
+                    <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>{mask(t[1], hidden, fm)}</span>
                   </div>
                 ))}
 
@@ -766,9 +767,9 @@ export default function ExpensesView() {
                               )}
                             </span>
                             <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>
-                              {fm(x.amount)}
+                              {mask(x.amount, hidden, fm)}
                               {x.shared && x.total != null && (
-                                <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>de {fm(x.total)}</span>
+                                <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>de {mask(x.total, hidden, fm)}</span>
                               )}
                             </span>
                           </div>

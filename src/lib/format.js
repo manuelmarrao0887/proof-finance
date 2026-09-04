@@ -107,3 +107,8 @@ export function fmDateShort(iso, withYear) {
   const thisYear = String(new Date().getFullYear()) === m[1];
   return String(Number(m[3])) + ' ' + mon + (withYear || !thisYear ? ' ' + m[1].slice(2) : '');
 }
+
+// Saldos ocultos: a mesma máscara em toda a app. `f` é o formatador (fm/fc).
+export function mask(v, hidden, f = fm) { return hidden ? '••••' : f(v); }
+export function maskPct(p, hidden, digits = 0) { return hidden ? '••%' : (Number(p) || 0).toFixed(digits) + '%'; }
+export function maskText(text, hidden) { return hidden ? String(text || '').replace(/\d[\d\s.,]*\s?€/g, '••••') : text; }

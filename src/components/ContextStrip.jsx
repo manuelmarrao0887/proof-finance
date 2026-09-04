@@ -16,7 +16,7 @@ import { compute, monthlySummary, isNewUser, getAcctsLive, CARD_CAT, getGroupsDa
 import { estimateDeductions } from '../lib/irs.js';
 import { totalValue } from '../lib/investments.js';
 import { computeBalances, groupTotals, isSettled } from '../lib/split.js';
-import { fc } from '../lib/format.js';
+import { fc, mask, maskPct } from '../lib/format.js';
 
 export default function ContextStrip({ tab: tabProp }) {
   const { state, currentUser } = useStore();
@@ -25,6 +25,7 @@ export default function ContextStrip({ tab: tabProp }) {
   const s = { ...state, currentUser };
   const C = compute(s);
   const newU = isNewUser(s);
+  const hidden = !!state.balancesHidden;
 
   let label = '';
   let val = '';
@@ -37,7 +38,7 @@ export default function ContextStrip({ tab: tabProp }) {
     const key = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     const spent = (state.addedExp || []).reduce((t, x) => ((x.date || '').slice(0, 7) === key ? t + (Number(x.amount) || 0) : t), 0);
     label = 'Gastos do mês';
-    val = fc(spent);
+    val = mask(spent, hidden, fc);
     col = 'var(--signal)';
   } else if (tab === 'income') {
     let tot = 0;
@@ -45,7 +46,7 @@ export default function ContextStrip({ tab: tabProp }) {
       if (i.recurring !== false) tot += i.amount || 0;
     });
     label = 'Receita mensal recorrente';
-    val = fc(tot);
+    val = mask(tot, hidden, fc);
     col = 'var(--success)';
   } else if (tab === 'goals') {
     let tt = 0;
@@ -56,7 +57,7 @@ export default function ContextStrip({ tab: tabProp }) {
     });
     const p = tt > 0 ? (tc / tt) * 100 : 0;
     label = 'Progresso global';
-    val = p.toFixed(0) + '%';
+    val = maskPct(p, hidden);
     col = 'var(--blue)';
   } else if (tab === 'groups') {
     // Mesma definição de "ativo" e os mesmos totais que a GroupsView mostra
@@ -77,11 +78,11 @@ export default function ContextStrip({ tab: tabProp }) {
       if (!isSettled(computeBalances(entries, g.memberIds))) activeCount += 1;
     });
     label = activeCount + (activeCount === 1 ? ' grupo ativo' : ' grupos ativos');
-    val = 'a receber ' + fc(owedToMe) + ' · a pagar ' + fc(owedByMe);
+    val = 'a receber ' + mask(owedToMe, hidden, fc) + ' · a pagar ' + mask(owedByMe, hidden, fc);
     col = 'var(--text)';
   } else if (tab === 'loan') {
     label = 'Património liquido';
-    val = fc(C.nW);
+    val = mask(C.nW, hidden, fc);
     col = C.nW >= 0 ? 'var(--success)' : 'var(--signal)';
   } else if (tab === 'cards') {
     // Dívida total dos cartões de crédito (soma do que está por pagar).
@@ -90,12 +91,12 @@ export default function ContextStrip({ tab: tabProp }) {
       if (a.c === CARD_CAT) debt += a.used || 0;
     });
     label = 'Dívida dos cartões';
-    val = fc(debt);
+    val = mask(debt, hidden, fc);
     col = debt > 0 ? 'var(--signal)' : 'var(--success)';
   } else if (tab === 'tax') {
     const ded = estimateDeductions(state.addedExp, new Date().getFullYear());
     label = 'Deduções estimadas';
-    val = fc(ded.total);
+    val = mask(ded.total, hidden, fc);
     col = 'var(--success)';
   } else if (tab === 'transfers') {
     const n = (state.transfers || []).length;
@@ -109,19 +110,19 @@ export default function ContextStrip({ tab: tabProp }) {
     const positions = state.positions || [];
     if (positions.length) {
       label = 'Posições';
-      val = fc(totalValue(positions));
+      val = mask(totalValue(positions), hidden, fc);
     } else {
       let inv = 0;
       getAcctsLive(s).forEach((a) => {
         if (a.c === 'Investimentos' || a.c === 'Cripto') inv += a.v;
       });
       label = 'Carteira de investimentos';
-      val = fc(inv);
+      val = mask(inv, hidden, fc);
     }
     col = 'var(--text)';
   } else if (tab === 'cal' || tab === 'charts' || tab === 'rec' || tab === 'ai' || tab === 'report') {
     label = 'Património liquido';
-    val = fc(C.nW);
+    val = mask(C.nW, hidden, fc);
     col = 'var(--text)';
   }
 

@@ -13,7 +13,7 @@ import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { fc, fm } from '../lib/format.js';
+import { fc, fm, mask } from '../lib/format.js';
 import MerchantLogo, { BrandMark } from '../components/MerchantLogo.jsx';
 import StatTiles from '../components/StatTiles.jsx';
 import Icon from '../components/Icon.jsx';
@@ -56,6 +56,7 @@ export default function RecurringView() {
   const toast = useToast();
   const recurring = state.recurring || [];
   const bdg = state.bdg || [];
+  const hidden = !!state.balancesHidden;
 
   if (recurring.length === 0) {
     return (
@@ -102,9 +103,9 @@ export default function RecurringView() {
       <div style={{ marginBottom: 12 }}>
         <StatTiles
           items={[
-            { key: 'mes', value: fc(total), label: 'por mês' },
-            { key: 'ano', value: fc(yearly), label: 'por ano' },
-            { key: 'pend', value: fc(pendingTotal), label: 'por pagar', color: pendingTotal > 0 ? 'var(--warning)' : 'var(--success)' },
+            { key: 'mes', value: mask(total, hidden, fc), label: 'por mês' },
+            { key: 'ano', value: mask(yearly, hidden, fc), label: 'por ano' },
+            { key: 'pend', value: mask(pendingTotal, hidden, fc), label: 'por pagar', color: pendingTotal > 0 ? 'var(--warning)' : 'var(--success)' },
           ]}
         />
       </div>
@@ -145,7 +146,7 @@ export default function RecurringView() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div className="m" style={{ fontSize: 15, fontWeight: 600 }}>{fm(r.amount)}</div>
+                <div className="m" style={{ fontSize: 15, fontWeight: 600 }}>{mask(r.amount, hidden, fm)}</div>
                 <button
                   type="button"
                   onClick={() => open('rec', { id: r.id })}

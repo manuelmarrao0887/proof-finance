@@ -35,7 +35,7 @@ import {
   getGroupsData,
 } from '../lib/finance.js';
 import { groupTotals } from '../lib/split.js';
-import { fm, fc, uid } from '../lib/format.js';
+import { fm, fc, uid, mask, maskPct, maskText } from '../lib/format.js';
 import { upcomingRecurring } from '../lib/reminders.js';
 import { dailyAllowance, savingsPulse, buildInsights, monthPlan, monthForecast } from '../lib/pulse.js';
 import { monthClosing } from '../lib/closing.js';
@@ -224,11 +224,17 @@ export default function OverviewView() {
 
   // Saldos protegidos: ocultar é livre; mostrar pede PIN/FaceID (modal 'lock').
   const hidden = !!state.balancesHidden;
-  const mv = (v) => (hidden ? '••••' : fc(v));
+  const mv = (v) => mask(v, hidden, fc);
   const toggleHide = () => {
     if (hidden) open('lock');
     else actions.setBalancesHidden(true);
   };
+  // Insights combinam texto livre com montantes e percentagens (ex.: "Supermercado
+  // +885% vs média", "Este mês 445€ · média dos últimos meses 45€."). maskText só
+  // cobre euros — aqui aplica-se também sobre percentagens.
+  const maskInsight = (t) => (hidden ? maskText(t, true).replace(/[+-]?\d+([.,]\d+)?\s?%/g, '••%') : t);
+  // b.detail (saúde financeira) é uma string pré-formatada pelo finance.js (ex.: "68%").
+  const maskDetail = (d) => (hidden ? String(d).replace(/-?\d+(\.\d+)?%/g, '••%') : d);
 
   // Recorrentes a vencer nos próximos 5 dias (lembrete na app).
   const upcoming = useMemo(
@@ -267,8 +273,8 @@ export default function OverviewView() {
           aria-label={
             'Grupos — ' +
             [
-              groupsSummary.owedToMe > 0 ? 'amigos devem-te ' + (hidden ? '••••' : fm(groupsSummary.owedToMe)) : null,
-              groupsSummary.owedByMe > 0 ? 'deves ' + (hidden ? '••••' : fm(groupsSummary.owedByMe)) : null,
+              groupsSummary.owedToMe > 0 ? 'amigos devem-te ' + mask(groupsSummary.owedToMe, hidden, fm) : null,
+              groupsSummary.owedByMe > 0 ? 'deves ' + mask(groupsSummary.owedByMe, hidden, fm) : null,
             ]
               .filter(Boolean)
               .join(' · ')
@@ -285,12 +291,12 @@ export default function OverviewView() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 6 }}>
             {groupsSummary.owedToMe > 0 && (
               <span className="m" style={{ fontSize: 14, fontWeight: 700, color: 'var(--success)' }}>
-                Amigos devem-te {hidden ? '••••' : fm(groupsSummary.owedToMe)}
+                Amigos devem-te {mask(groupsSummary.owedToMe, hidden, fm)}
               </span>
             )}
             {groupsSummary.owedByMe > 0 && (
               <span className="m" style={{ fontSize: 14, fontWeight: 700, color: 'var(--signal)' }}>
-                Deves {hidden ? '••••' : fm(groupsSummary.owedByMe)}
+                Deves {mask(groupsSummary.owedByMe, hidden, fm)}
               </span>
             )}
           </div>
@@ -304,19 +310,19 @@ export default function OverviewView() {
             <div className="lb">Fecho de {closing.monthName}</div>
             {closing.deltaPct != null && (
               <span className="m" style={{ fontSize: 11, fontWeight: 700, color: closing.better ? 'var(--success)' : 'var(--warning)' }}>
-                {(closing.deltaPct > 0 ? '+' : '') + Math.round(closing.deltaPct)}% vs média
+                {hidden ? '••' : (closing.deltaPct > 0 ? '+' : '') + Math.round(closing.deltaPct)}% vs média
               </span>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 6 }}>
             <span className="m" style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1 }}>
-              {hidden ? '••••' : fc(closing.total)}
+              {mask(closing.total, hidden, fc)}
             </span>
             <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, marginBottom: 2 }}>gastos</span>
           </div>
           {closing.rate != null && (
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>
-              Poupaste {hidden ? '••••' : fc(closing.saved)} ({Math.round(closing.rate)}% do rendimento)
+              Poupaste {mask(closing.saved, hidden, fc)} ({hidden ? '••' : Math.round(closing.rate)}% do rendimento)
             </div>
           )}
           {closing.top.length > 0 && (
@@ -324,7 +330,7 @@ export default function OverviewView() {
               items={closing.top.map((t) => ({
                 key: t.cat,
                 icon: <CategoryIcon id={t.cat} size={24} bdg={state.bdg} />,
-                value: hidden ? '••••' : fc(t.value),
+                value: mask(t.value, hidden, fc),
                 label: t.name,
                 color: catMeta(t.cat, (state.bdg || []).find((b) => b.id === t.cat)).color,
               }))}
@@ -346,14 +352,14 @@ export default function OverviewView() {
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 4 }}>
                 <span className="m" style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1, color: allowTone }}>
-                  {hidden ? '••••' : fm(Math.max(0, allow.perDay))}
+                  {mask(Math.max(0, allow.perDay), hidden, fm)}
                 </span>
                 <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginBottom: 4 }}>/dia</span>
               </div>
               <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>
                 {allow.left < 0
-                  ? 'Já passaste o rendimento do mês em ' + (hidden ? '••••' : fc(-allow.left)) + '.'
-                  : (hidden ? '••••' : fc(allow.left)) + ' disponíveis' + (allow.pendingFixed > 0 ? ' (fixas por pagar já descontadas)' : '')}
+                  ? 'Já passaste o rendimento do mês em ' + mask(-allow.left, hidden, fc) + '.'
+                  : mask(allow.left, hidden, fc) + ' disponíveis' + (allow.pendingFixed > 0 ? ' (fixas por pagar já descontadas)' : '')}
               </div>
               {/* Barra: gasto + fixas por pagar vs rendimento */}
               <div style={{ height: 6, borderRadius: 999, background: 'var(--bg3)', overflow: 'hidden', display: 'flex' }}>
@@ -372,23 +378,23 @@ export default function OverviewView() {
                     lineHeight: 1.45,
                   }}
                 >
-                  A este ritmo ({hidden ? '••••' : fc(forecast.dailyBurn)}/dia) fechas o mês em{' '}
-                  <b>{hidden ? '••••' : fc(forecast.projectedSpend)}</b>
+                  A este ritmo ({mask(forecast.dailyBurn, hidden, fc)}/dia) fechas o mês em{' '}
+                  <b>{mask(forecast.projectedSpend, hidden, fc)}</b>
                   {forecast.overBudget
-                    ? ' — ' + (hidden ? '••••' : fc(-forecast.projectedEnd)) + ' acima do rendimento.'
+                    ? ' — ' + mask(-forecast.projectedEnd, hidden, fc) + ' acima do rendimento.'
                     : allow.income > 0
-                      ? ', sobrando ' + (hidden ? '••••' : fc(forecast.projectedEnd)) + '.'
+                      ? ', sobrando ' + mask(forecast.projectedEnd, hidden, fc) + '.'
                       : '.'}
                 </div>
               )}
               <div className="rw" style={{ marginTop: 10, gap: 12 }}>
                 <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                  Rendimento {hidden ? '••••' : fc(allow.income)} · gasto {hidden ? '••••' : fc(allow.spent)}
-                  {allow.pendingFixed > 0 && ' · fixas ' + (hidden ? '••••' : fc(allow.pendingFixed))}
+                  Rendimento {mask(allow.income, hidden, fc)} · gasto {mask(allow.spent, hidden, fc)}
+                  {allow.pendingFixed > 0 && ' · fixas ' + mask(allow.pendingFixed, hidden, fc)}
                 </span>
                 {pulse && (
                   <span style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    Poupança <b style={{ color: pulse.rate >= 20 ? 'var(--success)' : 'var(--text2)' }}>{Math.round(pulse.rate)}%</b>
+                    Poupança <b style={{ color: pulse.rate >= 20 ? 'var(--success)' : 'var(--text2)' }}>{maskPct(pulse.rate, hidden)}</b>
                   </span>
                 )}
               </div>
@@ -436,7 +442,7 @@ export default function OverviewView() {
                   {row.l}
                 </span>
                 <span className="m" style={{ fontSize: 12, fontWeight: 600, color: row.v < 0 ? 'var(--signal)' : 'var(--text)' }}>
-                  {hidden ? '••••' : fm(row.v)}
+                  {mask(row.v, hidden, fm)}
                 </span>
               </div>
             ))}
@@ -452,7 +458,7 @@ export default function OverviewView() {
                 onClick={applyPlan}
                 style={{ width: '100%', padding: '11px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
               >
-                Reservar {hidden ? '••••' : fm(plan.goalsTotal)} para as metas
+                Reservar {mask(plan.goalsTotal, hidden, fm)} para as metas
               </button>
             )
           )}
@@ -475,15 +481,15 @@ export default function OverviewView() {
                     </span>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: tone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ins.title}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: tone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{maskInsight(ins.title)}</div>
                     {/* Duas linhas em vez de uma: num telemóvel o texto mais
                         longo (rácio da anomalia) cabia só no title, e num PWA
                         de toque não há hover para o ler. */}
                     <div
                       style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-                      title={ins.long || ins.detail}
+                      title={maskInsight(ins.long || ins.detail)}
                     >
-                      {ins.detail}
+                      {maskInsight(ins.detail)}
                     </div>
                   </div>
                   {/* Avisos de despesa suspeita podem ser falsos positivos → dispensar. */}
@@ -517,7 +523,7 @@ export default function OverviewView() {
             <div key={u.rec.id} className="rw" style={{ padding: '6px 0' }}>
               <span style={{ fontSize: 13, fontWeight: 600 }}>{u.rec.name}</span>
               <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                <span className="m" style={{ fontSize: 13, fontWeight: 600 }}>{fm(u.rec.amount)}</span>
+                <span className="m" style={{ fontSize: 13, fontWeight: 600 }}>{mask(u.rec.amount, hidden, fm)}</span>
                 <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                   {u.daysLeft === 0 ? 'hoje' : u.daysLeft === 1 ? 'amanhã' : 'em ' + u.daysLeft + ' dias'}
                 </span>
@@ -586,9 +592,9 @@ export default function OverviewView() {
           <div className="rw" style={{ marginBottom: 14 }}>
             <div className="lb">Resumo · {curMonth}</div>
             {ms.rate > 0 ? (
-              <div className="chip up-solid">{ms.rate.toFixed(0)}% poupado</div>
+              <div className="chip up-solid">{maskPct(ms.rate, hidden)} poupado</div>
             ) : ms.inc > 0 ? (
-              <div className="chip down-solid">{ms.rate.toFixed(0)}%</div>
+              <div className="chip down-solid">{maskPct(ms.rate, hidden)}</div>
             ) : null}
           </div>
           <div className="g3">
@@ -597,7 +603,7 @@ export default function OverviewView() {
                 Receita
               </div>
               <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)', marginTop: 4 }}>
-                {ms.inc > 0 ? fc(ms.inc) : '—'}
+                {ms.inc > 0 ? mask(ms.inc, hidden, fc) : '—'}
               </div>
             </div>
             <div style={{ background: 'var(--signal-soft)', borderRadius: 14, padding: '12px 14px' }}>
@@ -605,7 +611,7 @@ export default function OverviewView() {
                 Despesa
               </div>
               <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--signal)', marginTop: 4 }}>
-                {fc(ms.exp)}
+                {mask(ms.exp, hidden, fc)}
               </div>
             </div>
             <div style={{ background: 'var(--blue-soft)', borderRadius: 14, padding: '12px 14px' }}>
@@ -613,7 +619,7 @@ export default function OverviewView() {
                 Saldo
               </div>
               <div className="m" style={{ fontSize: 15, fontWeight: 600, color: ms.saved >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 4 }}>
-                {(ms.saved >= 0 ? '+' : '') + fc(ms.saved)}
+                {hidden ? '••••' : (ms.saved >= 0 ? '+' : '') + fc(ms.saved)}
               </div>
             </div>
           </div>
@@ -660,7 +666,7 @@ export default function OverviewView() {
                     <div className="rw" style={{ marginBottom: 4 }}>
                       <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>{b.label}</div>
                       <div className="m" style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>
-                        {b.pts}/{b.max} · {b.detail}
+                        {b.pts}/{b.max} · {maskDetail(b.detail)}
                       </div>
                     </div>
                     <div style={{ height: 3, background: 'var(--elevated)', borderRadius: 2, overflow: 'hidden' }}>
@@ -702,7 +708,7 @@ export default function OverviewView() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 500 }}>{sub.desc}</div>
                     <div className="m" style={{ fontSize: 10, color: 'var(--fg-subtle)', marginTop: 2 }}>
-                      {sub.count} vezes · ~{fc(sub.monthlyEstimate)}/mês
+                      {sub.count} vezes · ~{mask(sub.monthlyEstimate, hidden, fc)}/mês
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -772,8 +778,8 @@ export default function OverviewView() {
               <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 600 }}>meses cobertos</div>
             </div>
             <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
-              <span>Reserva: {fc(ef.safe)}</span>
-              <span>Despesa/mês: {fc(ef.avgMonthly)}</span>
+              <span>Reserva: {mask(ef.safe, hidden, fc)}</span>
+              <span>Despesa/mês: {mask(ef.avgMonthly, hidden, fc)}</span>
             </div>
             <div className="bar" style={{ height: 6, marginTop: 10 }}>
               <div className="bar-fill" style={{ width: efPct + '%', background: efColor }} />
@@ -790,7 +796,7 @@ export default function OverviewView() {
             <div className="rw" style={{ marginBottom: 12 }}>
               <div className="lb">Projecao {forecastMonths} meses</div>
               <div className={'chip ' + (lastBal >= cf.startBalance ? 'up-solid' : 'down-solid')}>
-                {(lastBal >= cf.startBalance ? '+' : '') + fc(lastBal - cf.startBalance)}
+                {hidden ? '••••' : (lastBal >= cf.startBalance ? '+' : '') + fc(lastBal - cf.startBalance)}
               </div>
             </div>
             <div className="ms-bar" style={{ marginBottom: 14 }}>
@@ -806,7 +812,7 @@ export default function OverviewView() {
               ))}
             </div>
             <div style={{ fontSize: 11, color: 'var(--fg-subtle)', marginBottom: 14, lineHeight: 1.5 }}>
-              Receitas {fc(cf.monthlyIncome)}/mês · recorrentes {fc(cf.monthlyRecExpense)} · crédito {fc(cf.loanPay)} · discricionario {fc(cf.avgDiscretionary)}
+              Receitas {mask(cf.monthlyIncome, hidden, fc)}/mês · recorrentes {mask(cf.monthlyRecExpense, hidden, fc)} · crédito {mask(cf.loanPay, hidden, fc)} · discricionario {mask(cf.avgDiscretionary, hidden, fc)}
             </div>
 
             {cf.rows.length <= 6 ? (
@@ -835,12 +841,12 @@ export default function OverviewView() {
 
             <div className="rw m" style={{ fontSize: 11, color: 'var(--fg)' }}>
               <span style={{ color: 'var(--fg-muted)' }}>Hoje</span>
-              <span style={{ fontWeight: 600 }}>{fc(cf.startBalance)}</span>
+              <span style={{ fontWeight: 600 }}>{mask(cf.startBalance, hidden, fc)}</span>
             </div>
             {cfRowsToShow.map((r, i) => (
               <div key={i} className="rw m" style={{ fontSize: 11, paddingTop: 4 }}>
                 <span style={{ color: 'var(--fg-muted)' }}>{r.label}</span>
-                <span style={{ fontWeight: 600, color: r.balance >= 0 ? 'var(--fg)' : 'var(--danger)' }}>{fc(r.balance)}</span>
+                <span style={{ fontWeight: 600, color: r.balance >= 0 ? 'var(--fg)' : 'var(--danger)' }}>{mask(r.balance, hidden, fc)}</span>
               </div>
             ))}
           </div>
@@ -878,7 +884,7 @@ export default function OverviewView() {
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 600 }}>{acctCatLabel(cat)}</div>
                       <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
-                        {items.length} contas · {pctOfAssets.toFixed(0)}%
+                        {items.length} contas · {maskPct(pctOfAssets, hidden)}
                       </div>
                     </div>
                   </div>
@@ -906,7 +912,7 @@ export default function OverviewView() {
                           {a.updated && <div className="m" style={{ fontSize: 11, color: 'var(--success)', marginTop: 2 }}>Atualizado {a.updated}</div>}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{hidden ? '••••' : fm(a.v)}</div>
+                          <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{mask(a.v, hidden, fm)}</div>
                           <button
                             type="button"
                             onClick={() => open('balanceHistory', { acctKey: a.custom ? a.id : a.b + '_' + a.t, bank: a.b, type: a.t })}

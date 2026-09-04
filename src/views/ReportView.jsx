@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
-import { fm, fc } from '../lib/format.js';
+import { fm, fc, mask, maskPct, maskText } from '../lib/format.js';
 import { categoryTotals, monthTotal, monthComparison, topExpenses, prevMonth, yearSummary } from '../lib/reports.js';
 import { monthsWithData, monthLabelShort, MONTH_SHORT as MS } from '../lib/months.js';
 import { savingsOpportunities, totalSavings } from '../lib/savings.js';
@@ -17,6 +17,7 @@ export default function ReportView() {
   const { state } = useStore();
   const addedExp = state.addedExp || [];
   const bdg = state.bdg || [];
+  const hidden = !!state.balancesHidden;
   const catName = (id) => {
     const b = bdg.find((x) => x.id === id);
     return b ? b.nm : id;
@@ -65,7 +66,7 @@ export default function ReportView() {
       {/* Total */}
       <div className="cd" style={{ marginBottom: 16 }}>
         <div className="lb">Despesa total</div>
-        <div className="m" style={{ fontSize: 28, fontWeight: 800, marginTop: 4 }}>{fc(total)}</div>
+        <div className="m" style={{ fontSize: 28, fontWeight: 800, marginTop: 4 }}>{mask(total, hidden, fc)}</div>
       </div>
 
       {/* Onde posso poupar — oportunidades concretas com impacto anual */}
@@ -74,7 +75,7 @@ export default function ReportView() {
           <div className="rw" style={{ marginBottom: 4 }}>
             <div className="lb">Onde podes poupar</div>
             <span className="m" style={{ fontSize: 13, fontWeight: 800, color: 'var(--success)' }}>
-              até {fc(oppTotal)}/ano
+              até {mask(oppTotal, hidden, fc)}/ano
             </span>
           </div>
           <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 12 }}>
@@ -85,15 +86,15 @@ export default function ReportView() {
               <div className="rw" style={{ marginBottom: 2, gap: 10 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, minWidth: 0 }}>{o.title}</span>
                 <span className="m" style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)', whiteSpace: 'nowrap' }}>
-                  {fc(o.yearly)}/ano
+                  {mask(o.yearly, hidden, fc)}/ano
                 </span>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{o.detail}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{maskText(o.detail, hidden)}</div>
               {o.evidence && o.evidence.length > 0 && o.kind === 'subscriptions' && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
                   {o.evidence.map((e) => (
                     <span key={e.name} className="m" style={{ fontSize: 9, color: 'var(--text3)', background: 'var(--elevated)', padding: '2px 7px', borderRadius: 999 }}>
-                      {e.name} {fm(e.amount)}
+                      {e.name} {mask(e.amount, hidden, fm)}
                     </span>
                   ))}
                 </div>
@@ -109,7 +110,7 @@ export default function ReportView() {
           <div className="rw" style={{ marginBottom: 12 }}>
             <div className="lb">Ano {yearNum}</div>
             <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-              {fc(ySum.total)} · média {fc(ySum.avg)}/mês
+              {mask(ySum.total, hidden, fc)} · média {mask(ySum.avg, hidden, fc)}/mês
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 72 }}>
@@ -121,7 +122,7 @@ export default function ReportView() {
               return (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 4, height: '100%' }}>
                   <div
-                    title={MS[i] + ': ' + fc(v)}
+                    title={MS[i] + ': ' + mask(v, hidden, fc)}
                     style={{
                       width: '100%',
                       height: h + 'px',
@@ -140,7 +141,7 @@ export default function ReportView() {
           </div>
           {ySum.maxMonth >= 0 && (
             <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 8 }}>
-              Mês mais caro: {MS[ySum.maxMonth]} ({fc(ySum.max)})
+              Mês mais caro: {MS[ySum.maxMonth]} ({mask(ySum.max, hidden, fc)})
               {curMonthIdx === ySum.maxMonth ? ' — é este.' : ''}
             </div>
           )}
@@ -163,10 +164,10 @@ export default function ReportView() {
                     <CategoryIcon id={c.cat} size={26} /> {catName(c.cat)}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                    <span className="m" style={{ fontSize: 14, fontWeight: 600 }}>{fm(c.cur)}</span>
+                    <span className="m" style={{ fontSize: 14, fontWeight: 600 }}>{mask(c.cur, hidden, fm)}</span>
                     {c.prev > 0 && (
                       <span className="m" style={{ fontSize: 11, fontWeight: 600, color: c.delta > 0 ? 'var(--signal)' : 'var(--success)' }}>
-                        {c.delta > 0 ? '▲' : '▼'} {Math.abs(c.pct).toFixed(0)}%
+                        {c.delta > 0 ? '▲' : '▼'} {maskPct(Math.abs(c.pct), hidden)}
                       </span>
                     )}
                   </span>
@@ -187,7 +188,7 @@ export default function ReportView() {
                   <CategoryIcon id={x.cat} size={26} />
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.desc}</span>
                 </span>
-                <span className="m" style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{fm(x.amount)}</span>
+                <span className="m" style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{mask(x.amount, hidden, fm)}</span>
               </div>
             ))}
           </div>

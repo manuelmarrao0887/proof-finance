@@ -19,7 +19,7 @@ import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { computeBalances, simplifyDebts, groupTotals, isSettled, groupCatMeta, shareText, toCents, fromCents } from '../lib/split.js';
 import { getGroupsData } from '../lib/finance.js';
-import { fm, fmDateShort } from '../lib/format.js';
+import { fm, fmDateShort, mask } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import Avatar from '../components/Avatar.jsx';
 
@@ -43,14 +43,16 @@ function colorOfFactory(people) {
 // `btnRef` deixa GroupsView reganhar o foco neste cartão ao voltar do
 // detalhe (ver useEffect de foco em GroupsView, mais abaixo).
 function GroupCard({ group, totals, settled, onOpen, btnRef, nameOf, colorOf }) {
+  const { state } = useStore();
+  const hidden = !!state.balancesHidden;
   const memberCount = (group.memberIds || []).length;
   const hasRange = !!(group.start && group.end);
   const saldoColor = totals.owedToMe > 0 ? 'var(--success)' : totals.owedByMe > 0 ? 'var(--signal)' : 'var(--text3)';
   const saldoLabel =
     totals.owedToMe > 0
-      ? 'Devem-te ' + fm(totals.owedToMe)
+      ? 'Devem-te ' + mask(totals.owedToMe, hidden, fm)
       : totals.owedByMe > 0
-      ? 'Deves ' + fm(totals.owedByMe)
+      ? 'Deves ' + mask(totals.owedByMe, hidden, fm)
       : 'Sem saldo';
 
   return (
@@ -87,7 +89,7 @@ function GroupCard({ group, totals, settled, onOpen, btnRef, nameOf, colorOf }) 
                   substituiria o nome acessível inteiro e calaria o saldo. */}
               <span className="vh">{memberCount} pessoas</span>
               <span>
-                {fm(totals.total)}
+                {mask(totals.total, hidden, fm)}
                 {hasRange ? ' · ' + fmDateShort(group.start) + ' – ' + fmDateShort(group.end) : ''}
               </span>
             </span>
@@ -126,6 +128,8 @@ function myImpactCents(entry) {
 // Linha de uma despesa (separador "Despesas"): categoria, descrição, quem pagou
 // e o impacto para o utilizador — a haver (verde) ou a dever (vermelho).
 function ExpenseRow({ entry, nameOf, onOpen, disabled }) {
+  const { state } = useStore();
+  const hidden = !!state.balancesHidden;
   const impactCents = myImpactCents(entry);
   const shareCount = (entry.shares || []).length;
   return (
@@ -147,10 +151,10 @@ function ExpenseRow({ entry, nameOf, onOpen, disabled }) {
           </span>
         </span>
         <span style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-          <span className="m" style={{ fontSize: 13, fontWeight: 700, display: 'block' }}>{fm(entry.amount)}</span>
+          <span className="m" style={{ fontSize: 13, fontWeight: 700, display: 'block' }}>{mask(entry.amount, hidden, fm)}</span>
           {impactCents !== 0 && (
             <span style={{ fontSize: 11, fontWeight: 600, color: impactCents > 0 ? 'var(--success)' : 'var(--signal)' }}>
-              {impactCents > 0 ? 'emprestaste ' : 'deves '}{fm(fromCents(Math.abs(impactCents)))}
+              {impactCents > 0 ? 'emprestaste ' : 'deves '}{mask(fromCents(Math.abs(impactCents)), hidden, fm)}
             </span>
           )}
         </span>
@@ -161,6 +165,8 @@ function ExpenseRow({ entry, nameOf, onOpen, disabled }) {
 
 // Linha de atividade: despesa (categoria + quem pagou) ou acerto ("X pagou a Y").
 function ActivityRow({ entry, nameOf }) {
+  const { state } = useStore();
+  const hidden = !!state.balancesHidden;
   const isSettlement = entry.kind === 'settlement';
   return (
     <div className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
@@ -176,7 +182,7 @@ function ActivityRow({ entry, nameOf }) {
             </span>
           </span>
         </span>
-        <span className="m" style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>{fm(entry.amount)}</span>
+        <span className="m" style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>{mask(entry.amount, hidden, fm)}</span>
       </div>
     </div>
   );
@@ -190,11 +196,13 @@ function ActivityRow({ entry, nameOf }) {
 // esta linha é o único sítio garantido onde o nome fica visível para toda a
 // gente, não só para quem usa leitor de ecrã ou passa o rato pelo avatar.
 function BalanceBar({ id, balance, maxAbsCents, nameOf, colorOf }) {
+  const { state } = useStore();
+  const hidden = !!state.balancesHidden;
   const cents = toCents(balance);
   const ratio = maxAbsCents > 0 ? Math.min(1, Math.abs(cents) / maxAbsCents) : 0;
-  const widthPct = ratio * 50;
+  const widthPct = hidden ? 0 : ratio * 50;
   const color = cents > 0 ? 'var(--success)' : cents < 0 ? 'var(--signal)' : 'var(--text3)';
-  const label = cents > 0 ? 'Tens a receber ' + fm(balance) : cents < 0 ? 'Deves ' + fm(Math.abs(balance)) : 'Acertado';
+  const label = cents > 0 ? 'Tens a receber ' + mask(balance, hidden, fm) : cents < 0 ? 'Deves ' + mask(Math.abs(balance), hidden, fm) : 'Acertado';
   return (
     <div style={{ marginBottom: 14 }}>
       <div className="rw" style={{ marginBottom: 6 }}>
@@ -226,6 +234,8 @@ function BalanceBar({ id, balance, maxAbsCents, nameOf, colorOf }) {
 
 // Linha do plano de acertos (simplifyDebts): quem deve pagar a quem + botão.
 function SettleRow({ debt, nameOf, colorOf, onSettle, disabled }) {
+  const { state } = useStore();
+  const hidden = !!state.balancesHidden;
   return (
     <div className="cd rw" style={{ marginBottom: 8, padding: '12px 16px' }}>
       <span style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
@@ -236,7 +246,7 @@ function SettleRow({ debt, nameOf, colorOf, onSettle, disabled }) {
         <span>{nameOf(debt.to)}</span>
       </span>
       <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span className="m" style={{ fontSize: 13, fontWeight: 700 }}>{fm(debt.amount)}</span>
+        <span className="m" style={{ fontSize: 13, fontWeight: 700 }}>{mask(debt.amount, hidden, fm)}</span>
         <button
           type="button"
           onClick={disabled ? undefined : onSettle}
@@ -278,6 +288,8 @@ function GroupsHeader({ onManagePeople, headingRef }) {
 // Ecrã de detalhe de um grupo: totais, separador Despesas/Saldos/Atividade e
 // os dois atalhos fixos no fundo (Acertar / Despesa).
 function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, toast, onBack, isDemo }) {
+  const { state } = useStore();
+  const hidden = !!state.balancesHidden;
   const [seg, setSeg] = useState('exp');
   const headingRef = useRef(null);
 
@@ -365,9 +377,9 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
 
       <div className="cd" style={{ marginBottom: 16 }}>
         <div className="lb">Total do grupo</div>
-        <div className="m" style={{ fontSize: 26, fontWeight: 800, marginTop: 4, letterSpacing: '-0.02em' }}>{fm(totals.total)}</div>
+        <div className="m" style={{ fontSize: 26, fontWeight: 800, marginTop: 4, letterSpacing: '-0.02em' }}>{mask(totals.total, hidden, fm)}</div>
         <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
-          tu pagaste {fm(totals.paidByMe)} · a tua parte {fm(totals.myShare)}
+          tu pagaste {mask(totals.paidByMe, hidden, fm)} · a tua parte {mask(totals.myShare, hidden, fm)}
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
           {(group.memberIds || []).map((id) => (
@@ -483,6 +495,7 @@ function GroupDetail({ group, entries, totals, balances, nameOf, colorOf, open, 
 
 export default function GroupsView() {
   const { state, preview } = useStore();
+  const hidden = !!state.balancesHidden;
   const { open } = useUI();
   const toast = useToast();
   const [openId, setOpenId] = useState(null);
@@ -615,12 +628,12 @@ export default function GroupsView() {
           Saldo global dos grupos
         </div>
         <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, marginTop: 6 }}>
-          {fm(net)}
+          {mask(net, hidden, fm)}
         </div>
         <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>{netLabel}</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-          <span className="chip up">A receber {fm(owedToMe)}</span>
-          <span className="chip down">A pagar {fm(owedByMe)}</span>
+          <span className="chip up">A receber {mask(owedToMe, hidden, fm)}</span>
+          <span className="chip down">A pagar {mask(owedByMe, hidden, fm)}</span>
         </div>
       </div>
 

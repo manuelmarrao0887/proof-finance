@@ -14,7 +14,7 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { windowLabels, monthKeyAt } from '../lib/months.js';
 import MonthNav from '../components/MonthNav.jsx';
-import { fc, fm } from '../lib/format.js';
+import { fc, fm, mask } from '../lib/format.js';
 import { isPreviewMode } from '../lib/finance.js';
 
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -43,6 +43,7 @@ export default function IncomesView() {
   const { state, actions, currentUser } = useStore();
   const { open } = useUI();
   const incomes = state.incomes || [];
+  const hidden = !!state.balancesHidden;
   const preview = isPreviewMode({ ...state, currentUser });
   const em = typeof state.em === 'number' ? state.em : 3;
   const isQ = em === 4;
@@ -133,9 +134,9 @@ export default function IncomesView() {
         <div className="rw" style={{ marginBottom: 4 }}>
           <div className="lb">{(isQ ? 'RECEITA Q1' : 'RECEITA ' + (ms[em] || '').toUpperCase())}</div>
         </div>
-        <div className="m" style={{ fontSize: 26, fontWeight: 800, color: 'var(--success)' }}>{fc(monthTotal)}</div>
+        <div className="m" style={{ fontSize: 26, fontWeight: 800, color: 'var(--success)' }}>{mask(monthTotal, hidden, fc)}</div>
         <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
-          {fc(recTotal)} recorrente{oneTotal > 0 ? ' · +' + fc(oneTotal) + ' pontual' : ''}
+          {mask(recTotal, hidden, fc)} recorrente{oneTotal > 0 ? ' · +' + mask(oneTotal, hidden, fc) + ' pontual' : ''}
         </div>
       </div>
 
@@ -174,7 +175,7 @@ export default function IncomesView() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)' }}>+{fm(i.amount || 0)}</div>
+                  <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)' }}>{hidden ? '••••' : '+' + fm(i.amount || 0)}</div>
                   <button
                     type="button"
                     onClick={() => open('income', { id: i.id })}

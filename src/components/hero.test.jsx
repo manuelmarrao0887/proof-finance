@@ -1,8 +1,9 @@
 /* ════════════════════════════════════════════════════════════════════════
    Hero.test — o cartão "Património Liquido" no topo do Resumo tem de
    respeitar state.balancesHidden: mascarar os MONTANTES (o número grande e
-   a linha "Ativos … · Dívida …"), mas manter visível o chip de variação (%)
-   e o sparkline — nenhum dos dois revela um valor em euros, só a tendência.
+   a linha "Ativos … · Dívida …"), o chip de variação (%, via maskPct) e o
+   sparkline (que deixa de ser desenhado) — o modo "saldos ocultos" esconde
+   qualquer sinal, incluindo tendência, em toda a app (ver Task 2).
 
    Fixture com valores facilmente reconhecíveis e todos DIFERENTES entre si,
    para as asserções de ausência/presença não poderem colidir por acaso:
@@ -85,7 +86,7 @@ describe('Hero — respeita balancesHidden', () => {
     expect(C.hist.length).toBeGreaterThan(1);
   });
 
-  it('balancesHidden:true — oculta o número e Ativos/Dívida, mantém % e sparkline', async () => {
+  it('balancesHidden:true — oculta o número, Ativos/Dívida, % e sparkline', async () => {
     const fx = fixture();
     const s = buildState(fx);
     const C = compute(s);
@@ -100,13 +101,17 @@ describe('Hero — respeita balancesHidden', () => {
     expect(container.textContent).not.toContain(fc(C.debt));
     expect(container.textContent).toContain('••••');
 
-    // Tendência: mantida — a % não revela nenhum montante.
-    expect(container.textContent).toContain(expectedHeroPct(s));
+    // Tendência: mascarada — o modo "saldos ocultos" não deixa nenhum sinal
+    // visível, nem a variação percentual (Task 2 — maskPct).
+    expect(container.textContent).not.toContain(expectedHeroPct(s));
+    expect(container.textContent).toContain('••%');
 
-    // Sparkline: mantido — é normalizado, não tem escala em euros.
-    const polyline = container.querySelector('svg polyline');
-    expect(polyline).not.toBeNull();
-    expect(polyline.getAttribute('points')).not.toBe('');
+    // Sparkline: não desenhado — mesmo normalizado, é um sinal a esconder.
+    // Seletor específico: a própria Hero tem outro <polyline> (a seta do
+    // chip de variação), que fica sempre visível — 'svg polyline' sozinho
+    // apanhava esse e mascarava um falso-positivo.
+    const polyline = container.querySelector('svg[viewBox="0 0 100 28"] polyline');
+    expect(polyline).toBeNull();
   });
 
   it('balancesHidden:false — mostra o número, Ativos/Dívida, % e sparkline', async () => {
@@ -128,7 +133,10 @@ describe('Hero — respeita balancesHidden', () => {
     expect(container.textContent).toContain(expectedHeroPct(s));
 
     // Sparkline: presente.
-    const polyline = container.querySelector('svg polyline');
+    // Seletor específico: a própria Hero tem outro <polyline> (a seta do
+    // chip de variação), que fica sempre visível — 'svg polyline' sozinho
+    // apanhava esse e mascarava um falso-positivo.
+    const polyline = container.querySelector('svg[viewBox="0 0 100 28"] polyline');
     expect(polyline).not.toBeNull();
     expect(polyline.getAttribute('points')).not.toBe('');
   });

@@ -17,7 +17,7 @@
 
 import React, { useState } from 'react';
 import { useStore } from '../store/store.jsx';
-import { fc, fm } from '../lib/format.js';
+import { fc, fm, mask } from '../lib/format.js';
 import { getLoan } from '../lib/finance.js';
 
 const MONTH_NAMES = [
@@ -28,6 +28,7 @@ const DOW = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']; // Monday-first labels
 
 export default function CalendarView() {
   const { state, currentUser } = useStore();
+  const hidden = !!state.balancesHidden;
   const [calOffset, setCalOffset] = useState(0); // months from current
   const [showCalDay, setShowCalDay] = useState(null);
 
@@ -179,17 +180,16 @@ export default function CalendarView() {
       <div className="g3" style={{ marginBottom: 16 }}>
         <div className="cd" style={{ padding: 12 }}>
           <div className="lb" style={{ fontSize: 11 }}>Receita</div>
-          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--success)', marginTop: 2 }}>+{fc(totalIn)}</div>
+          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--success)', marginTop: 2 }}>{hidden ? '••••' : '+' + fc(totalIn)}</div>
         </div>
         <div className="cd" style={{ padding: 12 }}>
           <div className="lb" style={{ fontSize: 11 }}>Despesa</div>
-          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--signal)', marginTop: 2 }}>-{fc(totalOut)}</div>
+          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--signal)', marginTop: 2 }}>{hidden ? '••••' : '-' + fc(totalOut)}</div>
         </div>
         <div className="cd" style={{ padding: 12, borderLeft: '3px solid ' + (net >= 0 ? 'var(--success)' : 'var(--signal)') }}>
           <div className="lb" style={{ fontSize: 11 }}>Net</div>
           <div className="m" style={{ fontSize: 14, fontWeight: 800, color: net >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 2 }}>
-            {net >= 0 ? '+' : ''}
-            {fc(net)}
+            {hidden ? '••••' : (net >= 0 ? '+' : '') + fc(net)}
           </div>
         </div>
       </div>
@@ -227,8 +227,7 @@ export default function CalendarView() {
                 <span style={{ fontSize: 13 }}>{ev.name}</span>
               </div>
               <span className="m" style={{ fontSize: 13, fontWeight: 600, color: ev.color }}>
-                {ev.amount > 0 ? '+' : ''}
-                {fm(ev.amount)}
+                {hidden ? '••••' : (ev.amount > 0 ? '+' : '') + fm(ev.amount)}
               </span>
             </div>
           ))}

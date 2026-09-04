@@ -10,7 +10,7 @@
 import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { compute, isNewUser, cCol, CARD_CAT, acctCatLabel } from '../lib/finance.js';
-import { fm, fc } from '../lib/format.js';
+import { fm, fc, mask, maskPct } from '../lib/format.js';
 
 export default function Hero() {
   const { state, currentUser } = useStore();
@@ -24,16 +24,14 @@ export default function Hero() {
   // (state.balancesHidden), com um helper por formatador (fm vs fc) para não
   // alterar o formato quando visível.
   const hidden = !!state.balancesHidden;
-  const mv = (v) => (hidden ? '••••' : fm(v));
-  const mc = (v) => (hidden ? '••••' : fc(v));
+  const mv = (v) => mask(v, hidden, fm);
+  const mc = (v) => mask(v, hidden, fc);
 
   // Delta percentage relative to the base net worth (orig 2894-2896).
   const lastH = C.hist[C.hist.length - 1] || { liq: 0, poup: 0, inv: 0, div: 0 };
   const baseNW = lastH.liq + lastH.poup + lastH.inv - C.aD || 1;
-  const heroPct =
-    (C.aD >= 0 ? '+' : '') +
-    (C.tA > 0 ? ((C.aD / Math.abs(baseNW)) * 100).toFixed(1) : '0') +
-    '%';
+  const heroPctRaw = C.tA > 0 ? (C.aD / Math.abs(baseNW)) * 100 : 0;
+  const heroPct = hidden ? maskPct(heroPctRaw, hidden, 1) : (C.aD >= 0 ? '+' : '') + heroPctRaw.toFixed(1) + '%';
 
   // Mini net-worth sparkline points (orig 2904-2908).
   const nwSeries = C.hist.map((x) => x.liq + x.poup + x.inv - x.div);
@@ -102,7 +100,7 @@ export default function Hero() {
           Ativos {mc(gross)}
           {C.debt > 0 ? ' · Dívida ' + mc(C.debt) : ''}
         </div>
-        {nwSeries.length > 1 && (
+        {!hidden && nwSeries.length > 1 && (
           <svg
             viewBox="0 0 100 28"
             preserveAspectRatio="none"
@@ -128,19 +126,23 @@ export default function Hero() {
             style={{ display: 'flex', height: 6, background: 'var(--bg3)', borderRadius: 3, overflow: 'hidden' }}
             aria-hidden="true"
           >
-            {cats.map((c) => (
-              <div
-                key={c}
-                style={{ width: (C.cT[c] / gross) * 100 + '%', background: cCol[c] || 'var(--fg-subtle)' }}
-              />
-            ))}
+            {hidden ? (
+              <div style={{ width: '100%', background: 'var(--elevated)' }} />
+            ) : (
+              cats.map((c) => (
+                <div
+                  key={c}
+                  style={{ width: (C.cT[c] / gross) * 100 + '%', background: cCol[c] || 'var(--fg-subtle)' }}
+                />
+              ))
+            )}
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 14, marginTop: 10 }}>
             {cats.map((c) => (
               <div key={c} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: cCol[c] || 'var(--fg-subtle)' }} />
                 <span style={{ fontSize: 11, color: 'var(--text2)', fontWeight: 500 }}>
-                  {acctCatLabel(c)} {((C.cT[c] / gross) * 100).toFixed(0)}%
+                  {acctCatLabel(c)}{hidden ? '' : ' ' + ((C.cT[c] / gross) * 100).toFixed(0) + '%'}
                 </span>
               </div>
             ))}

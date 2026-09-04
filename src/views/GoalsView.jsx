@@ -16,7 +16,7 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import Icon from '../components/Icon.jsx';
-import { fc } from '../lib/format.js';
+import { fc, mask, maskPct } from '../lib/format.js';
 import { monthsToTarget, etaDate, ymLabel, goalsAtRisk } from '../lib/goals.js';
 
 const QUICK_ADD = [10, 50, 100, 500];
@@ -26,6 +26,7 @@ export default function GoalsView() {
   const { open } = useUI();
   const toast = useToast();
   const goals = state.goals || [];
+  const hidden = !!state.balancesHidden;
   // Metas cuja reserva mensal não chega para cumprir o prazo.
   const atRisk = goalsAtRisk(goals);
   const riskById = Object.fromEntries(atRisk.map((r) => [r.id, r]));
@@ -82,14 +83,14 @@ export default function GoalsView() {
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
       {/* Global progress */}
       <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-        <div className="bar" style={{ height: 8 }} role="img" aria-label={'Progresso global ' + overall.toFixed(0) + '%'}>
+        <div className="bar" style={{ height: 8 }} role="img" aria-label={'Progresso global ' + maskPct(overall, hidden)}>
           <div className="bar-fill" style={{ width: Math.min(overall, 100) + '%', background: 'var(--primary)' }} />
         </div>
         <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
           <span>
-            {fc(totalCurrent)} de {fc(totalTarget)}
+            {mask(totalCurrent, hidden, fc)} de {mask(totalTarget, hidden, fc)}
           </span>
-          <span>{fc(Math.max(totalTarget - totalCurrent, 0))} restantes</span>
+          <span>{mask(Math.max(totalTarget - totalCurrent, 0), hidden, fc)} restantes</span>
         </div>
       </div>
 
@@ -116,7 +117,7 @@ export default function GoalsView() {
         const stateLabel = done ? 'concluída' : risk ? 'atrasada' : g.monthly > 0 ? 'no ritmo' : 'a começar';
         const tone = done || stateLabel === 'no ritmo' ? 'var(--success)' : risk ? 'var(--warning)' : 'var(--text3)';
         const riskText = risk
-          ? 'Não chega para o prazo: precisas de ' + fc(risk.needed) + '/mês' + (risk.monthly > 0 ? ' (+' + fc(risk.gap) + ')' : '') + ' nos próximos ' + risk.monthsLeft + (risk.monthsLeft === 1 ? ' mês' : ' meses') + '.'
+          ? 'Não chega para o prazo: precisas de ' + mask(risk.needed, hidden, fc) + '/mês' + (risk.monthly > 0 ? ' (+' + mask(risk.gap, hidden, fc) + ')' : '') + ' nos próximos ' + risk.monthsLeft + (risk.monthsLeft === 1 ? ' mês' : ' meses') + '.'
           : undefined;
         const chipStyle = { border: 'none', background: 'color-mix(in srgb, ' + tone + ' 14%, transparent)', color: tone, fontWeight: 700, padding: '3px 9px', flexShrink: 0 };
         // id do painel; só vai a aria-controls enquanto ele existe no DOM.
@@ -178,20 +179,20 @@ export default function GoalsView() {
                   />
                 </svg>
                 <div style={{ position: 'absolute', fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                  {pctAbs.toFixed(0)}%
+                  {maskPct(pctAbs, hidden)}
                 </div>
               </div>
               <div style={{ flex: 1 }}>
                 <div className="m" style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em' }}>
-                  {fc(g.current)}
+                  {mask(g.current, hidden, fc)}
                 </div>
                 <div className="m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-                  de {fc(g.target)}
+                  de {mask(g.target, hidden, fc)}
                 </div>
                 {g.monthly > 0 && rem > 0 ? (
                   <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span>
-                      {fc(g.monthly)}/mês · conclui {ymLabel(etaDate(rem, g.monthly))} ({monthsToTarget(rem, g.monthly)} {monthsToTarget(rem, g.monthly) === 1 ? 'mês' : 'meses'})
+                      {mask(g.monthly, hidden, fc)}/mês · conclui {ymLabel(etaDate(rem, g.monthly))} ({monthsToTarget(rem, g.monthly)} {monthsToTarget(rem, g.monthly) === 1 ? 'mês' : 'meses'})
                     </span>
                     {/* Reforçada pelo "Plano do mês" (envelope budgeting) no Resumo. */}
                     {g.lastAlloc === thisMonth && (
@@ -202,7 +203,7 @@ export default function GoalsView() {
                   </div>
                 ) : monthly != null ? (
                   <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6, fontWeight: 600 }}>
-                    Sugestão: ~ {fc(monthly)}/mês para o prazo
+                    Sugestão: ~ {mask(monthly, hidden, fc)}/mês para o prazo
                   </div>
                 ) : null}
               </div>

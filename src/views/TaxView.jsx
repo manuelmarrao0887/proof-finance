@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { fm } from '../lib/format.js';
+import { fm, mask, maskText } from '../lib/format.js';
 import { taxCalendarPT, upcomingTaxEvents, MONTH_NAMES_PT } from '../lib/taxpt.js';
 import { estimateDeductions } from '../lib/irs.js';
 import { monthsWithData } from '../lib/months.js';
@@ -30,6 +30,7 @@ export default function TaxView() {
   const { state, actions } = useStore();
   const toast = useToast();
   const cfg = state.taxCfg || {};
+  const hidden = !!state.balancesHidden;
   const [editing, setEditing] = useState(false);
   const [imi, setImi] = useState(cfg.imiAmount != null ? String(cfg.imiAmount).replace('.', ',') : '');
   const [iuc, setIuc] = useState(Array.isArray(cfg.iucMonths) ? cfg.iucMonths.join(', ') : '');
@@ -78,7 +79,7 @@ export default function TaxView() {
                   {fmtDate(e.date)} · {e.daysLeft === 0 ? 'hoje' : e.daysLeft === 1 ? 'amanhã' : e.daysLeft + ' dias'}
                 </span>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{e.detail}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>{maskText(e.detail, hidden)}</div>
             </div>
           ))}
         </div>
@@ -102,7 +103,7 @@ export default function TaxView() {
       <div className="cd" style={{ padding: 16, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 4 }}>
           <span className="m" style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1, color: 'var(--success)' }}>
-            {fm(ded.total)}
+            {mask(ded.total, hidden, fm)}
           </span>
           <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, marginBottom: 3 }}>a deduzir (estimativa)</span>
         </div>
@@ -119,13 +120,13 @@ export default function TaxView() {
                   {r.label}
                   {r.capped && <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--warning)', marginLeft: 6 }}>NO LIMITE</span>}
                 </span>
-                <span className="m" style={{ fontSize: 12, fontWeight: 700 }}>{fm(r.deduction)}</span>
+                <span className="m" style={{ fontSize: 12, fontWeight: 700 }}>{mask(r.deduction, hidden, fm)}</span>
               </div>
               <div style={{ height: 5, borderRadius: 999, background: 'var(--bg3)', overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: pct + '%', background: r.capped ? 'var(--warning)' : 'var(--success)' }} />
               </div>
               <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 3 }}>
-                Gasto {fm(r.spent)} · teto {fm(r.cap)}
+                Gasto {mask(r.spent, hidden, fm)} · teto {mask(r.cap, hidden, fm)}
               </div>
             </div>
           );
