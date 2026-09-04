@@ -101,8 +101,8 @@ export default function LoanView() {
 
           <Row label="Valor de aquisição" value={mv(h.valorAquisicao)} />
           <Row label="Empréstimo bancário" value={mv(h.valorEmprestimo)} />
-          <Row label="Capitais próprios" value={mv(h.capitaisProprios)} />
-          <Row label="Impostos na compra (IMT+IS)" value={mv(h.impostos)} />
+          <Row label="Capitais próprios" value={h.capitaisProprios != null && h.capitaisProprios !== '' ? mv(h.capitaisProprios) : '—'} />
+          <Row label="Impostos na compra (IMT+IS)" value={h.impostos != null && h.impostos !== '' ? mv(h.impostos) : '—'} />
           {h.dataAquisicao && <Row label="Data de aquisição" value={h.dataAquisicao} />}
           {h.taxaJuro > 0 && <Row label="Taxa de juro" value={(h.taxaJuro).toString().replace('.', ',') + '%'} />}
           {h.prazoAnos > 0 && <Row label="Prazo" value={h.prazoAnos + ' anos'} />}

@@ -10,7 +10,7 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 :root{
-  color-scheme: light dark;
+  color-scheme: light;
   /* ── Finany palette (Proof Finance redesign) ── */
   --bg:#ffffff;
   --surface:#f4f6fa;
@@ -111,7 +111,7 @@ html{scrollbar-gutter:stable}
 html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-weight:400;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100vh;min-height:100svh;overflow-x:hidden;transition:background 0.3s,color 0.3s;text-rendering:optimizeLegibility;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{padding-left:var(--safe-left);padding-right:var(--safe-right);user-select:none;-webkit-user-select:none}
 input,textarea,[contenteditable]{user-select:text;-webkit-user-select:text}
-button{font-family:var(--font);cursor:pointer;transition:transform 0.18s var(--ease-ios),opacity 0.15s,background 0.2s,border-color 0.2s,box-shadow 0.2s;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button{font-family:var(--font);color:inherit;cursor:pointer;transition:transform 0.18s var(--ease-ios),opacity 0.15s,background 0.2s,border-color 0.2s,box-shadow 0.2s;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 button:active{transform:scale(0.96)}
 button:disabled{opacity:0.5;cursor:not-allowed}
 input,select,textarea{font-family:var(--font);outline:none;transition:border-color 0.2s,background 0.2s;font-size:16px;-webkit-appearance:none;border-radius:12px}

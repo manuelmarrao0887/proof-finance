@@ -4,7 +4,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/tokens.css';
-import { StoreProvider, useStore, useAuth, initialPersisted } from './store/store.jsx';
+import { StoreProvider, useStore, useAuth, initialPersisted, applyTheme } from './store/store.jsx';
 import { ToastProvider } from './components/Toast.jsx';
 import { UIProvider, useUI } from './store/ui.jsx';
 import { DeviceProvider } from './store/device.jsx';
@@ -28,6 +28,7 @@ function Seed({ children }) {
     if (q.get('theme')) fx.theme = q.get('theme');
     setCurrentUser({ uid: 'preview-user', email: 'preview@local' });
     dispatch({ type: 'hydrate', persisted: { ...initialPersisted(), ...fx } });
+    applyTheme(fx.theme || 'light');
     if (q.get('tab')) ui.goTab(q.get('tab'));
     if (q.get('modal')) ui.open(q.get('modal'));
     window.__PROOF_READY__ = true;

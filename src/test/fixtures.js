@@ -108,5 +108,5 @@ export function richFixture() {
 }
 
 export function emptyFixture() {
-  return {};
+  return { lastSeenPatchVersion: 999 }; // não abrir as Novidades por cima nos testes/screenshots
 }

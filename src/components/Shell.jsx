@@ -252,7 +252,7 @@ export default function Shell() {
     if (patchChecked.current) return;
     if (!currentUser) return;
     patchChecked.current = true;
-    if (!isNewUser(state) && hasUnseenNotes(state.lastSeenPatchVersion)) {
+    if (!isNewUser({ ...state, currentUser }) && hasUnseenNotes(state.lastSeenPatchVersion)) {
       open('patchNotes');
     }
   }, [currentUser, state, open]);
