@@ -75,7 +75,7 @@ export default function RecurringView() {
             <br />
             seguros, telecom...) para teres uma
             <br />
-            visao clara do gasto mensal fixo.
+            visão clara do gasto mensal fixo.
           </div>
         </div>
         <Suggestions recurring={recurring} open={open} />

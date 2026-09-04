@@ -586,7 +586,7 @@ export default function ExpensesView() {
           onClick={() => actions.setEm(4)}
           style={{ borderLeft: '1px solid var(--border)' }}
         >
-          {preview ? 'Q1' : '3M'}
+          3M
         </button>
       </div>
 
@@ -594,7 +594,7 @@ export default function ExpensesView() {
       <div className="cd" style={{ marginBottom: 16 }}>
         <div className="rw">
           <div>
-            <div className="lb">{isQ ? (preview ? 'Despesas Q1' : 'Despesas 3M (últimos 3 meses)') : 'DESPESAS ' + ms[em]}</div>
+            <div className="lb">{isQ ? 'Despesas 3M (últimos 3 meses)' : 'DESPESAS ' + ms[em]}</div>
             <div className="m" style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{mask(tE, hidden, fm)}</div>
           </div>
           {!isQ && em < 3 && salP[em] != null && (
@@ -655,7 +655,7 @@ export default function ExpensesView() {
         </div>
       )}
 
-      {/* Rollover do orçamento (só em meses, autenticado) */}
+      {/* Transportar saldo do orçamento (só em meses, autenticado) */}
       {!preview && !isQ && rows.length > 0 && (
         <button
           type="button"
@@ -664,8 +664,8 @@ export default function ExpensesView() {
           aria-pressed={rolloverOn}
         >
           <span style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Rollover do orçamento</span>
-            <span style={{ fontSize: 11, color: 'var(--text3)' }}>O que sobra/falta transita para o mês seguinte</span>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Transportar saldo</span>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>O que sobra ou falta passa para o mês seguinte</span>
           </span>
           <span style={{ fontSize: 12, fontWeight: 700, color: rolloverOn ? 'var(--success)' : 'var(--text3)' }}>{rolloverOn ? 'ON' : 'OFF'}</span>
         </button>

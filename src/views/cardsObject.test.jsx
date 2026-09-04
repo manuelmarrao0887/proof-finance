@@ -32,7 +32,7 @@ describe('CardsView: cartão como objeto', () => {
     expect(screen.getByText(/2872/)).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Mastercard' })).toBeTruthy();
     expect(screen.getByText(/Dívida atual/)).toBeTruthy();
-    expect(screen.getByText(/de plafond/)).toBeTruthy();
+    expect(screen.getByText(/de limite/)).toBeTruthy();
   });
   it('sem last4 nem rede mostra só pontos e nenhum logo de rede', async () => {
     await renderWithStore(<CardsView />, { fixture: richFixture() });

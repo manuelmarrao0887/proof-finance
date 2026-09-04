@@ -67,10 +67,10 @@ export default function Hero() {
               opacity: 0.85,
             }}
           >
-            Património Liquido
+            Património Líquido
           </div>
           {!newU && (
-            <div className={'chip ' + (C.aD >= 0 ? 'up' : 'down')} aria-label={'Variacao ' + heroPct}>
+            <div className={'chip ' + (C.aD >= 0 ? 'up' : 'down')} aria-label={'Variação ' + heroPct}>
               {C.aD >= 0 ? (
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <polyline points="18 15 12 9 6 15" />

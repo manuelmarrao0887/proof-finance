@@ -170,7 +170,7 @@ export default function ActionSheet() {
     },
     {
       title: 'Nova conta',
-      sub: 'Banco, corretora, cripto, imobiliario',
+      sub: 'Banco, corretora, cripto, imobiliário',
       onClick: () => go('acct'),
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

@@ -520,7 +520,7 @@ export default function AIView() {
           </div>
           <div className="lb" style={{ marginBottom: 6, color: 'var(--text2)' }}>A analisar documento</div>
           <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.5 }}>
-            A IA esta a ler e extrair informacao.
+            A IA esta a ler e extrair informação.
             <br />
             Pode demorar ate 30 segundos.
           </div>

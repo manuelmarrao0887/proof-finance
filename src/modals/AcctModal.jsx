@@ -158,7 +158,7 @@ export default function AcctModal() {
       {/* Value/Plafond + currency */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
         <div style={{ flex: 1 }}>
-          <label className="lb" style={labelStyle} htmlFor="acVal">{isCard ? 'Plafond mensal' : 'Saldo'}</label>
+          <label className="lb" style={labelStyle} htmlFor="acVal">{isCard ? 'Limite mensal' : 'Saldo'}</label>
           <input
             id="acVal"
             value={isCard ? draft.plafond : draft.value}

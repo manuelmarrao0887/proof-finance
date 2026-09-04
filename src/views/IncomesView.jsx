@@ -80,7 +80,7 @@ export default function IncomesView() {
     return (b.amount || 0) - (a.amount || 0);
   });
 
-  const periodLabel = isQ ? 'Q1' : ms[em];
+  const periodLabel = isQ ? '3M' : ms[em];
   // Default date for a new one-off income in the selected month (payslip).
   const newDefaultDate = isQ ? '' : ymForIdx(em) + '-01';
   const registerIncome = () =>
@@ -125,14 +125,14 @@ export default function IncomesView() {
           </button>
         ))}
         <button type="button" className={'ms' + (isQ ? ' on' : '')} onClick={() => actions.setEm(4)}>
-          Q1
+          3M
         </button>
       </div>
 
       {/* Month total card */}
       <div className="cd" style={{ marginBottom: 14, padding: '18px 20px' }}>
         <div className="rw" style={{ marginBottom: 4 }}>
-          <div className="lb">{(isQ ? 'RECEITA Q1' : 'RECEITA ' + (ms[em] || '').toUpperCase())}</div>
+          <div className="lb">{(isQ ? 'RECEITA 3M' : 'RECEITA ' + (ms[em] || '').toUpperCase())}</div>
         </div>
         <div className="m" style={{ fontSize: 26, fontWeight: 800, color: 'var(--success)' }}>{mask(monthTotal, hidden, fc)}</div>
         <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>

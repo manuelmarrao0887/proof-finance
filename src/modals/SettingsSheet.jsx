@@ -57,9 +57,9 @@ const THEME_OPTIONS = [
 // calling típico), não uma medição — serve para o utilizador comparar os
 // três níveis entre si.
 const AI_TIER_OPTIONS = [
-  { id: 'economico', label: 'Económico', model: 'Gemini 3.5 Flash Lite', cost: '~$0,003 / mensagem' },
-  { id: 'equilibrado', label: 'Equilibrado', model: 'Gemini 3.7 Flash', cost: '~$0,007 / mensagem' },
-  { id: 'avancado', label: 'Avançado', model: 'Claude Haiku 4.5', cost: '~$0,010 / mensagem' },
+  { id: 'economico', label: 'Económico', model: 'Gemini 3.5 Flash Lite', cost: '≈ 0,003 USD / mensagem' },
+  { id: 'equilibrado', label: 'Equilibrado', model: 'Gemini 3.7 Flash', cost: '≈ 0,007 USD / mensagem' },
+  { id: 'avancado', label: 'Avançado', model: 'Claude Haiku 4.5', cost: '≈ 0,010 USD / mensagem' },
 ];
 
 export default function SettingsSheet() {
@@ -228,7 +228,7 @@ export default function SettingsSheet() {
       </div>
 
       {/* ── Theme ── */}
-      <div className="lb" style={{ marginBottom: 10 }}>Aparencia</div>
+      <div className="lb" style={{ marginBottom: 10 }}>Aparência</div>
       <div className="g3" style={{ marginBottom: 24 }}>
         {THEME_OPTIONS.map((t) => {
           const on = curTheme === t.id;

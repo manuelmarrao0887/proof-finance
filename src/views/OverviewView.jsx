@@ -715,7 +715,7 @@ export default function OverviewView() {
                     <button
                       type="button"
                       onClick={() => dismissSub(sub)}
-                      aria-label={'Não e subscrição: ' + sub.desc}
+                      aria-label={'Não é subscrição: ' + sub.desc}
                       style={{
                         padding: '6px 12px',
                         border: '1px solid var(--border)',
@@ -727,7 +727,7 @@ export default function OverviewView() {
                         fontFamily: 'inherit',
                       }}
                     >
-                      Não e
+                      Não é
                     </button>
                     <button
                       type="button"
@@ -766,7 +766,7 @@ export default function OverviewView() {
               <div>
                 <div className="lb">Fundo de emergência</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-                  Liquidez + Poupanca / despesa media
+                  Liquidez + Poupança / despesa média
                 </div>
               </div>
               <div className="chip" style={{ background: efColor, color: '#fff' }}>{efLabel}</div>
@@ -794,7 +794,7 @@ export default function OverviewView() {
           {/* Cash-flow projection */}
           <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
             <div className="rw" style={{ marginBottom: 12 }}>
-              <div className="lb">Projecao {forecastMonths} meses</div>
+              <div className="lb">Projeção {forecastMonths} meses</div>
               <div className={'chip ' + (lastBal >= cf.startBalance ? 'up-solid' : 'down-solid')}>
                 {hidden ? '••••' : (lastBal >= cf.startBalance ? '+' : '') + fc(lastBal - cf.startBalance)}
               </div>
@@ -812,7 +812,7 @@ export default function OverviewView() {
               ))}
             </div>
             <div style={{ fontSize: 11, color: 'var(--fg-subtle)', marginBottom: 14, lineHeight: 1.5 }}>
-              Receitas {mask(cf.monthlyIncome, hidden, fc)}/mês · recorrentes {mask(cf.monthlyRecExpense, hidden, fc)} · crédito {mask(cf.loanPay, hidden, fc)} · discricionario {mask(cf.avgDiscretionary, hidden, fc)}
+              Receitas {mask(cf.monthlyIncome, hidden, fc)}/mês · recorrentes {mask(cf.monthlyRecExpense, hidden, fc)} · crédito {mask(cf.loanPay, hidden, fc)} · discricionário {mask(cf.avgDiscretionary, hidden, fc)}
             </div>
 
             {cf.rows.length <= 6 ? (

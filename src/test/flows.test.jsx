@@ -272,11 +272,11 @@ describe('Fluxo: importar Excel do banco (ponta-a-ponta)', () => {
 });
 
 describe('Fluxo: cartões', () => {
-  it('vista mostra dívida, plafond e pagamentos do cartão', async () => {
+  it('vista mostra dívida, limite e pagamentos do cartão', async () => {
     await renderWithStore(<><CardsView /><Probe /></>, { fixture: richFixture() });
     const body = document.body.textContent;
     expect(body).toMatch(/Dívida atual/);
-    expect(body).toMatch(/de plafond/);
+    expect(body).toMatch(/de limite/);
     expect(body).toMatch(/Pagamentos \(1\)/); // t2 = pagamento ao cartão
   });
 });

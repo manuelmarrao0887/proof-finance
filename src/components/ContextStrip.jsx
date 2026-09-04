@@ -81,7 +81,7 @@ export default function ContextStrip({ tab: tabProp }) {
     val = 'a receber ' + mask(owedToMe, hidden, fc) + ' · a pagar ' + mask(owedByMe, hidden, fc);
     col = 'var(--text)';
   } else if (tab === 'loan') {
-    label = 'Património liquido';
+    label = 'Património líquido';
     val = mask(C.nW, hidden, fc);
     col = C.nW >= 0 ? 'var(--success)' : 'var(--signal)';
   } else if (tab === 'cards') {
@@ -121,7 +121,7 @@ export default function ContextStrip({ tab: tabProp }) {
     }
     col = 'var(--text)';
   } else if (tab === 'cal' || tab === 'charts' || tab === 'rec' || tab === 'ai' || tab === 'report') {
-    label = 'Património liquido';
+    label = 'Património líquido';
     val = mask(C.nW, hidden, fc);
     col = 'var(--text)';
   }

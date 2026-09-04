@@ -47,7 +47,7 @@ export default function ChartsView() {
   // Net-worth evolution card (orig 996-998).
   const evoHtml =
     chrt(ah.map((x) => x.liq + x.poup + x.inv), 'var(--success)', 'Ativos Totais', ah, fm) +
-    chrt(ah.map((x) => x.liq + x.poup + x.inv - x.div), 'var(--primary)', 'Património Liquido', ah, fm);
+    chrt(ah.map((x) => x.liq + x.poup + x.inv - x.div), 'var(--primary)', 'Património Líquido', ah, fm);
 
   // Investments card (orig 999-1002).
   const invHtml =

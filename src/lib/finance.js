@@ -690,7 +690,7 @@ export function healthScore(state) {
     }
   });
   const baPts = totCat > 0 ? (okCat / totCat) * 15 : 15;
-  br.push({ label: 'Adesao ao orcamento', pts: Math.round(baPts), max: 15, detail: totCat > 0 ? okCat + '/' + totCat + ' categorias' : 'sem despesas' });
+  br.push({ label: 'Adesão ao orçamento', pts: Math.round(baPts), max: 15, detail: totCat > 0 ? okCat + '/' + totCat + ' categorias' : 'sem despesas' });
   // 5. Goal progress (0-10)
   let gpPts = 0;
   if (goals.length > 0) {
@@ -714,7 +714,7 @@ export function healthScore(state) {
       if (b.label === 'Fundo de emergência' && b.pts < 20) recs.push('Aumenta a tua reserva. Objetivo: 6 meses de despesa media.');
       else if (b.label === 'Taxa de poupanca' && b.pts < 15) recs.push('Poupa pelo menos 15% do que ganhas todos os meses.');
       else if (b.label === 'Dívida vs ativos' && b.pts < 10) recs.push('Reduz dívida activa para baixo de 30% dos teus ativos.');
-      else if (b.label === 'Adesao ao orcamento' && b.pts < 10) recs.push('Reve os limites das categorias que ultrapassaste este mês.');
+      else if (b.label === 'Adesão ao orçamento' && b.pts < 10) recs.push('Revê os limites das categorias que ultrapassaste este mês.');
       else if (b.label === 'Progresso de metas' && b.pts < 5) recs.push('Cria pelo menos uma meta de poupanca para teres direccao.');
     });
   return { score: score, grade: grade, breakdown: br, recommendations: recs };

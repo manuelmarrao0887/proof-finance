@@ -42,7 +42,7 @@ export default function CardsView() {
         <div className="empty" style={{ padding: '40px 20px', textAlign: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Sem cartões de crédito</div>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>
-            Adiciona uma conta com categoria “Cartão de crédito” e define o plafond.
+            Adiciona uma conta com categoria “Cartão de crédito” e define o limite.
           </div>
           <button
             type="button"
@@ -95,8 +95,8 @@ export default function CardsView() {
               {/* Plafond e ações */}
               <div className="rw" style={{ marginBottom: 6 }}>
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                  {plafond > 0 ? mv(used) + ' de ' + mv(plafond) + ' de plafond' : 'Sem plafond definido — edita o cartão'}
-                  {over && <span style={{ color: 'var(--signal)', fontWeight: 600 }}> · plafond excedido</span>}
+                  {plafond > 0 ? mv(used) + ' de ' + mv(plafond) + ' de limite' : 'Sem limite definido — edita o cartão'}
+                  {over && <span style={{ color: 'var(--signal)', fontWeight: 600 }}> · limite excedido</span>}
                 </div>
                 <button type="button" onClick={() => open('acct', { id: a.id })} aria-label="Editar cartão" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', borderRadius: 999, padding: '4px 10px', fontSize: 11, cursor: 'pointer', flexShrink: 0 }}>
                   Editar
