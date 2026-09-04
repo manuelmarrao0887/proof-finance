@@ -17,7 +17,7 @@ import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { renderMD } from '../lib/markdown.js';
 import { buildAIContext } from '../lib/ai.js';
-import { runAssistant, confirmPending, estimateCost, ASSISTANT_SYSTEM } from '../lib/aiChat.js';
+import { runAssistant, confirmPending, estimateCost, ASSISTANT_SYSTEM, toolCtx } from '../lib/aiChat.js';
 // WRITE_TOOL_SLICES é a fonte única (lib/aiTools.js) das slices que cada tool
 // de escrita toca — não replicar essa tabela aqui. Um mapa local já divergiu
 // uma vez desta fonte (add_group_expense também reflete em addedExp via
@@ -128,7 +128,8 @@ export default function AssistantSheet() {
       // leitura veem a app em modo de demonstracao (ver aiChat.js).
       currentUser,
       history: historyRef.current,
-      systemPrompt: ASSISTANT_SYSTEM + '\n\nCONTEXTO:\n' + JSON.stringify(buildAIContext(actions.getState())),
+      systemPrompt:
+        ASSISTANT_SYSTEM + '\n\nCONTEXTO:\n' + JSON.stringify(buildAIContext({ ...actions.getState(), currentUser })),
       // Tier escolhido em Definições (SettingsSheet) — aiChat.js é um módulo
       // puro sem acesso ao store, por isso lê-se aqui e passa-se explícito.
       tier: tierAtSend,
@@ -221,7 +222,11 @@ export default function AssistantSheet() {
   const confirm = useCallback(
     (turnIdx, pendIdx) => {
       const p = turns[turnIdx].pending[pendIdx];
-      const r = confirmPending({ name: p.name, args: p.args }, { state: actions.getState(), actions });
+      // toolCtx junta currentUser ao ctx — sem isso isPreviewMode(state) dá
+      // true a meio desta escrita CONFIRMADA e resolveAccountRef (update_expense
+      // com "acct") liga a despesa a uma conta de DEMONSTRAÇÃO em produção
+      // (revisão da Task 5, Finding 1). Mesmo ctx de runAssistant/sendAI.
+      const r = confirmPending({ name: p.name, args: p.args }, toolCtx(actions, currentUser));
       if (r && r.ok) toast('Feito', 'success');
       else toast('Não foi possível concluir', 'error');
       setTurns((t) =>
@@ -238,7 +243,7 @@ export default function AssistantSheet() {
         })
       );
     },
-    [turns, actions, toast]
+    [turns, actions, toast, currentUser]
   );
 
   const cancel = useCallback((turnIdx, pendIdx) => {

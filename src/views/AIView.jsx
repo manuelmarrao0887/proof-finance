@@ -31,7 +31,7 @@ import {
   parseExcel,
   buildAIContext,
 } from '../lib/ai.js';
-import { runAssistant, confirmPending, ASSISTANT_SYSTEM } from '../lib/aiChat.js';
+import { runAssistant, confirmPending, ASSISTANT_SYSTEM, toolCtx } from '../lib/aiChat.js';
 import { esc, renderMD } from '../lib/markdown.js';
 
 /* ── actionLabel (orig 2408-2416, ampliada na revisão da Task 12). Devolve
@@ -188,7 +188,7 @@ export default function AIView() {
       // currentUser nao esta no estado do reducer — sem ele as tools de
       // leitura veem a app em modo de demonstracao (ver aiChat.js).
       currentUser,
-      systemPrompt: ASSISTANT_SYSTEM + '\n\nCONTEXTO:\n' + JSON.stringify(buildAIContext(st)),
+      systemPrompt: ASSISTANT_SYSTEM + '\n\nCONTEXTO:\n' + JSON.stringify(buildAIContext({ ...st, currentUser })),
       // Tier escolhido em Definições (SettingsSheet) — aiChat.js é um módulo
       // puro sem acesso ao store, por isso lê-se aqui e passa-se explícito.
       tier: st.aiTier,
@@ -239,14 +239,19 @@ export default function AIView() {
       const p = entry && entry.pending && entry.pending[pendIdx];
       if (!p) return;
       if (execute) {
-        const r = confirmPending({ name: p.name, args: p.args }, { state: actions.getState(), actions });
+        // toolCtx junta currentUser ao ctx — sem isso isPreviewMode(state) dá
+        // true a meio desta escrita CONFIRMADA e resolveAccountRef
+        // (update_expense com "acct") liga a despesa a uma conta de
+        // DEMONSTRAÇÃO em produção (revisão da Task 5, Finding 1). Mesmo ctx
+        // de runAssistant/sendAI.
+        const r = confirmPending({ name: p.name, args: p.args }, toolCtx(actions, currentUser));
         toast(r && r.ok ? 'Feito' : 'Não foi possível concluir', r && r.ok ? 'success' : 'error');
       }
       actions.setAiHistory(
         hist.map((h, i) => (i === entryIdx ? { ...h, pending: h.pending.filter((_, j) => j !== pendIdx) } : h))
       );
     },
-    [actions, toast]
+    [actions, toast, currentUser]
   );
 
   /* ── aiImportFile (orig 2677-2712). ────────────────────────────────────── */

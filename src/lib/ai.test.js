@@ -267,6 +267,22 @@ describe('buildAIContext', () => {
     const c = buildAIContext(state);
     expect(c.accounts).toContainEqual({ name: 'Bankinter · Conta a Ordem', value: 640 });
   });
+  it('com currentUser, lista as contas REAIS do utilizador (customAccts), nao os bancos de demonstracao (revisao Task 5, SHOULD-FIX 3)', () => {
+    // Sem `currentUser` (o `state` deste describe, acima) isPreviewMode dá
+    // true e as contas são as 12 de demonstração de finance.js `accts` — foi
+    // exatamente esse call-site sem currentUser (AssistantSheet.jsx,
+    // AIView.jsx) que fazia o assistente "ver" contas que o utilizador não
+    // tem no CONTEXTO do prompt, incluindo o nome exato que a Task 5 (acct de
+    // add_expense/update_expense) instrui o modelo a copiar dali.
+    const real = {
+      ...state,
+      currentUser: { uid: 'u1' },
+      customAccts: [{ id: 'a1', bank: 'Activobank', type: 'Conta a Ordem', value: 2500, category: 'Liquidez', currency: 'EUR' }],
+    };
+    const c = buildAIContext(real);
+    expect(c.accounts).toContainEqual({ name: 'Activobank · Conta a Ordem', value: 2500 });
+    expect(c.accounts).not.toContainEqual({ name: 'Bankinter · Conta a Ordem', value: 640 });
+  });
   it('inclui orcamento do mes com gasto', () => {
     const c = buildAIContext(state);
     expect(c.budget.find((b) => b.id === 'sup').spent).toBe(45.2);

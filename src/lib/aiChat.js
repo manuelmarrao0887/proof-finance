@@ -32,7 +32,7 @@ export const ASSISTANT_SYSTEM = [
   'Es o assistente financeiro da app PROOF. FINANCE. Respondes em portugues de Portugal.',
   'Tens tools para ler e escrever nos dados do utilizador — usa-as em vez de adivinhar.',
   'Para alterar ou apagar um registo, procura-o primeiro com uma tool de leitura e usa o id que ela devolver.',
-  'Quando o utilizador diz com que conta ou banco pagou ("pago pelo Activobank", "no cartão Revolut"), passa esse nome em "acct" de add_expense/update_expense; o nome exato das contas está em "accounts" no contexto.',
+  'Quando o utilizador diz com que conta ou banco pagou ("pago pelo Activobank", "no cartão Revolut"), passa esse nome em "acct" de add_expense/update_expense; o nome exato das contas está em "accounts" no contexto. Se uma tool devolver "ambiguous_account", faz ao utilizador exatamente a pergunta que vem em "detail", sem escolher tu a conta, e espera pela resposta antes de tentares outra vez.',
   'Nunca preenchas o campo "confirmed": e o utilizador que confirma na app.',
   'Respostas curtas e diretas, com markdown simples. Valores em formato europeu (1.234,56 EUR).',
 ].join('\n');
@@ -106,6 +106,28 @@ export function confirmPending(call, ctx) {
   return execTool(call.name, { ...call.args, confirmed: true }, ctx);
 }
 
+/* toolCtx — a MESMA forma de ctx para as tools em qualquer sítio que as
+   chame: runAssistant (voltas normais) e o confirmPending() das duas UIs
+   (AssistantSheet, AIView), no clique em "Confirmar" de uma tool destrutiva.
+   `state` é um GETTER, não um retrato — ver runAssistant abaixo para o
+   porquê. `currentUser` NAO vive no estado do reducer (é um useState à parte
+   no provider) — sem o juntar aqui, isPreviewMode(state) dá true e
+   listAccounts/getAccts devolvem as contas de DEMONSTRAÇÃO em vez das do
+   utilizador. Nasceu porque cada UI construía o ctx de confirmPending() à
+   mão, sem currentUser — uma escrita CONFIRMADA (update_expense com `acct`,
+   Task 5) resolvia contra bancos de demonstração em produção, silenciosamente
+   (revisão da Task 5, Finding 1). `fallbackState` só serve testes puros sem
+   `actions` (ver comentário antigo, preservado aqui). */
+export function toolCtx(actions, currentUser, fallbackState) {
+  return {
+    get state() {
+      const s = (actions && actions.getState ? actions.getState() : fallbackState) || {};
+      return currentUser ? { ...s, currentUser } : s;
+    },
+    actions,
+  };
+}
+
 export async function runAssistant(userText, opts) {
   const o = opts || {};
   const chatFn = o.chatFn || defaultChat;
@@ -116,19 +138,7 @@ export async function runAssistant(userText, opts) {
      cada update, o capturado nunca muda). Resultado: "regista o jantar e
      diz-me quanto gastei" respondia sem contar o jantar. `o.state` fica só
      como recurso para quem chame sem actions (testes puros). */
-  const ctx = {
-    get state() {
-      const s = (o.actions && o.actions.getState ? o.actions.getState() : o.state) || {};
-      /* `currentUser` NAO vive no estado do reducer (e um useState a parte no
-         provider) — e a UI junta-o em cada sitio que precisa dele (ver
-         BalanceUpdateSheet: listAccounts({...state, currentUser})). Sem esta
-         juncao, isPreviewMode(state) da true e get_overview devolve as contas
-         de DEMONSTRACAO de lib/finance.js como se fossem as do utilizador: o
-         assistente reportava um patrimonio inventado. */
-      return o.currentUser ? { ...s, currentUser: o.currentUser } : s;
-    },
-    actions: o.actions,
-  };
+  const ctx = toolCtx(o.actions, o.currentUser, o.state);
   const messages = [
     ...(o.systemPrompt ? [{ role: 'system', content: o.systemPrompt }] : []),
     ...(o.history || []),

@@ -1,6 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { TOOLS, TOOL_SCHEMAS, execTool, ME_ID as TOOLS_ME_ID, WRITE_TOOL_SLICES, WRITE_TOOL_NAMES } from './aiTools.js';
 import { ME_ID } from '../store/store.jsx';
+// toolCtx é o factory partilhado por runAssistant e pelo confirmPending() das
+// duas UIs (AssistantSheet, AIView) — nasceu da revisão da Task 5 (Finding 1):
+// cada UI construía o ctx de confirmPending() à mão, sem `currentUser`, e uma
+// escrita CONFIRMADA (update_expense com "acct") resolvia contra as contas de
+// DEMONSTRAÇÃO em produção. Importa-se aqui só para o describe abaixo exercer
+// EXACTAMENTE o mesmo par (execTool, ctx) que a UI corrigida agora chama.
+import { toolCtx } from './aiChat.js';
 
 // aiTools.js e um modulo puro (sem Firebase). Este ficheiro de testes importa
 // ME_ID de store/store.jsx so para comparar com a constante local de
@@ -268,6 +275,68 @@ describe('add_expense com conta', () => {
     const r = execTool('update_expense', { id: 'e1', acct: 'activobank', confirmed: true }, c);
     expect(r.ok).toBe(true);
     expect(c.actions.updateExpense.mock.calls[0][1].acct).toBe('Activobank · Conta a Ordem');
+  });
+  it('update_expense ambíguo: o erro já sai na 1a chamada (sem confirmed) — o modelo recebe a pergunta antes do gate destrutivo pedir confirmação (revisão, SHOULD-FIX 2)', () => {
+    const c = ctxWithAccts();
+    c.state.customAccts.push({ id: 'r2', bank: 'Revolut', type: 'Poupanca', value: 10, category: 'Outros', currency: 'EUR' });
+    c.state.customAccts[1].category = 'Outros';
+    c.state.addedExp = [{ id: 'e1', desc: 'Café', amount: 2, cat: 'rest', date: '2026-09-01' }];
+    const r = execTool('update_expense', { id: 'e1', acct: 'Revolut' }, c); // SEM confirmed
+    expect(r.pending).toBeUndefined();
+    expect(r.error).toBe('ambiguous_account');
+    expect(r.detail).toMatch(/Revolut · Cartão de Crédito/);
+    expect(c.actions.updateExpense).not.toHaveBeenCalled();
+  });
+  it('update_expense pendente: preview.after.acct e preview.patch.acct guardam o rótulo RESOLVIDO, não o texto em bruto que o modelo passou (revisão, NIT 6)', () => {
+    const c = ctxWithAccts();
+    c.state.addedExp = [{ id: 'e1', desc: 'Café', amount: 2, cat: 'rest', date: '2026-09-01' }];
+    const r = execTool('update_expense', { id: 'e1', acct: 'activobank' }, c); // SEM confirmed
+    expect(r.pending).toBe(true);
+    expect(r.preview.after.acct).toBe('Activobank · Conta a Ordem');
+    expect(r.preview.patch.acct).toBe('Activobank · Conta a Ordem');
+  });
+  it('acct vazia (string explícita) limpa a conta gravada; acct ausente não mexe no que já lá estava (revisão, NIT 5)', () => {
+    const c = ctxWithAccts();
+    c.state.addedExp = [{ id: 'e1', desc: 'Café', amount: 2, cat: 'rest', date: '2026-09-01', acct: 'Activobank · Conta a Ordem' }];
+    const r1 = execTool('update_expense', { id: 'e1', acct: '', confirmed: true }, c);
+    expect(r1.ok).toBe(true);
+    expect(c.actions.updateExpense.mock.calls[0][1].acct).toBe('');
+    const r2 = execTool('update_expense', { id: 'e1', desc: 'Almoço', confirmed: true }, c);
+    expect(r2.ok).toBe(true);
+    expect(c.actions.updateExpense.mock.calls[1][1]).not.toHaveProperty('acct');
+  });
+  it('Finding 1 (revisão): toolCtx(actions, currentUser) — o ctx que confirmPending() usa agora em AssistantSheet/AIView — resolve contra as contas REAIS do utilizador', () => {
+    const c = ctxWithAccts();
+    c.state.addedExp = [{ id: 'e1', desc: 'Café', amount: 2, cat: 'rest', date: '2026-09-01' }];
+    // O MESMO par (execTool, ctx) que o clique em "Confirmar" agora produz —
+    // ver toolCtx() em aiChat.js e o call-site em AssistantSheet.jsx/AIView.jsx.
+    const ctx = toolCtx(c.actions, c.state.currentUser);
+    const r = execTool('update_expense', { id: 'e1', acct: 'cartão revolut', confirmed: true }, ctx);
+    expect(r.ok).toBe(true);
+    expect(c.actions.updateExpense.mock.calls[0][1].acct).toBe('Revolut · Cartão de Crédito');
+  });
+  it('Finding 1 (revisão): sem currentUser no ctx (o bug de antes da correção), a MESMA chamada resolvia contra uma conta de DEMONSTRAÇÃO em vez da conta real do utilizador', () => {
+    const c = ctxWithAccts();
+    c.state.addedExp = [{ id: 'e1', desc: 'Café', amount: 2, cat: 'rest', date: '2026-09-01' }];
+    // ctxWithAccts() põe currentUser diretamente no `state` (para os outros
+    // testes deste describe, que passam `c` tal e qual como ctx). Aqui
+    // simula-se o ctx que AssistantSheet.jsx/AIView.jsx construíam à mão
+    // ANTES desta correção — sem currentUser nenhures, nem no `state` nem no
+    // ctx — por isso remove-se também do `state` (senão actions.getState()
+    // devolvia-o de qualquer forma, e o teste não provava nada).
+    delete c.state.currentUser;
+    const brokenCtx = toolCtx(c.actions, undefined);
+    const r = execTool('update_expense', { id: 'e1', acct: 'cartão revolut', confirmed: true }, brokenCtx);
+    expect(r.ok).toBe(true);
+    // isPreviewMode(state) dá true sem currentUser (finance.js) — listAccounts
+    // ignora customAccts e usa só os 12 bancos de DEMONSTRAÇÃO (finance.js
+    // `accts`); lá o único Revolut é "Conta a Ordem", nunca "Cartão de
+    // Crédito" (a conta real que o utilizador tem via customAccts). A escrita
+    // "tem sucesso" mas fica ligada a uma conta que o utilizador não possui —
+    // exactamente o Finding 1 da revisão da Task 5, agora inatingível a
+    // partir de toolCtx() porque as duas UIs passam sempre currentUser.
+    expect(c.actions.updateExpense.mock.calls[0][1].acct).toBe('Revolut · Conta a Ordem');
+    expect(c.actions.updateExpense.mock.calls[0][1].acct).not.toBe('Revolut · Cartão de Crédito');
   });
 });
 

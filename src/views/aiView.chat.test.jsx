@@ -15,6 +15,15 @@ const confirmPending = vi.fn(() => ({ ok: true, data: {} }));
 vi.mock('../lib/aiChat.js', () => ({
   runAssistant: (...a) => runAssistant(...a),
   confirmPending: (...a) => confirmPending(...a),
+  // Mesma forma do toolCtx real (aiChat.js) — a vista usa-o para o ctx de
+  // confirmPending() ir sempre com currentUser (revisão da Task 5, Finding 1).
+  toolCtx: (actions, currentUser) => ({
+    get state() {
+      const s = (actions && actions.getState ? actions.getState() : {}) || {};
+      return currentUser ? { ...s, currentUser } : s;
+    },
+    actions,
+  }),
   estimateCost: () => 0,
   ASSISTANT_SYSTEM: 'sistema-de-teste',
   MAX_ROUNDS: 4,

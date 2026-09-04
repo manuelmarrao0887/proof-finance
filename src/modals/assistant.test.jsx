@@ -19,6 +19,15 @@ const MOCK_PRICE = {
 vi.mock('../lib/aiChat.js', () => ({
   runAssistant: (...a) => runAssistant(...a),
   confirmPending: (...a) => confirmPending(...a),
+  // Mesma forma do toolCtx real (aiChat.js) — a folha usa-o para o ctx de
+  // confirmPending() ir sempre com currentUser (revisão da Task 5, Finding 1).
+  toolCtx: (actions, currentUser) => ({
+    get state() {
+      const s = (actions && actions.getState ? actions.getState() : {}) || {};
+      return currentUser ? { ...s, currentUser } : s;
+    },
+    actions,
+  }),
   estimateCost: (u, tier) => {
     const p = MOCK_PRICE[tier] || MOCK_PRICE.economico;
     return ((u && u.prompt_tokens) || 0) * p.in + ((u && u.completion_tokens) || 0) * p.out;

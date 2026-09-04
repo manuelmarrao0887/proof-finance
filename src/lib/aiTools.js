@@ -741,6 +741,27 @@ function makeUpdateTool(key) {
         if (!RESERVED.has(k) && c.fields[k]) raw[k] = args[k];
       });
       const patch = c.sanitize ? c.sanitize(raw) : coerceNumericFields(raw);
+      // `acct` só existe em c.fields de 'expense' — para as outras colecções
+      // patch.acct nunca está definido e este bloco não faz nada. O texto
+      // que chega aqui já passou por EXPENSE_FIELD_SANITIZERS (só txt(),
+      // ainda não é um rótulo de conta) — resolve-o para o rótulo canónico de
+      // uma conta existente AQUI, em preview() e não em run(): um {error}
+      // devolvido aqui faz o gate destrutivo de execTool cortar antes de
+      // pedir confirmação (aiTools.js, execTool), por isso a pergunta de
+      // ambiguidade chega ao modelo já na 1a volta, não só depois de o
+      // utilizador clicar Confirmar às cegas. Guardar o rótulo RESOLVIDO (não
+      // o texto em bruto) em `patch`/`after` também evita que aiHistory fique
+      // com texto que o utilizador nunca escreveu. Uma string vazia
+      // EXPLÍCITA ('') é o utilizador a pedir para desligar a conta desta
+      // despesa — distingue-se de "acct" ausente do pedido, que nem chega a
+      // `patch` (raw só tem as chaves presentes em `args`) e por isso nunca
+      // entra neste bloco.
+      if (patch.acct !== undefined && patch.acct !== '') {
+        const ra = resolveAcctArg({ acct: patch.acct }, ctx);
+        if (ra.error) return ra;
+        if (ra.acct) patch.acct = ra.acct;
+        else delete patch.acct; // conta desconhecida: nao mexe no acct ja gravado
+      }
       const after = { ...cur, ...patch };
       // O cartao partilhado (PendingActionCard) so mostra `label` — se ficasse
       // so com c.label(cur) o utilizador confirmava as cegas: via o registo
@@ -757,22 +778,8 @@ function makeUpdateTool(key) {
     run(args, ctx) {
       const p = this.preview(args, ctx);
       if (p.error) return p;
-      // `acct` só existe em c.fields de 'expense' — para as outras colecções
-      // patch.acct nunca está definido e este bloco não faz nada. O texto
-      // bruto (já saneado por EXPENSE_FIELD_SANITIZERS) ainda não é um
-      // rótulo de conta: resolve-o da MESMA forma que add_expense antes de
-      // escrever. Conta desconhecida remove o campo (não apaga um acct já
-      // gravado); ambígua devolve o mesmo erro amigável, sem escrever nada.
-      let patch = p.patch;
-      if (patch.acct !== undefined) {
-        const ra = resolveAcctArg({ acct: patch.acct }, ctx);
-        if (ra.error) return ra;
-        patch = { ...patch };
-        if (ra.acct) patch.acct = ra.acct;
-        else delete patch.acct;
-      }
-      c.update(ctx.actions)(args.id, patch);
-      return ok({ id: args.id, patch });
+      c.update(ctx.actions)(args.id, p.patch);
+      return ok({ id: args.id, patch: p.patch });
     },
   };
 }
