@@ -169,6 +169,7 @@ describe('AIView — chat', () => {
     fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
     await waitFor(() => expect(confirmPending).toHaveBeenCalledTimes(1));
     expect(confirmPending.mock.calls[0][0]).toEqual({ name: 'delete_expense', args: { id: 'e1' } });
+    expect(confirmPending.mock.calls[0][1].state.currentUser).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole('button', { name: /confirmar/i })).toBeNull());
   });
 

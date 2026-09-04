@@ -294,6 +294,7 @@ describe('add_expense com conta', () => {
     expect(r.pending).toBe(true);
     expect(r.preview.after.acct).toBe('Activobank · Conta a Ordem');
     expect(r.preview.patch.acct).toBe('Activobank · Conta a Ordem');
+    expect(r.preview.label).toContain('Activobank · Conta a Ordem');
   });
   it('acct vazia (string explícita) limpa a conta gravada; acct ausente não mexe no que já lá estava (revisão, NIT 5)', () => {
     const c = ctxWithAccts();

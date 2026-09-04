@@ -655,7 +655,7 @@ const COLLECTIONS = {
     slice: 'addedExp',
     update: (a) => a.updateExpense,
     remove: (a) => a.deleteExpense,
-    label: (x) => x.desc + ' · ' + (Number(x.amount) || 0).toFixed(2) + ' EUR · ' + (x.date || ''),
+    label: (x) => x.desc + ' · ' + (Number(x.amount) || 0).toFixed(2) + ' EUR · ' + (x.date || '') + (x.acct ? ' · ' + x.acct : ''),
     // O MESMO saneador de add_expense: alterar uma despesa não pode aceitar o
     // que criar uma despesa rejeita (ver sanitizeExpenseFields).
     sanitize: sanitizeExpenseFields,
