@@ -107,6 +107,7 @@ export default function GoalModal() {
 
   function deleteGoal() {
     if (!draft.id) return;
+    if (typeof confirm === 'function' && !confirm('Eliminar a meta "' + draft.name + '"? O valor poupado não é devolvido a nenhuma conta.')) return;
     actions.deleteGoal(draft.id);
     close();
     toast('Meta eliminada', 'success');

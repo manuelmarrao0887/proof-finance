@@ -193,6 +193,7 @@ export default function AddExpenseSheet() {
 
   const remove = () => {
     if (!isEdit) return;
+    if (typeof confirm === 'function' && !confirm('Remover esta despesa? ' + (d.desc || '') + ' · ' + (d.amount || '') + ' €')) return;
     actions.deleteExpense(editId);
     close();
     toast('Despesa eliminada', 'success');
