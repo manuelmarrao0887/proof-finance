@@ -15,8 +15,9 @@ import { useUI } from '../store/ui.jsx';
 import { compute, monthlySummary, isNewUser, getAcctsLive, CARD_CAT, getGroupsData } from '../lib/finance.js';
 import { estimateDeductions } from '../lib/irs.js';
 import { totalValue } from '../lib/investments.js';
+import { monthSpend } from '../lib/metrics.js';
 import { computeBalances, groupTotals, isSettled } from '../lib/split.js';
-import { fc, mask, maskPct } from '../lib/format.js';
+import { fc, mask, maskPct, todayISO } from '../lib/format.js';
 
 export default function ContextStrip({ tab: tabProp }) {
   const { state, currentUser } = useStore();
@@ -32,11 +33,11 @@ export default function ContextStrip({ tab: tabProp }) {
   let col = 'var(--text)';
 
   if (tab === 'expenses') {
-    // O mesmo número que a vista mostra: despesas REGISTADAS no mês (sem
-    // projetar recorrentes por lançar — isso confundia: 715 no topo, 675 em baixo).
-    const now = new Date();
-    const key = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    const spent = (state.addedExp || []).reduce((t, x) => ((x.date || '').slice(0, 7) === key ? t + (Number(x.amount) || 0) : t), 0);
+    // O mesmo número que a vista mostra: monthSpend, a ÚNICA fórmula de
+    // despesas do mês (ver src/lib/metrics.js) — antes cada vista somava por
+    // sua conta e os números divergiam (715 no topo, 675 em baixo).
+    const key = todayISO().slice(0, 7);
+    const spent = monthSpend(state, key);
     label = 'Gastos do mês';
     val = mask(spent, hidden, fc);
     col = 'var(--signal)';

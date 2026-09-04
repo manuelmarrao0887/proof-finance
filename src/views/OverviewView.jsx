@@ -34,6 +34,7 @@ import {
   acctCatLabel,
   getGroupsData,
 } from '../lib/finance.js';
+import { investmentAccountsValue } from '../lib/metrics.js';
 import { groupTotals } from '../lib/split.js';
 import { fm, fc, uid, mask, maskPct, maskText } from '../lib/format.js';
 import { upcomingRecurring } from '../lib/reminders.js';
@@ -219,7 +220,7 @@ export default function OverviewView() {
   // Liquidez (disponível) vs Investimentos — destaque no topo (o utilizador quer
   // ver a liquidez, não o detalhe de ativos).
   const liquidez = (C.cT['Liquidez'] || 0) + (C.cT['Poupanca'] || 0);
-  const investimentos = (C.cT['Investimentos'] || 0) + (C.cT['Cripto'] || 0);
+  const investimentos = investmentAccountsValue(s);
   const liqAccounts = (C.grp['Liquidez'] || []).concat(C.grp['Poupanca'] || []);
 
   // Saldos protegidos: ocultar é livre; mostrar pede PIN/FaceID (modal 'lock').
@@ -589,9 +590,11 @@ export default function OverviewView() {
             </div>
           )}
 
-          {/* Investimentos (resumido) */}
+          {/* Contas de investimento (resumido) — nome explícito porque não é o
+              mesmo número que as posições detalhadas mostram em Investimentos
+              (ver investmentAccountsValue vs positionsValue em lib/metrics.js). */}
           <div className="rw" style={{ marginTop: 14, background: 'var(--elevated)', borderRadius: 14, padding: '10px 14px' }}>
-            <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Investimentos</span>
+            <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Contas de investimento</span>
             <span className="m" style={{ fontSize: 16, fontWeight: 600, color: 'var(--secondary)' }}>{mv(investimentos)}</span>
           </div>
         </div>

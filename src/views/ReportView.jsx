@@ -6,7 +6,8 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { fm, fc, mask, maskPct, maskText } from '../lib/format.js';
-import { categoryTotals, monthTotal, monthComparison, topExpenses, prevMonth, yearSummary } from '../lib/reports.js';
+import { categoryTotals, monthComparison, topExpenses, prevMonth, yearSummary } from '../lib/reports.js';
+import { monthSpend } from '../lib/metrics.js';
 import { monthsWithData, monthLabelShort, MONTH_SHORT as MS } from '../lib/months.js';
 import { savingsOpportunities, totalSavings } from '../lib/savings.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
@@ -32,7 +33,10 @@ export default function ReportView() {
   const [ym, setYm] = useState(months[0].ym);
 
   const totals = categoryTotals(addedExp, ym);
-  const total = monthTotal(addedExp, ym);
+  // A ÚNICA fórmula de despesas do mês (ver src/lib/metrics.js) — antes usava
+  // monthTotal(addedExp, ym), que somava por categoria e podia divergir da
+  // faixa/Despesas/Calendário.
+  const total = monthSpend(state, ym);
   const comp = monthComparison(addedExp, ym, prevMonth(ym));
   const top = topExpenses(addedExp, ym, 5);
   // Visão anual do ano do mês selecionado.

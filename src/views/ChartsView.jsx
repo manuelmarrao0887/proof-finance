@@ -9,7 +9,8 @@
 
 import React from 'react';
 import { useStore } from '../store/store.jsx';
-import { getAllHist, chrt, netWorthSeries } from '../lib/finance.js';
+import { getAllHist, chrt } from '../lib/finance.js';
+import { netWorth, netWorthHistory } from '../lib/metrics.js';
 import { fm, fc } from '../lib/format.js';
 
 export default function ChartsView() {
@@ -55,9 +56,14 @@ export default function ChartsView() {
     chrt(ah.map((x) => x.xT), 'var(--warning)', 'XTB Transações', ah, fm) +
     chrt(ah.map((x) => x.tC), 'var(--secondary)', 'TR Corretagem', ah, fm);
 
-  // Património (net worth) timeline — valor atual + variação desde o início.
-  const nws = netWorthSeries(s);
-  const curNet = nws.length ? nws[nws.length - 1].net : 0;
+  // Património (net worth): o número em cima é SEMPRE netWorth(s) — a mesma
+  // fórmula de contas ao vivo que a faixa e o resto da app usam (antes este
+  // cartão mostrava o último snapshot do histórico, que podia divergir bastante
+  // do valor real das contas). O sparkline por baixo continua a traçar o
+  // HISTÓRICO de snapshots (netWorthHistory) — daí a legenda dizer isso e o
+  // delta comparar explicitamente "vs primeiro snapshot", não "desde o início".
+  const nws = netWorthHistory(s);
+  const curNet = netWorth(s);
   const firstNet = nws.length ? nws[0].net : 0;
   const delta = curNet - firstNet;
   const hidden = !!state.balancesHidden;
@@ -69,13 +75,13 @@ export default function ChartsView() {
         <div className="m" style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em' }}>
           {hidden ? '••••' : fc(curNet)}
         </div>
-        {!hidden && (
+        {!hidden && nws.length >= 2 && (
           <div className="m" style={{ fontSize: 12, fontWeight: 600, marginTop: 4, color: delta >= 0 ? 'var(--success)' : 'var(--signal)' }}>
-            {(delta >= 0 ? '+' : '') + fc(delta)} desde o início
+            {(delta >= 0 ? '+' : '') + fc(delta)} vs primeiro snapshot
           </div>
         )}
         {!hidden && (
-          <div style={{ marginTop: 12 }} dangerouslySetInnerHTML={{ __html: chrt(nws.map((p) => p.net), 'var(--primary)', 'Património líquido', nws, fm) }} />
+          <div style={{ marginTop: 12 }} dangerouslySetInnerHTML={{ __html: chrt(nws.map((p) => p.net), 'var(--primary)', 'histórico de snapshots', nws, fm) }} />
         )}
       </div>
       <div className="cd" style={{ marginBottom: 12 }}>

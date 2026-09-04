@@ -8,16 +8,22 @@ import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { fc } from '../lib/format.js';
 import { totalValue, totalPL, totalPLPct, withAllocation, portfolioWarnings } from '../lib/investments.js';
+import { investmentAccountsValue } from '../lib/metrics.js';
 import { AssetLogo } from '../components/MerchantLogo.jsx';
 
 export default function InvestmentsView() {
-  const { state } = useStore();
+  const { state, currentUser } = useStore();
   const { open } = useUI();
   const positions = state.positions || [];
   const hidden = !!state.balancesHidden;
   const mv = (v) => (hidden ? '••••' : fc(v));
 
   const tv = totalValue(positions);
+  // Saldo das contas de categoria Investimentos/Cripto — pode ser diferente do
+  // valor das posições detalhadas acima (ex.: saldo em cash não investido,
+  // posição ainda não registada). Ver investmentAccountsValue/positionsValue
+  // em lib/metrics.js — a mesma distinção que o Resumo mostra.
+  const accountsValue = investmentAccountsValue({ ...state, currentUser });
   const tpl = totalPL(positions);
   const tplPct = totalPLPct(positions);
   const rows = withAllocation(positions);
@@ -38,6 +44,11 @@ export default function InvestmentsView() {
         {!hidden && positions.length > 0 && (
           <div className="m" style={{ fontSize: 13, fontWeight: 700, marginTop: 4, color: plColor }}>
             {(tpl >= 0 ? '+' : '') + fc(tpl)} ({(tpl >= 0 ? '+' : '') + tplPct.toFixed(1)}%)
+          </div>
+        )}
+        {accountsValue !== tv && (
+          <div className="lb" style={{ marginTop: 6 }}>
+            Contas de investimento: {mv(accountsValue)} · posições registadas: {mv(tv)}
           </div>
         )}
       </div>

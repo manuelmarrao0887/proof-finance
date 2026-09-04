@@ -30,11 +30,12 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
-import { fm, mask, maskPct, normalizeStmtDate, fmDateShort, todayISO } from '../lib/format.js';
+import { fm, fc, mask, maskPct, normalizeStmtDate, fmDateShort, todayISO } from '../lib/format.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import MerchantLogo from '../components/MerchantLogo.jsx';
 import Icon from '../components/Icon.jsx';
 import { dedupeAddedExp } from '../lib/dedupe.js';
+import { monthSpend } from '../lib/metrics.js';
 import { monthEffectiveLimits } from '../lib/budget.js';
 import { windowLabels, windowMonthKeys, monthKeyAt, categorySeries, seriesTrend } from '../lib/months.js';
 import Sparkline from '../components/Sparkline.jsx';
@@ -388,7 +389,17 @@ export default function ExpensesView() {
   // By-value ordering for the budget summary (orig 1103). Rows carry stable
   // `id` keys (FIX 2) so React reconciles them in place instead of rebuilding.
   rows.sort((a, b) => b.val - a.val);
-  const tE = rows.reduce((acc, r) => acc + r.val, 0);
+  // Total do cartão "DESPESAS {mês}": SEMPRE monthSpend (a mesma fórmula da
+  // faixa/Relatório/Calendário) — nunca a soma dos rows do orçamento, que
+  // ficava aquém quando havia despesas em categorias fora de state.bdg.
+  // Preview usa os buckets sintéticos (sem datas reais para monthSpend).
+  // No modo 3M soma monthSpend dos 3 meses mais antigos da janela (os mesmos
+  // que os rows por categoria já somavam com vs[0]+vs[1]+vs[2]).
+  const tE = preview
+    ? rows.reduce((acc, r) => acc + r.val, 0)
+    : isQ
+      ? windowMonthKeys(mOff).slice(0, 3).reduce((acc, key) => acc + monthSpend(s, key), 0)
+      : monthSpend(s, selYm);
 
   // Tag chip cloud (orig 1110-1121).
   const allTags = {};
@@ -595,7 +606,8 @@ export default function ExpensesView() {
         <div className="rw">
           <div>
             <div className="lb">{isQ ? 'Despesas 3M (últimos 3 meses)' : 'DESPESAS ' + ms[em]}</div>
-            <div className="m" style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{mask(tE, hidden, fm)}</div>
+            {/* fc (0 decimais): o MESMO formato do número em todas as vistas. */}
+            <div className="m" style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{mask(tE, hidden, fc)}</div>
           </div>
           {!isQ && em < 3 && salP[em] != null && (
             <div style={{ textAlign: 'right' }}>

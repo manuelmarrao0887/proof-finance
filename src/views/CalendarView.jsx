@@ -19,6 +19,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store/store.jsx';
 import { fc, fm, mask } from '../lib/format.js';
 import { getLoan } from '../lib/finance.js';
+import { monthSpend, monthPendingFixed } from '../lib/metrics.js';
 
 const MONTH_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -94,6 +95,15 @@ export default function CalendarView() {
   const net = totalIn - totalOut;
   const todayDate = now.getDate();
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+
+  // "Despesa" mostrada no resumo passa a monthSpend — a MESMA fórmula da
+  // faixa/Despesas/Relatório (antes o cartão somava eventos: recorrentes +
+  // crédito habitação + despesas, um total de cash-flow diferente do resto
+  // da app). As recorrentes por lançar aparecem à parte, como "previstas",
+  // nunca somadas ao total.
+  const ym = year + '-' + String(month + 1).padStart(2, '0');
+  const monthSpent = monthSpend(state, ym);
+  const pendingFixed = monthPendingFixed(state, ym);
 
   // Build day cells
   const cells = [];
@@ -184,7 +194,10 @@ export default function CalendarView() {
         </div>
         <div className="cd" style={{ padding: 12 }}>
           <div className="lb" style={{ fontSize: 11 }}>Despesa</div>
-          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--signal)', marginTop: 2 }}>{mask(totalOut, hidden, (v) => '-' + fc(v))}</div>
+          <div className="m" style={{ fontSize: 14, fontWeight: 600, color: 'var(--signal)', marginTop: 2 }}>{mask(monthSpent, hidden, (v) => '-' + fc(v))}</div>
+          {pendingFixed > 0 && (
+            <div className="lb" style={{ fontSize: 10, marginTop: 2 }}>+ {mask(pendingFixed, hidden, fc)} previstas</div>
+          )}
         </div>
         <div className="cd" style={{ padding: 12, borderLeft: '3px solid ' + (net >= 0 ? 'var(--success)' : 'var(--signal)') }}>
           <div className="lb" style={{ fontSize: 11 }}>Net</div>
