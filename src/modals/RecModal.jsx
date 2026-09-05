@@ -27,7 +27,7 @@ const inputStyle = {
   background: 'var(--bg)',
   color: 'var(--text)',
   borderRadius: 'var(--r2)',
-  fontSize: 15,
+  fontSize: 'var(--fs-input)',
   boxSizing: 'border-box',
 };
 const numStyle = {
@@ -38,7 +38,7 @@ const numStyle = {
   color: 'var(--fg)',
   borderRadius: 8,
   fontFamily: 'var(--mono)',
-  fontSize: 15,
+  fontSize: 'var(--fs-input)',
   fontWeight: 600,
   boxSizing: 'border-box',
 };
@@ -151,7 +151,7 @@ export default function RecModal() {
           background: 'var(--elevated)',
           color: 'var(--fg)',
           borderRadius: 8,
-          fontSize: 14,
+          fontSize: 'var(--fs-input)',
           appearance: 'none',
           marginBottom: 4,
         }}

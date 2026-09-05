@@ -39,7 +39,7 @@ const inputStyle = {
   background: 'var(--bg)',
   color: 'var(--text)',
   borderRadius: 'var(--r2)',
-  fontSize: 15,
+  fontSize: 'var(--fs-input)',
   boxSizing: 'border-box',
 };
 const numStyle = {
@@ -50,7 +50,7 @@ const numStyle = {
   color: 'var(--fg)',
   borderRadius: 8,
   fontFamily: 'var(--mono)',
-  fontSize: 15,
+  fontSize: 'var(--fs-input)',
   fontWeight: 600,
   boxSizing: 'border-box',
 };
@@ -196,7 +196,7 @@ export default function IncomeModal() {
         ) : (
           <div style={{ flex: 1 }}>
             <div className="lb" style={{ marginBottom: 6 }}>Data</div>
-            <input type="date" value={draft.date} onChange={(e) => set('date', e.target.value)} aria-label="Data" style={{ ...numStyle, fontSize: 13, fontWeight: 400 }} />
+            <input type="date" value={draft.date} onChange={(e) => set('date', e.target.value)} aria-label="Data" style={{ ...numStyle, fontSize: 'var(--fs-input)', fontWeight: 400 }} />
           </div>
         )}
       </div>
@@ -213,7 +213,7 @@ export default function IncomeModal() {
           background: 'var(--elevated)',
           color: 'var(--fg)',
           borderRadius: 8,
-          fontSize: 14,
+          fontSize: 'var(--fs-input)',
           appearance: 'none',
           marginBottom: 4,
         }}
@@ -238,7 +238,7 @@ export default function IncomeModal() {
           background: 'var(--elevated)',
           color: 'var(--fg)',
           borderRadius: 8,
-          fontSize: 14,
+          fontSize: 'var(--fs-input)',
           appearance: 'none',
           marginBottom: 4,
         }}

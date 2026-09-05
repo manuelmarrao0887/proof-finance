@@ -257,7 +257,7 @@ export default function AddExpenseSheet() {
     background: 'var(--elevated)',
     color: 'var(--fg)',
     borderRadius: 8,
-    fontSize: 'var(--fs-md)',
+    fontSize: 'var(--fs-input)',
     boxSizing: 'border-box',
   };
   const monoBig = {
@@ -377,7 +377,7 @@ export default function AddExpenseSheet() {
           onChange={(e) => set('desc', e.target.value)}
           placeholder="Ex: Pingo Doce"
           aria-label="Descrição"
-          style={{ ...inputStyle, fontSize: 'var(--fs-md)', paddingLeft: resolveBrand(d.desc) ? 'var(--space-7)' : 'var(--space-4)' }}
+          style={{ ...inputStyle, fontSize: 'var(--fs-input)', paddingLeft: resolveBrand(d.desc) ? 'var(--space-7)' : 'var(--space-4)' }}
         />
       </div>
       {errText(errors.desc)}
@@ -389,7 +389,7 @@ export default function AddExpenseSheet() {
         value={d.acct}
         onChange={(e) => set('acct', e.target.value)}
         aria-label="Conta debitada (opcional)"
-        style={{ ...inputStyle, appearance: 'none', marginBottom: 'var(--space-4)', fontSize: 'var(--fs-md)' }}
+        style={{ ...inputStyle, appearance: 'none', marginBottom: 'var(--space-4)', fontSize: 'var(--fs-input)' }}
       >
         <option value="">— sem conta —</option>
         {accounts.map((a) => {
@@ -407,7 +407,7 @@ export default function AddExpenseSheet() {
         value={d.date}
         onChange={(e) => set('date', e.target.value)}
         aria-label="Data"
-        style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-sm)', marginBottom: 'var(--space-4)' }}
+        style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)', marginBottom: 'var(--space-4)' }}
       />
 
       {/* Mais opções — partilhada / tags / nota, fora do caminho dos 5 segundos */}
@@ -472,7 +472,7 @@ export default function AddExpenseSheet() {
                     placeholder="100,00"
                     inputMode="decimal"
                     aria-label="Total (€)"
-                    style={{ ...monoBig, fontSize: 'var(--fs-md)', padding: 'var(--space-4) var(--space-4)' }}
+                    style={{ ...monoBig, fontSize: 'var(--fs-input)', padding: 'var(--space-4) var(--space-4)' }}
                   />
                   {errText(errors.total)}
                 </div>
@@ -485,7 +485,7 @@ export default function AddExpenseSheet() {
                     min="2"
                     max="10"
                     aria-label="Pessoas"
-                    style={{ ...monoBig, fontSize: 'var(--fs-md)', padding: 'var(--space-4) var(--space-4)', textAlign: 'center' }}
+                    style={{ ...monoBig, fontSize: 'var(--fs-input)', padding: 'var(--space-4) var(--space-4)', textAlign: 'center' }}
                   />
                 </div>
               </div>
@@ -505,7 +505,7 @@ export default function AddExpenseSheet() {
             onChange={(e) => set('tags', e.target.value)}
             placeholder="Ex: viagem-acores, casa, presente"
             aria-label="Tags (opcional)"
-            style={{ ...inputStyle, fontSize: 'var(--fs-sm)', marginBottom: 'var(--space-4)' }}
+            style={{ ...inputStyle, fontSize: 'var(--fs-input)', marginBottom: 'var(--space-4)' }}
           />
 
           {/* Notes */}
@@ -516,7 +516,7 @@ export default function AddExpenseSheet() {
             placeholder="Detalhes ou contexto"
             aria-label="Nota (opcional)"
             rows={2}
-            style={{ ...inputStyle, fontSize: 'var(--fs-sm)', marginBottom: 'var(--space-2)', resize: 'vertical', fontFamily: 'var(--font)' }}
+            style={{ ...inputStyle, fontSize: 'var(--fs-input)', marginBottom: 'var(--space-2)', resize: 'vertical', fontFamily: 'var(--font)' }}
           />
         </>
       )}

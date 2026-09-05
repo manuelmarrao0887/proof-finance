@@ -262,7 +262,7 @@ export default function AssistantSheet() {
           background: 'var(--elevated)',
           color: 'var(--fg)',
           borderRadius: 8,
-          fontSize: 14,
+          fontSize: 'var(--fs-input)',
           resize: 'vertical',
           boxSizing: 'border-box',
           fontFamily: 'var(--font)',

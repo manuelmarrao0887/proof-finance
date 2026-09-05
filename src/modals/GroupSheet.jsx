@@ -235,10 +235,10 @@ export default function GroupSheet() {
     background: 'var(--bg)',
     color: 'var(--text)',
     borderRadius: 'var(--r2)',
-    fontSize: 15,
+    fontSize: 'var(--fs-input)',
     boxSizing: 'border-box',
   };
-  const selectStyle = { ...inputStyle, fontSize: 14 };
+  const selectStyle = { ...inputStyle, fontSize: 'var(--fs-input)' };
 
   const footer = (
     <>
@@ -349,7 +349,7 @@ export default function GroupSheet() {
             value={draft.start}
             onChange={(e) => set('start', e.target.value)}
             aria-label="Data de início"
-            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 14 }}
+            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)' }}
           />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -359,7 +359,7 @@ export default function GroupSheet() {
             value={draft.end}
             onChange={(e) => set('end', e.target.value)}
             aria-label="Data de fim"
-            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 14 }}
+            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)' }}
           />
         </div>
       </div>

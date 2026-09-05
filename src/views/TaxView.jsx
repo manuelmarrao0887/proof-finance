@@ -59,7 +59,7 @@ export default function TaxView() {
     toast('Configuração fiscal guardada', 'success');
   };
 
-  const input = { width: '100%', padding: '10px 12px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 10, fontSize: 15, boxSizing: 'border-box' };
+  const input = { width: '100%', padding: '10px 12px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 10, fontSize: 'var(--fs-input)', boxSizing: 'border-box' };
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px calc(40px + var(--safe-bottom))' }}>
@@ -93,7 +93,7 @@ export default function TaxView() {
             value={year}
             onChange={(e) => setYear(e.target.value)}
             aria-label="Ano fiscal"
-            style={{ padding: '4px 10px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', borderRadius: 8, fontSize: 12, fontFamily: 'var(--mono)' }}
+            style={{ padding: '4px 10px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', borderRadius: 8, fontSize: 'var(--fs-input)', fontFamily: 'var(--mono)' }}
           >
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>

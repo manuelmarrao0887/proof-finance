@@ -108,7 +108,7 @@ export default function CatManagerModal() {
     background: 'var(--elevated)',
     color: 'var(--fg)',
     borderRadius: 8,
-    fontSize: 13,
+    fontSize: 'var(--fs-input)',
     boxSizing: 'border-box',
   };
 

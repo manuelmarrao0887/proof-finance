@@ -238,7 +238,7 @@ export default function ExpensesView() {
               value={acctFilter}
               onChange={(e) => setAcctFilter(e.target.value)}
               aria-label="Filtrar por conta"
-              style={{ flex: 1, minWidth: 0, padding: 'var(--space-3) var(--space-3)', border: '1px solid ' + (hasAcctFilter ? 'var(--primary)' : 'var(--border)'), background: 'var(--surface)', color: 'var(--text)', borderRadius: 8, fontSize: 'var(--fs-sm)' }}
+              style={{ flex: 1, minWidth: 0, padding: 'var(--space-3) var(--space-3)', border: '1px solid ' + (hasAcctFilter ? 'var(--primary)' : 'var(--border)'), background: 'var(--surface)', color: 'var(--text)', borderRadius: 8, fontSize: 'var(--fs-input)' }}
             >
               <option value="">Todas as contas</option>
               {acctsWithExp.map((a) => (
@@ -585,7 +585,7 @@ export default function ExpensesView() {
             value={acctFilter}
             onChange={(e) => setAcctFilter(e.target.value)}
             aria-label="Filtrar despesas por conta"
-            style={{ width: '100%', padding: 'var(--space-3) var(--space-3)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 8, fontSize: 'var(--fs-sm)' }}
+            style={{ width: '100%', padding: 'var(--space-3) var(--space-3)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 8, fontSize: 'var(--fs-input)' }}
           >
             <option value="">Todas as contas</option>
             {acctsWithExp.map((a) => (

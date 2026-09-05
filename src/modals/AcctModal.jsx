@@ -132,7 +132,7 @@ export default function AcctModal() {
   if (!isOpen) return null;
 
   const inputStyle = { width: '100%', padding: 'var(--space-4) var(--space-4)', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 'var(--fs-lg)', boxSizing: 'border-box', marginBottom: 'var(--space-4)' };
-  const selectStyle = { width: '100%', padding: 'var(--space-4) var(--space-4)', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 'var(--fs-md)', marginBottom: 'var(--space-4)' };
+  const selectStyle = { width: '100%', padding: 'var(--space-4) var(--space-4)', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 'var(--fs-input)', marginBottom: 'var(--space-4)' };
   const labelStyle = { display: 'block', marginBottom: 'var(--space-2)' };
 
   return (
@@ -176,7 +176,7 @@ export default function AcctModal() {
             id="acCur"
             value={draft.currency}
             onChange={(e) => set('currency', e.target.value)}
-            style={{ width: '100%', padding: 'var(--space-4) var(--space-4)', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontFamily: 'var(--mono)', fontSize: 'var(--fs-md)', textAlign: 'center' }}
+            style={{ width: '100%', padding: 'var(--space-4) var(--space-4)', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)', textAlign: 'center' }}
           >
             {CURRENCIES.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -219,7 +219,7 @@ export default function AcctModal() {
 
       {/* Note */}
       <label className="lb" style={labelStyle} htmlFor="acNote">Nota (opcional)</label>
-      <input id="acNote" value={draft.note} onChange={(e) => set('note', e.target.value)} placeholder="Juros, IBAN parcial, etc." style={{ ...inputStyle, fontSize: 'var(--fs-md)', marginBottom: 'var(--space-5)' }} />
+      <input id="acNote" value={draft.note} onChange={(e) => set('note', e.target.value)} placeholder="Juros, IBAN parcial, etc." style={{ ...inputStyle, fontSize: 'var(--fs-input)', marginBottom: 'var(--space-5)' }} />
 
       {/* Save */}
       <PrimaryButton onClick={saveAcct}>

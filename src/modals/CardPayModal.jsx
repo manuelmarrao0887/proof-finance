@@ -84,7 +84,7 @@ export default function CardPayModal() {
     toast('Pagamento registado', 'success');
   };
 
-  const sel = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 12, fontSize: 15, marginBottom: 14, appearance: 'none' };
+  const sel = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 12, fontSize: 'var(--fs-input)', marginBottom: 14, appearance: 'none' };
   const input = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 12, fontSize: 16, boxSizing: 'border-box', fontFamily: 'var(--mono)' };
 
   return (
@@ -119,12 +119,12 @@ export default function CardPayModal() {
         </div>
         <div style={{ flex: 1 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Data</div>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Data" style={{ ...input, fontSize: 13 }} />
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Data" style={{ ...input, fontSize: 'var(--fs-input)' }} />
         </div>
       </div>
 
       <div className="lb" style={{ marginBottom: 6 }}>Nota (opcional)</div>
-      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex: pagamento fatura junho" aria-label="Nota" style={{ ...input, fontFamily: 'var(--font)', fontSize: 14 }} />
+      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex: pagamento fatura junho" aria-label="Nota" style={{ ...input, fontFamily: 'var(--font)', fontSize: 'var(--fs-input)' }} />
 
       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
         Baixa a dívida do cartão e desce o saldo da conta à ordem escolhida. Fica registado em Transferências.

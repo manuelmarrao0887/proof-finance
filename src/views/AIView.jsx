@@ -636,7 +636,7 @@ export default function AIView() {
           value={chat}
           onChange={(e) => setChat(e.target.value)}
           placeholder="Pergunta ou comanda..."
-          style={{ width: '100%', padding: 12, border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'var(--font)' }}
+          style={{ width: '100%', padding: 12, border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 'var(--fs-input)', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'var(--font)' }}
         />
         <button
           type="button"

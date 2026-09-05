@@ -33,7 +33,7 @@ const inputStyle = {
   background: 'var(--bg)',
   color: 'var(--text)',
   borderRadius: 'var(--r2)',
-  fontSize: 'var(--fs-md)',
+  fontSize: 'var(--fs-input)',
   boxSizing: 'border-box',
 };
 const numStyle = {
@@ -44,7 +44,7 @@ const numStyle = {
   color: 'var(--fg)',
   borderRadius: 8,
   fontFamily: 'var(--mono)',
-  fontSize: 'var(--fs-md)',
+  fontSize: 'var(--fs-input)',
   fontWeight: 600,
   boxSizing: 'border-box',
 };
@@ -165,7 +165,7 @@ export default function GoalModal() {
             value={draft.deadline}
             onChange={(e) => set('deadline', e.target.value)}
             aria-label="Data alvo (opcional)"
-            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-md)' }}
+            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)' }}
           />
         </div>
         <div style={{ flex: 1 }}>

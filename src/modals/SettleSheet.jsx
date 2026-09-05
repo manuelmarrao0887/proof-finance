@@ -66,7 +66,7 @@ const sel = {
   background: 'var(--elevated)',
   color: 'var(--fg)',
   borderRadius: 12,
-  fontSize: 15,
+  fontSize: 'var(--fs-input)',
   marginBottom: 14,
   appearance: 'none',
 };
@@ -77,7 +77,7 @@ const inputStyle = {
   background: 'var(--elevated)',
   color: 'var(--fg)',
   borderRadius: 8,
-  fontSize: 14,
+  fontSize: 'var(--fs-input)',
   boxSizing: 'border-box',
 };
 const monoBig = { ...inputStyle, fontFamily: 'var(--mono)', fontSize: 17, fontWeight: 600 };
@@ -241,7 +241,7 @@ export default function SettleSheet() {
             value={date}
             onChange={(e) => setDate(e.target.value)}
             aria-label="Data"
-            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 13 }}
+            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)' }}
           />
         </div>
       </div>

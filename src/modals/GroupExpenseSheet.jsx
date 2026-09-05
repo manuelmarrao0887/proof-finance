@@ -126,13 +126,13 @@ const inputStyle = {
   background: 'var(--elevated)',
   color: 'var(--fg)',
   borderRadius: 8,
-  fontSize: 14,
+  fontSize: 'var(--fs-input)',
   boxSizing: 'border-box',
 };
 const monoBig = { ...inputStyle, fontFamily: 'var(--mono)', fontSize: 17, fontWeight: 600 };
 const monoSmall = {
   fontFamily: 'var(--mono)',
-  fontSize: 13,
+  fontSize: 'var(--fs-input)',
   fontWeight: 600,
   textAlign: 'right',
   padding: '6px 8px',
@@ -342,7 +342,7 @@ export default function GroupExpenseSheet() {
         onChange={(e) => set('desc', e.target.value)}
         placeholder="Ex: Jantar"
         aria-label="Descrição"
-        style={{ ...inputStyle, fontSize: 15, marginBottom: errors.desc ? 0 : 14 }}
+        style={{ ...inputStyle, fontSize: 'var(--fs-input)', marginBottom: errors.desc ? 0 : 14 }}
       />
       {errText(errors.desc)}
       {errors.desc && <div style={{ height: 14 }} />}
@@ -372,7 +372,7 @@ export default function GroupExpenseSheet() {
             value={draft.date}
             onChange={(e) => set('date', e.target.value)}
             aria-label="Data"
-            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 13 }}
+            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)' }}
           />
         </div>
       </div>
@@ -541,7 +541,7 @@ export default function GroupExpenseSheet() {
         placeholder="Detalhes ou contexto"
         aria-label="Nota (opcional)"
         rows={2}
-        style={{ ...inputStyle, fontSize: 13, marginBottom: 14, resize: 'vertical', fontFamily: 'var(--font)' }}
+        style={{ ...inputStyle, fontSize: 'var(--fs-input)', marginBottom: 14, resize: 'vertical', fontFamily: 'var(--font)' }}
       />
 
       {/* Refletir a minha parte nas Despesas */}

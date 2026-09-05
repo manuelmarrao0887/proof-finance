@@ -59,7 +59,7 @@ export default function TransferModal() {
     toast('Transferência registada', 'success');
   };
 
-  const sel = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 12, fontSize: 15, marginBottom: 14, appearance: 'none' };
+  const sel = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 12, fontSize: 'var(--fs-input)', marginBottom: 14, appearance: 'none' };
   const input = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 12, fontSize: 16, boxSizing: 'border-box', fontFamily: 'var(--mono)' };
 
   return (
@@ -81,12 +81,12 @@ export default function TransferModal() {
         </div>
         <div style={{ flex: 1 }}>
           <div className="lb" style={{ marginBottom: 6 }}>Data</div>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Data" style={{ ...input, fontSize: 13 }} />
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Data" style={{ ...input, fontSize: 'var(--fs-input)' }} />
         </div>
       </div>
 
       <div className="lb" style={{ marginBottom: 6 }}>Nota (opcional)</div>
-      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex: reforço poupança" aria-label="Nota" style={{ ...input, fontFamily: 'var(--font)', fontSize: 14 }} />
+      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex: reforço poupança" aria-label="Nota" style={{ ...input, fontFamily: 'var(--font)', fontSize: 'var(--fs-input)' }} />
 
       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
         Não conta como despesa nem receita. Ajusta o saldo das duas contas (o património total não muda).

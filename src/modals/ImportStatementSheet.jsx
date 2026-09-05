@@ -569,7 +569,7 @@ export default function ImportStatementSheet() {
                         value={t._type}
                         onChange={(e) => setRowType(i, e.target.value)}
                         aria-label={'Tipo de ' + (t.desc || 'transação')}
-                        style={{ padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', appearance: 'none' }}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)', letterSpacing: '0.05em', appearance: 'none' }}
                       >
                         {/* Crédito → Receita/Transferência; Débito → Despesa/Transferência */}
                         {isD ? <option value="expense">Despesa</option> : <option value="income">Receita</option>}
@@ -588,7 +588,7 @@ export default function ImportStatementSheet() {
                               background: warn ? 'rgba(229,57,53,0.05)' : 'var(--bg)',
                               color: 'var(--text)',
                               fontFamily: 'var(--mono)',
-                              fontSize: 11,
+                              fontSize: 'var(--fs-input)',
                               letterSpacing: '0.05em',
                               appearance: 'none',
                             }}
@@ -607,7 +607,7 @@ export default function ImportStatementSheet() {
                           value={t._source || 'other'}
                           onChange={(e) => setRowSource(i, e.target.value)}
                           aria-label={'Fonte da receita ' + (t.desc || '')}
-                          style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.05em', appearance: 'none' }}
+                          style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)', letterSpacing: '0.05em', appearance: 'none' }}
                         >
                           <option value="salary">Salário</option>
                           <option value="freelance">Freelance</option>
@@ -622,7 +622,7 @@ export default function ImportStatementSheet() {
                           value={t._from}
                           onChange={(e) => setRowAcct(i, 'from', e.target.value)}
                           aria-label={'Conta de origem de ' + (t.desc || 'transação')}
-                          style={{ flex: 1, minWidth: 0, padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 11, appearance: 'none' }}
+                          style={{ flex: 1, minWidth: 0, padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 'var(--fs-input)', appearance: 'none' }}
                         >
                           <option value="">De…</option>
                           {acctLabels.map((l) => <option key={'f' + l} value={l}>{l}</option>)}
@@ -632,7 +632,7 @@ export default function ImportStatementSheet() {
                           value={t._to}
                           onChange={(e) => setRowAcct(i, 'to', e.target.value)}
                           aria-label={'Conta de destino de ' + (t.desc || 'transação')}
-                          style={{ flex: 1, minWidth: 0, padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 11, appearance: 'none' }}
+                          style={{ flex: 1, minWidth: 0, padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 'var(--fs-input)', appearance: 'none' }}
                         >
                           <option value="">Para…</option>
                           {acctLabels.map((l) => <option key={'t' + l} value={l}>{l}</option>)}
