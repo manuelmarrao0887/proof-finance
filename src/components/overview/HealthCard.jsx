@@ -23,15 +23,15 @@ export default function HealthCard() {
   const hsCol = hs.score >= 70 ? 'var(--success)' : hs.score >= 50 ? 'var(--warning)' : 'var(--danger)';
 
   return (
-    <div className="cd" style={{ marginBottom: 16, padding: 20 }}>
-      <div className="rw" style={{ marginBottom: 14, alignItems: 'flex-start' }}>
+    <div className="cd" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-5)' }}>
+      <div className="rw" style={{ marginBottom: 'var(--space-4)', alignItems: 'flex-start' }}>
         <div>
           <div className="lb">Saúde financeira</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
-            <div className="m" style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.02em', color: hsCol }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+            <div className="m" style={{ fontSize: 'var(--fs-3xl)', fontWeight: 500, letterSpacing: '-0.02em', color: hsCol }}>
               {hs.score}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--fg-subtle)', fontFamily: 'var(--mono)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-subtle)', fontFamily: 'var(--mono)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               / 100
             </div>
           </div>
@@ -40,18 +40,18 @@ export default function HealthCard() {
           {hs.grade}
         </div>
       </div>
-      <div className="bar" style={{ height: 6, background: 'var(--elevated)', marginBottom: 14 }}>
+      <div className="bar" style={{ height: 6, background: 'var(--elevated)', marginBottom: 'var(--space-4)' }}>
         <div className="bar-fill" style={{ width: hs.score + '%', background: hsCol }} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         {hs.breakdown.map((b) => {
           const pct = b.max > 0 ? (b.pts / b.max) * 100 : 0;
           const col = pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--warning)' : 'var(--danger)';
           return (
             <div key={b.label}>
-              <div className="rw" style={{ marginBottom: 4 }}>
-                <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>{b.label}</div>
-                <div className="m" style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>
+              <div className="rw" style={{ marginBottom: 'var(--space-2)' }}>
+                <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg-muted)' }}>{b.label}</div>
+                <div className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-subtle)' }}>
                   {b.pts}/{b.max} · {maskDetail(b.detail)}
                 </div>
               </div>
@@ -63,10 +63,10 @@ export default function HealthCard() {
         })}
       </div>
       {hs.recommendations.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-          <div className="lb" style={{ marginBottom: 8 }}>Para subir o score</div>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-4)' }}>
+          <div className="lb" style={{ marginBottom: 'var(--space-3)' }}>Para subir o score</div>
           {hs.recommendations.map((r, i) => (
-            <div key={i} style={{ display: 'flex', gap: 8, padding: '4px 0', fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
+            <div key={i} style={{ display: 'flex', gap: 'var(--space-3)', padding: 'var(--space-2) 0', fontSize: 'var(--fs-sm)', color: 'var(--fg-muted)', lineHeight: 1.5 }}>
               <span className="m" style={{ color: 'var(--fg-subtle)', flexShrink: 0 }}>
                 {'0' + (i + 1)}
               </span>

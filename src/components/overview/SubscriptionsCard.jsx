@@ -42,36 +42,36 @@ export default function SubscriptionsCard() {
   if (newU || subs.length === 0) return null;
 
   return (
-    <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-      <div className="rw" style={{ marginBottom: 6 }}>
+    <div className="cd" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-5) var(--space-5)' }}>
+      <div className="rw" style={{ marginBottom: 'var(--space-2)' }}>
         <div className="lb">Subscrições detectadas</div>
         <div className="chip" style={{ background: 'transparent', color: 'var(--fg-muted)', border: '1px solid var(--border)' }}>
           {subs.length}
         </div>
       </div>
-      <div style={{ fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.5, marginBottom: 14 }}>
+      <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg-muted)', lineHeight: 1.5, marginBottom: 'var(--space-4)' }}>
         Estas despesas repetem-se. Queres registá-las como recorrentes?
       </div>
       {subs.slice(0, 3).map((sub, i) => (
-        <div key={sub.key} className="rw" style={{ padding: '10px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+        <div key={sub.key} className="rw" style={{ padding: 'var(--space-3) 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>{sub.desc}</div>
-            <div className="m" style={{ fontSize: 10, color: 'var(--fg-subtle)', marginTop: 2 }}>
+            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{sub.desc}</div>
+            <div className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-subtle)', marginTop: 'var(--space-1)' }}>
               {sub.count} vezes · ~{mask(sub.monthlyEstimate, hidden, fc)}/mês
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
             <button
               type="button"
               onClick={() => dismissSub(sub)}
               aria-label={'Não é subscrição: ' + sub.desc}
               style={{
-                padding: '6px 12px',
+                padding: 'var(--space-2) var(--space-4)',
                 border: '1px solid var(--border)',
                 background: 'transparent',
                 color: 'var(--fg-muted)',
                 borderRadius: 999,
-                fontSize: 11,
+                fontSize: 'var(--fs-xs)',
                 fontWeight: 500,
                 fontFamily: 'inherit',
               }}
@@ -82,12 +82,12 @@ export default function SubscriptionsCard() {
               type="button"
               onClick={() => addSub(sub)}
               style={{
-                padding: '6px 12px',
+                padding: 'var(--space-2) var(--space-4)',
                 border: '1px solid var(--primary)',
                 background: 'var(--primary)',
                 color: '#fff',
                 borderRadius: 999,
-                fontSize: 11,
+                fontSize: 'var(--fs-xs)',
                 fontWeight: 600,
                 fontFamily: 'inherit',
               }}
@@ -98,7 +98,7 @@ export default function SubscriptionsCard() {
         </div>
       ))}
       {subs.length > 3 && (
-        <div style={{ fontSize: 11, color: 'var(--fg-subtle)', padding: '8px 0 0', textAlign: 'center' }}>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-subtle)', padding: 'var(--space-3) 0 0', textAlign: 'center' }}>
           + {subs.length - 3} outras
         </div>
       )}

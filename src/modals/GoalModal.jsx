@@ -28,23 +28,23 @@ const EMPTY = { id: null, name: '', target: '', current: '', deadline: '', month
 
 const inputStyle = {
   width: '100%',
-  padding: '12px 16px',
+  padding: 'var(--space-4) var(--space-4)',
   border: '1px solid var(--border)',
   background: 'var(--bg)',
   color: 'var(--text)',
   borderRadius: 'var(--r2)',
-  fontSize: 15,
+  fontSize: 'var(--fs-md)',
   boxSizing: 'border-box',
 };
 const numStyle = {
   width: '100%',
-  padding: '12px 16px',
+  padding: 'var(--space-4) var(--space-4)',
   border: '1px solid var(--border)',
   background: 'var(--elevated)',
   color: 'var(--fg)',
   borderRadius: 8,
   fontFamily: 'var(--mono)',
-  fontSize: 15,
+  fontSize: 'var(--fs-md)',
   fontWeight: 600,
   boxSizing: 'border-box',
 };
@@ -124,9 +124,9 @@ export default function GoalModal() {
       </PrimaryButton>
       {isEdit && (
         <>
-          <ConfirmButton label="Eliminar meta" confirmLabel="Confirmar eliminação" onConfirm={deleteGoal} style={{ marginTop: 8 }} />
+          <ConfirmButton label="Eliminar meta" confirmLabel="Confirmar eliminação" onConfirm={deleteGoal} style={{ marginTop: 'var(--space-3)' }} />
           {parseFloat((String(draft.current) || '0').replace(',', '.')) > 0 && (
-            <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', marginTop: 4 }}>
+            <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', textAlign: 'center', marginTop: 'var(--space-2)' }}>
               O valor poupado não é devolvido a nenhuma conta.
             </div>
           )}
@@ -137,44 +137,44 @@ export default function GoalModal() {
 
   return (
     <Sheet open={isOpen} onClose={close} title={isEdit ? 'Editar meta' : 'Nova meta'} footer={footer}>
-      <div className="lb" style={{ marginBottom: 6 }}>Nome</div>
+      <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Nome</div>
       <input
         value={draft.name}
         onChange={(e) => set('name', e.target.value)}
         placeholder="Ex: Fundo Emergência"
         aria-label="Nome"
-        style={{ ...inputStyle, marginBottom: 16 }}
+        style={{ ...inputStyle, marginBottom: 'var(--space-4)' }}
       />
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
         <div style={{ flex: 1 }}>
-          <div className="lb" style={{ marginBottom: 6 }}>Objetivo</div>
+          <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Objetivo</div>
           <input value={draft.target} onChange={(e) => set('target', e.target.value)} placeholder="10000" inputMode="decimal" aria-label="Objetivo" style={numStyle} />
         </div>
         <div style={{ flex: 1 }}>
-          <div className="lb" style={{ marginBottom: 6 }}>Atual</div>
+          <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Atual</div>
           <input value={draft.current} onChange={(e) => set('current', e.target.value)} placeholder="0" inputMode="decimal" aria-label="Atual" style={numStyle} />
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
         <div style={{ flex: 1 }}>
-          <div className="lb" style={{ marginBottom: 6 }}>Data alvo (opcional)</div>
+          <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Data alvo (opcional)</div>
           <input
             type="date"
             value={draft.deadline}
             onChange={(e) => set('deadline', e.target.value)}
             aria-label="Data alvo (opcional)"
-            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 14 }}
+            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-md)' }}
           />
         </div>
         <div style={{ flex: 1 }}>
-          <div className="lb" style={{ marginBottom: 6 }}>Reservar/mês (opcional)</div>
+          <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Reservar/mês (opcional)</div>
           <input value={draft.monthly} onChange={(e) => set('monthly', e.target.value)} placeholder="200" inputMode="decimal" aria-label="Reservar por mês" style={numStyle} />
         </div>
       </div>
 
-      <div className="lb" style={{ marginBottom: 8 }}>Ícone</div>
+      <div className="lb" style={{ marginBottom: 'var(--space-3)' }}>Ícone</div>
       <div className="icon-grid">
         {GOAL_ICONS.map((ic) => (
           <button key={ic} type="button" aria-label={'Ícone ' + (ICON_LABELS[ic] || ic)} aria-pressed={draft.icon === ic} onClick={() => set('icon', ic)}>
@@ -183,8 +183,8 @@ export default function GoalModal() {
         ))}
       </div>
 
-      <div className="lb" style={{ marginBottom: 8 }}>Cor</div>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 4 }}>
+      <div className="lb" style={{ marginBottom: 'var(--space-3)' }}>Cor</div>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
         {COLORS.map((c) => (
           <button
             key={c}
@@ -197,7 +197,6 @@ export default function GoalModal() {
               borderRadius: '50%',
               border: draft.color === c ? '3px solid var(--text)' : '3px solid transparent',
               background: c,
-              padding: 0,
               transition: 'transform 0.15s',
             }}
           />

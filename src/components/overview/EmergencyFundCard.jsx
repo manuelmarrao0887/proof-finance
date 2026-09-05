@@ -24,30 +24,30 @@ export default function EmergencyFundCard() {
   const efLabel = ef.months >= 6 ? 'Sólido' : ef.months >= 3 ? 'Razoável' : ef.months >= 1 ? 'Fraco' : 'Crítico';
 
   return (
-    <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-      <div className="rw" style={{ marginBottom: 10 }}>
+    <div className="cd" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-5) var(--space-5)' }}>
+      <div className="rw" style={{ marginBottom: 'var(--space-3)' }}>
         <div>
           <div className="lb">Fundo de emergência</div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-1)' }}>
             Liquidez + Poupança / despesa média
           </div>
         </div>
         <div className="chip" style={{ background: efColor, color: '#fff' }}>{efLabel}</div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-        <div className="m" style={{ fontSize: 30, fontWeight: 600, color: efColor, letterSpacing: '-0.02em' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
+        <div className="m" style={{ fontSize: 'var(--fs-2xl)', fontWeight: 600, color: efColor, letterSpacing: '-0.02em' }}>
           {ef.months.toFixed(1)}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 600 }}>meses cobertos</div>
+        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text2)', fontWeight: 600 }}>meses cobertos</div>
       </div>
-      <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
+      <div className="rw m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-2)' }}>
         <span>Reserva: {mask(ef.safe, hidden, fc)}</span>
         <span>Despesa/mês: {mask(ef.avgMonthly, hidden, fc)}</span>
       </div>
-      <div className="bar" style={{ height: 6, marginTop: 10 }}>
+      <div className="bar" style={{ height: 6, marginTop: 'var(--space-3)' }}>
         <div className="bar-fill" style={{ width: efPct + '%', background: efColor }} />
       </div>
-      <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+      <div className="rw m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-2)' }}>
         <span>0</span>
         <span>3 meses</span>
         <span>6 meses (ideal)</span>

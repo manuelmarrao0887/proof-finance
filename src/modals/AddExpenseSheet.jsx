@@ -252,23 +252,23 @@ export default function AddExpenseSheet() {
 
   const inputStyle = {
     width: '100%',
-    padding: '12px 16px',
+    padding: 'var(--space-4) var(--space-4)',
     border: '1px solid var(--border)',
     background: 'var(--elevated)',
     color: 'var(--fg)',
     borderRadius: 8,
-    fontSize: 14,
+    fontSize: 'var(--fs-md)',
     boxSizing: 'border-box',
   };
   const monoBig = {
     ...inputStyle,
     fontFamily: 'var(--mono)',
-    fontSize: 17,
+    fontSize: 'var(--fs-lg)',
     fontWeight: 600,
   };
   // Inline error helper text (orig had only a toast).
   const errText = (msg) =>
-    msg ? <div style={{ color: 'var(--signal)', fontSize: 11, marginTop: 4 }}>{msg}</div> : null;
+    msg ? <div style={{ color: 'var(--signal)', fontSize: 'var(--fs-xs)', marginTop: 'var(--space-2)' }}>{msg}</div> : null;
 
   const footer = (
     <>
@@ -276,7 +276,7 @@ export default function AddExpenseSheet() {
         {isEdit ? 'Guardar alterações' : d.recId ? 'Registar despesa' : 'Adicionar despesa'}
       </PrimaryButton>
       {isEdit && (
-        <ConfirmButton label="Eliminar despesa" confirmLabel="Confirmar eliminação" onConfirm={remove} style={{ marginTop: 8 }} />
+        <ConfirmButton label="Eliminar despesa" confirmLabel="Confirmar eliminação" onConfirm={remove} style={{ marginTop: 'var(--space-3)' }} />
       )}
     </>
   );
@@ -285,15 +285,15 @@ export default function AddExpenseSheet() {
   // competir com o valor (o campo que realmente importa nos 5 segundos).
   const moreBtnStyle = {
     width: '100%',
-    padding: '10px 12px',
+    padding: 'var(--space-3) var(--space-4)',
     border: '1px dashed var(--border)',
     background: 'transparent',
     color: 'var(--primary)',
     borderRadius: 8,
-    fontSize: 13,
+    fontSize: 'var(--fs-sm)',
     fontWeight: 600,
     cursor: 'pointer',
-    marginBottom: 14,
+    marginBottom: 'var(--space-4)',
   };
 
   return (
@@ -302,8 +302,8 @@ export default function AddExpenseSheet() {
           automático (ver useEffect). Só aparece quando não é partilhada: com
           d.shared o valor vem do Total/Pessoas dentro de "Mais opções". */}
       {!d.shared && (
-        <div style={{ marginBottom: 20 }}>
-          <div className="lb" style={{ marginBottom: 6 }}>Valor (€)</div>
+        <div style={{ marginBottom: 'var(--space-5)' }}>
+          <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Valor (€)</div>
           <input
             ref={amountRef}
             autoFocus
@@ -312,7 +312,7 @@ export default function AddExpenseSheet() {
             placeholder="0,00"
             inputMode="decimal"
             aria-label="Valor (€)"
-            style={{ ...monoBig, fontSize: 28 }}
+            style={{ ...monoBig, fontSize: 'var(--fs-2xl)' }}
           />
           {errText(errors.amount)}
         </div>
@@ -322,10 +322,10 @@ export default function AddExpenseSheet() {
           últimos 90 dias primeiro, com "Mais categorias" para a lista alfabética
           completa (FIX 3). */}
       <div role="group" aria-label="Categoria">
-        <div className="lb" style={{ marginBottom: 8 }}>Categoria</div>
+        <div className="lb" style={{ marginBottom: 'var(--space-3)' }}>Categoria</div>
         {/* minmax(0,1fr) e não 1fr: o chão de 1fr é min-content, por isso nomes
             longos ("Combustível") empurravam a grelha para lá do ecrã a 320px. */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8, marginBottom: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
           {shownCats.map((b) => {
             const on = d.cat === b.id;
             return (
@@ -338,9 +338,9 @@ export default function AddExpenseSheet() {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: 5,
+                  gap: 'var(--space-2)',
                   minWidth: 0,
-                  padding: '10px 4px',
+                  padding: 'var(--space-3) var(--space-2)',
                   borderRadius: 14,
                   border: '1px solid ' + (on ? 'var(--primary)' : 'var(--border)'),
                   background: on ? 'var(--blue-soft)' : 'var(--surface)',
@@ -350,7 +350,7 @@ export default function AddExpenseSheet() {
                 <CategoryIcon id={b.id} size={34} bdg={cats} />
                 {/* minWidth:0 + hyphens: "Supermercado" (77px) não cabia numa
                     célula de 65px a 320px e empurrava a grelha para fora. */}
-                <span style={{ fontSize: 11, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15, minWidth: 0, maxWidth: '100%', overflowWrap: 'anywhere', hyphens: 'auto' }}>
+                <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15, minWidth: 0, maxWidth: '100%', overflowWrap: 'anywhere', hyphens: 'auto' }}>
                   {b.nm}
                 </span>
               </button>
@@ -365,7 +365,7 @@ export default function AddExpenseSheet() {
       </div>
 
       {/* Descrição */}
-      <div className="lb" style={{ marginBottom: 6 }}>Descrição</div>
+      <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Descrição</div>
       <div style={{ position: 'relative', marginBottom: errors.desc ? 0 : 14 }}>
         {resolveBrand(d.desc) && (
           <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', display: 'inline-flex' }}>
@@ -377,19 +377,19 @@ export default function AddExpenseSheet() {
           onChange={(e) => set('desc', e.target.value)}
           placeholder="Ex: Pingo Doce"
           aria-label="Descrição"
-          style={{ ...inputStyle, fontSize: 15, marginBottom: 0, paddingLeft: resolveBrand(d.desc) ? 46 : 16 }}
+          style={{ ...inputStyle, fontSize: 'var(--fs-md)', paddingLeft: resolveBrand(d.desc) ? 'var(--space-7)' : 'var(--space-4)' }}
         />
       </div>
       {errText(errors.desc)}
       {errors.desc && <div style={{ height: 14 }} />}
 
       {/* Conta debitada (opcional) — pré-selecionada com a última usada */}
-      <div className="lb" style={{ marginBottom: 6 }}>Conta debitada (opcional)</div>
+      <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Conta debitada (opcional)</div>
       <select
         value={d.acct}
         onChange={(e) => set('acct', e.target.value)}
         aria-label="Conta debitada (opcional)"
-        style={{ ...inputStyle, appearance: 'none', marginBottom: 14, fontSize: 14 }}
+        style={{ ...inputStyle, appearance: 'none', marginBottom: 'var(--space-4)', fontSize: 'var(--fs-md)' }}
       >
         <option value="">— sem conta —</option>
         {accounts.map((a) => {
@@ -401,13 +401,13 @@ export default function AddExpenseSheet() {
       </select>
 
       {/* Data */}
-      <div className="lb" style={{ marginBottom: 6 }}>Data</div>
+      <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Data</div>
       <input
         type="date"
         value={d.date}
         onChange={(e) => set('date', e.target.value)}
         aria-label="Data"
-        style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 13, marginBottom: 14 }}
+        style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-sm)', marginBottom: 'var(--space-4)' }}
       />
 
       {/* Mais opções — partilhada / tags / nota, fora do caminho dos 5 segundos */}
@@ -417,10 +417,10 @@ export default function AddExpenseSheet() {
       {more && (
         <>
           {/* Shared toggle */}
-          <div className="rw" style={{ padding: '10px 14px', background: 'var(--bg3)', borderRadius: 'var(--r2)', marginBottom: 14 }}>
+          <div className="rw" style={{ padding: 'var(--space-3) var(--space-4)', background: 'var(--bg3)', borderRadius: 'var(--r2)', marginBottom: 'var(--space-4)' }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>Despesa partilhada</div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>Divide o valor por outras pessoas</div>
+              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>Despesa partilhada</div>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-1)' }}>Divide o valor por outras pessoas</div>
             </div>
             <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 26 }}>
               <input
@@ -463,21 +463,21 @@ export default function AddExpenseSheet() {
 
           {d.shared && (
             <>
-              <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+              <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
                 <div style={{ flex: 1 }}>
-                  <div className="lb" style={{ marginBottom: 6 }}>Total (€)</div>
+                  <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Total (€)</div>
                   <input
                     value={d.total}
                     onChange={(e) => set('total', e.target.value)}
                     placeholder="100,00"
                     inputMode="decimal"
                     aria-label="Total (€)"
-                    style={{ ...monoBig, fontSize: 15, padding: '11px 14px' }}
+                    style={{ ...monoBig, fontSize: 'var(--fs-md)', padding: 'var(--space-4) var(--space-4)' }}
                   />
                   {errText(errors.total)}
                 </div>
                 <div style={{ width: 80 }}>
-                  <div className="lb" style={{ marginBottom: 6 }}>Pessoas</div>
+                  <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Pessoas</div>
                   <input
                     value={d.split}
                     onChange={(e) => set('split', e.target.value)}
@@ -485,38 +485,38 @@ export default function AddExpenseSheet() {
                     min="2"
                     max="10"
                     aria-label="Pessoas"
-                    style={{ ...monoBig, fontSize: 15, padding: '11px 12px', textAlign: 'center' }}
+                    style={{ ...monoBig, fontSize: 'var(--fs-md)', padding: 'var(--space-4) var(--space-4)', textAlign: 'center' }}
                   />
                 </div>
               </div>
-              <div className="cd" style={{ padding: '12px 14px', marginBottom: 14, background: 'var(--blue-soft)', borderLeft: '3px solid var(--blue)' }}>
+              <div className="cd" style={{ padding: 'var(--space-4) var(--space-4)', marginBottom: 'var(--space-4)', background: 'var(--blue-soft)', borderLeft: '3px solid var(--blue)' }}>
                 <div className="rw">
-                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)' }}>A tua parte ({splitVal}x split)</div>
-                  <div className="m" style={{ fontSize: 16, fontWeight: 800, color: 'var(--blue)' }}>{fm(calc)}</div>
+                  <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--text2)' }}>A tua parte ({splitVal}x split)</div>
+                  <div className="m" style={{ fontSize: 'var(--fs-lg)', fontWeight: 800, color: 'var(--blue)' }}>{fm(calc)}</div>
                 </div>
               </div>
             </>
           )}
 
           {/* Tags */}
-          <div className="lb" style={{ marginBottom: 6 }}>Tags (opcional)</div>
+          <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Tags (opcional)</div>
           <input
             value={Array.isArray(d.tags) ? d.tags.join(', ') : d.tags || ''}
             onChange={(e) => set('tags', e.target.value)}
             placeholder="Ex: viagem-acores, casa, presente"
             aria-label="Tags (opcional)"
-            style={{ ...inputStyle, fontSize: 13, marginBottom: 14 }}
+            style={{ ...inputStyle, fontSize: 'var(--fs-sm)', marginBottom: 'var(--space-4)' }}
           />
 
           {/* Notes */}
-          <div className="lb" style={{ marginBottom: 6 }}>Nota (opcional)</div>
+          <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Nota (opcional)</div>
           <textarea
             value={d.notes || ''}
             onChange={(e) => set('notes', e.target.value)}
             placeholder="Detalhes ou contexto"
             aria-label="Nota (opcional)"
             rows={2}
-            style={{ ...inputStyle, fontSize: 13, marginBottom: 4, resize: 'vertical', fontFamily: 'var(--font)' }}
+            style={{ ...inputStyle, fontSize: 'var(--fs-sm)', marginBottom: 'var(--space-2)', resize: 'vertical', fontFamily: 'var(--font)' }}
           />
         </>
       )}

@@ -26,23 +26,23 @@ export default function ClosingCard() {
   if (newU || !closing) return null;
 
   return (
-    <div className="cd" style={{ marginBottom: 16, padding: '16px 18px', borderLeft: '3px solid ' + (closing.better ? 'var(--success)' : 'var(--warning)') }}>
-      <div className="rw" style={{ marginBottom: 8 }}>
+    <div className="cd" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-4) var(--space-5)', borderLeft: '3px solid ' + (closing.better ? 'var(--success)' : 'var(--warning)') }}>
+      <div className="rw" style={{ marginBottom: 'var(--space-3)' }}>
         <div className="lb">Fecho de {closing.monthName}</div>
         {closing.deltaPct != null && (
-          <span className="m" style={{ fontSize: 11, fontWeight: 700, color: closing.better ? 'var(--success)' : 'var(--warning)' }}>
+          <span className="m" style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: closing.better ? 'var(--success)' : 'var(--warning)' }}>
             {hidden ? maskPct(closing.deltaPct, hidden) : (closing.deltaPct > 0 ? '+' : '') + Math.round(closing.deltaPct) + '%'} vs média
           </span>
         )}
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 6 }}>
-        <span className="m" style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+        <span className="m" style={{ fontSize: 'var(--fs-2xl)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1 }}>
           {mask(closing.total, hidden, fc)}
         </span>
-        <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, marginBottom: 2 }}>gastos</span>
+        <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)', fontWeight: 600, marginBottom: 'var(--space-1)' }}>gastos</span>
       </div>
       {closing.rate != null && (
-        <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginBottom: 'var(--space-3)' }}>
           Poupaste {mask(closing.saved, hidden, fc)} ({maskPct(closing.rate, hidden)} do rendimento)
         </div>
       )}

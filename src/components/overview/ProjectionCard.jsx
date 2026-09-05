@@ -52,14 +52,14 @@ export default function ProjectionCard() {
   const lastBal = cf.rows[cf.rows.length - 1].balance;
 
   return (
-    <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-      <div className="rw" style={{ marginBottom: 12 }}>
+    <div className="cd" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-5) var(--space-5)' }}>
+      <div className="rw" style={{ marginBottom: 'var(--space-4)' }}>
         <div className="lb">Projeção {forecastMonths} meses</div>
         <div className={'chip ' + (lastBal >= cf.startBalance ? 'up-solid' : 'down-solid')}>
           {mask(lastBal - cf.startBalance, hidden, (v) => (v >= 0 ? '+' : '') + fc(v))}
         </div>
       </div>
-      <div className="ms-bar" style={{ marginBottom: 14 }}>
+      <div className="ms-bar" style={{ marginBottom: 'var(--space-4)' }}>
         {[3, 6, 12].map((m) => (
           <button
             key={m}
@@ -71,40 +71,40 @@ export default function ProjectionCard() {
           </button>
         ))}
       </div>
-      <div style={{ fontSize: 11, color: 'var(--fg-subtle)', marginBottom: 14, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-subtle)', marginBottom: 'var(--space-4)', lineHeight: 1.5 }}>
         Receitas {mask(cf.monthlyIncome, hidden, fc)}/mês · recorrentes {mask(cf.monthlyRecExpense, hidden, fc)} · crédito {mask(cf.loanPay, hidden, fc)} · discricionário {mask(cf.avgDiscretionary, hidden, fc)}
       </div>
 
       {cf.rows.length <= 6 ? (
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 90, marginBottom: 10 }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--space-2)', height: 90, marginBottom: 'var(--space-3)' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)' }}>
             <div style={{ width: '100%', background: 'var(--elevated)', borderRadius: '4px 4px 0 0', height: cfStartPct + '%', minHeight: 4 }} />
-            <div className="m" style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>Hoje</div>
+            <div className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-subtle)' }}>Hoje</div>
           </div>
           {cf.rows.map((r, i) => {
             const pct = (Math.abs(r.balance) / cfMaxAbs) * 100;
             const col = r.balance >= 0 ? 'var(--fg)' : 'var(--danger)';
             return (
-              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <div style={{ width: '100%', background: col, borderRadius: '4px 4px 0 0', height: pct + '%', minHeight: 4 }} />
-                <div className="m" style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>{r.label.split(' ')[0]}</div>
+                <div className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-subtle)' }}>{r.label.split(' ')[0]}</div>
               </div>
             );
           })}
         </div>
       ) : (
-        <svg viewBox="0 0 100 55" preserveAspectRatio="none" style={{ width: '100%', height: 80, marginBottom: 10 }} aria-hidden="true">
+        <svg viewBox="0 0 100 55" preserveAspectRatio="none" style={{ width: '100%', height: 80, marginBottom: 'var(--space-3)' }} aria-hidden="true">
           <polyline points={cfSparkPts} fill="none" stroke="var(--fg)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           <line x1="0" y1={cfZeroY} x2="100" y2={cfZeroY} stroke="var(--border)" strokeWidth="0.5" strokeDasharray="2 2" />
         </svg>
       )}
 
-      <div className="rw m" style={{ fontSize: 11, color: 'var(--fg)' }}>
+      <div className="rw m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg)' }}>
         <span style={{ color: 'var(--fg-muted)' }}>Hoje</span>
         <span style={{ fontWeight: 600 }}>{mask(cf.startBalance, hidden, fc)}</span>
       </div>
       {cfRowsToShow.map((r, i) => (
-        <div key={i} className="rw m" style={{ fontSize: 11, paddingTop: 4 }}>
+        <div key={i} className="rw m" style={{ fontSize: 'var(--fs-xs)', paddingTop: 'var(--space-2)' }}>
           <span style={{ color: 'var(--fg-muted)' }}>{r.label}</span>
           <span style={{ fontWeight: 600, color: r.balance >= 0 ? 'var(--fg)' : 'var(--danger)' }}>{mask(r.balance, hidden, fc)}</span>
         </div>

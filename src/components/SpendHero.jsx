@@ -31,10 +31,10 @@ export default function SpendHero() {
   const month = MONTHS_LONG[new Date().getMonth()];
 
   return (
-    <div className="hero fadeUp" style={{ margin: '6px 20px 16px' }}>
+    <div className="hero fadeUp" style={{ margin: 'var(--space-2) var(--space-5) var(--space-4)' }}>
       <div
         style={{
-          fontSize: 11,
+          fontSize: 'var(--fs-xs)',
           fontWeight: 600,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
@@ -48,10 +48,10 @@ export default function SpendHero() {
 
       {allow.ready ? (
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <div className="m" style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: 6 }}>
+          <div className="m" style={{ fontSize: 'var(--fs-3xl)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: 'var(--space-2)' }}>
             {mask(Math.max(0, allow.perDay), hidden, fm)}
           </div>
-          <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
+          <div style={{ fontSize: 'var(--fs-sm)', opacity: 0.85, marginTop: 'var(--space-2)' }}>
             por dia · {allow.daysLeft} {allow.daysLeft === 1 ? 'dia' : 'dias'} até ao fim de {month}
           </div>
 
@@ -59,7 +59,7 @@ export default function SpendHero() {
               colapsa numa faixa única — a largura dos segmentos revelaria a
               distribuição do orçamento sem passar por texto nenhum. */}
           <div
-            style={{ display: 'flex', height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.22)', overflow: 'hidden', marginTop: 14 }}
+            style={{ display: 'flex', height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.22)', overflow: 'hidden', marginTop: 'var(--space-4)' }}
             aria-hidden="true"
           >
             {hidden ? (
@@ -74,7 +74,7 @@ export default function SpendHero() {
 
           {/* UMA frase, e com agência: diz o que muda se o ritmo continuar. */}
           {forecast.dailyBurn > 0 && (
-            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 10, lineHeight: 1.45 }}>
+            <div style={{ fontSize: 'var(--fs-sm)', opacity: 0.9, marginTop: 'var(--space-3)', lineHeight: 1.45 }}>
               {forecast.overBudget
                 ? 'Faltam-te ' + mask(-forecast.projectedEnd, hidden, fc) +
                   ' para fechar dentro do rendimento a este ritmo (' + mask(forecast.dailyBurn, hidden, fc) + '/dia)'
@@ -84,19 +84,19 @@ export default function SpendHero() {
         </div>
       ) : (
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ fontSize: 13, opacity: 0.9, margin: '10px 0 14px', lineHeight: 1.45 }}>
+          <div style={{ fontSize: 'var(--fs-sm)', opacity: 0.9, margin: 'var(--space-3) 0 var(--space-4)', lineHeight: 1.45 }}>
             Regista o teu rendimento mensal para saber quanto podes gastar por dia.
           </div>
           <button
             type="button"
             onClick={() => open('income')}
             style={{
-              padding: '9px 18px',
+              padding: 'var(--space-3) var(--space-5)',
               border: 'none',
               background: 'rgba(255,255,255,0.9)',
               color: 'var(--primary)',
               borderRadius: 999,
-              fontSize: 12,
+              fontSize: 'var(--fs-sm)',
               fontWeight: 700,
               fontFamily: 'inherit',
               cursor: 'pointer',

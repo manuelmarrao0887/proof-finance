@@ -51,17 +51,17 @@ export default function GoalsView() {
 
   if (goals.length === 0) {
     return (
-      <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
+      <div className="fadeUp" style={{ paddingLeft: 'var(--space-5)', paddingRight: 'var(--space-5)', paddingBottom: 'var(--space-5)' }}>
         <div className="empty">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10" />
             <circle cx="12" cy="12" r="6" />
             <circle cx="12" cy="12" r="2" />
           </svg>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+          <div style={{ fontSize: 'var(--fs-md)', fontWeight: 600, color: 'var(--text)', marginBottom: 'var(--space-2)' }}>
             Ainda não tens metas
           </div>
-          <div style={{ fontSize: 12, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.6 }}>
             Cria a tua primeira meta de poupança:
             <br />
             fundo de emergência, ferias, casa nova...
@@ -80,13 +80,13 @@ export default function GoalsView() {
   const overall = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
 
   return (
-    <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
+    <div className="fadeUp" style={{ paddingLeft: 'var(--space-5)', paddingRight: 'var(--space-5)', paddingBottom: 'var(--space-5)' }}>
       {/* Global progress */}
-      <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
+      <div className="cd" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-5) var(--space-5)' }}>
         <div className="bar" style={{ height: 8 }} role="img" aria-label={'Progresso global ' + maskPct(overall, hidden)}>
           <div className="bar-fill" style={{ width: Math.min(overall, 100) + '%', background: 'var(--primary)' }} />
         </div>
-        <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
+        <div className="rw m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-3)' }}>
           <span>
             {mask(totalCurrent, hidden, fc)} de {mask(totalTarget, hidden, fc)}
           </span>
@@ -119,21 +119,21 @@ export default function GoalsView() {
         const riskText = risk
           ? 'Não chega para o prazo: precisas de ' + mask(risk.needed, hidden, fc) + '/mês' + (risk.monthly > 0 ? ' (+' + mask(risk.gap, hidden, fc) + ')' : '') + ' nos próximos ' + risk.monthsLeft + (risk.monthsLeft === 1 ? ' mês' : ' meses') + '.'
           : undefined;
-        const chipStyle = { border: 'none', background: 'color-mix(in srgb, ' + tone + ' 14%, transparent)', color: tone, fontWeight: 700, padding: '3px 9px', flexShrink: 0 };
+        const chipStyle = { border: 'none', background: 'color-mix(in srgb, ' + tone + ' 14%, transparent)', color: tone, fontWeight: 700, padding: 'var(--space-1) var(--space-3)', flexShrink: 0 };
         // id do painel; só vai a aria-controls enquanto ele existe no DOM.
         const riskId = 'goal-risk-' + g.id;
         const riskOpen = !!risk && openRisk === g.id;
 
         return (
-          <div key={g.id} className="cd fadeUp" style={{ marginBottom: 12, padding: 18, position: 'relative', overflow: 'hidden' }}>
-            <div className="rw" style={{ marginBottom: 12, gap: 10 }}>
+          <div key={g.id} className="cd fadeUp" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-5)', position: 'relative', overflow: 'hidden' }}>
+            <div className="rw" style={{ marginBottom: 'var(--space-4)', gap: 'var(--space-3)' }}>
               <span className="cat goal-icon" style={{ width: 40, height: 40, background: c + '22', color: c }} aria-hidden="true">
                 <Icon name={g.icon || 'goal'} size={20} />
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em' }}>{g.name}</div>
+                <div style={{ fontSize: 'var(--fs-md)', fontWeight: 700, letterSpacing: '-0.01em' }}>{g.name}</div>
                 {g.deadline && (
-                  <div style={{ fontSize: 11, color: daysLeft != null && daysLeft < 30 ? 'var(--orange)' : 'var(--text3)', marginTop: 2, fontWeight: 500 }}>
+                  <div style={{ fontSize: 'var(--fs-xs)', color: daysLeft != null && daysLeft < 30 ? 'var(--orange)' : 'var(--text3)', marginTop: 'var(--space-1)', fontWeight: 500 }}>
                     {daysLeft != null ? (daysLeft > 0 ? daysLeft + ' dias restantes' : 'Prazo passado') : g.deadline}
                   </div>
                 )}
@@ -163,7 +163,7 @@ export default function GoalsView() {
               </button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
               {/* Ring */}
               <div className="ring-wrap">
                 <svg width="72" height="72" viewBox="0 0 72 72">
@@ -178,31 +178,31 @@ export default function GoalsView() {
                     strokeDashoffset={C2 - (pct / 100) * C2}
                   />
                 </svg>
-                <div style={{ position: 'absolute', fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                <div style={{ position: 'absolute', fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--text)' }}>
                   {maskPct(pctAbs, hidden)}
                 </div>
               </div>
               <div style={{ flex: 1 }}>
-                <div className="m" style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em' }}>
+                <div className="m" style={{ fontSize: 'var(--fs-lg)', fontWeight: 800, letterSpacing: '-0.02em' }}>
                   {mask(g.current, hidden, fc)}
                 </div>
-                <div className="m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                <div className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-1)' }}>
                   de {mask(g.target, hidden, fc)}
                 </div>
                 {g.monthly > 0 && rem > 0 ? (
-                  <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text2)', marginTop: 'var(--space-2)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                     <span>
                       {mask(g.monthly, hidden, fc)}/mês · conclui {ymLabel(etaDate(rem, g.monthly))} ({monthsToTarget(rem, g.monthly)} {monthsToTarget(rem, g.monthly) === 1 ? 'mês' : 'meses'})
                     </span>
                     {/* Reforçada pelo "Plano do mês" (envelope budgeting) no Resumo. */}
                     {g.lastAlloc === thisMonth && (
-                      <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--success)', background: 'var(--success-soft, rgba(63,201,122,0.12))', padding: '1px 6px', borderRadius: 999 }}>
+                      <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--success)', background: 'var(--success-soft, rgba(63,201,122,0.12))', padding: 'var(--space-1) var(--space-2)', borderRadius: 999 }}>
                         REFORÇADA ESTE MÊS
                       </span>
                     )}
                   </div>
                 ) : monthly != null ? (
-                  <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6, fontWeight: 600 }}>
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text2)', marginTop: 'var(--space-2)', fontWeight: 600 }}>
                     Sugestão: ~ {mask(monthly, hidden, fc)}/mês para o prazo
                   </div>
                 ) : null}
@@ -211,13 +211,13 @@ export default function GoalsView() {
 
             {/* Explicação do risco, aberta pelo chip "atrasada". */}
             {riskOpen && (
-              <div id={riskId} style={{ fontSize: 11, color: 'var(--warning)', marginTop: 12, fontWeight: 600, lineHeight: 1.4 }}>
+              <div id={riskId} style={{ fontSize: 'var(--fs-xs)', color: 'var(--warning)', marginTop: 'var(--space-4)', fontWeight: 600, lineHeight: 1.4 }}>
                 {riskText}
               </div>
             )}
 
             {/* Quick add buttons */}
-            <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
+            <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
               {QUICK_ADD.map((amt) => (
                 <button
                   key={amt}
@@ -225,13 +225,13 @@ export default function GoalsView() {
                   onClick={() => addToGoal(g.id, amt)}
                   style={{
                     flex: 1,
-                    padding: '8px 0',
+                    padding: 'var(--space-3) 0',
                     border: '1px solid var(--border)',
                     background: 'transparent',
                     color: 'var(--text2)',
                     borderRadius: 8,
                     fontFamily: 'var(--mono)',
-                    fontSize: 11,
+                    fontSize: 'var(--fs-xs)',
                     fontWeight: 600,
                   }}
                 >

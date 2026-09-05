@@ -64,13 +64,13 @@ export default function AccountsByCategory() {
 
   return (
     <>
-      <div className="lb" style={{ marginBottom: 10, paddingLeft: 4 }}>Contas por categoria</div>
+      <div className="lb" style={{ marginBottom: 'var(--space-3)', paddingLeft: 'var(--space-2)' }}>Contas por categoria</div>
       {cats.map((cat) => {
         const items = C.grp[cat];
         const isX = xCat === cat;
         const pctOfAssets = C.tA > 0 ? (C.cT[cat] / C.tA) * 100 : 0;
         return (
-          <div key={cat} style={{ marginBottom: 10 }}>
+          <div key={cat} style={{ marginBottom: 'var(--space-3)' }}>
             <button
               type="button"
               onClick={() => setXCat(isX ? null : cat)}
@@ -82,45 +82,45 @@ export default function AccountsByCategory() {
                 background: 'var(--bg2)',
                 border: 'none',
                 borderRadius: isX ? 'var(--r) var(--r) 0 0' : 'var(--r)',
-                padding: '16px 18px',
+                padding: 'var(--space-4) var(--space-5)',
                 color: 'var(--text)',
                 boxShadow: 'var(--shadow)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', textAlign: 'left' }}>
                 <div style={{ width: 8, height: 40, borderRadius: 4, background: cCol[cat] || 'var(--fg-subtle)' }} />
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 600 }}>{acctCatLabel(cat)}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                  <div style={{ fontSize: 'var(--fs-md)', fontWeight: 600 }}>{acctCatLabel(cat)}</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)', marginTop: 'var(--space-1)' }}>
                     {items.length} contas · {maskPct(pctOfAssets, hidden)}
                   </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' }}>{mask(C.cT[cat], hidden, fc)}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                <span style={{ fontSize: 'var(--fs-lg)', fontWeight: 600, letterSpacing: '-0.01em' }}>{mask(C.cT[cat], hidden, fc)}</span>
                 <Chevron open={isX} />
               </div>
             </button>
             {isX && (
               <div className="fadeIn" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 12px 12px' }}>
                 {items.map((a, i) => (
-                  <div key={a.id || a.b + '_' + a.t + '_' + i} className="rw" style={{ padding: '14px 18px', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+                  <div key={a.id || a.b + '_' + a.t + '_' + i} className="rw" style={{ padding: 'var(--space-4) var(--space-5)', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 500 }}>{a.b}</div>
-                      <div style={{ fontSize: 12, color: 'var(--fg-subtle)', marginTop: 1 }}>
+                      <div style={{ fontSize: 'var(--fs-md)', fontWeight: 500 }}>{a.b}</div>
+                      <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg-subtle)', marginTop: 'var(--space-1)' }}>
                         {a.t}
                         {a.currency && a.currency !== 'EUR' ? (
                           <>
                             {' · '}
-                            <span className="m" style={{ fontSize: 11 }}>{a.currency}</span>
+                            <span className="m" style={{ fontSize: 'var(--fs-xs)' }}>{a.currency}</span>
                           </>
                         ) : null}
                       </div>
-                      {a.n && <div style={{ fontSize: 11, color: 'var(--fg-subtle)', marginTop: 1 }}>{a.n}</div>}
-                      {a.updated && <div className="m" style={{ fontSize: 11, color: 'var(--success)', marginTop: 2 }}>Atualizado {a.updated}</div>}
+                      {a.n && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-subtle)', marginTop: 'var(--space-1)' }}>{a.n}</div>}
+                      {a.updated && <div className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--success)', marginTop: 'var(--space-1)' }}>Atualizado {a.updated}</div>}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{mask(a.v, hidden, fm)}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                      <div className="m" style={{ fontSize: 'var(--fs-md)', fontWeight: 600 }}>{mask(a.v, hidden, fm)}</div>
                       <button
                         type="button"
                         onClick={() => open('balanceHistory', { acctKey: a.custom ? a.id : a.b + '_' + a.t, bank: a.b, type: a.t })}

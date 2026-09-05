@@ -215,8 +215,8 @@ export default function ExpensesView() {
     const today = todayISO();
 
     return (
-      <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
-        <div style={{ position: 'relative', marginBottom: 14 }}>
+      <div className="fadeUp" style={{ paddingLeft: 'var(--space-5)', paddingRight: 'var(--space-5)', paddingBottom: 'var(--space-5)' }}>
+        <div style={{ position: 'relative', marginBottom: 'var(--space-4)' }}>
           <SearchIcon />
           <input
             id="exSearch"
@@ -225,13 +225,13 @@ export default function ExpensesView() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Pesquisar…"
-            style={{ width: '100%', padding: '12px 40px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 16, boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: 'var(--space-4) var(--space-7)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 'var(--fs-lg)', boxSizing: 'border-box' }}
           />
           {q && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fg-subtle)', fontSize: 18, lineHeight: 1, padding: 12, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fg-subtle)', fontSize: 'var(--fs-lg)', lineHeight: 1, padding: 'var(--space-4)', minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               aria-label="Limpar pesquisa"
             >
               &times;
@@ -239,13 +239,13 @@ export default function ExpensesView() {
           )}
         </div>
         {hasTagFilter && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10, padding: '0 4px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-3)', paddingLeft: 'var(--space-2)', paddingRight: 'var(--space-2)' }}>
             {tagFilter.map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => toggleTagFilter(t)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--fg)', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 999, fontSize: 11, fontWeight: 500, fontFamily: 'var(--mono)' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-2) var(--space-3)', border: '1px solid var(--fg)', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 999, fontSize: 'var(--fs-xs)', fontWeight: 500, fontFamily: 'var(--mono)' }}
               >
                 #{t} &times;
               </button>
@@ -254,12 +254,12 @@ export default function ExpensesView() {
         )}
         {/* Filtro por conta/cartão — "quanto saiu deste cartão?" */}
         {acctsWithExp.length > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '0 4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)', paddingLeft: 'var(--space-2)', paddingRight: 'var(--space-2)' }}>
             <select
               value={acctFilter}
               onChange={(e) => setAcctFilter(e.target.value)}
               aria-label="Filtrar por conta"
-              style={{ flex: 1, minWidth: 0, padding: '8px 10px', border: '1px solid ' + (hasAcctFilter ? 'var(--primary)' : 'var(--border)'), background: 'var(--surface)', color: 'var(--text)', borderRadius: 8, fontSize: 12 }}
+              style={{ flex: 1, minWidth: 0, padding: 'var(--space-3) var(--space-3)', border: '1px solid ' + (hasAcctFilter ? 'var(--primary)' : 'var(--border)'), background: 'var(--surface)', color: 'var(--text)', borderRadius: 8, fontSize: 'var(--fs-sm)' }}
             >
               <option value="">Todas as contas</option>
               {acctsWithExp.map((a) => (
@@ -270,28 +270,28 @@ export default function ExpensesView() {
               <button
                 type="button"
                 onClick={() => setAcctFilter('')}
-                style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', borderRadius: 999, padding: '5px 10px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', borderRadius: 999, padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--fs-xs)', cursor: 'pointer', whiteSpace: 'nowrap' }}
               >
                 Limpar
               </button>
             )}
           </div>
         )}
-        <div className="rw" style={{ marginBottom: 10, padding: '0 4px' }}>
+        <div className="rw" style={{ marginBottom: 'var(--space-3)', paddingLeft: 'var(--space-2)', paddingRight: 'var(--space-2)' }}>
           <div className="lb">{matches.length + ' resultado' + (matches.length === 1 ? '' : 's')}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
             {!hidden && activeMonths > 1 && (
               <>
                 <Sparkline values={searchSeries} width={44} height={16} />
-                <span className="m" style={{ fontSize: 10, color: 'var(--text3)' }}>~{mask(searchAvg, hidden, fm)}/mês</span>
+                <span className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)' }}>~{mask(searchAvg, hidden, fm)}/mês</span>
               </>
             )}
-            <div className="m" style={{ fontSize: 13, fontWeight: 600 }}>{mask(tot, hidden, fm)}</div>
+            <div className="m" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{mask(tot, hidden, fm)}</div>
           </div>
         </div>
         {sorted.length === 0 ? (
           <div className="empty">
-            <div style={{ fontSize: 13 }}>{'Sem resultados para "' + searchQuery + '"'}</div>
+            <div style={{ fontSize: 'var(--fs-sm)' }}>{'Sem resultados para "' + searchQuery + '"'}</div>
           </div>
         ) : (
           groupByDay(sorted).map((g) => (
@@ -300,28 +300,28 @@ export default function ExpensesView() {
               {g.items.map(({ x }) => {
                 const b = bdg.find((bb) => bb.id === x.cat);
                 return (
-                  <div key={x.id} className="cd" style={{ marginBottom: 8, padding: '12px 16px' }}>
-                    <div className="rw" style={{ gap: 12 }}>
+                  <div key={x.id} className="cd" style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-4) var(--space-4)' }}>
+                    <div className="rw" style={{ gap: 'var(--space-4)' }}>
                       <MerchantLogo text={x.desc} cat={x.cat} size={40} bdg={bdg} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600 }}>
+                        <div style={{ fontSize: 'var(--fs-md)', fontWeight: 600 }}>
                           {x.desc}
                           {x.shared && (
-                            <span style={{ fontSize: 11, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 5px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
+                            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--blue)', background: 'var(--blue-soft)', padding: 'var(--space-1) var(--space-2)', borderRadius: 8, fontWeight: 600, marginLeft: 'var(--space-2)' }}>
                               /{x.split || 2}
                             </span>
                           )}
                           {x.groupEntryId && (
-                            <span className="chip" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', border: 'none', padding: '1px 8px', fontSize: 10, marginLeft: 4 }}>
+                            <span className="chip" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', border: 'none', padding: 'var(--space-1) var(--space-3)', fontSize: 'var(--fs-xs)', marginLeft: 'var(--space-2)' }}>
                               grupo
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-1)' }}>
                           {(b ? b.nm : '-') + (x.acct ? ' · ' + x.acct : '')}
                         </div>
                         {x.tags && x.tags.length > 0 && (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
                             {x.tags.map((t) => {
                               const on = tagFilter.indexOf(t) > -1;
                               return (
@@ -332,7 +332,7 @@ export default function ExpensesView() {
                                     ev.stopPropagation();
                                     toggleTagFilter(t);
                                   }}
-                                  style={{ fontSize: 11, background: on ? 'var(--fg)' : 'var(--elevated)', color: on ? 'var(--bg)' : 'var(--fg-muted)', padding: '2px 8px', borderRadius: 999, fontWeight: 500, border: '1px solid ' + (on ? 'var(--fg)' : 'var(--border)'), fontFamily: 'var(--mono)', cursor: 'pointer' }}
+                                  style={{ fontSize: 'var(--fs-xs)', background: on ? 'var(--fg)' : 'var(--elevated)', color: on ? 'var(--bg)' : 'var(--fg-muted)', padding: 'var(--space-1) var(--space-3)', borderRadius: 999, fontWeight: 500, border: '1px solid ' + (on ? 'var(--fg)' : 'var(--border)'), fontFamily: 'var(--mono)', cursor: 'pointer' }}
                                 >
                                   #{t}
                                 </button>
@@ -341,8 +341,8 @@ export default function ExpensesView() {
                           </div>
                         )}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{mask(x.amount, hidden, fm)}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        <div className="m" style={{ fontSize: 'var(--fs-md)', fontWeight: 600 }}>{mask(x.amount, hidden, fm)}</div>
                         <button type="button" onClick={() => openExpEdit(x)} className="icon-btn" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Editar despesa">
                           <EditIcon />
                         </button>
@@ -441,13 +441,13 @@ export default function ExpensesView() {
     const dEnd = new Date(dToday.getFullYear(), dToday.getMonth() + 1, 0).getDate();
     const pct = Math.round((dToday.getDate() / dEnd) * 100);
     partialNote = (
-      <div className="m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
+      <div className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-3)' }}>
         {ms[3] + ' parcial · ' + maskPct(pct, hidden) + ' do mês'}
       </div>
     );
   } else if (em === 3 && preview) {
     partialNote = (
-      <div className="m" style={{ fontSize: 11, color: 'var(--signal)', marginTop: 10 }}>Abril parcial</div>
+      <div className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--signal)', marginTop: 'var(--space-3)' }}>Abril parcial</div>
     );
   }
 
@@ -537,9 +537,9 @@ export default function ExpensesView() {
   };
 
   return (
-    <div style={{ padding: '0 20px 24px' }}>
+    <div style={{ paddingLeft: 'var(--space-5)', paddingRight: 'var(--space-5)', paddingBottom: 'var(--space-5)' }}>
       {/* Search bar */}
-      <div style={{ position: 'relative', marginBottom: 12 }}>
+      <div style={{ position: 'relative', marginBottom: 'var(--space-4)' }}>
         <SearchIcon />
         <input
           id="exSearch"
@@ -548,7 +548,7 @@ export default function ExpensesView() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Pesquisar…"
-          style={{ width: '100%', padding: '12px 16px 12px 40px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 16, boxSizing: 'border-box' }}
+          style={{ width: '100%', padding: 'var(--space-4) var(--space-4) var(--space-4) var(--space-7)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 'var(--fs-lg)', boxSizing: 'border-box' }}
         />
       </div>
 
@@ -557,7 +557,7 @@ export default function ExpensesView() {
         <button
           type="button"
           onClick={cleanExpenses}
-          style={{ width: '100%', marginBottom: 12, padding: '10px 14px', border: '1px solid var(--warning)', background: 'var(--orange-soft)', color: 'var(--warning)', borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          style={{ width: '100%', marginBottom: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)', border: '1px solid var(--warning)', background: 'var(--orange-soft)', color: 'var(--warning)', borderRadius: 12, fontSize: 'var(--fs-sm)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-3)' }}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M3 6h18" />
@@ -569,7 +569,7 @@ export default function ExpensesView() {
 
       {/* Tag chips */}
       {tagList.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14, alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', alignItems: 'center' }}>
           {tagList.map((t) => {
             const on = tagFilter.indexOf(t) > -1;
             return (
@@ -577,7 +577,7 @@ export default function ExpensesView() {
                 key={t}
                 type="button"
                 onClick={() => toggleTagFilter(t)}
-                style={{ padding: '5px 10px', border: '1px solid ' + (on ? 'var(--fg)' : 'var(--border)'), background: on ? 'var(--fg)' : 'transparent', color: on ? 'var(--bg)' : 'var(--fg-muted)', borderRadius: 999, fontSize: 11, fontWeight: 500, fontFamily: 'var(--mono)', cursor: 'pointer' }}
+                style={{ padding: 'var(--space-2) var(--space-3)', border: '1px solid ' + (on ? 'var(--fg)' : 'var(--border)'), background: on ? 'var(--fg)' : 'transparent', color: on ? 'var(--bg)' : 'var(--fg-muted)', borderRadius: 999, fontSize: 'var(--fs-xs)', fontWeight: 500, fontFamily: 'var(--mono)', cursor: 'pointer' }}
               >
                 #{t}
               </button>
@@ -587,7 +587,7 @@ export default function ExpensesView() {
             <button
               type="button"
               onClick={clearTagFilter}
-              style={{ padding: '5px 10px', border: 'none', background: 'transparent', color: 'var(--fg-subtle)', borderRadius: 999, fontSize: 11, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }}
+              style={{ padding: 'var(--space-2) var(--space-3)', border: 'none', background: 'transparent', color: 'var(--fg-subtle)', borderRadius: 999, fontSize: 'var(--fs-xs)', fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }}
             >
               Limpar
             </button>
@@ -597,12 +597,12 @@ export default function ExpensesView() {
 
       {/* Filtro por conta (entra no modo de pesquisa filtrada) */}
       {!preview && acctsWithExp.length > 1 && (
-        <div style={{ marginBottom: 10 }}>
+        <div style={{ marginBottom: 'var(--space-3)' }}>
           <select
             value={acctFilter}
             onChange={(e) => setAcctFilter(e.target.value)}
             aria-label="Filtrar despesas por conta"
-            style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 8, fontSize: 12 }}
+            style={{ width: '100%', padding: 'var(--space-3) var(--space-3)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', borderRadius: 8, fontSize: 'var(--fs-sm)' }}
           >
             <option value="">Todas as contas</option>
             {acctsWithExp.map((a) => (
@@ -639,17 +639,17 @@ export default function ExpensesView() {
       </div>
 
       {/* Total card */}
-      <div className="cd" style={{ marginBottom: 16 }}>
+      <div className="cd" style={{ marginBottom: 'var(--space-4)' }}>
         <div className="rw">
           <div>
             <div className="lb">{isQ ? 'Despesas 3M (últimos 3 meses)' : 'DESPESAS ' + ms[em]}</div>
             {/* fc (0 decimais): o MESMO formato do número em todas as vistas. */}
-            <div className="m" style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{mask(tE, hidden, fc)}</div>
+            <div className="m" style={{ fontSize: 'var(--fs-xl)', fontWeight: 800, marginTop: 'var(--space-2)' }}>{mask(tE, hidden, fc)}</div>
           </div>
           {!isQ && em < 3 && salP[em] != null && (
             <div style={{ textAlign: 'right' }}>
               <div className="lb">Salário</div>
-              <div className="m" style={{ fontSize: 18, fontWeight: 600, color: 'var(--success)', marginTop: 4 }}>{mask(salP[em], hidden, fm)}</div>
+              <div className="m" style={{ fontSize: 'var(--fs-lg)', fontWeight: 600, color: 'var(--success)', marginTop: 'var(--space-2)' }}>{mask(salP[em], hidden, fm)}</div>
             </div>
           )}
         </div>
@@ -658,26 +658,26 @@ export default function ExpensesView() {
 
       {/* Recorrentes pendentes do mês selecionado — registar com o dia da cobrança */}
       {pendingRec.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div className="lb" style={{ marginBottom: 8, padding: '0 4px' }}>
+        <div style={{ marginBottom: 'var(--space-4)' }}>
+          <div className="lb" style={{ marginBottom: 'var(--space-2)', paddingLeft: 'var(--space-2)', paddingRight: 'var(--space-2)' }}>
             Recorrentes de {selMonthLabel} ({pendingRec.length})
           </div>
           {pendingRec.map((r) => {
             const b = bdg.find((bb) => bb.id === r.cat);
             return (
-              <div key={r.id} className="cd" style={{ marginBottom: 8, padding: '10px 14px' }}>
-                <div className="rw" style={{ gap: 12 }}>
+              <div key={r.id} className="cd" style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)' }}>
+                <div className="rw" style={{ gap: 'var(--space-4)' }}>
                   <MerchantLogo text={r.name} cat={r.cat} size={36} bdg={bdg} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                    <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{r.name}</div>
+                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-1)' }}>
                       {(b ? b.nm : '-') + ' · dia ' + (r.day || '?') + ' · ' + mask(r.amount, hidden, fm)}
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => registerRec(r)}
-                    style={{ padding: '7px 12px', border: '1px solid var(--primary)', background: 'var(--blue-soft)', color: 'var(--primary)', borderRadius: 999, fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    style={{ padding: 'var(--space-3) var(--space-4)', border: '1px solid var(--primary)', background: 'var(--blue-soft)', color: 'var(--primary)', borderRadius: 999, fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     Registar
                   </button>
@@ -690,13 +690,13 @@ export default function ExpensesView() {
 
       {/* Empty state */}
       {rows.length === 0 && (
-        <div className="empty fadeUp" style={{ padding: '40px 20px' }}>
+        <div className="empty fadeUp" style={{ padding: 'var(--space-7) var(--space-5)' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="2" y="5" width="20" height="14" rx="2" />
             <line x1="2" y1="10" x2="22" y2="10" />
           </svg>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Sem despesas neste período</div>
-          <div style={{ fontSize: 11, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 'var(--space-2)' }}>Sem despesas neste período</div>
+          <div style={{ fontSize: 'var(--fs-xs)', lineHeight: 1.5 }}>
             Toca no <span style={{ color: 'var(--blue)', fontWeight: 700 }}>+</span> em baixo
             <br />
             para adicionar a primeira.
@@ -709,14 +709,14 @@ export default function ExpensesView() {
         <button
           type="button"
           onClick={() => actions.setRolloverOn(!rolloverOn)}
-          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 14px', marginBottom: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 12, cursor: 'pointer' }}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)', marginBottom: 'var(--space-3)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 12, cursor: 'pointer' }}
           aria-pressed={rolloverOn}
         >
           <span style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Transportar saldo</span>
-            <span style={{ fontSize: 11, color: 'var(--text3)' }}>O que sobra ou falta passa para o mês seguinte</span>
+            <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>Transportar saldo</span>
+            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)' }}>O que sobra ou falta passa para o mês seguinte</span>
           </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: rolloverOn ? 'var(--success)' : 'var(--text3)' }}>{rolloverOn ? 'ON' : 'OFF'}</span>
+          <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: rolloverOn ? 'var(--success)' : 'var(--text3)' }}>{rolloverOn ? 'ON' : 'OFF'}</span>
         </button>
       )}
 
@@ -733,40 +733,40 @@ export default function ExpensesView() {
         // Imported/added expenses in this category (orig 1168) — carry stable id.
         const aTxn = addedExp.filter((x) => x.cat === r.id);
         return (
-          <div key={r.id} style={{ marginBottom: 4 }}>
-            <button type="button" className="exp-btn" style={{ alignItems: 'center', gap: 12 }} onClick={() => setXExp(isE ? null : r.id)}>
+          <div key={r.id} style={{ marginBottom: 'var(--space-2)' }}>
+            <button type="button" className="exp-btn" style={{ alignItems: 'center', gap: 'var(--space-4)' }} onClick={() => setXExp(isE ? null : r.id)}>
               <CategoryIcon id={r.id} size={40} bdg={bdg} />
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="rw">
-                  <span style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
                     {r.nm}
                     {r.carried ? (
                       <span
                         title={'Transitado do mês anterior: ' + mask(r.carried, hidden, (v) => (v > 0 ? '+' : '') + fm(v))}
                         aria-label={'Transitado do mês anterior: ' + mask(r.carried, hidden, (v) => (v > 0 ? '+' : '') + fm(v))}
-                        style={{ fontSize: 9, fontWeight: 700, color: r.carried > 0 ? 'var(--success)' : 'var(--signal)', background: r.carried > 0 ? 'var(--success-soft)' : 'var(--signal-soft)', padding: '1px 6px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                        style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: r.carried > 0 ? 'var(--success)' : 'var(--signal)', background: r.carried > 0 ? 'var(--success-soft)' : 'var(--signal-soft)', padding: 'var(--space-1) var(--space-2)', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 'var(--space-1)' }}
                       >
                         <Icon name="recurring" size={9} />
                         {mask(r.carried, hidden, (v) => (v > 0 ? '+' : '') + fm(v))}
                       </span>
                     ) : null}
                   </span>
-                  <div>
-                    <span className="m" style={{ fontSize: 13, fontWeight: 600 }}>{mask(r.val, hidden, fm)}</span>
-                    <span className="m" style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>/ {mask(r.lm, hidden, fm)}</span>
+                  <div style={{ flexShrink: 0 }}>
+                    <span className="m" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{mask(r.val, hidden, fm)}</span>
+                    <span className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginLeft: 'var(--space-2)' }}>/ {mask(r.lm, hidden, fm)}</span>
                   </div>
                 </div>
                 <div className="bar">
                   <div className="bar-fill" style={{ width: Math.min(r.pct, 100) + '%', background: bc, opacity: op }} />
                 </div>
-                <div className="rw" style={{ marginTop: 4 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className="m" style={{ fontSize: 11, color: ov ? 'var(--signal)' : 'var(--text3)' }}>{maskPct(r.pct, hidden)}</span>
+                <div className="rw" style={{ marginTop: 'var(--space-2)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0, overflow: 'hidden' }}>
+                    <span className="m" style={{ fontSize: 'var(--fs-xs)', color: ov ? 'var(--signal)' : 'var(--text3)', flexShrink: 0 }}>{maskPct(r.pct, hidden)}</span>
                     {!hidden && r.series && (
                       <>
                         <Sparkline values={r.series} color={r.trend > 25 ? 'var(--signal)' : r.trend < -25 ? 'var(--success)' : 'var(--text3)'} />
                         {r.trend != null && Math.abs(r.trend) >= 25 && (
-                          <span className="m" style={{ fontSize: 10, fontWeight: 700, color: r.trend > 0 ? 'var(--signal)' : 'var(--success)' }}>
+                          <span className="m" style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: r.trend > 0 ? 'var(--signal)' : 'var(--success)', flexShrink: 0 }}>
                             {(r.trend > 0 ? '+' : '') + Math.round(r.trend)}%
                           </span>
                         )}
@@ -774,9 +774,9 @@ export default function ExpensesView() {
                     )}
                   </span>
                   {ov ? (
-                    <span className="m" style={{ fontSize: 11, color: 'var(--signal)' }}>+{mask(r.val - r.lm, hidden, fm)}</span>
+                    <span className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--signal)', flexShrink: 0 }}>+{mask(r.val - r.lm, hidden, fm)}</span>
                   ) : (
-                    <span className="m" style={{ fontSize: 11, color: 'var(--success)' }}>Resta {mask(r.lm - r.val, hidden, fm)}</span>
+                    <span className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--success)', flexShrink: 0 }}>Resta {mask(r.lm - r.val, hidden, fm)}</span>
                   )}
                 </div>
               </div>
@@ -786,49 +786,49 @@ export default function ExpensesView() {
               <div className="exp-detail">
                 {/* Historical transactions */}
                 {hTxn.map((t, i) => (
-                  <div key={'h' + i} className="rw" style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
-                    <span style={{ fontSize: 12, color: 'var(--text2)' }}>{t[0]}</span>
-                    <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>{mask(t[1], hidden, fm)}</span>
+                  <div key={'h' + i} className="rw" style={{ padding: 'var(--space-2) 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+                    <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text2)' }}>{t[0]}</span>
+                    <span className="m" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{mask(t[1], hidden, fm)}</span>
                   </div>
                 ))}
 
                 {/* Imported / added (editable) */}
                 {aTxn.length > 0 && (
                   <>
-                    {hTxn.length > 0 && <div style={{ borderTop: '1px solid var(--border)', margin: '8px 0' }} />}
-                    <div className="lb" style={{ fontSize: 11, marginBottom: 6 }}>Importadas</div>
+                    {hTxn.length > 0 && <div style={{ borderTop: '1px solid var(--border)', margin: 'var(--space-3) 0' }} />}
+                    <div className="lb" style={{ fontSize: 'var(--fs-xs)', marginBottom: 'var(--space-2)' }}>Importadas</div>
                     {aTxn.map((x, i) => {
                       return (
-                        <div key={'a' + x.id} style={{ padding: '6px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
-                          <div className="rw" style={{ gap: 8 }}>
+                        <div key={'a' + x.id} style={{ padding: 'var(--space-2) 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+                          <div className="rw" style={{ gap: 'var(--space-3)' }}>
                             <MerchantLogo text={x.desc} cat={x.cat} size={26} bdg={bdg} />
-                            <span style={{ fontSize: 12, color: 'var(--text)', flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text)', flex: 1, minWidth: 0 }}>
                               {x.desc}
                               {x.shared && (
-                                <span style={{ fontSize: 11, color: 'var(--blue)', background: 'var(--blue-soft)', padding: '1px 5px', borderRadius: 8, fontWeight: 600, marginLeft: 4 }}>
+                                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--blue)', background: 'var(--blue-soft)', padding: 'var(--space-1) var(--space-2)', borderRadius: 8, fontWeight: 600, marginLeft: 'var(--space-2)' }}>
                                   /{x.split || 2}
                                 </span>
                               )}
                               {x.groupEntryId && (
-                                <span className="chip" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', border: 'none', padding: '1px 8px', fontSize: 10, marginLeft: 4 }}>
+                                <span className="chip" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', border: 'none', padding: 'var(--space-1) var(--space-3)', fontSize: 'var(--fs-xs)', marginLeft: 'var(--space-2)' }}>
                                   grupo
                                 </span>
                               )}
                             </span>
-                            <span className="m" style={{ fontSize: 12, fontWeight: 600 }}>
+                            <span className="m" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>
                               {mask(x.amount, hidden, fm)}
                               {x.shared && x.total != null && (
-                                <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>de {mask(x.total, hidden, fm)}</span>
+                                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginLeft: 'var(--space-2)' }}>de {mask(x.total, hidden, fm)}</span>
                               )}
                             </span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                            <span className="m" style={{ fontSize: 11, color: 'var(--text3)', flex: 1 }}>{fmDateShort(x.date)}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+                            <span className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', flex: 1 }}>{fmDateShort(x.date)}</span>
                             {/* Categoria muda-se via Editar (sheet) — sem seletor por linha. */}
                             <button type="button" onClick={() => openExpEdit(x)} className="icon-btn" style={{ width: 36, height: 36 }} aria-label="Editar despesa">
                               <EditIcon />
                             </button>
-                            <button type="button" onClick={() => deleteExp(x)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 11, cursor: 'pointer', padding: '8px 10px', minHeight: 36 }}>
+                            <button type="button" onClick={() => deleteExp(x)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', fontFamily: 'var(--mono)', fontSize: 'var(--fs-xs)', cursor: 'pointer', padding: 'var(--space-3) var(--space-3)', minHeight: 36 }}>
                               Remover
                             </button>
                           </div>
@@ -839,7 +839,7 @@ export default function ExpensesView() {
                 )}
 
                 {hTxn.length === 0 && aTxn.length === 0 && (
-                  <div className="lb" style={{ padding: '8px 0', color: 'var(--text3)' }}>Sem transações detalhadas</div>
+                  <div className="lb" style={{ padding: 'var(--space-3) 0', color: 'var(--text3)' }}>Sem transações detalhadas</div>
                 )}
               </div>
             )}
@@ -853,7 +853,7 @@ export default function ExpensesView() {
         <button
           type="button"
           onClick={removeMonthExpenses}
-          style={{ width: '100%', marginTop: 20, padding: '10px 14px', border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text3)', borderRadius: 12, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          style={{ width: '100%', marginTop: 'var(--space-5)', padding: 'var(--space-3) var(--space-4)', border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text3)', borderRadius: 12, fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-3)' }}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M3 6h18" />

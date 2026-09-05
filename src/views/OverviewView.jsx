@@ -131,7 +131,7 @@ export default function OverviewView() {
   const topTone = top ? INS_COLOR[top.tone] || 'var(--primary)' : '';
 
   return (
-    <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
+    <div className="fadeUp" style={{ paddingLeft: 'var(--space-5)', paddingRight: 'var(--space-5)', paddingBottom: 'var(--space-5)' }}>
       {/* ── Quick actions (Finany-style) ── */}
       <QuickActions />
 
@@ -152,23 +152,23 @@ export default function OverviewView() {
               .filter(Boolean)
               .join(' · ')
           }
-          style={{ width: '100%', display: 'block', textAlign: 'left', marginBottom: 16, padding: '14px 18px', border: '1px solid var(--border)', cursor: 'pointer' }}
+          style={{ width: '100%', display: 'block', textAlign: 'left', marginBottom: 'var(--space-4)', padding: 'var(--space-4) var(--space-5)', border: '1px solid var(--border)', cursor: 'pointer' }}
         >
           <span className="rw">
             <div className="lb">Grupos</div>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
               <AvatarStack items={groupPeople} size={22} max={4} />
-              <span style={{ fontSize: 11, color: 'var(--text3)' }}>ver</span>
+              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)' }}>ver</span>
             </span>
           </span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', marginTop: 'var(--space-2)' }}>
             {groupsSummary.owedToMe > 0 && (
-              <span className="m" style={{ fontSize: 14, fontWeight: 700, color: 'var(--success)' }}>
+              <span className="m" style={{ fontSize: 'var(--fs-md)', fontWeight: 700, color: 'var(--success)' }}>
                 Amigos devem-te {mask(groupsSummary.owedToMe, hidden, fm)}
               </span>
             )}
             {groupsSummary.owedByMe > 0 && (
-              <span className="m" style={{ fontSize: 14, fontWeight: 700, color: 'var(--signal)' }}>
+              <span className="m" style={{ fontSize: 'var(--fs-md)', fontWeight: 700, color: 'var(--signal)' }}>
                 Deves {mask(groupsSummary.owedByMe, hidden, fm)}
               </span>
             )}
@@ -181,13 +181,13 @@ export default function OverviewView() {
             plano diz o que estava previsto, o ritmo diz o que está a acontecer.
             Os dois lado a lado é a única leitura que se faz durante o mês. ── */}
       {!newU && plan && plan.salaryIn && plan.income > 0 && (
-        <div className="cd" style={{ marginBottom: 16, padding: '16px 18px' }}>
-          <div className="rw" style={{ marginBottom: 10 }}>
+        <div className="cd" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-4) var(--space-5)' }}>
+          <div className="rw" style={{ marginBottom: 'var(--space-3)' }}>
             <div className="lb">Plano do mês</div>
-            <span style={{ fontSize: 11, color: 'var(--text3)' }}>salário recebido</span>
+            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)' }}>salário recebido</span>
           </div>
           {/* Barra de envelopes: fixas · metas · livre */}
-          <div style={{ height: 10, borderRadius: 999, overflow: 'hidden', display: 'flex', marginBottom: 10, background: 'var(--bg3)' }}>
+          <div style={{ height: 10, borderRadius: 999, overflow: 'hidden', display: 'flex', marginBottom: 'var(--space-3)', background: 'var(--bg3)' }}>
             {hidden ? (
               <div style={{ width: '100%', background: 'var(--elevated)' }} />
             ) : (
@@ -198,18 +198,18 @@ export default function OverviewView() {
               </>
             )}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
             {[
               { c: 'var(--warning)', l: 'Fixas', v: plan.fixedTotal },
               { c: 'var(--purple, #7b5fe0)', l: 'Metas', v: plan.goalsTotal },
               { c: 'var(--success)', l: 'Livre', v: plan.free },
             ].map((row) => (
               <div key={row.l} className="rw">
-                <span style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 'var(--fs-sm)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                   <span style={{ width: 8, height: 8, borderRadius: 999, background: row.c, display: 'inline-block' }} />
                   {row.l}
                 </span>
-                <span className="m" style={{ fontSize: 12, fontWeight: 600, color: row.v < 0 ? 'var(--signal)' : 'var(--text)' }}>
+                <span className="m" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: row.v < 0 ? 'var(--signal)' : 'var(--text)' }}>
                   {mask(row.v, hidden, fm)}
                 </span>
               </div>
@@ -217,14 +217,14 @@ export default function OverviewView() {
           </div>
           {plan.goalItems.length > 0 && (
             plan.allocatedGoals ? (
-              <div style={{ fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--success)', fontWeight: 600 }}>
                 Metas já reforçadas este mês.
               </div>
             ) : (
               <button
                 type="button"
                 onClick={applyPlan}
-                style={{ width: '100%', padding: '11px 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                style={{ width: '100%', padding: 'var(--space-4) 0', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 12, fontSize: 'var(--fs-sm)', fontWeight: 600, cursor: 'pointer' }}
               >
                 Reservar {mask(plan.goalsTotal, hidden, fm)} para as metas
               </button>
@@ -233,11 +233,11 @@ export default function OverviewView() {
 
           {/* Ritmo real do mês: gasto + fixas por pagar vs rendimento. */}
           {allow && allow.ready && (
-            <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-              <div className="rw" style={{ marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Ritmo</span>
+            <div style={{ marginTop: 'var(--space-4)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-4)' }}>
+              <div className="rw" style={{ marginBottom: 'var(--space-2)' }}>
+                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Ritmo</span>
                 {pulse && (
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)' }}>
                     Poupança <b style={{ color: pulse.rate >= 20 ? 'var(--success)' : 'var(--text2)' }}>{maskPct(pulse.rate, hidden)}</b>
                   </span>
                 )}
@@ -252,7 +252,7 @@ export default function OverviewView() {
                   </>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-2)' }}>
                 Rendimento {mask(allow.income, hidden, fc)} · gasto {mask(allow.spent, hidden, fc)}
                 {allow.pendingFixed > 0 && ' · fixas por pagar ' + mask(allow.pendingFixed, hidden, fc)}
               </div>
@@ -265,8 +265,8 @@ export default function OverviewView() {
             despesa, ritmo do mês, metas em risco e fixas a vencer na mesma
             lista). Os restantes ficam a um toque, no Relatório. ── */}
       {!newU && top && (
-        <div className="cd" style={{ marginBottom: 16, padding: '10px 12px', borderLeft: '3px solid ' + topTone }}>
-          <div className="rw" style={{ gap: 10, alignItems: 'center' }}>
+        <div className="cd" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)', borderLeft: '3px solid ' + topTone }}>
+          <div className="rw" style={{ gap: 'var(--space-3)', alignItems: 'center' }}>
             {top.subject ? (
               <MerchantLogo text={top.subject.desc} cat={top.subject.cat} size={36} bdg={state.bdg} />
             ) : (
@@ -275,12 +275,12 @@ export default function OverviewView() {
               </span>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: topTone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{maskInsight(top.title)}</div>
+              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: topTone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{maskInsight(top.title)}</div>
               {/* Duas linhas em vez de uma: num telemóvel o texto mais longo
                   (rácio da anomalia) cabia só no title, e num PWA de toque não
                   há hover para o ler. */}
               <div
-                style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-1)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
                 title={maskInsight(top.long || top.detail)}
               >
                 {maskInsight(top.detail)}
@@ -308,7 +308,7 @@ export default function OverviewView() {
             <button
               type="button"
               onClick={() => goTab('report')}
-              style={{ marginTop: 8, padding: 0, border: 'none', background: 'none', color: 'var(--primary)', fontSize: 11, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}
+              style={{ marginTop: 'var(--space-2)', border: 'none', background: 'none', color: 'var(--primary)', fontSize: 'var(--fs-xs)', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}
             >
               Ver mais ({ranked.length - 1})
             </button>
@@ -319,8 +319,8 @@ export default function OverviewView() {
       {/* ── Liquidez (disponível) por conta + Investimentos — protegido por
             PIN/FaceID (o olho fecha sozinho, abrir pede autenticação). ── */}
       {!newU && (liquidez > 0 || investimentos > 0) && (
-        <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-          <div className="rw" style={{ marginBottom: 12 }}>
+        <div className="cd" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-5) var(--space-5)' }}>
+          <div className="rw" style={{ marginBottom: 'var(--space-4)' }}>
             <div className="lb">Disponível</div>
             <button
               type="button"
@@ -332,30 +332,30 @@ export default function OverviewView() {
               {hidden ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
-            <span className="m" style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--space-2)' }}>
+            <span className="m" style={{ fontSize: 'var(--fs-3xl)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1 }}>
               {mv(liquidez)}
             </span>
-            <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginBottom: 4 }}>liquidez</span>
+            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)', fontWeight: 600, marginBottom: 'var(--space-2)' }}>liquidez</span>
           </div>
 
           {/* Detalhe por conta de liquidez */}
           {liqAccounts.length > 0 && (
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginTop: 'var(--space-4)' }}>
               {liqAccounts.map((a, i) => (
                 <div
                   key={(a.id || a.b + '_' + a.t) + '_' + i}
                   className="rw"
-                  style={{ padding: '9px 0', borderTop: i > 0 ? '1px solid var(--border)' : '1px solid var(--border)' }}
+                  style={{ padding: 'var(--space-3) 0', borderTop: i > 0 ? '1px solid var(--border)' : '1px solid var(--border)' }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0 }}>
                     <BankLogo bank={a.b} size={32} />
                     <span style={{ minWidth: 0 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.b}</span>
-                      <span style={{ fontSize: 11, color: 'var(--text3)' }}>{a.t}</span>
+                      <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.b}</span>
+                      <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)' }}>{a.t}</span>
                     </span>
                   </span>
-                  <span className="m" style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{mv(a.v)}</span>
+                  <span className="m" style={{ fontSize: 'var(--fs-md)', fontWeight: 600, whiteSpace: 'nowrap' }}>{mv(a.v)}</span>
                 </div>
               ))}
             </div>
@@ -364,9 +364,9 @@ export default function OverviewView() {
           {/* Contas de investimento (resumido) — nome explícito porque não é o
               mesmo número que as posições detalhadas mostram em Investimentos
               (ver investmentAccountsValue vs positionsValue em lib/metrics.js). */}
-          <div className="rw" style={{ marginTop: 14, background: 'var(--elevated)', borderRadius: 14, padding: '10px 14px' }}>
-            <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Contas de investimento</span>
-            <span className="m" style={{ fontSize: 16, fontWeight: 600, color: 'var(--secondary)' }}>{mv(investimentos)}</span>
+          <div className="rw" style={{ marginTop: 'var(--space-4)', background: 'var(--elevated)', borderRadius: 14, padding: 'var(--space-3) var(--space-4)' }}>
+            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Contas de investimento</span>
+            <span className="m" style={{ fontSize: 'var(--fs-lg)', fontWeight: 600, color: 'var(--secondary)' }}>{mv(investimentos)}</span>
           </div>
         </div>
       )}
@@ -375,8 +375,8 @@ export default function OverviewView() {
             "Podes gastar hoje" não tem números para dar. Com rendimento seria
             a mesma informação com outra definição de despesa. ── */}
       {!(allow && allow.ready) && (!newU || (state.addedExp || []).length > 0 || (state.incomes || []).length > 0) && (
-        <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-          <div className="rw" style={{ marginBottom: 14 }}>
+        <div className="cd" style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-5) var(--space-5)' }}>
+          <div className="rw" style={{ marginBottom: 'var(--space-4)' }}>
             <div className="lb">Resumo · {curMonth}</div>
             {ms.rate > 0 ? (
               <div className="chip up-solid">{maskPct(ms.rate, hidden)} poupado</div>
@@ -385,33 +385,33 @@ export default function OverviewView() {
             ) : null}
           </div>
           <div className="g3">
-            <div style={{ background: 'var(--success-soft)', borderRadius: 14, padding: '12px 14px' }}>
-              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            <div style={{ background: 'var(--success-soft)', borderRadius: 14, padding: 'var(--space-4) var(--space-4)' }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Receita
               </div>
-              <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)', marginTop: 4 }}>
+              <div className="m" style={{ fontSize: 'var(--fs-md)', fontWeight: 600, color: 'var(--success)', marginTop: 'var(--space-2)' }}>
                 {ms.inc > 0 ? mask(ms.inc, hidden, fc) : '—'}
               </div>
             </div>
-            <div style={{ background: 'var(--signal-soft)', borderRadius: 14, padding: '12px 14px' }}>
-              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            <div style={{ background: 'var(--signal-soft)', borderRadius: 14, padding: 'var(--space-4) var(--space-4)' }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Despesa
               </div>
-              <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--signal)', marginTop: 4 }}>
+              <div className="m" style={{ fontSize: 'var(--fs-md)', fontWeight: 600, color: 'var(--signal)', marginTop: 'var(--space-2)' }}>
                 {mask(ms.exp, hidden, fc)}
               </div>
             </div>
-            <div style={{ background: 'var(--blue-soft)', borderRadius: 14, padding: '12px 14px' }}>
-              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            <div style={{ background: 'var(--blue-soft)', borderRadius: 14, padding: 'var(--space-4) var(--space-4)' }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Saldo
               </div>
-              <div className="m" style={{ fontSize: 15, fontWeight: 600, color: ms.saved >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 4 }}>
+              <div className="m" style={{ fontSize: 'var(--fs-md)', fontWeight: 600, color: ms.saved >= 0 ? 'var(--success)' : 'var(--signal)', marginTop: 'var(--space-2)' }}>
                 {mask(ms.saved, hidden, (v) => (v >= 0 ? '+' : '') + fc(v))}
               </div>
             </div>
           </div>
           {ms.inc > 0 && (
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginTop: 'var(--space-4)' }}>
               <div className="bar" style={{ height: 6 }}>
                 <div className="bar-fill" style={{ width: ratePct + '%', background: 'var(--success)' }} />
               </div>

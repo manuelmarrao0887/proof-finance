@@ -131,9 +131,9 @@ export default function AcctModal() {
 
   if (!isOpen) return null;
 
-  const inputStyle = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 16, boxSizing: 'border-box', marginBottom: 14 };
-  const selectStyle = { width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 14, marginBottom: 14 };
-  const labelStyle = { display: 'block', marginBottom: 6 };
+  const inputStyle = { width: '100%', padding: 'var(--space-4) var(--space-4)', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 'var(--fs-lg)', boxSizing: 'border-box', marginBottom: 'var(--space-4)' };
+  const selectStyle = { width: '100%', padding: 'var(--space-4) var(--space-4)', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontSize: 'var(--fs-md)', marginBottom: 'var(--space-4)' };
+  const labelStyle = { display: 'block', marginBottom: 'var(--space-2)' };
 
   return (
     <Sheet open={isOpen} onClose={close} title={isEdit ? 'Editar conta' : 'Nova conta'}>
@@ -158,7 +158,7 @@ export default function AcctModal() {
       </select>
 
       {/* Value/Plafond + currency */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <div style={{ flex: 1 }}>
           <label className="lb" style={labelStyle} htmlFor="acVal">{isCard ? 'Limite mensal' : 'Saldo'}</label>
           <input
@@ -167,7 +167,7 @@ export default function AcctModal() {
             onChange={(e) => set(isCard ? 'plafond' : 'value', e.target.value)}
             placeholder="0,00"
             inputMode="decimal"
-            style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontFamily: 'var(--mono)', fontSize: 17, fontWeight: 500, boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: 'var(--space-4) var(--space-4)', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontFamily: 'var(--mono)', fontSize: 'var(--fs-lg)', fontWeight: 500, boxSizing: 'border-box' }}
           />
         </div>
         <div style={{ width: 96 }}>
@@ -176,7 +176,7 @@ export default function AcctModal() {
             id="acCur"
             value={draft.currency}
             onChange={(e) => set('currency', e.target.value)}
-            style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontFamily: 'var(--mono)', fontSize: 14, textAlign: 'center' }}
+            style={{ width: '100%', padding: 'var(--space-4) var(--space-4)', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 8, fontFamily: 'var(--mono)', fontSize: 'var(--fs-md)', textAlign: 'center' }}
           >
             {CURRENCIES.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -185,7 +185,7 @@ export default function AcctModal() {
         </div>
       </div>
       {isCard && (
-        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: -6, marginBottom: 14, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: -6, marginBottom: 'var(--space-4)', lineHeight: 1.5 }}>
           O saldo do cartão é a <b>dívida</b> — calculada pelas despesas do cartão menos os pagamentos. Não a introduzes aqui.
           {isEdit && (
             <> Dívida atual: <b style={{ color: 'var(--text)' }}>{fm(cardDebt)}</b> · disponível ~{fm(Math.max(0, (parseFloat((draft.plafond || '0').replace(',', '.')) || 0) - cardDebt))}.</>
@@ -193,7 +193,7 @@ export default function AcctModal() {
         </div>
       )}
       {isCard && (
-        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
           <div style={{ flex: 1 }}>
             <label className="lb" style={labelStyle} htmlFor="acLast4">Últimos 4 dígitos</label>
             <input
@@ -203,12 +203,12 @@ export default function AcctModal() {
               placeholder="2872"
               inputMode="numeric"
               maxLength={4}
-              style={{ ...inputStyle, marginBottom: 0, fontFamily: 'var(--mono)', letterSpacing: '0.2em' }}
+              style={{ ...inputStyle, marginBlockEnd: 0, fontFamily: 'var(--mono)', letterSpacing: '0.2em' }}
             />
           </div>
           <div style={{ flex: 1 }}>
             <label className="lb" style={labelStyle} htmlFor="acNet">Rede</label>
-            <select id="acNet" value={draft.network} onChange={(e) => set('network', e.target.value)} style={{ ...selectStyle, marginBottom: 0 }}>
+            <select id="acNet" value={draft.network} onChange={(e) => set('network', e.target.value)} style={{ ...selectStyle, marginBlockEnd: 0 }}>
               <option value="">Sem rede</option>
               <option value="mastercard">Mastercard</option>
               <option value="visa">Visa</option>
@@ -219,14 +219,14 @@ export default function AcctModal() {
 
       {/* Note */}
       <label className="lb" style={labelStyle} htmlFor="acNote">Nota (opcional)</label>
-      <input id="acNote" value={draft.note} onChange={(e) => set('note', e.target.value)} placeholder="Juros, IBAN parcial, etc." style={{ ...inputStyle, fontSize: 14, marginBottom: 22 }} />
+      <input id="acNote" value={draft.note} onChange={(e) => set('note', e.target.value)} placeholder="Juros, IBAN parcial, etc." style={{ ...inputStyle, fontSize: 'var(--fs-md)', marginBottom: 'var(--space-5)' }} />
 
       {/* Save */}
       <PrimaryButton onClick={saveAcct}>
         {isEdit ? 'Guardar alterações' : 'Adicionar conta'}
       </PrimaryButton>
       {isEdit && (
-        <ConfirmButton label="Eliminar conta" confirmLabel="Confirmar eliminação" onConfirm={deleteAcct} style={{ marginTop: 8 }} />
+        <ConfirmButton label="Eliminar conta" confirmLabel="Confirmar eliminação" onConfirm={deleteAcct} style={{ marginTop: 'var(--space-3)' }} />
       )}
     </Sheet>
   );
