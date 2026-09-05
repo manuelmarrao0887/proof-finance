@@ -19,3 +19,26 @@ describe('navegação temporal única', () => {
     });
   }
 });
+
+describe('nota "parcial" em Despesas', () => {
+  it('mostra "parcial" apenas quando o mês selecionado é o actual e não está no fim do mês', async () => {
+    const today = new Date();
+    const isEndOfMonth = today.getDate() >= 28;
+
+    // Com mOff=-1 o mês selecionado é o anterior, portanto a nota não deve aparecer
+    const { container: containerPrev } = await renderWithStore(<ExpensesView />, {
+      fixture: richFixture(),
+      onReady: ({ actions }) => actions.setMOff(-1),
+    });
+    expect(containerPrev.textContent).not.toContain('parcial');
+    cleanup();
+
+    // Com estado padrão (mês actual), a nota aparece só se não estamos no fim do mês
+    const { container: containerToday } = await renderWithStore(<ExpensesView />, { fixture: richFixture() });
+    if (!isEndOfMonth) {
+      expect(containerToday.textContent).toContain('parcial');
+    } else {
+      expect(containerToday.textContent).not.toContain('parcial');
+    }
+  });
+});

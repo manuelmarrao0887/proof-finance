@@ -7,11 +7,13 @@ import { initialPersisted } from '../store/store.jsx';
 import { monthSpend, netWorth } from '../lib/metrics.js';
 import { fc, fm } from '../lib/format.js';
 import { todayISO } from '../lib/format.js';
+import { monthKeyAt } from '../lib/months.js';
 import ContextStrip from '../components/ContextStrip.jsx';
 import ExpensesView from '../views/ExpensesView.jsx';
 import ReportView from '../views/ReportView.jsx';
 import CalendarView from '../views/CalendarView.jsx';
 import ChartsView from '../views/ChartsView.jsx';
+import TransactionsView from '../views/TransactionsView.jsx';
 vi.mock('../firebase/client.js', () => ({ auth: null, db: null, IS_FILE: false, initError: null, onAuth: () => () => {}, setAuthPersistenceLocal: () => Promise.resolve(), signInGoogle: () => Promise.resolve(), signOutUser: () => Promise.resolve(), signInEmail: () => Promise.resolve(), registerEmail: () => Promise.resolve(), getIdToken: () => Promise.resolve(null), loadUserDoc: () => Promise.resolve(null), saveUserDoc: () => Promise.resolve() }));
 vi.mock('../firebase/data.js', () => ({ loadUserData: () => Promise.resolve(null), syncUserData: () => Promise.resolve(), computeDiff: () => ({ upserts: [], deletes: [], root: null }), SUBCOLLECTIONS: {} }));
 afterEach(() => cleanup());
@@ -38,5 +40,19 @@ describe('um número, uma fórmula', () => {
     cleanup();
     const b = await renderWithStore(<ChartsView />, { fixture: richFixture() });
     expect(b.container.textContent).toContain(fm(net));
+  });
+  it('ContextStrip/expenses mostra o mês selecionado via mOff, não sempre o mês actual', async () => {
+    // mOff=-1 deslocaria a janela um mês para trás (monthKeyAt(3, -1) é o mês anterior ao actual)
+    const prevMonthKey = monthKeyAt(3, -1);
+    const expected = fc(monthSpend(state(), prevMonthKey));
+    const { container } = await renderWithStore(<ContextStrip tab="expenses" />, {
+      fixture: richFixture(),
+      onReady: ({ actions }) => actions.setMOff(-1),
+    });
+    expect(container.textContent).toContain(expected);
+  });
+  it('ContextStrip/transactions mostra "Gastos do mês" como tab expenses', async () => {
+    const { container } = await renderWithStore(<ContextStrip tab="transactions" />, { fixture: richFixture() });
+    expect(container.textContent).toContain('Gastos do mês');
   });
 });

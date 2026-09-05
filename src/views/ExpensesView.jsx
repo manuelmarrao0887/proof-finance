@@ -415,7 +415,11 @@ export default function ExpensesView() {
 
   // Partial-month note (orig 1132-1139).
   let partialNote = null;
-  if (em === 3 && !newUser && !preview) {
+  const today = new Date();
+  const todayMonth = todayISO().slice(0, 7);
+  const selectedMonth = !preview && em >= 0 && em <= 3 ? monthKeyAt(em, mOff) : null;
+  const isCurrentMonth = selectedMonth === todayMonth;
+  if (em === 3 && !newUser && !preview && isCurrentMonth && today.getDate() < 28) {
     const dToday = new Date();
     const dEnd = new Date(dToday.getFullYear(), dToday.getMonth() + 1, 0).getDate();
     const pct = Math.round((dToday.getDate() / dEnd) * 100);

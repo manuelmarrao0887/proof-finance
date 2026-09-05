@@ -18,6 +18,7 @@ import { totalValue } from '../lib/investments.js';
 import { monthSpend } from '../lib/metrics.js';
 import { computeBalances, groupTotals, isSettled } from '../lib/split.js';
 import { fm, fc, mask, maskPct, todayISO } from '../lib/format.js';
+import { monthKeyAt } from '../lib/months.js';
 import Amount from './Amount.jsx';
 
 export default function ContextStrip({ tab: tabProp }) {
@@ -36,11 +37,11 @@ export default function ContextStrip({ tab: tabProp }) {
   let valAmount = null;
   let valFmt = fc;
 
-  if (tab === 'expenses') {
+  if (tab === 'expenses' || tab === 'transactions') {
     // O mesmo número que a vista mostra: monthSpend, a ÚNICA fórmula de
     // despesas do mês (ver src/lib/metrics.js) — antes cada vista somava por
     // sua conta e os números divergiam (715 no topo, 675 em baixo).
-    const key = todayISO().slice(0, 7);
+    const key = monthKeyAt(3, state.mOff);
     const spent = monthSpend(state, key);
     label = 'Gastos do mês';
     valAmount = spent;

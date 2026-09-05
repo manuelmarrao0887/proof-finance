@@ -15,6 +15,7 @@ import RecurringView from '../views/RecurringView.jsx';
 import GoalsView from '../views/GoalsView.jsx';
 import CalendarView from '../views/CalendarView.jsx';
 import GroupsView from '../views/GroupsView.jsx';
+import TransactionsView from '../views/TransactionsView.jsx';
 import { mask, maskPct, maskText } from '../lib/format.js';
 
 vi.mock('../firebase/client.js', () => ({ auth: null, db: null, IS_FILE: false, initError: null, onAuth: () => () => {}, setAuthPersistenceLocal: () => Promise.resolve(), signInGoogle: () => Promise.resolve(), signOutUser: () => Promise.resolve(), signInEmail: () => Promise.resolve(), registerEmail: () => Promise.resolve(), getIdToken: () => Promise.resolve(null), loadUserDoc: () => Promise.resolve(null), saveUserDoc: () => Promise.resolve() }));
@@ -42,6 +43,7 @@ const VIEWS = [
   ['SpendHero', () => <SpendHero />],
   ['Overview', () => <OverviewView />],
   ['Expenses', () => <ExpensesView />],
+  ['Transactions', () => <TransactionsView />],
   ['Tax', () => <TaxView />],
   ['Report', () => <ReportView />],
   ['Incomes', () => <IncomesView />],

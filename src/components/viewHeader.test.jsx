@@ -29,7 +29,7 @@ describe('cabeçalho de vista e URL', () => {
     await renderWithStore(<Shell />, { fixture: richFixture(), tab: 'cal' });
     expect(screen.getByRole('heading', { level: 1, name: 'Calendário' })).toBeTruthy();
     expect(window.location.search).toContain('tab=cal');
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Voltar' })); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Voltar ao Resumo' })); });
     expect(screen.queryByRole('heading', { level: 1, name: 'Calendário' })).toBeNull();
     expect(window.location.search).not.toContain('tab=cal');
   });

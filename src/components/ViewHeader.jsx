@@ -9,7 +9,7 @@ import React from 'react';
 export default function ViewHeader({ title, sub, onBack }) {
   return (
     <div className="vhead">
-      <button type="button" aria-label="Voltar" onClick={onBack}>
+      <button type="button" aria-label="Voltar ao Resumo" onClick={onBack}>
         ‹
       </button>
       <h1>{title}</h1>
