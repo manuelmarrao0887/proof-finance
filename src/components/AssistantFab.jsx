@@ -71,7 +71,7 @@ export default function AssistantFab() {
         onClick={() => open('assistant')}
         aria-label="Abrir assistente de IA"
       >
-        <Icon name="sparkle" size={22} />
+        <Icon name="chat" size={22} />
       </button>
     </div>
   );

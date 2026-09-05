@@ -110,7 +110,7 @@ export default function Hero() {
             <polyline
               points={sparkPts}
               fill="none"
-              stroke="rgba(255,255,255,0.9)"
+              stroke="var(--primary)"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"

@@ -163,11 +163,11 @@ select option{background:var(--bg2);color:var(--text)}
 .ms-bar.ms-wrap .ms{padding:8px 4px}
 .ms{flex:1;padding:8px 0;border:none;border-radius:11px;font-size:12px;font-weight:500;background:transparent;color:var(--fg-muted);transition:all 0.2s;font-family:var(--mono);letter-spacing:0.04em}
 .ms.on{background:var(--primary);color:#fff;border:none;box-shadow:0 2px 6px rgba(59,111,238,0.30)}
-.hero{position:relative;background:var(--grad-hero);border-radius:24px;padding:24px;color:#fff;overflow:hidden;box-shadow:var(--shadow-hero)}
+.hero{position:relative;background:var(--surface);color:var(--fg);border:1px solid var(--border);border-radius:24px;padding:24px;overflow:hidden;box-shadow:var(--shadow)}
 .hero::before,.hero::after{content:none}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:500;font-variant-numeric:tabular-nums;font-family:var(--mono);letter-spacing:0.04em}
-.chip.up{background:rgba(255,255,255,0.14);color:var(--bg);border:1px solid rgba(255,255,255,0.18)}
-.chip.down{background:rgba(255,255,255,0.14);color:var(--bg);border:1px solid rgba(255,255,255,0.18)}
+.chip.up{background:var(--success-soft);color:var(--success);border:1px solid var(--success-soft)}
+.chip.down{background:var(--signal-soft);color:var(--danger);border:1px solid var(--signal-soft)}
 .chip.up-solid{background:transparent;color:var(--success);border:1px solid var(--border)}
 .chip.down-solid{background:transparent;color:var(--danger);border:1px solid var(--border)}
 .icon-btn{width:44px;height:44px;border:1px solid var(--border);background:var(--surface);border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--fg-muted)}
@@ -212,7 +212,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
    páginas (ver AssistantFab.jsx). Mesmo visual do .fab do bnav-center; a
    posição fixed/z-index vem inline no componente (depende do modo mobile/
    desktop), por isso aqui só o aspeto do botão em si. */
-.assistant-fab{width:54px;height:54px;border-radius:999px;background:var(--grad-hero);color:#fff;display:flex;align-items:center;justify-content:center;border:none;box-shadow:var(--shadow-hero);transition:transform 0.18s var(--ease-ios)}
+.assistant-fab{width:54px;height:54px;border-radius:999px;background:var(--secondary);color:#fff;display:flex;align-items:center;justify-content:center;border:none;box-shadow:var(--shadow-hero);transition:transform 0.18s var(--ease-ios)}
 .assistant-fab:active{transform:scale(0.88)}
 /* Safe-area top header */
 .app-header{padding-top:calc(8px + var(--safe-top))}

@@ -59,15 +59,15 @@ export default function SpendHero() {
               colapsa numa faixa única — a largura dos segmentos revelaria a
               distribuição do orçamento sem passar por texto nenhum. */}
           <div
-            style={{ display: 'flex', height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.22)', overflow: 'hidden', marginTop: 'var(--space-4)' }}
+            style={{ display: 'flex', height: 6, borderRadius: 999, background: 'var(--border)', overflow: 'hidden', marginTop: 'var(--space-4)' }}
             aria-hidden="true"
           >
             {hidden ? (
-              <div style={{ width: '100%', background: 'rgba(255,255,255,0.4)' }} />
+              <div style={{ width: '100%', background: 'var(--elevated)' }} />
             ) : (
               <>
-                <div style={{ width: Math.min(100, (allow.spent / Math.max(1, allow.income)) * 100) + '%', background: '#fff' }} />
-                <div style={{ width: Math.min(100, (allow.pendingFixed / Math.max(1, allow.income)) * 100) + '%', background: 'rgba(255,255,255,0.55)' }} />
+                <div style={{ width: Math.min(100, (allow.spent / Math.max(1, allow.income)) * 100) + '%', background: 'var(--primary)' }} />
+                <div style={{ width: Math.min(100, (allow.pendingFixed / Math.max(1, allow.income)) * 100) + '%', background: 'var(--fg-subtle)' }} />
               </>
             )}
           </div>
@@ -93,8 +93,8 @@ export default function SpendHero() {
             style={{
               padding: 'var(--space-3) var(--space-5)',
               border: 'none',
-              background: 'rgba(255,255,255,0.9)',
-              color: 'var(--primary)',
+              background: 'var(--primary)',
+              color: '#fff',
               borderRadius: 999,
               fontSize: 'var(--fs-sm)',
               fontWeight: 700,
