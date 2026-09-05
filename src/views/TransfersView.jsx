@@ -10,6 +10,7 @@ import { useConfirm } from '../components/ConfirmSheet.jsx';
 import { snapshotSlices } from '../lib/snapshot.js';
 import { fm, fmDateShort } from '../lib/format.js';
 import { BankLogo } from '../components/MerchantLogo.jsx';
+import Amount from '../components/Amount.jsx';
 
 export default function TransfersView() {
   const { state, actions } = useStore();
@@ -63,7 +64,7 @@ export default function TransfersView() {
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{fmDateShort(t.date)}{t.note ? ' · ' + t.note : ''}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span className="m" style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}>{mv(t.amount)}</span>
+                <Amount value={t.amount} kind="neutral" hidden={hidden} style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }} />
                 <button type="button" onClick={() => remove(t)} aria-label="Remover transferência" style={{ background: 'none', border: 'none', color: 'var(--signal)', cursor: 'pointer', padding: 4 }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                 </button>

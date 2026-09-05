@@ -17,6 +17,7 @@ import ClosingCard from '../components/overview/ClosingCard.jsx';
 import HealthCard from '../components/overview/HealthCard.jsx';
 import ProjectionCard from '../components/overview/ProjectionCard.jsx';
 import SubscriptionsCard from '../components/overview/SubscriptionsCard.jsx';
+import Amount from '../components/Amount.jsx';
 
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -206,7 +207,7 @@ export default function ReportView() {
                   <CategoryIcon id={x.cat} size={26} />
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.desc}</span>
                 </span>
-                <span className="m" style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{mask(x.amount, hidden, fm)}</span>
+                <Amount value={x.amount} kind="out" hidden={hidden} style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }} />
               </div>
             ))}
           </div>

@@ -16,6 +16,7 @@ import { windowLabels, monthKeyAt } from '../lib/months.js';
 import MonthNav from '../components/MonthNav.jsx';
 import { fc, fm, mask } from '../lib/format.js';
 import { isPreviewMode } from '../lib/finance.js';
+import Amount from '../components/Amount.jsx';
 
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -175,7 +176,7 @@ export default function IncomesView() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div className="m" style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)' }}>{mask(i.amount || 0, hidden, (v) => '+' + fm(v))}</div>
+                  <Amount value={i.amount || 0} kind="in" hidden={hidden} style={{ fontSize: 15, fontWeight: 600 }} />
                   <button
                     type="button"
                     onClick={() => open('income', { id: i.id })}

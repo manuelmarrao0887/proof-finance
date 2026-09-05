@@ -18,6 +18,7 @@ import MerchantLogo, { BrandMark } from '../components/MerchantLogo.jsx';
 import StatTiles from '../components/StatTiles.jsx';
 import Icon from '../components/Icon.jsx';
 import { resolveBrand } from '../lib/brands.jsx';
+import Amount from '../components/Amount.jsx';
 
 const MONTHS_SHORT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 // Marcas que quase toda a gente tem; aparecem como sugestão quando a lista é curta.
@@ -146,7 +147,7 @@ export default function RecurringView() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div className="m" style={{ fontSize: 15, fontWeight: 600 }}>{mask(r.amount, hidden, fm)}</div>
+                <Amount value={r.amount} kind="out" hidden={hidden} style={{ fontSize: 15, fontWeight: 600 }} />
                 <button
                   type="button"
                   onClick={() => open('rec', { id: r.id })}

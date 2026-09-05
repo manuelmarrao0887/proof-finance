@@ -17,7 +17,8 @@ import { estimateDeductions } from '../lib/irs.js';
 import { totalValue } from '../lib/investments.js';
 import { monthSpend } from '../lib/metrics.js';
 import { computeBalances, groupTotals, isSettled } from '../lib/split.js';
-import { fc, mask, maskPct, todayISO } from '../lib/format.js';
+import { fm, fc, mask, maskPct, todayISO } from '../lib/format.js';
+import Amount from './Amount.jsx';
 
 export default function ContextStrip({ tab: tabProp }) {
   const { state, currentUser } = useStore();
@@ -31,6 +32,9 @@ export default function ContextStrip({ tab: tabProp }) {
   let label = '';
   let val = '';
   let col = 'var(--text)';
+  let valKind = 'neutral';
+  let valAmount = null;
+  let valFmt = fc;
 
   if (tab === 'expenses') {
     // O mesmo número que a vista mostra: monthSpend, a ÚNICA fórmula de
@@ -39,7 +43,8 @@ export default function ContextStrip({ tab: tabProp }) {
     const key = todayISO().slice(0, 7);
     const spent = monthSpend(state, key);
     label = 'Gastos do mês';
-    val = mask(spent, hidden, fc);
+    valAmount = spent;
+    valKind = 'neutral';
     col = 'var(--signal)';
   } else if (tab === 'income') {
     let tot = 0;
@@ -92,7 +97,8 @@ export default function ContextStrip({ tab: tabProp }) {
       if (a.c === CARD_CAT) debt += a.used || 0;
     });
     label = 'Dívida dos cartões';
-    val = mask(debt, hidden, fc);
+    valAmount = debt;
+    valKind = 'neutral';
     col = debt > 0 ? 'var(--signal)' : 'var(--success)';
   } else if (tab === 'tax') {
     const ded = estimateDeductions(state.addedExp, new Date().getFullYear());
@@ -136,9 +142,13 @@ export default function ContextStrip({ tab: tabProp }) {
         style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
       >
         <div className="lb">{label}</div>
-        <div className="m" style={{ fontSize: 16, fontWeight: 800, color: col }}>
-          {val}
-        </div>
+        {valAmount != null ? (
+          <Amount value={valAmount} kind={valKind} hidden={hidden} fmt={valFmt} style={{ fontSize: 16, fontWeight: 800, color: col }} />
+        ) : (
+          <div className="m" style={{ fontSize: 16, fontWeight: 800, color: col }}>
+            {val}
+          </div>
+        )}
       </div>
     </div>
   );

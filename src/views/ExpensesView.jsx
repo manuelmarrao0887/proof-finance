@@ -34,6 +34,7 @@ import { fm, fc, mask, maskPct, normalizeStmtDate, fmDateShort, todayISO } from 
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import MerchantLogo from '../components/MerchantLogo.jsx';
 import Icon from '../components/Icon.jsx';
+import Amount from '../components/Amount.jsx';
 import { dedupeAddedExp } from '../lib/dedupe.js';
 import { monthSpend } from '../lib/metrics.js';
 import { monthEffectiveLimits } from '../lib/budget.js';
@@ -342,7 +343,7 @@ export default function ExpensesView() {
                         )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                        <div className="m" style={{ fontSize: 'var(--fs-md)', fontWeight: 600 }}>{mask(x.amount, hidden, fm)}</div>
+                        <Amount value={x.amount} kind="out" hidden={hidden} style={{ fontSize: 'var(--fs-md)', fontWeight: 600 }} />
                         <button type="button" onClick={() => openExpEdit(x)} className="icon-btn" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Editar despesa">
                           <EditIcon />
                         </button>
@@ -752,7 +753,7 @@ export default function ExpensesView() {
                     ) : null}
                   </span>
                   <div style={{ flexShrink: 0 }}>
-                    <span className="m" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{mask(r.val, hidden, fm)}</span>
+                    <Amount value={r.val} kind="out" hidden={hidden} style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }} />
                     <span className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginLeft: 'var(--space-2)' }}>/ {mask(r.lm, hidden, fm)}</span>
                   </div>
                 </div>
@@ -774,9 +775,9 @@ export default function ExpensesView() {
                     )}
                   </span>
                   {ov ? (
-                    <span className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--signal)', flexShrink: 0 }}>+{mask(r.val - r.lm, hidden, fm)}</span>
+                    <Amount value={r.val - r.lm} kind="alert" hidden={hidden} style={{ fontSize: 'var(--fs-xs)', flexShrink: 0 }} />
                   ) : (
-                    <span className="m" style={{ fontSize: 'var(--fs-xs)', color: 'var(--success)', flexShrink: 0 }}>Resta {mask(r.lm - r.val, hidden, fm)}</span>
+                    <span className="m" style={{ fontSize: 'var(--fs-xs)', flexShrink: 0 }}>Resta <Amount value={r.lm - r.val} kind="neutral" hidden={hidden} style={{ color: 'var(--success)' }} /></span>
                   )}
                 </div>
               </div>
@@ -788,7 +789,7 @@ export default function ExpensesView() {
                 {hTxn.map((t, i) => (
                   <div key={'h' + i} className="rw" style={{ padding: 'var(--space-2) 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
                     <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text2)' }}>{t[0]}</span>
-                    <span className="m" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{mask(t[1], hidden, fm)}</span>
+                    <Amount value={t[1]} kind="out" hidden={hidden} style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }} />
                   </div>
                 ))}
 
@@ -815,8 +816,8 @@ export default function ExpensesView() {
                                 </span>
                               )}
                             </span>
-                            <span className="m" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>
-                              {mask(x.amount, hidden, fm)}
+                            <span>
+                              <Amount value={x.amount} kind="out" hidden={hidden} style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }} />
                               {x.shared && x.total != null && (
                                 <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginLeft: 'var(--space-2)' }}>de {mask(x.total, hidden, fm)}</span>
                               )}

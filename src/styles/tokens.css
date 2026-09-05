@@ -139,6 +139,10 @@ select option{background:var(--bg2);color:var(--text)}
 .slideInR{animation:slideInRight 0.32s var(--ease-ios) both}
 .slideInL{animation:slideInLeft 0.32s var(--ease-ios) both}
 .m{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;font-weight:400}
+.amount{font-variant-numeric:tabular-nums;white-space:nowrap}
+.amount-in{color:var(--success)}
+.amount-alert{color:var(--danger)}
+.amount-out,.amount-neutral{color:var(--fg)}
 .lb{font-size:11px;font-weight:500;color:var(--fg-subtle);letter-spacing:0.1em;text-transform:uppercase;font-family:var(--mono)}
 .cd{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
 .cs{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;border-left:3px solid var(--danger);box-shadow:var(--shadow)}

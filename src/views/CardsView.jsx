@@ -14,6 +14,7 @@ import { fm, fmDateShort } from '../lib/format.js';
 import { getAcctsLive, normAcct, CARD_CAT } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
 import MerchantLogo, { BankLogo, BrandMark } from '../components/MerchantLogo.jsx';
+import Amount from '../components/Amount.jsx';
 
 export default function CardsView() {
   const { state, actions, currentUser } = useStore();
@@ -149,9 +150,7 @@ export default function CardsView() {
                       <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {fmDateShort(t.date)} · de {t.from}
                       </span>
-                      <span className="m" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--success)', flexShrink: 0 }}>
-                        +{mv(t.amount)}
-                      </span>
+                      <Amount value={t.amount} kind="in" hidden={hidden} style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, flexShrink: 0 }} />
                     </div>
                   ))}
                   {pays.length > 4 && (
@@ -175,7 +174,7 @@ export default function CardsView() {
                       <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)' }}>{catName(x.cat)} · {fmDateShort(x.date)}{x.imported ? ' · importada' : ''}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
-                      <span className="m" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>-{mv(Math.abs(x.amount))}</span>
+                      <Amount value={x.amount} kind="out" hidden={hidden} style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }} />
                       <button type="button" onClick={() => deleteExp(x)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', cursor: 'pointer', padding: 'var(--space-1)' }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                       </button>

@@ -10,6 +10,7 @@ import { fc } from '../lib/format.js';
 import { totalPL, totalPLPct, withAllocation, portfolioWarnings } from '../lib/investments.js';
 import { investmentAccountsValue, positionsValue } from '../lib/metrics.js';
 import { AssetLogo } from '../components/MerchantLogo.jsx';
+import Amount from '../components/Amount.jsx';
 
 export default function InvestmentsView() {
   const { state, currentUser } = useStore();
@@ -88,9 +89,7 @@ export default function InvestmentsView() {
                   <>
                     {/* O ganho/perda em euros — a percentagem sozinha não diz
                         quanto dinheiro está em jogo. Escondido com os saldos. */}
-                    <span className="m" style={{ display: 'block', fontSize: 11, fontWeight: 700, marginTop: 2, color: p.pl >= 0 ? 'var(--success)' : 'var(--signal)' }}>
-                      {(p.pl >= 0 ? '+' : '') + fc(p.pl)}
-                    </span>
+                    <Amount value={p.pl} kind={p.pl >= 0 ? 'in' : 'alert'} hidden={false} fmt={fc} style={{ display: 'block', fontSize: 11, fontWeight: 700, marginTop: 2 }} />
                     <span className="chip" style={{ marginTop: 3, padding: '1px 7px', fontSize: 10, fontWeight: 700, border: 'none', background: p.pl >= 0 ? 'var(--success-soft)' : 'var(--signal-soft)', color: p.pl >= 0 ? 'var(--success)' : 'var(--signal)' }}>
                       {(p.pl >= 0 ? '+' : '') + p.plPct.toFixed(1) + '%'}
                     </span>
