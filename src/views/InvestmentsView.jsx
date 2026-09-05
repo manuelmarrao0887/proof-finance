@@ -7,8 +7,8 @@ import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { fc } from '../lib/format.js';
-import { totalValue, totalPL, totalPLPct, withAllocation, portfolioWarnings } from '../lib/investments.js';
-import { investmentAccountsValue } from '../lib/metrics.js';
+import { totalPL, totalPLPct, withAllocation, portfolioWarnings } from '../lib/investments.js';
+import { investmentAccountsValue, positionsValue } from '../lib/metrics.js';
 import { AssetLogo } from '../components/MerchantLogo.jsx';
 
 export default function InvestmentsView() {
@@ -18,7 +18,7 @@ export default function InvestmentsView() {
   const hidden = !!state.balancesHidden;
   const mv = (v) => (hidden ? '••••' : fc(v));
 
-  const tv = totalValue(positions);
+  const tv = positionsValue(state);
   // Saldo das contas de categoria Investimentos/Cripto — pode ser diferente do
   // valor das posições detalhadas acima (ex.: saldo em cash não investido,
   // posição ainda não registada). Ver investmentAccountsValue/positionsValue

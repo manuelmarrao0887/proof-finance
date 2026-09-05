@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { findAnomalies } from './anomalies.js';
+import { richFixture } from '../test/fixtures.js';
+import { initialPersisted } from '../store/store.jsx';
 
 const NOW = new Date(2026, 6, 20); // 20 julho 2026
 
@@ -105,5 +107,29 @@ describe('dispensar avisos', () => {
     if (all.length < 2) return; // nada a testar neste fixture
     const dismissed = { ...state, dismissedAnomalies: [all[0].id] };
     expect(findAnomalies(dismissed, NOW2).length).toBe(all.length - 1);
+  });
+});
+
+describe('fuso horário — despesa de hoje entra na janela mesmo antes da 1h local', () => {
+  // `x.date` é uma string ISO de dia ("2026-09-05"), lida como meia-noite UTC.
+  // Em Portugal no verão (WEST, UTC+1) isso é 01:00 local: um `new Date(x.date)`
+  // direto ficava no FUTURO até à 1h, e a despesa de hoje era excluída da
+  // janela `t <= d` entre 00:00 e 01:00 local (e no fuso oeste, o dia inteiro).
+  const state = { ...initialPersisted(), ...richFixture(), currentUser: { uid: 'u' } };
+  const out1 = state.addedExp.find((x) => x.id === 'out1');
+  const [y, m, dd] = out1.date.split('-').map(Number);
+
+  it('encontra o outlier de hoje mesmo às 00:30 local', () => {
+    const now = new Date(y, m - 1, dd, 0, 30);
+    const out = findAnomalies(state, now).find((x) => x.expense && x.expense.id === 'out1');
+    expect(out).toBeTruthy();
+    expect(out.kind).toBe('outlier');
+  });
+
+  it('continua a encontrar o mesmo outlier ao meio-dia (comportamento inalterado)', () => {
+    const now = new Date(y, m - 1, dd, 12);
+    const out = findAnomalies(state, now).find((x) => x.expense && x.expense.id === 'out1');
+    expect(out).toBeTruthy();
+    expect(out.kind).toBe('outlier');
   });
 });

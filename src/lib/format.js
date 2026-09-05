@@ -53,6 +53,18 @@ export function todayISO(d) {
   );
 }
 
+// parseLocalDay('2026-08-20') -> Date local à meia-noite (não UTC). Mesmo
+// problema do todayISO ao contrário: `new Date('2026-08-20')` é lido como
+// meia-noite UTC, que num fuso negativo (ou antes da 1h em Portugal no
+// verão) cai no dia anterior local. Usar sempre que se compara uma data ISO
+// de despesa com "agora" ou outra data local. Entrada não-ISO cai no
+// `new Date(iso)` normal (ex.: já um Date, ou string com hora).
+export function parseLocalDay(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return new Date(iso);
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
 // normalizeStmtDate(d) -> 'YYYY-MM-DD'. Bank statements often give 'DD.MM' (no
 // year) or 'DD/MM/YYYY'; the budget buckets expect ISO 'YYYY-MM-DD'. Convert so
 // imported transactions land in the right month. Unknown formats pass through.

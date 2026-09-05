@@ -13,6 +13,8 @@
    `limit` (default 5) itens, mais graves primeiro.
    ════════════════════════════════════════════════════════════════════════ */
 
+import { parseLocalDay } from './format.js';
+
 const key = (s) =>
   String(s || '')
     .toLowerCase()
@@ -34,9 +36,13 @@ export function findAnomalies(state, now, opts) {
   const dismissed = new Set((state && state.dismissedAnomalies) || []);
 
   const cutoff = new Date(d.getFullYear(), d.getMonth(), d.getDate() - days);
+  // Fim do dia local de `d` — não `d` em si — porque uma despesa de hoje tem
+  // hora 00:00 e `d` normalmente traz a hora atual (`now`); comparar direto
+  // excluía despesas de hoje lançadas depois dessa hora.
+  const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
   const recent = all.filter((x) => {
-    const t = new Date(x.date);
-    return !isNaN(t) && t >= cutoff && t <= d;
+    const t = parseLocalDay(x.date);
+    return !isNaN(t) && t >= cutoff && t <= end;
   });
   if (!recent.length) return [];
 
