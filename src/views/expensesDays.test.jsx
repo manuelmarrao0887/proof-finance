@@ -4,7 +4,8 @@ import { screen, cleanup, fireEvent, act } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
 import { richFixture } from '../test/fixtures.js';
 import { initialPersisted } from '../store/store.jsx';
-import ExpensesView, { dayLabel as dayLabelForTest } from './ExpensesView.jsx';
+import ExpensesView from './ExpensesView.jsx';
+import { dayLabel as dayLabelForTest } from '../lib/days.js';
 
 vi.mock('../firebase/client.js', () => ({
   auth: null, db: null, IS_FILE: false, initError: null,

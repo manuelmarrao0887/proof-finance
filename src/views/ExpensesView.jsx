@@ -44,6 +44,7 @@ import MonthNav from '../components/MonthNav.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useConfirm } from '../components/ConfirmSheet.jsx';
 import { snapshotSlices } from '../lib/snapshot.js';
+import { dayLabel, groupByDay } from '../lib/days.js';
 import {
   isPreviewMode,
   isNewUser,
@@ -67,34 +68,6 @@ const EditIcon = () => (
     <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
   </svg>
 );
-
-// "Hoje" / "Ontem" / "20 ago" para os cabeçalhos de dia da pesquisa.
-// O ISO é partido em números: `new Date('2026-01-15')` seria lido como
-// meia-noite UTC e, num fuso negativo (Açores, UTC−1), "ontem" caía no dia
-// errado.
-export function dayLabel(iso, todayIso) {
-  if (!iso) return '—';
-  if (iso === todayIso) return 'Hoje';
-  const p = String(todayIso || '').split('-');
-  const t = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
-  t.setDate(t.getDate() - 1);
-  const y =
-    t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
-  if (iso === y) return 'Ontem';
-  return fmDateShort(iso);
-}
-// Agrupa linhas já ordenadas (mais recente primeiro) por dia, aproveitando a
-// adjacência: como `sorted` vem newest-first, basta comparar com o último grupo.
-function groupByDay(rows) {
-  const out = [];
-  rows.forEach((row) => {
-    const d = row.x.date || '';
-    const last = out[out.length - 1];
-    if (last && last.date === d) last.items.push(row);
-    else out.push({ date: d, items: [row] });
-  });
-  return out;
-}
 
 export default function ExpensesView() {
   const { state, actions, currentUser } = useStore();
