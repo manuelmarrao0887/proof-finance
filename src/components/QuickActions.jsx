@@ -8,10 +8,12 @@ import React from 'react';
 import { useUI } from '../store/ui.jsx';
 import Icon from './Icon.jsx';
 
+/* Ordem por frequência de uso, não por importância abstrata: uma despesa
+   lança-se todos os dias, um saldo atualiza-se uma vez por semana. */
 const ACTIONS = [
-  { key: 'balanceUpdate', label: 'Saldo', icon: 'balance', color: 'var(--primary)' },
   { key: 'add', label: 'Despesa', icon: 'expense', color: 'var(--danger)' },
   { key: 'income', label: 'Receita', icon: 'income', color: 'var(--success)' },
+  { key: 'balanceUpdate', label: 'Saldo', icon: 'balance', color: 'var(--primary)' },
   { key: 'assistant', label: 'IA', icon: 'sparkle', color: 'var(--blue)' },
   { key: 'more', label: 'Mais', icon: 'dots', color: 'var(--secondary)' },
 ];

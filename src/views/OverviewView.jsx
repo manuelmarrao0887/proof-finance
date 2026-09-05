@@ -1,72 +1,41 @@
 /* ════════════════════════════════════════════════════════════════════════
-   OverviewView — "Resumo" tab. Ported from rOverview (orig 823-991).
+   OverviewView — "Resumo". UMA tese: quanto podes gastar, e o que fazer a
+   seguir. O hero ("Podes gastar hoje", SpendHero) vive no Shell; aqui ficam
+   cinco blocos, por esta ordem:
 
-   Sections (each gated exactly as the original):
-     • Monthly summary card           (monthlySummary; só sem "Podes gastar")
-     • Financial health score          (healthScore: score/grade/breakdown/recs)
-     • Subscriptions detected          (detectSubscriptions; "Adicionar" →
-                                        actions.addRecurring like addSubFromSuggestion)
-     • Emergency fund widget           (emergencyFund)
-     • Cash-flow projection            (cashFlowProjection, 3/6/12 horizon →
-                                        actions.setForecastMonths)
-     • Accounts grouped by category    (compute.grp; expandable accordions via
-                                        local xCat state; custom accounts →
-                                        useUI().open('acct', {id}))
+     • QuickActions                    (Despesa, Receita, Saldo, IA, Mais)
+     • Faixa de Grupos                 (só quando há saldos por acertar)
+     • Plano do mês                    (envelopes + a barra de ritmo do mês)
+     • UM insight — o mais grave       (rankInsights; "Ver mais (N)" → Relatório)
+     • Disponível                      (liquidez por conta + investimentos)
 
-   All finance calls receive { ...state, currentUser }.
+   Os blocos analíticos que aqui viviam (fecho do mês, saúde financeira,
+   subscrições detectadas, fundo de emergência, projeção e contas por
+   categoria) foram extraídos sem alterações para `components/overview/*` na
+   Task 10 e são montados em Gráficos/Relatório na Task 11. "A vencer em
+   breve" deixou de ser bloco: é um candidato a insight (ver rankInsights).
+
+   Todos os cálculos recebem { ...state, currentUser }.
    ════════════════════════════════════════════════════════════════════════ */
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useStore, ME_ID } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import Icon from '../components/Icon.jsx';
 import QuickActions from '../components/QuickActions.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { useConfirm } from '../components/ConfirmSheet.jsx';
-import { snapshotSlices } from '../lib/snapshot.js';
-import {
-  compute,
-  monthlySummary,
-  isNewUser,
-  healthScore,
-  detectSubscriptions,
-  emergencyFund,
-  cashFlowProjection,
-  cCol,
-  acctCatLabel,
-  getGroupsData,
-} from '../lib/finance.js';
+import { compute, monthlySummary, isNewUser, getGroupsData } from '../lib/finance.js';
 import { investmentAccountsValue } from '../lib/metrics.js';
 import { groupTotals } from '../lib/split.js';
-import { fm, fc, uid, mask, maskPct, maskText } from '../lib/format.js';
-import { upcomingRecurring } from '../lib/reminders.js';
-import { dailyAllowance, savingsPulse, buildInsights, monthPlan, monthForecast } from '../lib/pulse.js';
-import { monthClosing } from '../lib/closing.js';
+import { fm, fc, mask, maskPct, maskText } from '../lib/format.js';
+import { dailyAllowance, savingsPulse, monthPlan, rankInsights } from '../lib/pulse.js';
 import MerchantLogo, { BankLogo } from '../components/MerchantLogo.jsx';
-import CategoryIcon from '../components/CategoryIcon.jsx';
-import StatTiles from '../components/StatTiles.jsx';
-import { catMeta } from '../lib/categories.js';
 import { AvatarStack } from '../components/Avatar.jsx';
 
 const MONTHS_LONG = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
-
-/* ── Edit (pencil) icon for custom accounts ──────────────────────────────── */
-const EditIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M12 20h9" />
-    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M3 6h18" />
-    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </svg>
-);
 
 const EyeIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -81,35 +50,15 @@ const EyeOffIcon = () => (
   </svg>
 );
 
-const Chevron = ({ open }) => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="var(--text3)"
-    strokeWidth="2.2"
-    strokeLinecap="round"
-    style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-    aria-hidden="true"
-  >
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
-
 export default function OverviewView() {
   const { state, actions, currentUser, preview } = useStore();
   const { open, goTab } = useUI();
   const toast = useToast();
-  const confirm = useConfirm();
-  const [xCat, setXCat] = useState(null); // expanded account category (orig global xCat)
 
   // ── Grupos: quanto os amigos te devem / quanto deves (soma dos grupos não
   //    arquivados). É só informação — nunca entra no património nem no
-  //    orçamento do mês (ver compute()/monthlySummary() acima, intocados).
-  //    getGroupsData() troca para o grupo de exemplo em preview sem dados
-  //    próprios — a MESMA fonte que a vista de Grupos usa, para este
-  //    indicador nunca dessincronizar da lista.
+  //    orçamento do mês. getGroupsData() troca para o grupo de exemplo em
+  //    preview sem dados próprios — a MESMA fonte que a vista de Grupos usa.
   const groupsData = useMemo(() => getGroupsData(state, preview), [state.people, state.groups, state.groupEntries, preview]);
 
   const groupsSummary = useMemo(() => {
@@ -147,81 +96,10 @@ export default function OverviewView() {
   const newU = useMemo(() => isNewUser(s), [s]);
   const curMonth = MONTHS_LONG[new Date().getMonth()];
 
-  const addSub = (sub) => {
-    // orig addSubFromSuggestion (1741): push a recurring, toast.
-    actions.addRecurring({
-      id: uid(),
-      name: sub.desc,
-      amount: Number(sub.monthlyEstimate.toFixed(2)),
-      day: 1,
-      cat: sub.cat || 'sub',
-      createdAt: Date.now(),
-    });
-    toast('Recorrência criada', 'success');
-  };
-
-  // Dismiss a suggestion: mark its key so detectSubscriptions stops suggesting it.
-  const dismissSub = (sub) => {
-    actions.dismissSub(sub.key);
-    toast('Sugestão dispensada', 'success');
-  };
-
-  // ── Health score (only when not new) ──────────────────────────────────
-  const hs = useMemo(() => (!newU ? healthScore(s) : null), [s, newU]);
-  const hsCol = hs ? (hs.score >= 70 ? 'var(--success)' : hs.score >= 50 ? 'var(--warning)' : 'var(--danger)') : '';
-  const subs = useMemo(() => (!newU ? detectSubscriptions(s) : []), [s, newU]);
-
-  // ── Emergency fund + cash flow (only when not new) ─────────────────────
-  let ef = null;
-  let efPct = 0;
-  let efColor = '';
-  let efLabel = '';
-  let cf = null;
-  let lastBal = 0;
-  if (!newU) {
-    ef = emergencyFund(s);
-    efPct = Math.min((ef.months / 6) * 100, 100);
-    efColor = ef.months >= 6 ? 'var(--success)' : ef.months >= 3 ? 'var(--orange)' : 'var(--signal)';
-    efLabel = ef.months >= 6 ? 'Sólido' : ef.months >= 3 ? 'Razoável' : ef.months >= 1 ? 'Fraco' : 'Crítico';
-    cf = cashFlowProjection(s); // defaults to state.forecastMonths
-    lastBal = cf.rows[cf.rows.length - 1].balance;
-  }
-  const forecastMonths = state.forecastMonths || 3;
-
-  // Cash-flow mini chart pre-computation (bars when <=6 rows, sparkline otherwise).
-  let cfMaxAbs = 0;
-  let cfStartPct = 0;
-  let cfSparkPts = '';
-  let cfZeroY = 0;
-  let cfRowsToShow = [];
-  if (cf) {
-    if (cf.rows.length <= 6) {
-      cfMaxAbs = Math.max.apply(
-        null,
-        cf.rows.map((r) => Math.abs(r.balance)).concat([Math.abs(cf.startBalance)])
-      );
-      cfStartPct = cf.startBalance > 0 ? (Math.abs(cf.startBalance) / cfMaxAbs) * 100 : 0;
-    } else {
-      const allVals = [cf.startBalance].concat(cf.rows.map((r) => r.balance));
-      const mnv = Math.min.apply(null, allVals);
-      const mxv = Math.max.apply(null, allVals);
-      const rgv = mxv - mnv || 1;
-      cfSparkPts = allVals
-        .map((v, i) => ((i / (allVals.length - 1)) * 100).toFixed(1) + ',' + (50 - ((v - mnv) / rgv) * 45).toFixed(1))
-        .join(' ');
-      cfZeroY = Number((50 - ((0 - mnv) / rgv) * 45).toFixed(1));
-    }
-    cfRowsToShow =
-      cf.rows.length > 6
-        ? [cf.rows[0], cf.rows[Math.floor(cf.rows.length / 2)], cf.rows[cf.rows.length - 1]]
-        : cf.rows;
-  }
-
   const ratePct = Math.min(Math.max(ms.rate, 0), 100);
-  const cats = Object.keys(C.grp);
 
-  // Liquidez (disponível) vs Investimentos — destaque no topo (o utilizador quer
-  // ver a liquidez, não o detalhe de ativos).
+  // Liquidez (disponível) vs Investimentos — o utilizador quer ver a liquidez,
+  // não o detalhe de ativos (esse está em Contas por categoria / Gráficos).
   const liquidez = (C.cT['Liquidez'] || 0) + (C.cT['Poupanca'] || 0);
   const investimentos = investmentAccountsValue(s);
   const liqAccounts = (C.grp['Liquidez'] || []).concat(C.grp['Poupanca'] || []);
@@ -237,29 +115,20 @@ export default function OverviewView() {
   // +885% vs média", "Este mês 445€ · média dos últimos meses 45€."). maskText só
   // cobre euros — aqui aplica-se também sobre percentagens.
   const maskInsight = (t) => (hidden ? maskText(t, true).replace(/[+-]?\d+([.,]\d+)?\s?%/g, '••%') : t);
-  // b.detail (saúde financeira) é uma string pré-formatada pelo finance.js (ex.: "68%").
-  const maskDetail = (d) => (hidden ? String(d).replace(/-?\d+(\.\d+)?%/g, '••%') : d);
 
-  // Recorrentes a vencer nos próximos 5 dias (lembrete na app).
-  const upcoming = useMemo(
-    () => (!newU ? upcomingRecurring(state.recurring, 5, undefined, state.addedExp) : []),
-    [state.recurring, state.addedExp, newU]
-  );
-
-  // ── Pulso do mês: quanto posso gastar/dia, poupança e avisos acionáveis ──
+  // ── Pulso do mês: quanto posso gastar/dia, poupança e o aviso a mostrar ──
   const allow = useMemo(() => (!newU ? dailyAllowance(s) : null), [s, newU]);
   const pulse = useMemo(() => (!newU ? savingsPulse(s) : null), [s, newU]);
-  const insights = useMemo(() => (!newU ? buildInsights(s) : []), [s, newU]);
   const plan = useMemo(() => (!newU ? monthPlan(s) : null), [s, newU]);
-  const forecast = useMemo(() => (!newU ? monthForecast(s) : null), [s, newU]);
-  const closing = useMemo(() => (!newU ? monthClosing(s) : null), [s, newU]);
+  const ranked = useMemo(() => (!newU ? rankInsights(s) : []), [s, newU]);
+  const top = ranked[0] || null;
   const applyPlan = () => {
     const total = actions.allocateGoals(plan.monthKey);
     toast(total > 0 ? 'Reservado ' + mask(total, hidden, fm) + ' para as metas' : 'Nada a reservar', total > 0 ? 'success' : 'error');
   };
-  const allowTone = allow && allow.perDay < 0 ? 'var(--signal)' : allow && allow.left < allow.income * 0.15 ? 'var(--warning)' : 'var(--success)';
   const INS_COLOR = { alert: 'var(--signal)', warn: 'var(--warning)', good: 'var(--success)', info: 'var(--primary)' };
   const INS_ICON = { alert: 'bell', warn: 'bell', good: 'check', info: 'sparkle' };
+  const topTone = top ? INS_COLOR[top.tone] || 'var(--primary)' : '';
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px 24px' }}>
@@ -307,127 +176,10 @@ export default function OverviewView() {
         </button>
       )}
 
-      {/* ── Fecho do mês anterior (só nos primeiros dias) ── */}
-      {!newU && closing && (
-        <div className="cd" style={{ marginBottom: 16, padding: '16px 18px', borderLeft: '3px solid ' + (closing.better ? 'var(--success)' : 'var(--warning)') }}>
-          <div className="rw" style={{ marginBottom: 8 }}>
-            <div className="lb">Fecho de {closing.monthName}</div>
-            {closing.deltaPct != null && (
-              <span className="m" style={{ fontSize: 11, fontWeight: 700, color: closing.better ? 'var(--success)' : 'var(--warning)' }}>
-                {hidden ? maskPct(closing.deltaPct, hidden) : (closing.deltaPct > 0 ? '+' : '') + Math.round(closing.deltaPct) + '%'} vs média
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 6 }}>
-            <span className="m" style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1 }}>
-              {mask(closing.total, hidden, fc)}
-            </span>
-            <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 600, marginBottom: 2 }}>gastos</span>
-          </div>
-          {closing.rate != null && (
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>
-              Poupaste {mask(closing.saved, hidden, fc)} ({maskPct(closing.rate, hidden)} do rendimento)
-            </div>
-          )}
-          {closing.top.length > 0 && (
-            <StatTiles
-              items={closing.top.map((t) => ({
-                key: t.cat,
-                icon: <CategoryIcon id={t.cat} size={24} bdg={state.bdg} />,
-                value: mask(t.value, hidden, fc),
-                label: t.name,
-                color: catMeta(t.cat, (state.bdg || []).find((b) => b.id === t.cat)).color,
-              }))}
-            />
-          )}
-        </div>
-      )}
-
-      {/* ── PODES GASTAR — a métrica de decisão do mês ── */}
-      {!newU && allow && (
-        <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-          {allow.ready ? (
-            <>
-              <div className="rw" style={{ marginBottom: 10 }}>
-                <div className="lb">Podes gastar</div>
-                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                  {allow.daysLeft} {allow.daysLeft === 1 ? 'dia' : 'dias'} até fim do mês
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 4 }}>
-                <span className="m" style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1, color: allowTone }}>
-                  {mask(Math.max(0, allow.perDay), hidden, fm)}
-                </span>
-                <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600, marginBottom: 4 }}>/dia</span>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>
-                {allow.left < 0
-                  ? 'Já passaste o rendimento do mês em ' + mask(-allow.left, hidden, fc) + '.'
-                  : mask(allow.left, hidden, fc) + ' disponíveis' + (allow.pendingFixed > 0 ? ' (fixas por pagar já descontadas)' : '')}
-              </div>
-              {/* Barra: gasto + fixas por pagar vs rendimento */}
-              <div style={{ height: 6, borderRadius: 999, background: 'var(--bg3)', overflow: 'hidden', display: 'flex' }}>
-                {hidden ? (
-                  <div style={{ width: '100%', background: 'var(--elevated)' }} />
-                ) : (
-                  <>
-                    <div style={{ width: Math.min(100, (allow.spent / Math.max(1, allow.income)) * 100) + '%', background: 'var(--primary)' }} />
-                    <div style={{ width: Math.min(100, (allow.pendingFixed / Math.max(1, allow.income)) * 100) + '%', background: 'var(--warning)', opacity: 0.55 }} />
-                  </>
-                )}
-              </div>
-              {forecast && forecast.ready && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    padding: '8px 10px',
-                    borderRadius: 10,
-                    background: forecast.overBudget ? 'var(--signal-soft, rgba(229,57,53,0.08))' : 'var(--elevated)',
-                    fontSize: 11,
-                    color: forecast.overBudget ? 'var(--signal)' : 'var(--text3)',
-                    lineHeight: 1.45,
-                  }}
-                >
-                  A este ritmo ({mask(forecast.dailyBurn, hidden, fc)}/dia) fechas o mês em{' '}
-                  <b>{mask(forecast.projectedSpend, hidden, fc)}</b>
-                  {forecast.overBudget
-                    ? ' — ' + mask(-forecast.projectedEnd, hidden, fc) + ' acima do rendimento.'
-                    : allow.income > 0
-                      ? ', sobrando ' + mask(forecast.projectedEnd, hidden, fc) + '.'
-                      : '.'}
-                </div>
-              )}
-              <div className="rw" style={{ marginTop: 10, gap: 12 }}>
-                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                  Rendimento {mask(allow.income, hidden, fc)} · gasto {mask(allow.spent, hidden, fc)}
-                  {allow.pendingFixed > 0 && ' · fixas ' + mask(allow.pendingFixed, hidden, fc)}
-                </span>
-                {pulse && (
-                  <span style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    Poupança <b style={{ color: pulse.rate >= 20 ? 'var(--success)' : 'var(--text2)' }}>{maskPct(pulse.rate, hidden)}</b>
-                  </span>
-                )}
-              </div>
-            </>
-          ) : (
-            <div>
-              <div className="lb" style={{ marginBottom: 6 }}>Podes gastar</div>
-              <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>
-                Regista o teu rendimento mensal para saber quanto podes gastar por dia.
-              </div>
-              <button
-                type="button"
-                onClick={() => open('income')}
-                style={{ padding: '8px 16px', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-              >
-                + Adicionar rendimento
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Plano do mês (envelope budgeting) — aparece quando o salário entra ── */}
+      {/* ── Plano do mês (envelope budgeting) — aparece quando o salário entra.
+            Por baixo, a barra de ritmo que vivia no cartão "Podes gastar": o
+            plano diz o que estava previsto, o ritmo diz o que está a acontecer.
+            Os dois lado a lado é a única leitura que se faz durante o mês. ── */}
       {!newU && plan && plan.salaryIn && plan.income > 0 && (
         <div className="cd" style={{ marginBottom: 16, padding: '16px 18px' }}>
           <div className="rw" style={{ marginBottom: 10 }}>
@@ -478,78 +230,94 @@ export default function OverviewView() {
               </button>
             )
           )}
-        </div>
-      )}
 
-      {/* ── Insights automáticos (gerados localmente, sem IA) ── */}
-      {!newU && insights.length > 0 && (
-        <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {insights.map((ins) => {
-            const tone = INS_COLOR[ins.tone] || 'var(--primary)';
-            return (
-              <div key={ins.id} className="cd" style={{ padding: '10px 12px', borderLeft: '3px solid ' + tone }}>
-                <div className="rw" style={{ gap: 10, alignItems: 'center' }}>
-                  {ins.subject ? (
-                    <MerchantLogo text={ins.subject.desc} cat={ins.subject.cat} size={36} bdg={state.bdg} />
-                  ) : (
-                    <span className="cat" style={{ width: 36, height: 36, background: 'color-mix(in srgb, ' + tone + ' 14%, transparent)', color: tone }} aria-hidden="true">
-                      <Icon name={INS_ICON[ins.tone] || 'sparkle'} size={18} />
-                    </span>
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: tone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{maskInsight(ins.title)}</div>
-                    {/* Duas linhas em vez de uma: num telemóvel o texto mais
-                        longo (rácio da anomalia) cabia só no title, e num PWA
-                        de toque não há hover para o ler. */}
-                    <div
-                      style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-                      title={maskInsight(ins.long || ins.detail)}
-                    >
-                      {maskInsight(ins.detail)}
-                    </div>
-                  </div>
-                  {/* Avisos de despesa suspeita podem ser falsos positivos → dispensar. */}
-                  {ins.dismissId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        actions.dismissAnomaly(ins.dismissId);
-                        toast('Aviso dispensado', 'success');
-                      }}
-                      aria-label="Está certo, dispensar aviso"
-                      title="Está certo"
-                      className="icon-btn"
-                      style={{ width: 32, height: 32, color: 'var(--success)', flexShrink: 0 }}
-                    >
-                      <Icon name="check" size={16} />
-                    </button>
-                  )}
-                </div>
+          {/* Ritmo real do mês: gasto + fixas por pagar vs rendimento. */}
+          {allow && allow.ready && (
+            <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+              <div className="rw" style={{ marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Ritmo</span>
+                {pulse && (
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    Poupança <b style={{ color: pulse.rate >= 20 ? 'var(--success)' : 'var(--text2)' }}>{maskPct(pulse.rate, hidden)}</b>
+                  </span>
+                )}
               </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Recorrentes a vencer em breve (lembrete na app) ── */}
-      {!newU && upcoming.length > 0 && (
-        <div className="cd" style={{ marginBottom: 16, padding: '14px 16px', borderLeft: '3px solid var(--warning)' }}>
-          <div className="lb" style={{ marginBottom: 8, color: 'var(--warning)' }}>A vencer em breve</div>
-          {upcoming.slice(0, 4).map((u) => (
-            <div key={u.rec.id} className="rw" style={{ padding: '6px 0' }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>{u.rec.name}</span>
-              <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                <span className="m" style={{ fontSize: 13, fontWeight: 600 }}>{mask(u.rec.amount, hidden, fm)}</span>
-                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                  {u.daysLeft === 0 ? 'hoje' : u.daysLeft === 1 ? 'amanhã' : 'em ' + u.daysLeft + ' dias'}
-                </span>
-              </span>
+              <div style={{ height: 6, borderRadius: 999, overflow: 'hidden', display: 'flex', background: 'var(--bg3)' }}>
+                {hidden ? (
+                  <div style={{ width: '100%', background: 'var(--elevated)' }} />
+                ) : (
+                  <>
+                    <div style={{ width: Math.min(100, (allow.spent / Math.max(1, allow.income)) * 100) + '%', background: 'var(--primary)' }} />
+                    <div style={{ width: Math.min(100, (allow.pendingFixed / Math.max(1, allow.income)) * 100) + '%', background: 'var(--warning)', opacity: 0.55 }} />
+                  </>
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
+                Rendimento {mask(allow.income, hidden, fc)} · gasto {mask(allow.spent, hidden, fc)}
+                {allow.pendingFixed > 0 && ' · fixas por pagar ' + mask(allow.pendingFixed, hidden, fc)}
+              </div>
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* ── Liquidez (por conta) + Investimentos — topo, protegido por PIN/FaceID ── */}
+      {/* ── UM insight: o mais grave de todos (rankInsights ordena avisos de
+            despesa, ritmo do mês, metas em risco e fixas a vencer na mesma
+            lista). Os restantes ficam a um toque, no Relatório. ── */}
+      {!newU && top && (
+        <div className="cd" style={{ marginBottom: 16, padding: '10px 12px', borderLeft: '3px solid ' + topTone }}>
+          <div className="rw" style={{ gap: 10, alignItems: 'center' }}>
+            {top.subject ? (
+              <MerchantLogo text={top.subject.desc} cat={top.subject.cat} size={36} bdg={state.bdg} />
+            ) : (
+              <span className="cat" style={{ width: 36, height: 36, background: 'color-mix(in srgb, ' + topTone + ' 14%, transparent)', color: topTone }} aria-hidden="true">
+                <Icon name={INS_ICON[top.tone] || 'sparkle'} size={18} />
+              </span>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: topTone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{maskInsight(top.title)}</div>
+              {/* Duas linhas em vez de uma: num telemóvel o texto mais longo
+                  (rácio da anomalia) cabia só no title, e num PWA de toque não
+                  há hover para o ler. */}
+              <div
+                style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                title={maskInsight(top.long || top.detail)}
+              >
+                {maskInsight(top.detail)}
+              </div>
+            </div>
+            {/* Avisos de despesa suspeita podem ser falsos positivos → dispensar.
+                Os outros (ritmo, metas, fixas) não se dispensam: resolvem-se. */}
+            {top.dismissId && (
+              <button
+                type="button"
+                onClick={() => {
+                  actions.dismissAnomaly(top.dismissId);
+                  toast('Aviso dispensado', 'success');
+                }}
+                aria-label="Está certo, dispensar aviso"
+                title="Está certo"
+                className="icon-btn"
+                style={{ width: 32, height: 32, color: 'var(--success)', flexShrink: 0 }}
+              >
+                <Icon name="check" size={16} />
+              </button>
+            )}
+          </div>
+          {ranked.length > 1 && (
+            <button
+              type="button"
+              onClick={() => goTab('report')}
+              style={{ marginTop: 8, padding: 0, border: 'none', background: 'none', color: 'var(--primary)', fontSize: 11, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}
+            >
+              Ver mais ({ranked.length - 1})
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Liquidez (disponível) por conta + Investimentos — protegido por
+            PIN/FaceID (o olho fecha sozinho, abrir pede autenticação). ── */}
       {!newU && (liquidez > 0 || investimentos > 0) && (
         <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
           <div className="rw" style={{ marginBottom: 12 }}>
@@ -603,8 +371,9 @@ export default function OverviewView() {
         </div>
       )}
 
-      {/* ── Resumo do mês — só quando o "Podes gastar" não está ativo (sem rendimento
-            registado); com ele ativo era a mesma informação com outra definição de despesa ── */}
+      {/* ── Resumo do mês — só sem rendimento registado, que é quando o hero
+            "Podes gastar hoje" não tem números para dar. Com rendimento seria
+            a mesma informação com outra definição de despesa. ── */}
       {!(allow && allow.ready) && (!newU || (state.addedExp || []).length > 0 || (state.incomes || []).length > 0) && (
         <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
           <div className="rw" style={{ marginBottom: 14 }}>
@@ -649,338 +418,6 @@ export default function OverviewView() {
             </div>
           )}
         </div>
-      )}
-
-      {/* ── Quick stats + health + subscriptions (only when not new) ── */}
-      {!newU && (
-        <>
-          {/* Financial health score */}
-          <div className="cd" style={{ marginBottom: 16, padding: 20 }}>
-            <div className="rw" style={{ marginBottom: 14, alignItems: 'flex-start' }}>
-              <div>
-                <div className="lb">Saúde financeira</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
-                  <div className="m" style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.02em', color: hsCol }}>
-                    {hs.score}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--fg-subtle)', fontFamily: 'var(--mono)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                    / 100
-                  </div>
-                </div>
-              </div>
-              <div className="chip" style={{ background: 'transparent', color: hsCol, border: '1px solid ' + hsCol }}>
-                {hs.grade}
-              </div>
-            </div>
-            <div className="bar" style={{ height: 6, background: 'var(--elevated)', marginBottom: 14 }}>
-              <div className="bar-fill" style={{ width: hs.score + '%', background: hsCol }} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-              {hs.breakdown.map((b) => {
-                const pct = b.max > 0 ? (b.pts / b.max) * 100 : 0;
-                const col = pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--warning)' : 'var(--danger)';
-                return (
-                  <div key={b.label}>
-                    <div className="rw" style={{ marginBottom: 4 }}>
-                      <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>{b.label}</div>
-                      <div className="m" style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>
-                        {b.pts}/{b.max} · {maskDetail(b.detail)}
-                      </div>
-                    </div>
-                    <div style={{ height: 3, background: 'var(--elevated)', borderRadius: 2, overflow: 'hidden' }}>
-                      <div style={{ width: pct + '%', height: '100%', background: col, borderRadius: 2 }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {hs.recommendations.length > 0 && (
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-                <div className="lb" style={{ marginBottom: 8 }}>Para subir o score</div>
-                {hs.recommendations.map((r, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 8, padding: '4px 0', fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
-                    <span className="m" style={{ color: 'var(--fg-subtle)', flexShrink: 0 }}>
-                      {'0' + (i + 1)}
-                    </span>
-                    <span>{r}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Subscription suggestions */}
-          {subs.length > 0 && (
-            <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-              <div className="rw" style={{ marginBottom: 6 }}>
-                <div className="lb">Subscrições detectadas</div>
-                <div className="chip" style={{ background: 'transparent', color: 'var(--fg-muted)', border: '1px solid var(--border)' }}>
-                  {subs.length}
-                </div>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.5, marginBottom: 14 }}>
-                Estas despesas repetem-se. Queres regista-las como recorrentes?
-              </div>
-              {subs.slice(0, 3).map((sub, i) => (
-                <div key={sub.key} className="rw" style={{ padding: '10px 0', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500 }}>{sub.desc}</div>
-                    <div className="m" style={{ fontSize: 10, color: 'var(--fg-subtle)', marginTop: 2 }}>
-                      {sub.count} vezes · ~{mask(sub.monthlyEstimate, hidden, fc)}/mês
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      onClick={() => dismissSub(sub)}
-                      aria-label={'Não é subscrição: ' + sub.desc}
-                      style={{
-                        padding: '6px 12px',
-                        border: '1px solid var(--border)',
-                        background: 'transparent',
-                        color: 'var(--fg-muted)',
-                        borderRadius: 999,
-                        fontSize: 11,
-                        fontWeight: 500,
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      Não é
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => addSub(sub)}
-                      style={{
-                        padding: '6px 12px',
-                        border: '1px solid var(--primary)',
-                        background: 'var(--primary)',
-                        color: '#fff',
-                        borderRadius: 999,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      Adicionar
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {subs.length > 3 && (
-                <div style={{ fontSize: 11, color: 'var(--fg-subtle)', padding: '8px 0 0', textAlign: 'center' }}>
-                  + {subs.length - 3} outras
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* ── Emergency fund + cash flow (only when not new) ── */}
-      {!newU && (
-        <>
-          <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-            <div className="rw" style={{ marginBottom: 10 }}>
-              <div>
-                <div className="lb">Fundo de emergência</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-                  Liquidez + Poupança / despesa média
-                </div>
-              </div>
-              <div className="chip" style={{ background: efColor, color: '#fff' }}>{efLabel}</div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <div className="m" style={{ fontSize: 30, fontWeight: 600, color: efColor, letterSpacing: '-0.02em' }}>
-                {ef.months.toFixed(1)}
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 600 }}>meses cobertos</div>
-            </div>
-            <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
-              <span>Reserva: {mask(ef.safe, hidden, fc)}</span>
-              <span>Despesa/mês: {mask(ef.avgMonthly, hidden, fc)}</span>
-            </div>
-            <div className="bar" style={{ height: 6, marginTop: 10 }}>
-              <div className="bar-fill" style={{ width: efPct + '%', background: efColor }} />
-            </div>
-            <div className="rw m" style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
-              <span>0</span>
-              <span>3 meses</span>
-              <span>6 meses (ideal)</span>
-            </div>
-          </div>
-
-          {/* Cash-flow projection */}
-          <div className="cd" style={{ marginBottom: 16, padding: '18px 20px' }}>
-            <div className="rw" style={{ marginBottom: 12 }}>
-              <div className="lb">Projeção {forecastMonths} meses</div>
-              <div className={'chip ' + (lastBal >= cf.startBalance ? 'up-solid' : 'down-solid')}>
-                {mask(lastBal - cf.startBalance, hidden, (v) => (v >= 0 ? '+' : '') + fc(v))}
-              </div>
-            </div>
-            <div className="ms-bar" style={{ marginBottom: 14 }}>
-              {[3, 6, 12].map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  className={'ms' + (forecastMonths === m ? ' on' : '')}
-                  onClick={() => actions.setForecastMonths(m)}
-                >
-                  {m}M
-                </button>
-              ))}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--fg-subtle)', marginBottom: 14, lineHeight: 1.5 }}>
-              Receitas {mask(cf.monthlyIncome, hidden, fc)}/mês · recorrentes {mask(cf.monthlyRecExpense, hidden, fc)} · crédito {mask(cf.loanPay, hidden, fc)} · discricionário {mask(cf.avgDiscretionary, hidden, fc)}
-            </div>
-
-            {cf.rows.length <= 6 ? (
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 90, marginBottom: 10 }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <div style={{ width: '100%', background: 'var(--elevated)', borderRadius: '4px 4px 0 0', height: cfStartPct + '%', minHeight: 4 }} />
-                  <div className="m" style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>Hoje</div>
-                </div>
-                {cf.rows.map((r, i) => {
-                  const pct = (Math.abs(r.balance) / cfMaxAbs) * 100;
-                  const col = r.balance >= 0 ? 'var(--fg)' : 'var(--danger)';
-                  return (
-                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                      <div style={{ width: '100%', background: col, borderRadius: '4px 4px 0 0', height: pct + '%', minHeight: 4 }} />
-                      <div className="m" style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>{r.label.split(' ')[0]}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <svg viewBox="0 0 100 55" preserveAspectRatio="none" style={{ width: '100%', height: 80, marginBottom: 10 }} aria-hidden="true">
-                <polyline points={cfSparkPts} fill="none" stroke="var(--fg)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <line x1="0" y1={cfZeroY} x2="100" y2={cfZeroY} stroke="var(--border)" strokeWidth="0.5" strokeDasharray="2 2" />
-              </svg>
-            )}
-
-            <div className="rw m" style={{ fontSize: 11, color: 'var(--fg)' }}>
-              <span style={{ color: 'var(--fg-muted)' }}>Hoje</span>
-              <span style={{ fontWeight: 600 }}>{mask(cf.startBalance, hidden, fc)}</span>
-            </div>
-            {cfRowsToShow.map((r, i) => (
-              <div key={i} className="rw m" style={{ fontSize: 11, paddingTop: 4 }}>
-                <span style={{ color: 'var(--fg-muted)' }}>{r.label}</span>
-                <span style={{ fontWeight: 600, color: r.balance >= 0 ? 'var(--fg)' : 'var(--danger)' }}>{mask(r.balance, hidden, fc)}</span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* ── Accounts grouped by category (only when there are accounts) ── */}
-      {cats.length > 0 && (
-        <>
-          <div className="lb" style={{ marginBottom: 10, paddingLeft: 4 }}>Contas por categoria</div>
-          {cats.map((cat) => {
-            const items = C.grp[cat];
-            const isX = xCat === cat;
-            const pctOfAssets = C.tA > 0 ? (C.cT[cat] / C.tA) * 100 : 0;
-            return (
-              <div key={cat} style={{ marginBottom: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => setXCat(isX ? null : cat)}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: 'var(--bg2)',
-                    border: 'none',
-                    borderRadius: isX ? 'var(--r) var(--r) 0 0' : 'var(--r)',
-                    padding: '16px 18px',
-                    color: 'var(--text)',
-                    boxShadow: 'var(--shadow)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
-                    <div style={{ width: 8, height: 40, borderRadius: 4, background: cCol[cat] || 'var(--fg-subtle)' }} />
-                    <div>
-                      <div style={{ fontSize: 15, fontWeight: 600 }}>{acctCatLabel(cat)}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
-                        {items.length} contas · {maskPct(pctOfAssets, hidden)}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' }}>{mv(C.cT[cat])}</span>
-                    <Chevron open={isX} />
-                  </div>
-                </button>
-                {isX && (
-                  <div className="fadeIn" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 12px 12px' }}>
-                    {items.map((a, i) => (
-                      <div key={a.id || a.b + '_' + a.t + '_' + i} className="rw" style={{ padding: '14px 18px', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 500 }}>{a.b}</div>
-                          <div style={{ fontSize: 12, color: 'var(--fg-subtle)', marginTop: 1 }}>
-                            {a.t}
-                            {a.currency && a.currency !== 'EUR' ? (
-                              <>
-                                {' · '}
-                                <span className="m" style={{ fontSize: 11 }}>{a.currency}</span>
-                              </>
-                            ) : null}
-                          </div>
-                          {a.n && <div style={{ fontSize: 11, color: 'var(--fg-subtle)', marginTop: 1 }}>{a.n}</div>}
-                          {a.updated && <div className="m" style={{ fontSize: 11, color: 'var(--success)', marginTop: 2 }}>Atualizado {a.updated}</div>}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div className="m" style={{ fontSize: 14, fontWeight: 600 }}>{mask(a.v, hidden, fm)}</div>
-                          <button
-                            type="button"
-                            onClick={() => open('balanceHistory', { acctKey: a.custom ? a.id : a.b + '_' + a.t, bank: a.b, type: a.t })}
-                            className="icon-btn"
-                            style={{ width: 28, height: 28 }}
-                            aria-label="Histórico de saldos"
-                          >
-                            <Icon name="history" size={15} />
-                          </button>
-                          {a.custom && (
-                            <button
-                              type="button"
-                              onClick={() => open('acct', { id: a.id })}
-                              className="icon-btn"
-                              style={{ width: 28, height: 28 }}
-                              aria-label="Editar conta"
-                            >
-                              <EditIcon />
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              confirm({
-                                title: 'Remover conta',
-                                message: a.b + ' · ' + a.t + '. As leituras de saldo desta conta também são removidas.',
-                                amount: a.v,
-                                onConfirm: () => {
-                                  const snap = snapshotSlices(actions.getState(), ['customAccts', 'dynAccts', 'balanceLog']);
-                                  if (a.custom) actions.deleteCustomAcct(a.id);
-                                  else actions.removeDynAcct(a.b + '_' + a.t);
-                                  toast('Conta removida', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
-                                },
-                              });
-                            }}
-                            className="icon-btn"
-                            style={{ width: 28, height: 28, color: 'var(--danger)' }}
-                            aria-label="Remover conta"
-                          >
-                            <TrashIcon />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </>
       )}
     </div>
   );
