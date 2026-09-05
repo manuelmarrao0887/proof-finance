@@ -45,13 +45,24 @@ const CARDS = [
   ['EmergencyFundCard', () => <EmergencyFundCard />, /Fundo de emergência/],
   ['ProjectionCard', () => <ProjectionCard />, /Projeção/],
   ['AccountsByCategory', () => <AccountsByCategory />, /Contas por categoria/],
+  ['ClosingCard', () => <ClosingCard />, null],
 ];
 
 describe('blocos extraídos do Resumo', () => {
   for (const [name, make, title] of CARDS) {
     it(name + ' monta sozinho e mostra o seu título', async () => {
       const { container } = await renderWithStore(make(), { fixture: richFixture() });
-      expect(container.textContent, name).toMatch(title);
+      if (title) {
+        expect(container.textContent, name).toMatch(title);
+      } else if (name === 'ClosingCard') {
+        // ClosingCard only renders in the first 7 days of the month
+        const dayOfMonth = new Date().getDate();
+        if (dayOfMonth <= 7) {
+          expect(container.textContent).toMatch(/Fecho de/);
+        } else {
+          expect(container.textContent).not.toMatch(/Fecho de/);
+        }
+      }
     });
   }
 

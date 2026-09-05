@@ -11,7 +11,7 @@ export default function ConfirmButton({ label, confirmLabel = 'Confirmar', onCon
     <SecondaryButton
       onClick={() => (armed ? (setArmed(false), onConfirm()) : setArmed(true))}
       style={{
-        color: danger ? 'var(--danger)' : 'var(--text2)',
+        color: armed ? (danger ? 'var(--danger)' : 'var(--primary)') : 'var(--text2)',
         // 'border' (shorthand) — nunca 'borderColor' sozinho: misturar as
         // duas no mesmo objeto de estilo entre re-renders (armado <-> não
         // armado) dispara o aviso do React "Removing a style property...".

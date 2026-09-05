@@ -4,6 +4,7 @@ import { screen, cleanup } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
 import { richFixture } from '../test/fixtures.js';
 import OverviewView from './OverviewView.jsx';
+import ReportView from './ReportView.jsx';
 
 vi.mock('../firebase/client.js', () => ({
   auth: null, db: null, IS_FILE: false, initError: null,
@@ -32,9 +33,16 @@ describe('Resumo compacto', () => {
     expect(screen.getByText('Fora do padrão')).toBeTruthy();
   });
   it('o fecho do mês, quando aparece, usa tiles em vez da frase "Onde foi"', async () => {
-    const { container } = await renderWithStore(<OverviewView />, { fixture: richFixture() });
+    const { container } = await renderWithStore(<ReportView />, { fixture: richFixture() });
     expect(screen.queryByText(/Onde foi/)).toBeNull();
-    const closing = Array.from(container.querySelectorAll('.cd')).find((el) => /Fecho de/.test(el.textContent));
-    if (closing) expect(closing.querySelectorAll('.tile').length).toBeGreaterThan(0);
+    const dayOfMonth = new Date().getDate();
+    if (dayOfMonth <= 7) {
+      const closing = Array.from(container.querySelectorAll('.cd')).find((el) => /Fecho de/.test(el.textContent));
+      expect(closing).toBeTruthy();
+      expect(closing.querySelectorAll('.tile').length).toBeGreaterThan(0);
+    } else {
+      const closing = Array.from(container.querySelectorAll('.cd')).find((el) => /Fecho de/.test(el.textContent));
+      expect(closing).toBeFalsy();
+    }
   });
 });

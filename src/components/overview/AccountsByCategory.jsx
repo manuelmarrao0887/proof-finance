@@ -11,7 +11,7 @@ import React, { useMemo, useState } from 'react';
 import { useStore } from '../../store/store.jsx';
 import { useUI } from '../../store/ui.jsx';
 import { compute, cCol, acctCatLabel } from '../../lib/finance.js';
-import { fm, mask, maskPct } from '../../lib/format.js';
+import { fc, fm, mask, maskPct } from '../../lib/format.js';
 import { snapshotSlices } from '../../lib/snapshot.js';
 import { useToast } from '../Toast.jsx';
 import { useConfirm } from '../ConfirmSheet.jsx';
@@ -98,7 +98,7 @@ export default function AccountsByCategory() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' }}>{mv(C.cT[cat])}</span>
+                <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' }}>{mask(C.cT[cat], hidden, fc)}</span>
                 <Chevron open={isX} />
               </div>
             </button>
