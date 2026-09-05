@@ -419,7 +419,7 @@ export default function ExpensesView() {
   const todayMonth = todayISO().slice(0, 7);
   const selectedMonth = !preview && em >= 0 && em <= 3 ? monthKeyAt(em, mOff) : null;
   const isCurrentMonth = selectedMonth === todayMonth;
-  if (em === 3 && !newUser && !preview && isCurrentMonth && today.getDate() < 28) {
+  if (em === 3 && !newUser && !preview && isCurrentMonth) {
     const dToday = new Date();
     const dEnd = new Date(dToday.getFullYear(), dToday.getMonth() + 1, 0).getDate();
     const pct = Math.round((dToday.getDate() / dEnd) * 100);
