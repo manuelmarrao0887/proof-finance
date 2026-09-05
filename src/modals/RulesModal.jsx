@@ -103,13 +103,13 @@ export default function RulesModal() {
             value={cat}
             onChange={(e) => setCat(e.target.value)}
             aria-label="Categoria"
-            style={{ flex: 1, padding: '10px 12px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--fg)', borderRadius: 8, fontSize: 'var(--fs-input)' }}
+            style={{ flex: 1, minWidth: 0, padding: '10px 12px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--fg)', borderRadius: 8, fontSize: 'var(--fs-input)', maxWidth: '100%', boxSizing: 'border-box' }}
           >
             {cats.map((b) => (
               <option key={b.id} value={b.id}>{b.nm}</option>
             ))}
           </select>
-          <button type="button" onClick={addRule} style={{ padding: '10px 16px', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 999, fontSize: 13, fontWeight: 500, fontFamily: 'inherit' }}>
+          <button type="button" onClick={addRule} style={{ padding: '10px 16px', border: 'none', background: 'var(--primary)', color: 'var(--bg)', borderRadius: 999, fontSize: 13, fontWeight: 500, fontFamily: 'inherit', flexShrink: 0 }}>
             Adicionar
           </button>
         </div>

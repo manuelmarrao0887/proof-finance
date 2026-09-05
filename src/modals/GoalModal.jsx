@@ -147,30 +147,30 @@ export default function GoalModal() {
       />
 
       <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Objetivo</div>
-          <input value={draft.target} onChange={(e) => set('target', e.target.value)} placeholder="10000" inputMode="decimal" aria-label="Objetivo" style={numStyle} />
+          <input value={draft.target} onChange={(e) => set('target', e.target.value)} placeholder="10000" inputMode="decimal" aria-label="Objetivo" style={{ ...numStyle, maxWidth: '100%' }} />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Atual</div>
-          <input value={draft.current} onChange={(e) => set('current', e.target.value)} placeholder="0" inputMode="decimal" aria-label="Atual" style={numStyle} />
+          <input value={draft.current} onChange={(e) => set('current', e.target.value)} placeholder="0" inputMode="decimal" aria-label="Atual" style={{ ...numStyle, maxWidth: '100%' }} />
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Data alvo (opcional)</div>
           <input
             type="date"
             value={draft.deadline}
             onChange={(e) => set('deadline', e.target.value)}
             aria-label="Data alvo (opcional)"
-            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)' }}
+            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 'var(--fs-input)', maxWidth: '100%' }}
           />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Reservar/mês (opcional)</div>
-          <input value={draft.monthly} onChange={(e) => set('monthly', e.target.value)} placeholder="200" inputMode="decimal" aria-label="Reservar por mês" style={numStyle} />
+          <input value={draft.monthly} onChange={(e) => set('monthly', e.target.value)} placeholder="200" inputMode="decimal" aria-label="Reservar por mês" style={{ ...numStyle, maxWidth: '100%' }} />
         </div>
       </div>
 
