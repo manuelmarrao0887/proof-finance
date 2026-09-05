@@ -39,6 +39,11 @@ const BAD = [
   ['components/ContextStrip.jsx', /Património liquido/],
   ['views/ChartsView.jsx', /Património Liquido/],
   ['views/OverviewView.jsx', /Poupanca \/|despesa media|Projecao|discricionario|fim do mes|Não e\b/],
+  // As mesmas regras seguem a cópia: os blocos saíram do Resumo na Task 10.
+  ['components/SpendHero.jsx', /fim do mes|Podes gastar hoje\?/],
+  ['components/overview/EmergencyFundCard.jsx', /Poupanca \/|despesa media/],
+  ['components/overview/ProjectionCard.jsx', /Projecao|discricionario/],
+  ['components/overview/SubscriptionsCard.jsx', /Não e\b|regista-las/],
   ['lib/finance.js', /Adesao ao orcamento|Reve os limites/],
   ['views/RecurringView.jsx', /visao clara/],
   ['views/AIView.jsx', /informacao/],
