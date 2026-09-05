@@ -36,16 +36,16 @@ describe('Metas com ícone', () => {
     fx.goals = fx.goals.map((g) => (g.id === 'g1' ? { ...g, icon: 'umbrella' } : g));
     const { container } = await renderWithStore(<GoalsView />, { fixture: fx });
     expect(container.querySelectorAll('.goal-icon').length).toBe(2);
-    expect(screen.getByText('atrasada')).toBeTruthy();
+    expect(screen.getByText(/para chegar a tempo/)).toBeTruthy();
     expect(screen.getByText('no ritmo')).toBeTruthy();
     expect(screen.queryByText('Progresso global')).toBeNull();
     expect(screen.queryByText(/Não chega para o prazo/)).toBeNull();
   });
-  it('o chip "atrasada" é um botão que abre a explicação do risco numa linha visível', async () => {
+  it('o chip com a quantia por mês é um botão que abre a explicação do risco numa linha visível', async () => {
     // A frase vivia só no title de um <span> — sem hover num telemóvel não havia
     // como a ler.
     await renderWithStore(<GoalsView />, { fixture: richFixture() });
-    const chip = screen.getByRole('button', { name: 'atrasada' });
+    const chip = screen.getByRole('button', { name: /para chegar a tempo/ });
     expect(chip.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByText(/Não chega para o prazo/)).toBeNull();
     await act(async () => { fireEvent.click(chip); });

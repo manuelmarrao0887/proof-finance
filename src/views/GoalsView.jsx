@@ -113,8 +113,9 @@ export default function GoalsView() {
 
         const risk = riskById[g.id];
         const done = pctAbs >= 100;
-        // `done` dá 'concluída' — a condição do tone precisa dos dois casos.
-        const stateLabel = done ? 'concluída' : risk ? 'atrasada' : g.monthly > 0 ? 'no ritmo' : 'a começar';
+        // Estado: "concluída", amount/mês para chegar a tempo, "no ritmo", ou "a começar".
+        const riskAmount = risk ? (risk.gap > 0 ? risk.gap : risk.needed) : null;
+        const stateLabel = done ? 'concluída' : risk ? '+' + mask(riskAmount, hidden, fc) + '/mês para chegar a tempo' : g.monthly > 0 ? 'no ritmo' : 'a começar';
         const tone = done || stateLabel === 'no ritmo' ? 'var(--success)' : risk ? 'var(--warning)' : 'var(--text3)';
         const riskText = risk
           ? 'Não chega para o prazo: precisas de ' + mask(risk.needed, hidden, fc) + '/mês' + (risk.monthly > 0 ? ' (+' + mask(risk.gap, hidden, fc) + ')' : '') + ' nos próximos ' + risk.monthsLeft + (risk.monthsLeft === 1 ? ' mês' : ' meses') + '.'
@@ -209,10 +210,37 @@ export default function GoalsView() {
               </div>
             </div>
 
-            {/* Explicação do risco, aberta pelo chip "atrasada". */}
+            {/* Explicação do risco, aberta pelo chip com a quantia/mês. */}
             {riskOpen && (
               <div id={riskId} style={{ fontSize: 'var(--fs-xs)', color: 'var(--warning)', marginTop: 'var(--space-4)', fontWeight: 600, lineHeight: 1.4 }}>
                 {riskText}
+              </div>
+            )}
+
+            {/* Celebração: meta a 95%+ oferece fechar agora */}
+            {pctAbs >= 95 && pctAbs < 100 && (
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--success)', marginTop: 'var(--space-4)', fontWeight: 600, lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                <span>Faltam {mask(rem, hidden, fc)} — fecha agora</span>
+                <button
+                  type="button"
+                  onClick={() => addToGoal(g.id, rem)}
+                  style={{
+                    padding: 'var(--space-2) var(--space-3)',
+                    border: '1px solid var(--success)',
+                    background: 'color-mix(in srgb, var(--success) 12%, transparent)',
+                    color: 'var(--success)',
+                    borderRadius: 6,
+                    fontSize: 'var(--fs-xs)',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    minHeight: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  Fechar meta
+                </button>
               </div>
             )}
 
