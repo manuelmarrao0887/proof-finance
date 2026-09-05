@@ -14,6 +14,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from './store/store.jsx';
 import { onAuth, setAuthPersistenceLocal, IS_FILE, initError } from './firebase/client.js';
+import { useToast } from './components/Toast.jsx';
 import Login from './components/Login.jsx';
 import Shell from './components/Shell.jsx';
 
@@ -70,9 +71,17 @@ const DEMO = typeof location !== 'undefined' &&
 
 export default function App() {
   const { setCurrentUser, loadUser, resetUser } = useAuth();
+  const toast = useToast();
   const [view, setView] = useState('loading'); // loading | login | app
   const viewRef = useRef('loading');
   viewRef.current = view;
+
+  useEffect(() => {
+    if (!import.meta.env.PROD) return;
+    import('virtual:pwa-register').then(({ registerSW }) => {
+      const update = registerSW({ onNeedRefresh() { toast('Nova versão disponível', 'success', { action: { label: 'Atualizar', onClick: () => update(true) }, duration: 60000 }); } });
+    }).catch(() => {});
+  }, [toast]);
 
   useEffect(() => {
     if (DEMO || IS_FILE || initError) {

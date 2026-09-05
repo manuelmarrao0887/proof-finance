@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // base: './' so the built app works from any sub-path (GitHub Pages, file preview, etc.)
 export default defineConfig({
   base: './',
-  plugins: [react()],
+  plugins: [react(), VitePWA({ registerType: 'prompt', injectRegister: false, manifest: false, workbox: { globPatterns: ['**/*.{js,css,html,svg,woff2}'], navigateFallback: '/index.html' }, devOptions: { enabled: false } })],
   build: {
     rollupOptions: {
       output: {
