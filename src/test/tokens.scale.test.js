@@ -44,6 +44,14 @@ describe('escala de design', () => {
       const src = read(f);
       expect(src.match(/fontSize:\s*\d/g) || [], 'fontSize').toEqual([]);
       expect(src.match(/(padding|margin|gap)(Top|Bottom|Left|Right)?:\s*'?\d/g) || [], 'spacing').toEqual([]);
+      // Catch numeric branches in ternary expressions for spacing (second branch)
+      expect(src.match(/(padding|margin|gap)(Top|Bottom|Left|Right)?:\s*[^,}\n]*\?\s*[^:\n]*:\s*'?(?!0\b)\d/g) || [], 'spacing ternary 2nd branch').toEqual([]);
+      // Catch numeric branches in ternary expressions for spacing (first branch)
+      expect(src.match(/(padding|margin|gap)(Top|Bottom|Left|Right)?:\s*[^,}\n]*\?\s*'?(?!0\b)\d/g) || [], 'spacing ternary 1st branch').toEqual([]);
+      // Catch numeric branches in ternary expressions for fontSize (second branch)
+      expect(src.match(/fontSize:\s*[^,}\n]*\?\s*[^:\n]*:\s*'?(?!0\b)\d/g) || [], 'fontSize ternary 2nd branch').toEqual([]);
+      // Catch numeric branches in ternary expressions for fontSize (first branch)
+      expect(src.match(/fontSize:\s*[^,}\n]*\?\s*'?(?!0\b)\d/g) || [], 'fontSize ternary 1st branch').toEqual([]);
     });
   }
 });

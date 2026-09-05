@@ -366,7 +366,7 @@ export default function AddExpenseSheet() {
 
       {/* Descrição */}
       <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Descrição</div>
-      <div style={{ position: 'relative', marginBottom: errors.desc ? 0 : 14 }}>
+      <div style={{ position: 'relative', marginBottom: errors.desc ? 0 : 'var(--space-4)' }}>
         {resolveBrand(d.desc) && (
           <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', display: 'inline-flex' }}>
             <MerchantLogo text={d.desc} size={26} />
