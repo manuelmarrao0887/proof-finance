@@ -44,6 +44,40 @@ describe('ConfirmSheet + Anular', () => {
     const { container } = await renderWithStore(<ConfirmSheet />, { fixture: richFixture(), openModal: 'confirm', payload: true });
     expect(container.textContent).toBe('');
   });
+
+  // Fix round 1, finding 1: apagar uma despesa REFLETIDA de um grupo
+  // (addedExp com groupEntryId) também põe groupEntries[].linkedExpId a
+  // null (orphanedGroupEntries, store.jsx) — se o snapshot do Anular não
+  // levar 'groupEntries', a despesa volta mas a entry do grupo fica "sem
+  // reflexo", e a próxima edição da entry cria uma SEGUNDA despesa pessoal.
+  it('anular a remoção de uma despesa ligada a um grupo repõe o linkedExpId da entry (não só a despesa)', async () => {
+    const fixture = richFixture();
+    fixture.addedExp = [
+      ...fixture.addedExp,
+      { id: 'exp-airbnb-link', desc: 'Airbnb Reflexo', amount: 100, cat: 'cas', date: '2026-08-12', groupEntryId: 'ge-1' },
+    ];
+    fixture.groupEntries = fixture.groupEntries.map((e) => (e.id === 'ge-1' ? { ...e, linkedExpId: 'exp-airbnb-link' } : e));
+
+    let actionsRef;
+    await renderWithStore(<><ExpensesView /><ConfirmSheet /><Probe /></>, {
+      fixture,
+      onReady: ({ actions }) => { actionsRef = actions; },
+    });
+    expect(actionsRef.getState().groupEntries.find((e) => e.id === 'ge-1').linkedExpId).toBe('exp-airbnb-link');
+
+    await act(async () => { fireEvent.change(screen.getAllByLabelText(/Pesquisar despesas/)[0], { target: { value: 'airbnb reflexo' } }); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Remover despesa/ })); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Remover' })); });
+
+    // deleteExpense já orfanou a entry (comportamento existente do store).
+    expect(actionsRef.getState().addedExp.some((x) => x.id === 'exp-airbnb-link')).toBe(false);
+    expect(actionsRef.getState().groupEntries.find((e) => e.id === 'ge-1').linkedExpId).toBeNull();
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Anular' })); });
+
+    expect(actionsRef.getState().addedExp.some((x) => x.id === 'exp-airbnb-link')).toBe(true);
+    expect(actionsRef.getState().groupEntries.find((e) => e.id === 'ge-1').linkedExpId).toBe('exp-airbnb-link');
+  });
 });
 
 describe('ConfirmButton', () => {

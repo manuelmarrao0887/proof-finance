@@ -39,7 +39,9 @@ export default function CardsView() {
       message: (x.desc || '') + ' · ' + fmDateShort(x.date),
       amount: x.amount,
       onConfirm: () => {
-        const snap = snapshotSlices(actions.getState(), ['addedExp']);
+        // groupEntries também vai no snapshot — ver a mesma nota em
+        // ExpensesView.jsx deleteExp (Task 8, review "Fix round 1", finding 1).
+        const snap = snapshotSlices(actions.getState(), ['addedExp', 'groupEntries']);
         actions.deleteExpense(x.id);
         toast('Despesa removida', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
       },

@@ -249,7 +249,7 @@ export default function GroupSheet() {
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
               {'Apagar remove ' + deleteGroupCount + (deleteGroupCount === 1 ? ' movimento' : ' movimentos') + ' do grupo'
                 + (deleteGroupLinkedCount > 0 ? ' (incluindo ' + deleteGroupLinkedCount + (deleteGroupLinkedCount === 1 ? ' movimento' : ' movimentos') + ' nas tuas Despesas)' : '')
-                + '. Não é possível desfazer.'}
+                + '. Podes anular logo a seguir.'}
             </div>
           )}
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>

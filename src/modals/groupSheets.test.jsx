@@ -44,9 +44,6 @@ import PersonSheet from './PersonSheet.jsx';
 
 afterEach(() => {
   cleanup();
-  // setup.js define o default (aceita sempre) — repor entre testes que o
-  // sobrepõem para controlar a resposta da confirmação.
-  window.confirm = vi.fn(() => true);
 });
 
 describe('PersonSheet', () => {

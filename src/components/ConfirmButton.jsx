@@ -15,7 +15,13 @@ export default function ConfirmButton({ label, confirmLabel = 'Confirmar', onCon
         // 'border' (shorthand) — nunca 'borderColor' sozinho: misturar as
         // duas no mesmo objeto de estilo entre re-renders (armado <-> não
         // armado) dispara o aviso do React "Removing a style property...".
-        ...(armed ? { border: '1px solid var(--danger)', background: 'var(--signal-soft)' } : {}),
+        // A cor armada segue `danger`: sítios não destrutivos (ex. "Ligar" do
+        // reflect, "Importar mesmo assim") não devem piscar a vermelho.
+        ...(armed
+          ? danger
+            ? { border: '1px solid var(--danger)', background: 'var(--signal-soft)' }
+            : { border: '1px solid var(--primary)', background: 'var(--blue-soft)' }
+          : {}),
         ...style,
       }}
       aria-live="polite"

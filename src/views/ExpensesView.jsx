@@ -152,7 +152,13 @@ export default function ExpensesView() {
       message: (x.desc || '') + ' · ' + fmDateShort(x.date),
       amount: x.amount,
       onConfirm: () => {
-        const snap = snapshotSlices(actions.getState(), ['addedExp']);
+        // groupEntries também vai no snapshot: deleteExpense (store.jsx) põe
+        // linkedExpId a null na entry do grupo quando a despesa apagada tinha
+        // groupEntryId (orphanedGroupEntries) — sem repor essa fatia, o
+        // Anular ressuscita a despesa mas a entry fica "sem reflexo", e a
+        // próxima edição da entry cria uma SEGUNDA despesa pessoal (Task 8,
+        // review "Fix round 1", finding 1).
+        const snap = snapshotSlices(actions.getState(), ['addedExp', 'groupEntries']);
         actions.deleteExpense(x.id);
         toast('Despesa removida', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
       },
@@ -451,11 +457,15 @@ export default function ExpensesView() {
   const dateBad = addedExp.filter((x) => (x.date || '') !== normalizeStmtDate(x.date)).length;
   const needsClean = dupCount > 0 || dateBad > 0;
   const cleanExpenses = () => {
+    // groupEntries também vai no snapshot: setAddedExp (store.jsx) reconcilia
+    // groupEntries quando o dedupe descarta uma linha ligada a um grupo — ver
+    // a mesma nota em deleteExp (Task 8, review "Fix round 1", finding 1/5).
+    const snap = snapshotSlices(actions.getState(), ['addedExp', 'groupEntries']);
     actions.setAddedExp(dedupeAddedExp(addedExp));
     const parts = [];
     if (dupCount > 0) parts.push(dupCount + ' duplicada' + (dupCount === 1 ? '' : 's') + ' removida' + (dupCount === 1 ? '' : 's'));
     if (dateBad > 0) parts.push(dateBad + ' data' + (dateBad === 1 ? '' : 's') + ' corrigida' + (dateBad === 1 ? '' : 's'));
-    toast(parts.join(' · ') || 'Despesas importadas limpas', 'success');
+    toast(parts.join(' · ') || 'Despesas importadas limpas', 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
   };
   const cleanLabel =
     dupCount > 0 && dateBad > 0
@@ -481,9 +491,17 @@ export default function ExpensesView() {
       title: 'Remover despesas do mês',
       message: 'Remover as ' + monthExpCount + ' despesas de ' + selMonthLabel + '? Inclui manuais e importadas. Depois podes reimportar o extrato.',
       onConfirm: () => {
-        const snap = snapshotSlices(actions.getState(), ['addedExp']);
-        actions.setAddedExp(addedExp.filter((x) => (x.date || '').slice(0, 7) !== selMonthKey));
-        toast(monthExpCount + ' despesa' + (monthExpCount === 1 ? '' : 's') + ' de ' + selMonthLabel + ' removida' + (monthExpCount === 1 ? '' : 's'), 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
+        // Estado fresco no momento de confirmar, não o `addedExp` capturado
+        // no closure do render: a ConfirmSheet é assíncrona (fica aberta
+        // segundos, ao contrário do confirm() nativo que bloqueava a thread)
+        // — uma re-hidratação ou escrita do assistente nesse intervalo seria
+        // descartada em silêncio pelo write-back de um array desatualizado
+        // (Task 8, review "Fix round 1", finding 3).
+        const cur = actions.getState().addedExp || [];
+        const snap = snapshotSlices(actions.getState(), ['addedExp', 'groupEntries']);
+        const curCount = cur.filter((x) => (x.date || '').slice(0, 7) === selMonthKey).length;
+        actions.setAddedExp(cur.filter((x) => (x.date || '').slice(0, 7) !== selMonthKey));
+        toast(curCount + ' despesa' + (curCount === 1 ? '' : 's') + ' de ' + selMonthLabel + ' removida' + (curCount === 1 ? '' : 's'), 'success', { action: { label: 'Anular', onClick: () => actions.patch(snap) } });
       },
     });
   };
