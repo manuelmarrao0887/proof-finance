@@ -9,12 +9,13 @@
    Todas aceitam `now` (Date) para testes determinísticos.
    ════════════════════════════════════════════════════════════════════════ */
 
-import { fm } from './format.js';
+import { fm, fc } from './format.js';
 import { getAcctsLive, cardUsage, CARD_CAT } from './finance.js';
 import { upcomingTaxEvents } from './taxpt.js';
 import { savingsOpportunities } from './savings.js';
 import { findAnomalies } from './anomalies.js';
 import { goalsAtRisk } from './goals.js';
+import { upcomingRecurring } from './reminders.js';
 
 const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 const daysInMonth = (d) => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
@@ -379,4 +380,79 @@ export function monthForecast(state, now) {
     projectedEnd: income - projectedSpend,
     overBudget: income > 0 && projectedSpend > income,
   };
+}
+
+/* ── rankInsights ────────────────────────────────────────────────────────
+   Um Resumo com uma tese mostra UM aviso — o mais grave — e manda o resto
+   para o Relatório. Para escolher esse um é preciso pôr tudo na mesma lista
+   e ordená-la: os avisos de despesa (buildInsights) já vinham ordenados
+   entre si, mas o ritmo do mês, as metas em risco e as fixas a vencer
+   viviam em cartões próprios do Resumo, sem forma de competir com eles.
+
+   Junta e ordena por gravidade (alert > warn > info > good) e, dentro do
+   mesmo tom, pelo montante em jogo — entre dois alertas, o que custa mais
+   dinheiro é o que interessa. Devolve TODOS (a UI mostra o primeiro e
+   oferece "Ver mais (N)"). */
+export function rankInsights(state, now) {
+  const d = now || new Date();
+  const out = buildInsights(state, d).slice();
+  // buildInsights já corta a 3: um tema que lá esteja não se repete aqui.
+  const seen = new Set(out.map((i) => i.title));
+  const push = (ins) => {
+    if (seen.has(ins.title)) return;
+    seen.add(ins.title);
+    out.push(ins);
+  };
+
+  // 1. Ritmo do mês acima do rendimento (a projeção saiu do cartão "Podes
+  //    gastar": o hero diz o que falta, o aviso diz que o ritmo é o problema).
+  const f = monthForecast(state, d);
+  if (f.overBudget) {
+    const over = -f.projectedEnd;
+    push({
+      id: 'pace',
+      tone: 'warn',
+      title: 'Ritmo acima do rendimento',
+      detail: 'A este ritmo (' + fc(f.dailyBurn) + '/dia) fechas o mês em ' + fc(f.projectedSpend) + ' — ' + fc(over) + ' a mais.',
+      long:
+        'Despesa projetada ' + fc(f.projectedSpend) + ' para um rendimento de ' + fc(monthIncome(state, d)) +
+        '. Cortar ' + fc(over / Math.max(1, f.daysInMonth - f.elapsed)) + '/dia até fim do mês chega para fechar dentro.',
+      amount: over,
+    });
+  }
+
+  // 2. Metas com prazo que a reserva mensal não cumpre.
+  goalsAtRisk((state && state.goals) || [], d).forEach((g) => {
+    push({
+      id: 'goalrisk-' + g.id,
+      tone: 'warn',
+      title: g.name + ' não chega ao prazo',
+      detail: '+' + fc(g.gap) + '/mês para chegar a tempo',
+      long:
+        'Faltam ' + fc(g.remaining) + ' em ' + g.monthsLeft + ' ' + (g.monthsLeft === 1 ? 'mês' : 'meses') +
+        ' — precisas de ' + fc(g.needed) + '/mês (reservas ' + fc(g.monthly) + ').',
+      amount: g.gap,
+    });
+  });
+
+  // 3. Fixas a vencer nos próximos 3 dias (o cartão "A vencer em breve"
+  //    deixou de existir: é um aviso como os outros, e compete com eles).
+  upcomingRecurring((state && state.recurring) || [], 3, d, (state && state.addedExp) || []).forEach((u) => {
+    const amt = Number(u.rec.amount) || 0;
+    push({
+      id: 'due-' + (u.rec.id || u.rec.name),
+      tone: 'info',
+      title:
+        u.rec.name + (u.daysLeft === 0 ? ' vence hoje' : u.daysLeft === 1 ? ' vence amanhã' : ' vence em ' + u.daysLeft + ' dias'),
+      detail: fc(amt) + ' · débito previsto.',
+      amount: amt,
+    });
+  });
+
+  const order = { alert: 0, warn: 1, info: 2, good: 3 };
+  const rank = (t) => (order[t] == null ? 9 : order[t]);
+  // O montante de uma anomalia vive em `subject.amount` (é o que a UI usa
+  // para o logo do comerciante); os avisos novos trazem `amount`.
+  const amountOf = (i) => Number((i.subject && i.subject.amount) || i.amount || 0);
+  return out.sort((a, b) => rank(a.tone) - rank(b.tone) || amountOf(b) - amountOf(a));
 }

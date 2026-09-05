@@ -5,6 +5,7 @@ import { renderWithStore } from './renderWithStore.jsx';
 import { richFixture } from './fixtures.js';
 import ContextStrip from '../components/ContextStrip.jsx';
 import Hero from '../components/Hero.jsx';
+import SpendHero from '../components/SpendHero.jsx';
 import OverviewView from '../views/OverviewView.jsx';
 import ExpensesView from '../views/ExpensesView.jsx';
 import TaxView from '../views/TaxView.jsx';
@@ -38,6 +39,7 @@ const VIEWS = [
   ['ContextStrip/cards', () => <ContextStrip tab="cards" />],
   ['ContextStrip/groups', () => <ContextStrip tab="groups" />],
   ['Hero', () => <Hero />],
+  ['SpendHero', () => <SpendHero />],
   ['Overview', () => <OverviewView />],
   ['Expenses', () => <ExpensesView />],
   ['Tax', () => <TaxView />],

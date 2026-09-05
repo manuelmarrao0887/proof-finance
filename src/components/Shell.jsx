@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   App shell — Header + Hero/ContextStrip + tab-switched <main> + BottomNav,
+   App shell — Header + SpendHero/ContextStrip + tab-switched <main> + BottomNav,
    with all modals/sheets mounted. Navigation + modal state come from useUI().
    ════════════════════════════════════════════════════════════════════════ */
 
@@ -14,7 +14,7 @@ import DeviceToggle from './DeviceToggle.jsx';
 import AssistantFab from './AssistantFab.jsx';
 import Avatar, { greetingName } from './Avatar.jsx';
 
-import Hero from './Hero.jsx';
+import SpendHero from './SpendHero.jsx';
 import ContextStrip from './ContextStrip.jsx';
 import Onboarding from './Onboarding.jsx';
 
@@ -290,7 +290,7 @@ export default function Shell() {
               <Onboarding />
               {tab === 'overview' ? (
                 <>
-                  <Hero />
+                  <SpendHero />
                   <div className="dgrid">
                     <Suspense fallback={<ViewFallback />}>
                       <View />
@@ -321,7 +321,7 @@ export default function Shell() {
       <Header theme={state.theme} onToggleTheme={toggleTheme} syncStatus={syncStatus} user={currentUser} />
 
       <main className="has-bnav scroll-body" style={{ minHeight: '60svh' }}>
-        {tab === 'overview' ? <Hero /> : <ContextStrip tab={tab} />}
+        {tab === 'overview' ? <SpendHero /> : <ContextStrip tab={tab} />}
         <Onboarding />
         <Suspense fallback={<ViewFallback />}>
           <View />
