@@ -135,7 +135,7 @@ export default function TransactionsView() {
                       aria-label={'Categoria de ' + x.desc}
                       value={x.cat || ''}
                       onChange={(e) => actions.updateExpense(x.id, { cat: e.target.value })}
-                      style={{ marginTop: 'var(--space-1)', maxWidth: '100%', border: 'none', background: 'transparent', color: 'var(--text3)', fontSize: 'var(--fs-xs)', padding: 0 }}
+                      style={{ marginTop: 'var(--space-1)', maxWidth: '100%', border: 'none', background: 'transparent', color: 'var(--text3)', fontSize: 'var(--fs-xs)' }}
                     >
                       {cats.map((c) => (
                         <option key={c.id} value={c.id}>{c.nm}</option>

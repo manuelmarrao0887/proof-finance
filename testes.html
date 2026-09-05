@@ -631,7 +631,7 @@ const GROUPS = [
   ]},
   { id: 'T10', title: 'Navegação & tema', tests: [
     { id: 'T10.1', title: 'Tabs principais', steps: ['Tocar Resumo / Despesas / Metas'], expect: 'Muda de vista; a tab ativa fica destacada.' },
-    { id: 'T10.2', title: 'Menu "Mais" agrupado por secções', steps: ['Abrir "Mais"'], expect: 'Três secções com rótulo: "Registos" (Grupos, Receitas, Recorrentes, Transferências, Cartões de crédito), "Análise" (Calendário, Património, Análise, Investimentos, Crédito, Fiscal) e "Assistente" (Assistente IA) — 12 destinos no total, além de Definições e Novidades.' },
+    { id: 'T10.2', title: 'Menu "Mais" agrupado por secções', steps: ['Abrir "Mais"'], expect: 'Três secções com rótulo: "Registos" (Orçamento, Grupos, Receitas, Recorrentes, Transferências, Cartões de crédito), "Análise" (Calendário, Património, Análise, Investimentos, Crédito, Fiscal) e "Assistente" (Assistente IA) — 13 destinos no total, além de Definições e Novidades.' },
     { id: 'T10.3', title: 'Tema claro/escuro', steps: ['Alternar tema no cabeçalho (claro → escuro → sistema)'], expect: 'Todas as cores seguem o tema (sem zonas presas numa cor fixa).' },
     { id: 'T10.4', title: 'Carregamento lazy', steps: ['Abrir a vista AI e o importar extrato pela primeira vez'], expect: 'Carregam sem erro (chunks à parte); breve "A carregar…" é aceitável.' },
     { id: 'T10.5', title: 'Título e "Voltar" em cada ecrã de "Mais"', steps: ['Mais → qualquer destino (ex.: Calendário)'], expect: 'O ecrã ganha um cabeçalho com o título (ex.: "Calendário") e um botão "Voltar" (‹) de 44px; tocar "Voltar" regressa ao Resumo. A saudação do cabeçalho ("Olá, …") deixa de ser o título da página nesse ecrã — só há um <h1>.' },

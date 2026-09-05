@@ -19,6 +19,7 @@ const FILES = [
   'views/ExpensesView.jsx',
   'views/GoalsView.jsx',
   'views/CardsView.jsx',
+  'views/TransactionsView.jsx',
   'modals/AddExpenseSheet.jsx',
   'modals/GoalModal.jsx',
   'modals/AcctModal.jsx',
