@@ -5,7 +5,7 @@ import { renderWithStore } from './renderWithStore.jsx';
 import { richFixture } from './fixtures.js';
 import { initialPersisted } from '../store/store.jsx';
 import { monthSpend, netWorth } from '../lib/metrics.js';
-import { fc } from '../lib/format.js';
+import { fc, fm } from '../lib/format.js';
 import { todayISO } from '../lib/format.js';
 import ContextStrip from '../components/ContextStrip.jsx';
 import ExpensesView from '../views/ExpensesView.jsx';
@@ -28,11 +28,15 @@ describe('um número, uma fórmula', () => {
     }
   });
   it('o património é igual na faixa e no cartão de Gráficos', async () => {
-    const expected = fc(netWorth(state()));
+    // Mesma fórmula (netWorth(state) === compute(state).nW) dos dois lados —
+    // só o formatador difere: a faixa (ContextStrip) usa fc (sem cêntimos),
+    // o hero de Património (Hero.jsx, montado em Gráficos na Task 11) usa fm
+    // (com cêntimos), como o resto dos heroes da app.
+    const net = netWorth(state());
     const a = await renderWithStore(<ContextStrip tab="charts" />, { fixture: richFixture() });
-    expect(a.container.textContent).toContain(expected);
+    expect(a.container.textContent).toContain(fc(net));
     cleanup();
     const b = await renderWithStore(<ChartsView />, { fixture: richFixture() });
-    expect(b.container.textContent).toContain(expected);
+    expect(b.container.textContent).toContain(fm(net));
   });
 });

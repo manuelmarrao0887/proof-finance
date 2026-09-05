@@ -384,7 +384,7 @@ const GROUPS = [
     { id: 'T45.8', title: 'Categoria personalizada com ícone e cor', steps: ['Mais → Gerir categorias → Nova "Viagens" → ícone avião, cor laranja → Adicionar', 'Nova despesa'], expect: 'A grelha mostra "Viagens" com avião laranja — e também nos resultados da pesquisa de Despesas, nas recorrentes do mês, nas importadas, nas despesas do cartão e em Recorrentes. Com leitor de ecrã os botões dos seletores dizem "Ícone avião" e "Cor laranja", nunca "Ícone plane" nem "Cor #f5a623".' },
     { id: 'T45.9', title: 'Logo ao escrever a descrição', steps: ['Nova despesa → escrever "Netflix"'], expect: 'O logo aparece à esquerda dentro do campo enquanto a descrição bate numa marca; desaparece se apagares.' },
     { id: 'T45.10', title: 'Resumo compacto', steps: ['Ter uma anomalia (ex.: despesa 8× acima do habitual)'], expect: 'O insight numa linha: logo do comerciante, título curto ("Fora do padrão"), detalhe em até duas linhas (o rácio tem de se ler no telemóvel, sem hover) e botão ✓ (sem texto "Está certo"). Os valores usam o formato de euros do resto da app ("12 345,50 €"). O ✓ só aparece nos avisos que podem ser falso positivo (despesa suspeita); ritmo, metas e fixas não se dispensam.' },
-    { id: 'T45.13', title: 'Resumo com cinco blocos', steps: ['Abrir o Resumo com dados em todas as áreas'], expect: 'Por esta ordem: ações rápidas, faixa de Grupos (só com saldos por acertar), Plano do mês (com a barra "Ritmo" por baixo), UM insight e "Disponível". No máximo 6 cartões. Saúde financeira, subscrições detectadas, fundo de emergência, projeção, contas por categoria e "A vencer em breve" já não estão aqui.' },
+    { id: 'T45.13', title: 'Resumo com cinco blocos', steps: ['Abrir o Resumo com dados em todas as áreas'], expect: 'Por esta ordem: ações rápidas, faixa de Grupos (só com saldos por acertar), Plano do mês (com a barra "Ritmo" por baixo), UM insight e "Disponível". No máximo 6 cartões. Saúde financeira, subscrições detectadas, fundo de emergência, projeção, contas por categoria e "A vencer em breve" já não estão aqui — os quatro primeiros vivem agora em Mais → Análise, o fundo de emergência e as contas por categoria em Mais → Património.' },
     { id: 'T45.11', title: 'Recorrentes com tiles e sugestões', steps: ['Mais → Recorrentes com menos de 3 entradas', 'Tocar em "Netflix" nas sugestões'], expect: 'Três tiles (por mês, por ano, por pagar). Linhas com logo e "28 set" com ícone de calendário. A sugestão abre o modal com nome e categoria preenchidos. Com 3 ou mais recorrentes as sugestões desaparecem.' },
     { id: 'T45.12', title: 'Investimentos com logo do ativo', steps: ['Mais → Investimentos'], expect: 'VWCE com Vanguard, AAPL com Apple, MSFT com Microsoft; corretora como badge; ganho/perda em euros numa linha sob o valor MAIS o chip da percentagem; com saldos escondidos as duas desaparecem. A linha "20 @ 100 → 110" só no modal da posição.' },
     { id: 'T45.13', title: 'Sem pedidos externos', steps: ['Abrir DevTools → Network', 'Navegar por Despesas, Cartões, Recorrentes, Investimentos'], expect: 'Nenhum pedido a domínios de logos/favicons. Os logos vêm do bundle.' },
@@ -392,9 +392,9 @@ const GROUPS = [
     { id: 'T45.14', title: 'Temas e larguras', steps: ['Alternar tema claro/escuro', 'Testar a 320px e 390px'], expect: 'Logos, avatares, cartão e tiles legíveis nos dois temas — os tiles Google e Microsoft têm fundo cinzento muito claro e continuam a ver-se sobre a superfície do tema claro; sem scroll horizontal (node scripts/layout-check.mjs limpo).' },
   ]},
   { id: 'T46', title: 'Um número, uma fórmula (métricas partilhadas)', tests: [
-    { id: 'T46.1', title: 'A despesa do mês bate certo em toda a app', steps: ['Ver o total de despesas do mês na faixa do topo (tab Despesas)', 'Abrir Despesas, ver o cartão "DESPESAS {mês}"', 'Mais → Relatórios, ver "Despesa total"', 'Vista Calendário, ver o tile "Despesa"'], expect: 'Os quatro mostram exatamente o mesmo valor (mesma fórmula, src/lib/metrics.js: monthSpend) — nunca números diferentes para o mesmo mês.' },
+    { id: 'T46.1', title: 'A despesa do mês bate certo em toda a app', steps: ['Ver o total de despesas do mês na faixa do topo (tab Despesas)', 'Abrir Despesas, ver o cartão "DESPESAS {mês}"', 'Mais → Análise, ver "Despesa total"', 'Vista Calendário, ver o tile "Despesa"'], expect: 'Os quatro mostram exatamente o mesmo valor (mesma fórmula, src/lib/metrics.js: monthSpend) — nunca números diferentes para o mesmo mês.' },
     { id: 'T46.2', title: 'Recorrentes por lançar aparecem à parte no Calendário', steps: ['Ter uma despesa recorrente cujo mês ainda não tem a respetiva despesa lançada', 'Abrir Calendário no mês atual'], expect: 'Sob o total "Despesa" aparece uma linha extra "+ X previstas" — o valor das recorrentes por lançar NÃO está somado ao total acima.' },
-    { id: 'T46.3', title: 'Património bate certo na faixa e em Gráficos', steps: ['Ver "Património líquido" na faixa do topo (tabs Empréstimo/Calendário/Gráficos/Recorrentes/IA/Relatório)', 'Abrir Gráficos, ver o valor grande no cartão "Património"'], expect: 'Mostram o mesmo valor (netWorth, calculado a partir das contas ao vivo). O sparkline por baixo mostra o "histórico de snapshots" (pode divergir do valor de cima — são fontes diferentes por natureza) e, com 2+ snapshots, a variação diz "vs primeiro snapshot".' },
+    { id: 'T46.3', title: 'Património bate certo na faixa e em Património (Gráficos)', steps: ['Ver "Património líquido" na faixa do topo (tabs Empréstimo/Calendário/Património/Recorrentes/IA/Análise)', 'Abrir Património (ex-Gráficos), ver o valor grande no hero no topo'], expect: 'Mostram o mesmo valor (netWorth, calculado a partir das contas ao vivo). Mais abaixo, o cartão "Histórico do património" já não repete o número — só o sparkline do histórico de snapshots, que pode divergir do valor de cima por serem fontes diferentes por natureza.' },
     { id: 'T46.4', title: '"Contas de investimento" vs posições em Investimentos', steps: ['Resumo → ver o tile "Contas de investimento" em Disponível', 'Mais → Investimentos, ver o total no topo'], expect: 'O Resumo mostra o saldo das contas de categoria Investimentos/Cripto ("Contas de investimento", já não "Investimentos" sozinho). Se esse saldo for diferente do valor das posições detalhadas, Investimentos mostra por baixo do total uma linha "Contas de investimento: X · posições registadas: Y".' },
   ]},
   { id: 'T43', title: 'Grupos (despesas partilhadas)', tests: [
@@ -432,7 +432,7 @@ const GROUPS = [
     { id: 'T27.3', title: 'Sem histórico → sem setas', steps: ['Utilizador só com dados do mês atual'], expect: 'A navegação não aparece (nada para navegar).' },
     { id: 'T27.4', title: 'Partilhado com Receitas', steps: ['Deslizar meses nas Despesas', 'Abrir Receitas'], expect: 'As Receitas mostram a mesma janela de meses (estado partilhado).' },
     { id: 'T27.5', title: 'Orçamento e "Remover mês" seguem a seleção', steps: ['Navegar para um mês antigo e escolhê-lo'], expect: 'Limites/rollover e o botão "Remover mês" atuam sobre o mês selecionado (não sobre o mês atual).' },
-    { id: 'T27.6', title: 'Relatórios listam todos os meses com dados', steps: ['Mais → Relatórios'], expect: 'O seletor mostra TODOS os meses com despesas (ex.: Jan 26 … Jul 26), não apenas os últimos 6.' },
+    { id: 'T27.6', title: 'Relatórios listam todos os meses com dados', steps: ['Mais → Análise'], expect: 'O seletor mostra TODOS os meses com despesas (ex.: Jan 26 … Jul 26), não apenas os últimos 6.' },
     { id: 'T27.7', title: 'Resumo continua no mês atual', steps: ['Navegar para meses antigos e voltar ao Resumo'], expect: '"Podes gastar" e os insights continuam a referir-se ao MÊS ATUAL (não são afetados pela navegação).' },
   ]},
   { id: 'T28', title: 'Fiscal PT (IRS / IMI / IUC / e-Fatura)', tests: [
@@ -470,7 +470,7 @@ const GROUPS = [
     { id: 'T32.1', title: 'Projeção na frase do hero', steps: ['Resumo, com despesas variáveis no mês'], expect: 'A frase do hero diz o que falta ("Faltam-te X…") ou o que sobra ("…com X de sobra"). Sem despesa variável não projeta. Quando o ritmo passa o rendimento, o aviso "Ritmo acima do rendimento" concorre a insight.' },
     { id: 'T32.2', title: 'Não extrapola despesas fixas', steps: ['Ter uma renda paga no dia 1 e despesas variáveis'], expect: 'A projeção só extrapola a despesa variável; as fixas já pagas entram pelo valor real e as por pagar são somadas uma vez. Uma renda de 350 € paga no dia 1 NÃO vira 10.850 €.' },
     { id: 'T32.3', title: 'Aviso quando passa o rendimento', steps: ['Ritmo de despesa acima do rendimento'], expect: 'O bloco fica vermelho e diz quanto ficará acima do rendimento.' },
-    { id: 'T32.4', title: 'Visão anual nos Relatórios', steps: ['Mais → Relatórios (com ≥2 meses de dados no ano)'], expect: 'Barras dos 12 meses do ano, total e média mensal. O mês selecionado fica azul, o mais caro vermelho, e indica qual foi.' },
+    { id: 'T32.4', title: 'Visão anual nos Relatórios', steps: ['Mais → Análise (com ≥2 meses de dados no ano)'], expect: 'Barras dos 12 meses do ano, total e média mensal. O mês selecionado fica azul, o mais caro vermelho, e indica qual foi.' },
     { id: 'T32.5', title: 'Média só conta meses com dados', steps: ['Ano com apenas 3 meses preenchidos'], expect: 'A média é do total ÷ 3 (não ÷ 12).' },
   ]},
   { id: 'T33', title: 'Deteção de subscrições (precisão)', tests: [
@@ -498,7 +498,7 @@ const GROUPS = [
     { id: 'T36.2', title: 'Quanto falta pagar', steps: ['Ver o cartão do topo'], expect: 'Além do custo mensal e anual, indica "falta pagar X este mês" (só as que ainda não foram lançadas).' },
   ]},
   { id: 'T37', title: 'Onde podes poupar (Relatórios)', tests: [
-    { id: 'T37.1', title: 'Aparece com histórico suficiente', steps: ['Mais → Relatórios (com ≥3 meses fechados de dados)'], expect: 'Bloco "Onde podes poupar" com o total "até X€/ano" e até 5 sugestões ordenadas por impacto.' },
+    { id: 'T37.1', title: 'Aparece com histórico suficiente', steps: ['Mais → Análise (com ≥3 meses fechados de dados)'], expect: 'Bloco "Onde podes poupar" com o total "até X€/ano" e até 5 sugestões ordenadas por impacto.' },
     { id: 'T37.2', title: 'Custo anual das subscrições', steps: ['Ter recorrentes registadas'], expect: 'Mostra o custo anual total, quantas são e qual a maior, com chips das 4 maiores.' },
     { id: 'T37.3', title: 'Categoria consistentemente acima do limite', steps: ['Ter uma categoria acima do limite na maioria dos meses'], expect: 'Sugere voltar ao limite e quantifica a poupança anual (excesso médio × 12). Um único mês mau NÃO gera sugestão.' },
     { id: 'T37.4', title: 'Gastos formiga', steps: ['Ter muitas compras pequenas no mesmo sítio (≥8, média ≤15 €)'], expect: 'Mostra o nº de compras, a média por compra e o total; sugere cortar metade. Compras grandes não entram nesta regra.' },
@@ -521,7 +521,7 @@ const GROUPS = [
     { id: 'T39.6', title: 'Só despesas recentes', steps: ['Ter uma despesa estranha com mais de 45 dias'], expect: 'Não alerta (a janela de análise são os últimos 45 dias).' },
   ]},
   { id: 'T40', title: 'Fecho do mês', tests: [
-    { id: 'T40.1', title: 'Aparece nos primeiros dias', steps: ['Abrir a app entre os dias 1 e 7 do mês'], expect: 'Cartão "Fecho de {mês anterior}" com o total gasto. Depois do dia 7 desaparece. Já NÃO está no Resumo (que tem uma tese só): o bloco foi extraído e passa a viver no Relatório.' },
+    { id: 'T40.1', title: 'Aparece nos primeiros dias', steps: ['Abrir a app entre os dias 1 e 7 do mês'], expect: 'Cartão "Fecho de {mês anterior}" com o total gasto. Depois do dia 7 desaparece. Já NÃO está no Resumo (que tem uma tese só): o bloco foi extraído e passa a viver no topo de Mais → Análise (ex-Relatório), antes do seletor de mês.' },
     { id: 'T40.2', title: 'Comparação com o hábito', steps: ['Ter 3 meses de histórico antes do mês fechado'], expect: 'Mostra ±N% face à média dos 3 meses anteriores; verde quando gastaste menos, laranja quando gastaste mais.' },
     { id: 'T40.3', title: 'Poupança do mês fechado', steps: ['Ter rendimento registado'], expect: 'Indica quanto poupaste e a percentagem do rendimento. Sem rendimento não inventa taxa.' },
     { id: 'T40.4', title: 'Onde foi o dinheiro', steps: ['Ver a última linha'], expect: 'Lista as 3 maiores categorias do mês fechado com os valores.' },
@@ -631,7 +631,7 @@ const GROUPS = [
   ]},
   { id: 'T10', title: 'Navegação & tema', tests: [
     { id: 'T10.1', title: 'Tabs principais', steps: ['Tocar Resumo / Despesas / Metas'], expect: 'Muda de vista; a tab ativa fica destacada.' },
-    { id: 'T10.2', title: 'Menu "Mais"', steps: ['Abrir "Mais"'], expect: 'Dá acesso a Calendário, Receitas, Recorrentes, Gráficos, Empréstimo, AI.' },
+    { id: 'T10.2', title: 'Menu "Mais"', steps: ['Abrir "Mais"'], expect: 'Dá acesso a Calendário, Receitas, Recorrentes, Património, Empréstimo, AI.' },
     { id: 'T10.3', title: 'Tema claro/escuro', steps: ['Alternar tema no cabeçalho (claro → escuro → sistema)'], expect: 'Todas as cores seguem o tema (sem zonas presas numa cor fixa).' },
     { id: 'T10.4', title: 'Carregamento lazy', steps: ['Abrir a vista AI e o importar extrato pela primeira vez'], expect: 'Carregam sem erro (chunks à parte); breve "A carregar…" é aceitável.' },
   ]},
@@ -662,11 +662,11 @@ const GROUPS = [
     { id: 'T18.3', title: 'Sem recorrentes a vencer', steps: ['Nenhuma nos próximos 5 dias'], expect: 'O banner não aparece.' },
   ]},
   { id: 'T20', title: 'Património (net worth)', tests: [
-    { id: 'T20.1', title: 'Cartão de património', steps: ['Gráficos (≥2 leituras de saldo em datas diferentes)'], expect: 'Topo mostra "Património" com valor atual, variação desde o início e sparkline.' },
-    { id: 'T20.2', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos no Resumo → abrir Gráficos'], expect: 'O património aparece •••• e sem o gráfico de valores.' },
+    { id: 'T20.1', title: 'Hero de património', steps: ['Abrir Património (Gráficos)'], expect: 'O hero no topo mostra "Património Líquido" com o valor atual (contas ao vivo), o chip de variação e a barra de alocação por categoria. Com ≥2 leituras de saldo em datas diferentes, mais abaixo aparece também o cartão "Histórico do património" com o sparkline do histórico de snapshots (sem repetir o número).' },
+    { id: 'T20.2', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos no Resumo → abrir Património (Gráficos)'], expect: 'O hero aparece •••• e sem sparkline; o cartão "Histórico do património" some por completo (não sobra número nem gráfico para mostrar).' },
   ]},
   { id: 'T16', title: 'Relatórios do mês', tests: [
-    { id: 'T16.1', title: 'Abrir relatórios', steps: ['Mais → Relatórios'], expect: 'Seletor dos últimos 6 meses + despesa total do mês.' },
+    { id: 'T16.1', title: 'Abrir relatórios', steps: ['Mais → Análise'], expect: 'Seletor dos últimos 6 meses + despesa total do mês.' },
     { id: 'T16.2', title: 'Top categorias + variação', steps: ['Mês com despesas'], expect: 'Lista por categoria (barra) com % de variação vs mês anterior (▲/▼).' },
     { id: 'T16.3', title: 'Maiores despesas', steps: ['Ver a secção'], expect: 'Top 5 despesas individuais do mês, maior primeiro.' },
     { id: 'T16.4', title: 'Mês vazio', steps: ['Escolher um mês sem despesas'], expect: 'Estado vazio "Sem despesas neste mês".' },
@@ -731,7 +731,7 @@ const GROUPS = [
     { id: 'T14.13', title: 'Abrir um popup não desformata a página', steps: ['Reparar na largura/posição do conteúdo', 'Abrir e fechar uma sheet'], expect: 'Nada muda de largura nem se desloca lateralmente ao abrir/fechar (a goteira da barra de scroll está sempre reservada — scrollbar-gutter:stable).' },
     { id: 'T14.14', title: 'Sheets não passam do ecrã visível no iPhone', steps: ['Safari com a barra de endereço visível', 'Abrir uma sheet alta (Definições, Importar extrato, Assistente)'], expect: 'O rodapé da sheet (botões Guardar/Cancelar) fica sempre visível — a altura usa dvh, não vh, por isso não conta com a barra de endereço recolhida.' },
     { id: 'T14.15', title: 'Sem scroll horizontal em ecrãs pequenos (320px)', steps: ['Chrome DevTools a 320px de largura (ou iPhone SE)', 'Percorrer as 15 tabs', 'Abrir os 23 popups'], expect: 'Nenhum ecrã ou popup faz scroll lateral. Pontos que falhavam: seletor de meses do Relatório, grelha de categorias da Nova Despesa, par de datas Início/Fim no Grupo.' },
-    { id: 'T14.16', title: 'Seletor de meses do Relatório', steps: ['Mais → Relatórios num telemóvel'], expect: 'Os 6 meses aparecem numa grelha de 3 colunas (2 linhas), todos visíveis sem arrastar para o lado.' },
+    { id: 'T14.16', title: 'Seletor de meses do Relatório', steps: ['Mais → Análise num telemóvel'], expect: 'Os 6 meses aparecem numa grelha de 3 colunas (2 linhas), todos visíveis sem arrastar para o lado.' },
   ]},
 ];
 
@@ -943,12 +943,12 @@ const LAYERS = [
     ['Receitas', 'IncomesView'],
     ['Recorrentes', 'RecurringView'],
     ['Calendário', 'CalendarView'],
-    ['Gráficos', 'ChartsView'],
+    ['Património', 'ChartsView'],
     ['Metas · Empréstimo', 'GoalsView · LoanView'],
     ['Cartões de crédito', 'CardsView'],
     ['Transferências', 'TransfersView'],
     ['Fiscal (IRS/IMI/IUC)', 'TaxView'],
-    ['Relatórios', 'ReportView'],
+    ['Análise', 'ReportView'],
     ['Investimentos', 'InvestmentsView'],
     ['Grupos', 'GroupsView'],
     ['AI', 'AIView'],

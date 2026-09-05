@@ -1,6 +1,8 @@
 /* ════════════════════════════════════════════════════════════════════════
-   ReportView — relatório & insights do mês: total, top categorias, variação
-   vs mês anterior e maiores despesas. Seletor de mês.
+   ReportView — "Análise" tab (ex-"Relatório"): fecho do mês, saúde financeira,
+   projeção e subscrições detetadas (extraídos do Resumo na Task 10, montados
+   aqui na Task 11), seguidos do relatório original — total, top categorias,
+   variação vs mês anterior e maiores despesas. Seletor de mês.
    ════════════════════════════════════════════════════════════════════════ */
 
 import React, { useState, useMemo } from 'react';
@@ -11,6 +13,10 @@ import { monthSpend } from '../lib/metrics.js';
 import { monthsWithData, monthLabelShort, MONTH_SHORT as MS } from '../lib/months.js';
 import { savingsOpportunities, totalSavings } from '../lib/savings.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
+import ClosingCard from '../components/overview/ClosingCard.jsx';
+import HealthCard from '../components/overview/HealthCard.jsx';
+import ProjectionCard from '../components/overview/ProjectionCard.jsx';
+import SubscriptionsCard from '../components/overview/SubscriptionsCard.jsx';
 
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -50,6 +56,14 @@ export default function ReportView() {
 
   return (
     <div className="fadeUp" style={{ padding: '0 20px calc(40px + var(--safe-bottom))' }}>
+      {/* Blocos extraídos do Resumo na Task 10, montados aqui na Task 11 — cada
+          um lê o store por si e já esconde/mostra-se sozinho (ClosingCard só
+          nos primeiros dias do mês; os outros só sem utilizador novo). */}
+      <ClosingCard />
+      <HealthCard />
+      <ProjectionCard />
+      <SubscriptionsCard />
+
       {/* Seletor de mês */}
       {/* ms-wrap: grelha 3xN em vez de uma tira com scroll horizontal — os 6
           meses somavam 456px de conteúdo e não cabiam em nenhum telemóvel. */}

@@ -1,5 +1,8 @@
 /* ════════════════════════════════════════════════════════════════════════
-   ChartsView — "Gráficos" tab. Ported from rCharts (orig 993-1004).
+   ChartsView — "Património" tab (ex-"Gráficos"). Ported from rCharts
+   (orig 993-1004); Task 11 mounts Hero (net-worth hero + alocação) and two
+   blocks extracted from the Resumo on Task 10 (AccountsByCategory,
+   EmergencyFundCard) above the original evolution charts.
 
    Stacks chrt() sparklines over getAllHist(state). chrt(...) returns an SVG
    HTML string, so each card's series are concatenated and rendered with
@@ -10,8 +13,11 @@
 import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { getAllHist, chrt } from '../lib/finance.js';
-import { netWorth, netWorthHistory } from '../lib/metrics.js';
-import { fm, fc } from '../lib/format.js';
+import { netWorthHistory } from '../lib/metrics.js';
+import { fm } from '../lib/format.js';
+import Hero from '../components/Hero.jsx';
+import AccountsByCategory from '../components/overview/AccountsByCategory.jsx';
+import EmergencyFundCard from '../components/overview/EmergencyFundCard.jsx';
 
 export default function ChartsView() {
   const { state, currentUser } = useStore();
@@ -20,10 +26,15 @@ export default function ChartsView() {
 
   // Charts plot evolution over time — chrt() needs >= 2 dated snapshots to draw.
   // With 0 or 1 snapshot every series returns '' and the cards look empty, so
-  // show an explicit empty state instead of blank cards.
+  // show an explicit empty state instead of blank cards. Hero/AccountsByCategory/
+  // EmergencyFundCard read live balances (não dependem do histórico), por isso
+  // aparecem sempre, mesmo sem 2 snapshots.
   if (ah.length < 2) {
     return (
       <div style={{ padding: '0 20px 40px' }}>
+        <Hero />
+        <AccountsByCategory />
+        <EmergencyFundCard />
         <div className="cd" style={{ textAlign: 'center', padding: '32px 20px' }}>
           <div style={{ width: 56, height: 56, margin: '0 auto 16px', borderRadius: '50%', background: 'var(--blue-soft)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -56,34 +67,25 @@ export default function ChartsView() {
     chrt(ah.map((x) => x.xT), 'var(--warning)', 'XTB Transações', ah, fm) +
     chrt(ah.map((x) => x.tC), 'var(--secondary)', 'TR Corretagem', ah, fm);
 
-  // Património (net worth): o número em cima é SEMPRE netWorth(s) — a mesma
-  // fórmula de contas ao vivo que a faixa e o resto da app usam (antes este
-  // cartão mostrava o último snapshot do histórico, que podia divergir bastante
-  // do valor real das contas). O sparkline por baixo continua a traçar o
-  // HISTÓRICO de snapshots (netWorthHistory) — daí a legenda dizer isso e o
-  // delta comparar explicitamente "vs primeiro snapshot", não "desde o início".
+  // Histórico do património: o headline (valor atual) já vive na Hero, que
+  // usa a MESMA fórmula de contas ao vivo (netWorth(s) === compute(s).nW) —
+  // por isso este cartão já não repete o número, só o sparkline do
+  // HISTÓRICO de snapshots (netWorthHistory), que é uma fonte diferente por
+  // natureza e pode divergir do valor ao vivo (ver testes.html T46.3).
   const nws = netWorthHistory(s);
-  const curNet = netWorth(s);
-  const firstNet = nws.length ? nws[0].net : 0;
-  const delta = curNet - firstNet;
   const hidden = !!state.balancesHidden;
 
   return (
     <div style={{ padding: '0 20px 40px' }}>
-      <div className="cd" style={{ marginBottom: 12 }}>
-        <div className="lb" style={{ marginBottom: 8 }}>Património</div>
-        <div className="m" style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em' }}>
-          {hidden ? '••••' : fc(curNet)}
+      <Hero />
+      <AccountsByCategory />
+      <EmergencyFundCard />
+      {!hidden && nws.length > 1 && (
+        <div className="cd" style={{ marginBottom: 12 }}>
+          <div className="lb" style={{ marginBottom: 8 }}>Histórico do património</div>
+          <div dangerouslySetInnerHTML={{ __html: chrt(nws.map((p) => p.net), 'var(--primary)', 'histórico de snapshots', nws, fm) }} />
         </div>
-        {!hidden && nws.length >= 2 && (
-          <div className="m" style={{ fontSize: 12, fontWeight: 600, marginTop: 4, color: delta >= 0 ? 'var(--success)' : 'var(--signal)' }}>
-            {(delta >= 0 ? '+' : '') + fc(delta)} vs primeiro snapshot
-          </div>
-        )}
-        {!hidden && (
-          <div style={{ marginTop: 12 }} dangerouslySetInnerHTML={{ __html: chrt(nws.map((p) => p.net), 'var(--primary)', 'histórico de snapshots', nws, fm) }} />
-        )}
-      </div>
+      )}
       <div className="cd" style={{ marginBottom: 12 }}>
         <div className="lb" style={{ marginBottom: 16 }}>
           Evolução patrimonial
