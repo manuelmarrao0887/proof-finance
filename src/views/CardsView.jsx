@@ -4,7 +4,7 @@
    (barra), lista de despesas do cartão, e ações "+ Despesa" / "Pagar dívida".
    ════════════════════════════════════════════════════════════════════════ */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
@@ -13,6 +13,8 @@ import { snapshotSlices } from '../lib/snapshot.js';
 import { fm, fmDateShort } from '../lib/format.js';
 import { getAcctsLive, normAcct, CARD_CAT } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
+import { monthKeyAt, monthLabel } from '../lib/months.js';
+import MonthNav from '../components/MonthNav.jsx';
 import MerchantLogo, { BankLogo, BrandMark } from '../components/MerchantLogo.jsx';
 import Amount from '../components/Amount.jsx';
 
@@ -23,6 +25,11 @@ export default function CardsView() {
   const confirm = useConfirm();
   const hidden = !!state.balancesHidden;
   const mv = (v) => (hidden ? '••••' : fm(v));
+  // Um só seletor de tempo (Task 16, D12): filtra despesas/pagamentos pelo
+  // mês selecionado no MonthNav (o último da janela). "Ver todos" desliga o
+  // filtro sem mudar o mês selecionado.
+  const [showAll, setShowAll] = useState(false);
+  const ym = monthKeyAt(3, state.mOff);
 
   const live = getAcctsLive({ ...state, currentUser });
   const cards = live.filter((a) => a.c === CARD_CAT);
@@ -66,22 +73,37 @@ export default function CardsView() {
           </button>
         </div>
       ) : (
-        cards.map((a) => {
+        <>
+          <MonthNav
+            extra={
+              <button
+                type="button"
+                onClick={() => setShowAll((v) => !v)}
+                aria-pressed={showAll}
+                style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                {showAll ? 'Filtrar por mês' : 'Ver todos'}
+              </button>
+            }
+          />
+          {cards.map((a) => {
           const cardLabel = label(a);
           const plafond = a.plafond || 0;
           const used = a.used || 0;
           const available = plafond - used;
           const pct = plafond > 0 ? Math.min(100, Math.max(0, (used / plafond) * 100)) : 0;
           const over = plafond > 0 && used > plafond;
-          const exps = (state.addedExp || [])
+          const allExps = (state.addedExp || [])
             .filter((x) => normAcct(x.acct) === normAcct(cardLabel))
             .slice()
             .sort((x, y) => (y.date || '').localeCompare(x.date || ''));
+          const exps = showAll ? allExps : allExps.filter((x) => (x.date || '').slice(0, 7) === ym);
           // Pagamentos ao cartão = transferências cujo destino é este cartão.
-          const pays = (state.transfers || [])
+          const allPays = (state.transfers || [])
             .filter((t) => normAcct(t.to) === normAcct(cardLabel))
             .slice()
             .sort((x, y) => (y.date || '').localeCompare(x.date || ''));
+          const pays = showAll ? allPays : allPays.filter((t) => (t.date || '').slice(0, 7) === ym);
           // last4/network vivem no customAcct; getAcctsLive não os propaga.
           const raw = (state.customAccts || []).find((x) => x.id === a.id) || {};
           const last4 = raw.last4 || '';
@@ -164,7 +186,9 @@ export default function CardsView() {
               {/* Registo de despesas */}
               <div className="lb" style={{ fontSize: 'var(--fs-xs)', marginBottom: 'var(--space-3)' }}>Despesas do cartão ({exps.length})</div>
               {exps.length === 0 ? (
-                <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)' }}>Ainda sem despesas neste cartão.</div>
+                <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)' }}>
+                  {showAll ? 'Ainda sem despesas neste cartão.' : 'Sem movimentos em ' + monthLabel(ym) + '.'}
+                </div>
               ) : (
                 exps.map((x) => (
                   <div key={x.id} className="rw" style={{ padding: 'var(--space-3) 0', borderTop: '1px solid var(--border)', gap: 'var(--space-3)' }}>
@@ -184,7 +208,8 @@ export default function CardsView() {
               )}
             </div>
           );
-        })
+          })}
+        </>
       )}
     </div>
   );

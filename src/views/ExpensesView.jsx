@@ -110,8 +110,13 @@ export default function ExpensesView() {
   const [xExp, setXExp] = useState(null); // expanded budget-category id
 
   const preview = isPreviewMode(s);
-  const em = state.em;
-  const isQ = em === 4;
+  // Um só seletor de tempo (Task 16, D12): o mês selecionado é sempre o
+  // último da janela de 4 meses (em=3, ver MonthNav/setMOff em lib/months.js
+  // e store.jsx). O modo "3M" deixa de mexer no `em` global partilhado com
+  // outras vistas (Receitas) e passa a um toggle local mostrado como chip.
+  const em = 3;
+  const [range3, setRange3] = useState(false);
+  const isQ = range3;
 
   const addedExp = state.addedExp || [];
   const bdg = state.bdg || [];
@@ -613,31 +618,32 @@ export default function ExpensesView() {
         </div>
       )}
 
-      {/* Navegação de meses (histórico) + barra de meses */}
-      {!preview && <MonthNav />}
-      <div className="ms-bar">
-        {ms.map((m, i) => (
-          <button
-            key={i}
-            type="button"
-            className={'ms' + (em === i ? ' on' : '')}
-            aria-current={em === i ? 'true' : undefined}
-            onClick={() => actions.setEm(i)}
-            style={i < 3 ? { borderRight: '1px solid var(--border)' } : undefined}
-          >
-            {m}
-          </button>
-        ))}
-        <button
-          type="button"
-          className={'ms' + (em === 4 ? ' on' : '')}
-          aria-current={em === 4 ? 'true' : undefined}
-          onClick={() => actions.setEm(4)}
-          style={{ borderLeft: '1px solid var(--border)' }}
-        >
-          3M
-        </button>
-      </div>
+      {/* Navegação de meses (histórico, único seletor de tempo — Task 16) +
+          chip "3M" (soma os 3 meses mais antigos da janela) */}
+      {!preview && (
+        <MonthNav
+          extra={
+            <button
+              type="button"
+              onClick={() => setRange3((v) => !v)}
+              aria-pressed={isQ}
+              style={{
+                padding: 'var(--space-2) var(--space-3)',
+                border: '1px solid ' + (isQ ? 'var(--primary)' : 'var(--border)'),
+                background: isQ ? 'var(--primary)' : 'var(--surface)',
+                color: isQ ? '#fff' : 'var(--text2)',
+                borderRadius: 999,
+                fontSize: 'var(--fs-xs)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              3M
+            </button>
+          }
+        />
+      )}
 
       {/* Total card */}
       <div className="cd" style={{ marginBottom: 'var(--space-4)' }}>

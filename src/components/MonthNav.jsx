@@ -1,7 +1,10 @@
 /* ════════════════════════════════════════════════════════════════════════
-   MonthNav — setas ← → que deslizam a janela de 4 meses (state.mOff).
-   Aparece por cima da barra de meses; desativa-se nos limites (não há futuro,
-   nem histórico anterior ao mês mais antigo com dados).
+   MonthNav — setas ← → que deslizam a janela de 4 meses (state.mOff) e
+   mostram o mês selecionado (o último da janela, em=3). Único seletor de
+   tempo partilhado por Despesas, Cartões e Transferências (Task 16).
+   Desativa-se nos limites (não há futuro, nem histórico anterior ao mês
+   mais antigo com dados) mas NUNCA deixa de renderizar — sem histórico
+   mostra o mês atual com as duas setas desativadas.
    ════════════════════════════════════════════════════════════════════════ */
 
 import React from 'react';
@@ -14,16 +17,16 @@ const Arrow = ({ dir }) => (
   </svg>
 );
 
-export default function MonthNav() {
+// `extra`: nó opcional renderizado à direita das setas (ex.: chip "3M" em Despesas).
+export default function MonthNav({ extra }) {
   const { state, actions } = useStore();
   const mOff = Number(state.mOff) || 0;
   const min = minMonthOffset(state);
   const canBack = mOff > min;
   const canFwd = mOff < 0;
-  if (min === 0 && mOff === 0) return null; // sem histórico → nada para navegar
 
-  const from = monthLabel(monthKeyAt(0, mOff));
-  const to = monthLabel(monthKeyAt(3, mOff));
+  // Mês selecionado = o último da janela (em=3, ver lib/months.js e setMOff).
+  const label = monthLabel(monthKeyAt(3, mOff));
   const btn = (enabled) => ({
     width: 30,
     height: 30,
@@ -50,8 +53,8 @@ export default function MonthNav() {
       >
         <Arrow dir="left" />
       </button>
-      <span style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {from.split(' ')[0]} – {to}
+      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', textAlign: 'center', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {label}
       </span>
       <button
         type="button"
@@ -62,6 +65,7 @@ export default function MonthNav() {
       >
         <Arrow dir="right" />
       </button>
+      {extra}
     </div>
   );
 }

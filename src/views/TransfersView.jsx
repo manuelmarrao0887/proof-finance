@@ -2,13 +2,15 @@
    TransfersView — transferências entre contas: lista + criar + remover.
    ════════════════════════════════════════════════════════════════════════ */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useConfirm } from '../components/ConfirmSheet.jsx';
 import { snapshotSlices } from '../lib/snapshot.js';
 import { fm, fmDateShort } from '../lib/format.js';
+import { monthKeyAt, monthLabel } from '../lib/months.js';
+import MonthNav from '../components/MonthNav.jsx';
 import { BankLogo } from '../components/MerchantLogo.jsx';
 import Amount from '../components/Amount.jsx';
 
@@ -17,7 +19,12 @@ export default function TransfersView() {
   const { open } = useUI();
   const toast = useToast();
   const confirm = useConfirm();
-  const transfers = (state.transfers || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  // Um só seletor de tempo (Task 16, D12): filtra pelo mês selecionado no
+  // MonthNav (o último da janela). "Ver todos" desliga o filtro.
+  const [showAll, setShowAll] = useState(false);
+  const ym = monthKeyAt(3, state.mOff);
+  const allTransfers = (state.transfers || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const transfers = showAll ? allTransfers : allTransfers.filter((t) => (t.date || '').slice(0, 7) === ym);
   const hidden = !!state.balancesHidden;
   const mv = (v) => (hidden ? '••••' : fm(v));
 
@@ -44,9 +51,24 @@ export default function TransfersView() {
         + Nova transferência
       </button>
 
+      <MonthNav
+        extra={
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            aria-pressed={showAll}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
+            {showAll ? 'Filtrar por mês' : 'Ver todos'}
+          </button>
+        }
+      />
+
       {transfers.length === 0 ? (
         <div className="empty" style={{ padding: '40px 20px' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Sem transferências</div>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+            {showAll ? 'Sem transferências' : 'Sem movimentos em ' + monthLabel(ym)}
+          </div>
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>Move dinheiro entre as tuas contas sem contar como despesa.</div>
         </div>
       ) : (
