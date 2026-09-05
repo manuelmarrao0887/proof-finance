@@ -98,6 +98,7 @@ html[data-theme="dark"]{
   --info:#5b85f2;
   --signal-soft:rgba(244,120,120,0.16);
   --success-soft:rgba(76,217,138,0.16);
+  --orange-soft:rgba(247,185,85,0.16);
   --blue:var(--primary);
   --blue-soft:rgba(91,133,242,0.16);
   --purple:var(--secondary);

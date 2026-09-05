@@ -116,11 +116,16 @@ export default function GoalsView() {
         // Estado: "concluída", amount/mês para chegar a tempo, "no ritmo", ou "a começar".
         const riskAmount = risk ? (risk.gap > 0 ? risk.gap : risk.needed) : null;
         const stateLabel = done ? 'concluída' : risk ? '+' + mask(riskAmount, hidden, fc) + '/mês para chegar a tempo' : g.monthly > 0 ? 'no ritmo' : 'a começar';
-        const tone = done || stateLabel === 'no ritmo' ? 'var(--success)' : risk ? 'var(--warning)' : 'var(--text3)';
+        const isSuccessTone = done || stateLabel === 'no ritmo';
+        const tone = isSuccessTone ? 'var(--success)' : risk ? 'var(--warning)' : 'var(--text3)';
         const riskText = risk
           ? 'Não chega para o prazo: precisas de ' + mask(risk.needed, hidden, fc) + '/mês' + (risk.monthly > 0 ? ' (+' + mask(risk.gap, hidden, fc) + ')' : '') + ' nos próximos ' + risk.monthsLeft + (risk.monthsLeft === 1 ? ' mês' : ' meses') + '.'
           : undefined;
-        const chipStyle = { border: 'none', background: 'color-mix(in srgb, ' + tone + ' 14%, transparent)', color: tone, fontWeight: 700, padding: 'var(--space-1) var(--space-3)', flexShrink: 0 };
+        const chipStyle = risk
+          ? { border: 'none', background: 'var(--orange-soft)', color: 'var(--fg)', fontWeight: 700, padding: 'var(--space-1) var(--space-3)', flexShrink: 0 }
+          : isSuccessTone
+          ? { border: 'none', background: 'var(--success-soft)', color: 'var(--fg)', fontWeight: 700, padding: 'var(--space-1) var(--space-3)', flexShrink: 0 }
+          : { border: 'none', background: 'color-mix(in srgb, ' + tone + ' 14%, transparent)', color: tone, fontWeight: 700, padding: 'var(--space-1) var(--space-3)', flexShrink: 0 };
         // id do painel; só vai a aria-controls enquanto ele existe no DOM.
         const riskId = 'goal-risk-' + g.id;
         const riskOpen = !!risk && openRisk === g.id;
@@ -227,8 +232,8 @@ export default function GoalsView() {
                   style={{
                     padding: 'var(--space-2) var(--space-3)',
                     border: '1px solid var(--success)',
-                    background: 'color-mix(in srgb, var(--success) 12%, transparent)',
-                    color: 'var(--success)',
+                    background: 'var(--success-soft)',
+                    color: 'var(--fg)',
                     borderRadius: 6,
                     fontSize: 'var(--fs-xs)',
                     fontWeight: 700,
