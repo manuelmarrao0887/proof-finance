@@ -59,7 +59,6 @@ export default function AccountsByCategory() {
   const C = useMemo(() => compute(s), [s]);
   const cats = Object.keys(C.grp);
   const hidden = !!state.balancesHidden;
-  const mv = (v) => mask(v, hidden, fm);
 
   if (cats.length === 0) return null;
 
