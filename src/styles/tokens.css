@@ -24,6 +24,7 @@
      usam como TEXTO (percentagens, badges, títulos de avisos). Os valores
      antigos (#3b6fee/#7b5fe0) ficavam a 4,1:1. */
   --primary:#2a5be0;
+  --primary-cta:#2a5be0;  /* fundo dos botões "on"/primários — branco ≥4,5:1 (Task 22) */
   --primary-dark:#2149c4;
   --secondary:#6b4fd6;
   --accent:#2a5be0;
@@ -86,8 +87,9 @@ html[data-theme="dark"]{
   --fg-muted:#9aa6c0;
   --fg-subtle:#8792b0;  /* era #5f6b89 = 3,2:1 no escuro; agora ≥4,9:1 */
   --primary:#5b85f2;
+  --primary-cta:#3d66d9;  /* mais escuro que --primary p/ branco ≥4,5:1 no escuro (5,1:1) */
   --primary-dark:#3b6fee;
-  --secondary:#9a82f0;
+  --secondary:#7860e0;  /* era #9a82f0 = 3,08:1 com o glifo branco do .assistant-fab; agora 4,62:1 (Task 22) */
   --accent:#5b85f2;
   --bg-glass:rgba(10,16,36,0.82);
   --success:#4cd98a;
@@ -151,7 +153,7 @@ select option{background:var(--bg2);color:var(--text)}
 .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .tab-bar{display:flex;padding:3px;margin:0 20px 20px;background:var(--elevated);border:1px solid var(--border);border-radius:14px;gap:2px}
 .tb{flex:1;padding:9px 4px;border:none;border-radius:11px;background:transparent;font-size:11px;font-weight:500;color:var(--fg-muted);white-space:nowrap;transition:all 0.2s;letter-spacing:0.04em;font-family:var(--mono);text-transform:uppercase}
-.tb.on{background:var(--primary);color:#fff;border:none;box-shadow:0 2px 6px rgba(59,111,238,0.30)}
+.tb.on{background:var(--primary-cta);color:#fff;border:none;box-shadow:0 2px 6px rgba(59,111,238,0.30)}
 .exp-btn{width:100%;display:flex;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;color:var(--fg);text-align:left;box-shadow:var(--shadow)}
 .exp-detail{background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 16px 16px;padding:12px 16px;margin-top:-8px}
 .bar{height:4px;background:var(--elevated);overflow:hidden;margin-top:8px;border-radius:2px}
@@ -162,7 +164,7 @@ select option{background:var(--bg2);color:var(--text)}
 .ms-bar.ms-wrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
 .ms-bar.ms-wrap .ms{padding:8px 4px}
 .ms{flex:1;padding:8px 0;border:none;border-radius:11px;font-size:12px;font-weight:500;background:transparent;color:var(--fg-muted);transition:all 0.2s;font-family:var(--mono);letter-spacing:0.04em}
-.ms.on{background:var(--primary);color:#fff;border:none;box-shadow:0 2px 6px rgba(59,111,238,0.30)}
+.ms.on{background:var(--primary-cta);color:#fff;border:none;box-shadow:0 2px 6px rgba(59,111,238,0.30)}
 .hero{position:relative;background:var(--surface);color:var(--fg);border:1px solid var(--border);border-radius:24px;padding:24px;overflow:hidden;box-shadow:var(--shadow)}
 .hero::before,.hero::after{content:none}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:500;font-variant-numeric:tabular-nums;font-family:var(--mono);letter-spacing:0.04em}
@@ -295,7 +297,7 @@ html[data-theme="dark"] .sheet-overlay{background:rgba(0,0,0,0.55)}
 /* Device toggle (segmented) */
 .dtoggle{display:flex;background:var(--elevated);border-radius:14px;padding:3px;gap:2px;margin:0 4px 10px}
 .dtoggle button{flex:1;border:none;background:transparent;color:var(--fg-muted);font-size:11px;font-weight:600;padding:7px 6px;border-radius:11px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;letter-spacing:0.02em}
-.dtoggle button.on{background:var(--primary);color:#fff}
+.dtoggle button.on{background:var(--primary-cta);color:#fff}
 .dtoggle button svg{width:14px;height:14px}
 
 /* ── Logos de marcas, iniciais, avatares, cartão-objeto, tiles (spec 2026-09-02) ── */

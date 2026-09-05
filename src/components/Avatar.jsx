@@ -5,6 +5,20 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 import React from 'react';
+import { luminance } from '../lib/color.js';
+
+// Escolhe o texto das iniciais por luminância da cor de fundo em vez de
+// branco fixo: cores claras/médias (ex.: amarelo, laranja, teal) ficavam
+// ilegíveis com texto branco — falha de contraste AA confirmada tanto por
+// cálculo (branco só chega a 4,5:1 quando o fundo tem luminância ≲0,18-0,2)
+// como pelo axe-core no ecrã real (avatares "Ana" #12b3a6 e "João" #f5a623
+// da fixture, ambos com apenas ~2,0-2,6:1 em branco). `var(--…)` (o
+// fallback --primary e as cores dos tokens) mantém-se sempre branco — só
+// cores hex explícitas (as escolhidas pela pessoa) entram no cálculo.
+function textColorFor(color) {
+  if (!/^#/.test(String(color || ''))) return '#fff';
+  return luminance(color) > 0.2 ? '#0a1633' : '#fff';
+}
 
 export function initialsFrom(name) {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
@@ -35,7 +49,7 @@ export default function Avatar({ name, photoURL, color, size = 32, decorative, i
       className="avatar"
       {...a11y}
       title={name || undefined}
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.38), background: color || 'var(--primary)' }}
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.38), background: color || 'var(--primary)', color: textColorFor(color) }}
     >
       {photoURL ? <img src={photoURL} alt="" referrerPolicy="no-referrer" /> : initials || initialsFrom(name)}
     </span>

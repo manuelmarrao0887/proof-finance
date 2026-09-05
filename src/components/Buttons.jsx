@@ -2,8 +2,9 @@
    Shared modal buttons — presentational only, no external deps.
 
    - PrimaryButton: the full-width pill used by every modal footer (the submit
-     action). Background var(--primary)/text var(--bg) when enabled; var(--bg3)/
-     var(--text3) when disabled.
+     action). Background var(--primary-cta)/text var(--bg) when enabled; var(--bg3)/
+     var(--text3) when disabled. --primary-cta is a shade darker than --primary in
+     the dark theme so the white text keeps AA contrast (Task 22).
    - SecondaryButton: full-width transparent text button used for destructive /
      secondary actions (e.g. "Eliminar"), coloured var(--signal). Text dims to
      var(--text3) when disabled, same treatment as PrimaryButton.
@@ -26,7 +27,7 @@ export function PrimaryButton({ children, onClick, disabled, type = 'button', st
         borderRadius: 999,
         fontSize: 14,
         fontWeight: 600,
-        background: disabled ? 'var(--bg3)' : 'var(--primary)',
+        background: disabled ? 'var(--bg3)' : 'var(--primary-cta)',
         color: disabled ? 'var(--text3)' : 'var(--bg)',
         cursor: 'pointer',
         ...style,
