@@ -133,7 +133,7 @@ export default function CardsView() {
                   {plafond > 0 ? mv(used) + ' de ' + mv(plafond) + ' de limite' : 'Sem limite definido — edita o cartão'}
                   {over && <span style={{ color: 'var(--signal)', fontWeight: 600 }}> · limite excedido</span>}
                 </div>
-                <button type="button" onClick={() => open('acct', { id: a.id })} aria-label="Editar cartão" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', borderRadius: 999, padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--fs-xs)', cursor: 'pointer', flexShrink: 0 }}>
+                <button type="button" onClick={() => open('acct', { id: a.id })} aria-label="Editar cartão" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text2)', borderRadius: 999, padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--fs-xs)', cursor: 'pointer', flexShrink: 0, minHeight: 44 }}>
                   Editar
                 </button>
               </div>
@@ -199,7 +199,7 @@ export default function CardsView() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
                       <Amount value={x.amount} kind="out" hidden={hidden} style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }} />
-                      <button type="button" onClick={() => deleteExp(x)} aria-label="Remover despesa" style={{ background: 'none', border: 'none', color: 'var(--signal)', cursor: 'pointer', padding: 'var(--space-1)' }}>
+                      <button type="button" onClick={() => deleteExp(x)} aria-label="Remover despesa" className="icon-btn" style={{ color: 'var(--signal)', flexShrink: 0 }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                       </button>
                     </div>

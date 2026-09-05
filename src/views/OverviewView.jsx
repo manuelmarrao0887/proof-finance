@@ -298,7 +298,7 @@ export default function OverviewView() {
                 aria-label="Está certo, dispensar aviso"
                 title="Está certo"
                 className="icon-btn"
-                style={{ width: 32, height: 32, color: 'var(--success)', flexShrink: 0 }}
+                style={{ color: 'var(--success)', flexShrink: 0 }}
               >
                 <Icon name="check" size={16} />
               </button>
@@ -326,7 +326,6 @@ export default function OverviewView() {
               type="button"
               onClick={toggleHide}
               className="icon-btn"
-              style={{ width: 34, height: 34 }}
               aria-label={hidden ? 'Mostrar saldos (PIN/FaceID)' : 'Ocultar saldos'}
             >
               {hidden ? <EyeOffIcon /> : <EyeIcon />}
