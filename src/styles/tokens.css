@@ -243,6 +243,12 @@ html[data-theme="dark"] .sheet-overlay{background:rgba(0,0,0,0.55)}
 .crumb{font-size:11px;color:var(--fg-subtle);padding:0 4px 8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .crumb .sep{color:var(--fg-subtle);opacity:0.5}
 .crumb .cur{color:var(--fg-muted);font-weight:500}
+/* View header — título + "Voltar" dos ecrãs alcançados a partir do "Mais" */
+.vhead{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-3);padding:0 var(--space-5) var(--space-3)}
+.vhead button{width:44px;height:44px;flex-shrink:0;border:1px solid var(--border);background:var(--surface);border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--fg-muted);font-size:var(--fs-xl);line-height:1;font-family:inherit}
+.vhead button:hover{color:var(--fg);border-color:var(--border-strong)}
+.vhead h1{flex:1;min-width:0;margin:0;font-size:var(--fs-lg);font-weight:600;letter-spacing:-0.01em}
+.vhead .lb{flex-basis:100%;padding-left:calc(44px + var(--space-3))}
 /* Content offset for bottom nav */
 .has-bnav{padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 16px)}
 

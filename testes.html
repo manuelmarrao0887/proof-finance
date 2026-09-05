@@ -631,9 +631,12 @@ const GROUPS = [
   ]},
   { id: 'T10', title: 'Navegação & tema', tests: [
     { id: 'T10.1', title: 'Tabs principais', steps: ['Tocar Resumo / Despesas / Metas'], expect: 'Muda de vista; a tab ativa fica destacada.' },
-    { id: 'T10.2', title: 'Menu "Mais"', steps: ['Abrir "Mais"'], expect: 'Dá acesso a Calendário, Receitas, Recorrentes, Património, Empréstimo, AI.' },
+    { id: 'T10.2', title: 'Menu "Mais" agrupado por secções', steps: ['Abrir "Mais"'], expect: 'Três secções com rótulo: "Registos" (Grupos, Receitas, Recorrentes, Transferências, Cartões de crédito), "Análise" (Calendário, Património, Análise, Investimentos, Crédito, Fiscal) e "Assistente" (Assistente IA) — 12 destinos no total, além de Definições e Novidades.' },
     { id: 'T10.3', title: 'Tema claro/escuro', steps: ['Alternar tema no cabeçalho (claro → escuro → sistema)'], expect: 'Todas as cores seguem o tema (sem zonas presas numa cor fixa).' },
     { id: 'T10.4', title: 'Carregamento lazy', steps: ['Abrir a vista AI e o importar extrato pela primeira vez'], expect: 'Carregam sem erro (chunks à parte); breve "A carregar…" é aceitável.' },
+    { id: 'T10.5', title: 'Título e "Voltar" em cada ecrã de "Mais"', steps: ['Mais → qualquer destino (ex.: Calendário)'], expect: 'O ecrã ganha um cabeçalho com o título (ex.: "Calendário") e um botão "Voltar" (‹) de 44px; tocar "Voltar" regressa ao Resumo. A saudação do cabeçalho ("Olá, …") deixa de ser o título da página nesse ecrã — só há um <h1>.' },
+    { id: 'T10.6', title: 'A tab fica na URL', steps: ['Mais → Calendário', 'Ver o endereço', 'Tocar "Voltar"/recuar no navegador'], expect: 'O endereço passa a ter "?tab=cal"; ao voltar ao Resumo a query desaparece. Avançar/recuar no navegador (setas do browser) muda de tab tal como os botões da app.' },
+    { id: 'T10.7', title: 'Sidebar (desktop) com os 15 destinos', steps: ['Ecrã largo (desktop) → ver a barra lateral'], expect: 'Lista os 15 destinos (Resumo, Despesas, Metas, Grupos, Receitas, Recorrentes, Transferências, Cartões, Calendário, Património, Análise, Investimentos, Crédito, Fiscal, Assistente IA) — os mesmos do "Mais" + os 3 principais, sem nenhum em falta.' },
   ]},
   { id: 'T11', title: 'Acessibilidade', tests: [
     { id: 'T11.1', title: 'Escape fecha sheets', steps: ['Abrir um sheet/modal', 'Carregar Escape'], expect: 'O sheet fecha.' },

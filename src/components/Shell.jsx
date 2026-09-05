@@ -13,6 +13,7 @@ import Sidebar from './Sidebar.jsx';
 import DeviceToggle from './DeviceToggle.jsx';
 import AssistantFab from './AssistantFab.jsx';
 import Avatar, { greetingName } from './Avatar.jsx';
+import ViewHeader from './ViewHeader.jsx';
 
 import SpendHero from './SpendHero.jsx';
 import ContextStrip from './ContextStrip.jsx';
@@ -128,6 +129,26 @@ const VIEWS = {
   tax: TaxView,
 };
 
+// Tabs alcançadas a partir do "Mais" (BottomNav) — cada uma ganha um
+// <ViewHeader> com título + "Voltar" (ver Shell mobile, abaixo).
+const moreTabs = ['groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax'];
+
+// Título de cada tab de "Mais", usado pelo <ViewHeader>.
+const TAB_TITLES = {
+  groups: 'Grupos',
+  cal: 'Calendário',
+  income: 'Receitas',
+  rec: 'Recorrentes',
+  charts: 'Património',
+  loan: 'Crédito',
+  ai: 'Assistente',
+  report: 'Análise',
+  invest: 'Investimentos',
+  transfers: 'Transferências',
+  cards: 'Cartões',
+  tax: 'Fiscal',
+};
+
 function SyncChip({ status }) {
   if (status === 'idle') return null;
   const label =
@@ -157,19 +178,23 @@ function ViewFallback() {
 
 const MONTHS_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-function Header({ theme, onToggleTheme, syncStatus, user }) {
+function Header({ theme, onToggleTheme, syncStatus, user, plain }) {
   const isDark =
     theme === 'dark' ||
     (theme === 'system' && document.documentElement.getAttribute('data-theme') === 'dark');
   const now = new Date();
   const name = greetingName(user);
   const label = (user && (user.displayName || user.email)) || 'Utilizador';
+  // Numa tab de "Mais" já há um <h1> (o <ViewHeader>) — a saudação passa a
+  // <div> para a página continuar a ter só um <h1>.
+  const Greeting = plain ? 'div' : 'h1';
   return (
     <header className="app-header" style={{ padding: 'calc(8px + var(--safe-top)) 20px 16px' }}>
       <div className="rw">
-        <h1 style={{ display: 'flex', alignItems: 'center', gap: 10, margin: 0, fontSize: 17, lineHeight: 1.2, minWidth: 0 }}>
-          {/* Decorativo: o <h1> é o único da página e o nome acessível já sai
-              do "Olá, …" ao lado — sem isto anunciava o email inteiro. */}
+        <Greeting style={{ display: 'flex', alignItems: 'center', gap: 10, margin: 0, fontSize: 17, lineHeight: 1.2, minWidth: 0 }}>
+          {/* Decorativo: quando este é o <h1> da página, é o único e o nome
+              acessível já sai do "Olá, …" ao lado — sem isto anunciava o
+              email inteiro. */}
           <Avatar name={label} photoURL={user && user.photoURL} size={36} decorative />
           <span style={{ minWidth: 0 }}>
             <span style={{ display: 'block', fontSize: 10.5, fontWeight: 600, color: 'var(--fg-subtle)', letterSpacing: '0.04em' }}>
@@ -179,7 +204,7 @@ function Header({ theme, onToggleTheme, syncStatus, user }) {
               {name ? 'Olá, ' + name : 'Proof. Finance'}
             </span>
           </span>
-        </h1>
+        </Greeting>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <SyncChip status={syncStatus} />
           <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Mudar tema">
@@ -203,7 +228,6 @@ function BottomNav({ tab, onTab, onPlus, onMore }) {
       <span>{label}</span>
     </button>
   );
-  const moreTabs = ['groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax'];
   return (
     <nav className="bnav">
       {slot('overview', 'Resumo')}
@@ -318,9 +342,10 @@ export default function Shell() {
   return (
     <div className="fadeIn">
       {canToggle && <DeviceToggle />}
-      <Header theme={state.theme} onToggleTheme={toggleTheme} syncStatus={syncStatus} user={currentUser} />
+      <Header theme={state.theme} onToggleTheme={toggleTheme} syncStatus={syncStatus} user={currentUser} plain={moreTabs.includes(tab)} />
 
       <main className="has-bnav scroll-body" style={{ minHeight: '60svh' }}>
+        {moreTabs.includes(tab) && <ViewHeader title={TAB_TITLES[tab]} onBack={() => goTab('overview')} />}
         {tab === 'overview' ? <SpendHero /> : <ContextStrip tab={tab} />}
         <Onboarding />
         <Suspense fallback={<ViewFallback />}>

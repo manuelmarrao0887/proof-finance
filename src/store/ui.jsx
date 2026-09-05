@@ -2,7 +2,7 @@
 // Replaces the original global flags (tab, showAdd, showStmt, ...) + render().
 // Views OPEN modals via the openers; modal components READ their open-state +
 // optional `payload` (e.g. an item being edited) and call close() to dismiss.
-import { createContext, useContext, useState, useCallback, useMemo } from 'react'
+import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react'
 
 const UIContext = createContext(null)
 
@@ -47,6 +47,28 @@ export function UIProvider({ children }) {
   // modal -> payload (null = closed; any value/true = open with that payload)
   const [modals, setModals] = useState(() => Object.fromEntries(MODALS.map((k) => [k, null])))
 
+  // Espelha `tab` numa ref para o goTab (estável, sem depender de `tab`) saber
+  // se a navegação é para o mesmo destino, sem empurrar entradas duplicadas
+  // no histórico.
+  const tabRef = useRef(tab)
+  useEffect(() => {
+    tabRef.current = tab
+  }, [tab])
+
+  // Lê `?tab=` na montagem (cobre navegação sem recarregar a página, ex.: um
+  // link externo que já chega com a query) e sincroniza com o botão
+  // avançar/recuar do navegador.
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const t = new URLSearchParams(window.location.search).get('tab')
+    if (VALID_TABS.includes(t)) setTab(t)
+    const onPopState = (e) => {
+      setTab((e.state && e.state.tab) || 'overview')
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
   const open = useCallback((key, payload = true) => {
     setModals((m) => ({ ...m, [key]: payload }))
   }, [])
@@ -58,7 +80,14 @@ export function UIProvider({ children }) {
   }, [])
 
   // Navigate to a tab (also closes transient sheets, like the original T()).
+  // Also reflects the tab in the URL (`?tab=`, or the bare path for
+  // 'overview') so the browser's back/forward buttons work — but only when
+  // the tab actually changes, to avoid stacking no-op history entries.
   const goTab = useCallback((t) => {
+    if (typeof window !== 'undefined' && tabRef.current !== t) {
+      window.history.pushState({ tab: t }, '', t === 'overview' ? window.location.pathname : '?tab=' + t)
+    }
+    tabRef.current = t
     setTab(t)
     setModals((m) => ({ ...m, action: null, more: null }))
   }, [])
