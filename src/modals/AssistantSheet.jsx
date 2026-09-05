@@ -30,15 +30,8 @@ import { snapshotSlices as snapshotSlicesLib, SLICES } from '../lib/snapshot.js'
 // "antes" de que o Anular precisa. Note-se que isto sozinho NÃO chega: ver
 // undoSnapshotFor abaixo para o porquê de só se repor as slices que a
 // PRÓPRIA volta tocou, nunca todas de uma vez.
-//
-// SLICES (lib/snapshot.js) não inclui 'dynSnaps' — nenhuma das outras 12
-// views/modais que usam snapshotSlices() mexe nele, só a tool add_snapshot
-// do assistente (WRITE_TOOL_SLICES.add_snapshot = ['dynSnaps']). Sem o
-// acrescentar aqui, o Anular de um "guarda este print" ficava sempre a
-// tentar repor `undefined` nessa fatia — perdia-se dynSnaps em silêncio.
-const ASSISTANT_SLICES = [...SLICES, 'dynSnaps'];
 function snapshotSlices(state) {
-  return snapshotSlicesLib(state, ASSISTANT_SLICES);
+  return snapshotSlicesLib(state, SLICES);
 }
 
 // Devolve o subconjunto de `before` correspondente à UNIÃO das slices que

@@ -152,9 +152,6 @@ select option{background:var(--bg2);color:var(--text)}
 .rw{display:flex;justify-content:space-between;align-items:center}
 .g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.tab-bar{display:flex;padding:3px;margin:0 20px 20px;background:var(--elevated);border:1px solid var(--border);border-radius:14px;gap:2px}
-.tb{flex:1;padding:9px 4px;border:none;border-radius:11px;background:transparent;font-size:11px;font-weight:500;color:var(--fg-muted);white-space:nowrap;transition:all 0.2s;letter-spacing:0.04em;font-family:var(--mono);text-transform:uppercase}
-.tb.on{background:var(--primary-cta);color:#fff;border:none;box-shadow:0 2px 6px rgba(59,111,238,0.30)}
 .exp-btn{width:100%;display:flex;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;color:var(--fg);text-align:left;box-shadow:var(--shadow)}
 .exp-detail{background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 16px 16px;padding:12px 16px;margin-top:-8px}
 .bar{height:4px;background:var(--elevated);overflow:hidden;margin-top:8px;border-radius:2px}

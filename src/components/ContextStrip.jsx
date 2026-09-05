@@ -14,10 +14,9 @@ import { useStore, ME_ID } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { compute, monthlySummary, isNewUser, getAcctsLive, CARD_CAT, getGroupsData } from '../lib/finance.js';
 import { estimateDeductions } from '../lib/irs.js';
-import { totalValue } from '../lib/investments.js';
-import { monthSpend } from '../lib/metrics.js';
+import { monthSpend, positionsValue } from '../lib/metrics.js';
 import { computeBalances, groupTotals, isSettled } from '../lib/split.js';
-import { fm, fc, mask, maskPct, todayISO } from '../lib/format.js';
+import { fm, fc, mask, maskPct } from '../lib/format.js';
 import { monthKeyAt } from '../lib/months.js';
 import Amount from './Amount.jsx';
 
@@ -118,7 +117,7 @@ export default function ContextStrip({ tab: tabProp }) {
     const positions = state.positions || [];
     if (positions.length) {
       label = 'Posições';
-      val = mask(totalValue(positions), hidden, fc);
+      val = mask(positionsValue(state), hidden, fc);
     } else {
       let inv = 0;
       getAcctsLive(s).forEach((a) => {

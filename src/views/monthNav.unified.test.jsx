@@ -21,10 +21,7 @@ describe('navegação temporal única', () => {
 });
 
 describe('nota "parcial" em Despesas', () => {
-  it('mostra "parcial" apenas quando o mês selecionado é o actual e não está no fim do mês', async () => {
-    const today = new Date();
-    const isEndOfMonth = today.getDate() >= 28;
-
+  it('mostra "parcial" apenas quando o mês selecionado é o atual', async () => {
     // Com mOff=-1 o mês selecionado é o anterior, portanto a nota não deve aparecer
     const { container: containerPrev } = await renderWithStore(<ExpensesView />, {
       fixture: richFixture(),
@@ -33,12 +30,8 @@ describe('nota "parcial" em Despesas', () => {
     expect(containerPrev.textContent).not.toContain('parcial');
     cleanup();
 
-    // Com estado padrão (mês actual), a nota aparece só se não estamos no fim do mês
+    // Com estado padrão (mês atual), a nota aparece sempre
     const { container: containerToday } = await renderWithStore(<ExpensesView />, { fixture: richFixture() });
-    if (!isEndOfMonth) {
-      expect(containerToday.textContent).toContain('parcial');
-    } else {
-      expect(containerToday.textContent).not.toContain('parcial');
-    }
+    expect(containerToday.textContent).toContain('parcial');
   });
 });
