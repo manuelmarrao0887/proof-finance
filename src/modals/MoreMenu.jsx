@@ -32,6 +32,7 @@ const ITEMS = [
   { id: 'transfers', section: 'Registos', title: 'Transferências', sub: 'Mover dinheiro entre contas', svg: <><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></> },
   { id: 'tax', section: 'Análise', title: 'Fiscal (IRS/IMI/IUC)', sub: 'Calendário e deduções estimadas', svg: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></> },
   { id: 'cards', section: 'Registos', title: 'Cartões de crédito', sub: 'Plafond, dívida e pagamentos', svg: <><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></> },
+  { id: 'expenses', section: 'Registos', title: 'Orçamento', sub: 'Limites por categoria e transporte de saldo', svg: <><line x1="4" y1="20" x2="4" y2="10" /><line x1="10" y1="20" x2="10" y2="4" /><line x1="16" y1="20" x2="16" y2="14" /><line x1="20" y1="20" x2="4" y2="20" /></> },
   { id: 'loan', section: 'Análise', title: 'Crédito', sub: 'Habitação e dividas', svg: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> },
   { id: 'ai', section: 'Assistente', title: 'Assistente IA', sub: 'Chat e importacao inteligente', svg: <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z" /> },
 ];

@@ -10,7 +10,7 @@ const OUT = process.env.OUT || '/tmp/proof-shots';
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 fs.mkdirSync(OUT, { recursive: true });
 
-const TABS = ['overview', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'report', 'invest', 'transfers', 'cards', 'tax'];
+const TABS = ['overview', 'transactions', 'expenses', 'goals', 'cal', 'income', 'rec', 'charts', 'loan', 'report', 'invest', 'transfers', 'cards', 'tax'];
 const MODALS = ['action', 'more', 'add', 'transfer', 'cardpay', 'stmt', 'settings'];
 const VARIANTS = [
   { name: 'rich', q: '' },

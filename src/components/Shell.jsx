@@ -22,6 +22,7 @@ import Onboarding from './Onboarding.jsx';
 // Overview is the landing view → eager (no flash). The rest load on demand when
 // their tab is opened (code-splitting: each becomes its own chunk).
 import OverviewView from '../views/OverviewView.jsx';
+const TransactionsView = lazy(() => import('../views/TransactionsView.jsx'));
 const ExpensesView = lazy(() => import('../views/ExpensesView.jsx'));
 const GoalsView = lazy(() => import('../views/GoalsView.jsx'));
 const GroupsView = lazy(() => import('../views/GroupsView.jsx'));
@@ -75,7 +76,7 @@ const Icon = {
       <rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="16" width="7" height="5" rx="2" />
     </svg>
   ),
-  expenses: (
+  transactions: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
     </svg>
@@ -113,6 +114,7 @@ const Icon = {
 
 const VIEWS = {
   overview: OverviewView,
+  transactions: TransactionsView,
   expenses: ExpensesView,
   goals: GoalsView,
   groups: GroupsView,
@@ -131,9 +133,15 @@ const VIEWS = {
 
 // Tabs alcançadas a partir do "Mais" (BottomNav) — cada uma ganha um
 // <ViewHeader> com título + "Voltar" (ver Shell mobile, abaixo).
-const moreTabs = ['groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax'];
+// 'expenses' (o antigo orçamento por categoria) sai da barra inferior nesta
+// tarefa e passa a viver aqui como "Orçamento" (Task 18, D14) — a barra
+// passa a abrir 'transactions' (o feed cronológico) em "Despesas".
+const moreTabs = ['groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax', 'expenses'];
 
-// Título de cada tab de "Mais", usado pelo <ViewHeader>.
+// Título de cada tab de "Mais", usado pelo <ViewHeader>. 'transactions' NÃO
+// é uma tab de "Mais" (é a barra inferior "Despesas", sem <ViewHeader> nem
+// "Voltar") — o título entra aqui só por documentação/consistência; quem
+// desenha o <h1> "Transações" é a própria TransactionsView.
 const TAB_TITLES = {
   groups: 'Grupos',
   cal: 'Calendário',
@@ -147,6 +155,8 @@ const TAB_TITLES = {
   transfers: 'Transferências',
   cards: 'Cartões',
   tax: 'Fiscal',
+  expenses: 'Orçamento',
+  transactions: 'Transações',
 };
 
 function SyncChip({ status }) {
@@ -231,7 +241,7 @@ function BottomNav({ tab, onTab, onPlus, onMore }) {
   return (
     <nav className="bnav">
       {slot('overview', 'Resumo')}
-      {slot('expenses', 'Despesas')}
+      {slot('transactions', 'Despesas')}
       <button type="button" className="bnav-center" onClick={onPlus} aria-label="Adicionar">
         <span className="fab">{Icon.plus}</span>
       </button>
@@ -342,7 +352,10 @@ export default function Shell() {
   return (
     <div className="fadeIn">
       {canToggle && <DeviceToggle />}
-      <Header theme={state.theme} onToggleTheme={toggleTheme} syncStatus={syncStatus} user={currentUser} plain={moreTabs.includes(tab)} />
+      {/* 'transactions' também é "plain" (saudação vira <div>): a própria
+          TransactionsView desenha o seu <h1> "Transações" — sem isto a
+          página teria dois <h1> (a saudação + o da vista). */}
+      <Header theme={state.theme} onToggleTheme={toggleTheme} syncStatus={syncStatus} user={currentUser} plain={moreTabs.includes(tab) || tab === 'transactions'} />
 
       <main className="has-bnav scroll-body" style={{ minHeight: '60svh' }}>
         {moreTabs.includes(tab) && <ViewHeader title={TAB_TITLES[tab]} onBack={() => goTab('overview')} />}

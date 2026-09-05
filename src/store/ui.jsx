@@ -35,7 +35,7 @@ export const MODALS = [
   'confirm',        // ConfirmSheet — substitui confirm() nativo nas views
 ]
 
-export const VALID_TABS = ['overview', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax']
+export const VALID_TABS = ['overview', 'transactions', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax']
 function initialTab() {
   if (typeof location === 'undefined') return 'overview'
   const t = new URLSearchParams(location.search).get('tab')

@@ -447,7 +447,7 @@ const GROUPS = [
     { id: 'T28.9', title: 'Aviso de que é estimativa', steps: ['Ver o rodapé da vista'], expect: 'Diz claramente que é estimativa indicativa e não aconselhamento fiscal; só contam faturas com NIF comunicadas à AT.' },
   ]},
   { id: 'T29', title: 'Tendência por categoria (sparklines)', tests: [
-    { id: 'T29.1', title: 'Mini-gráfico em cada categoria', steps: ['Despesas (com ≥2 meses de histórico)'], expect: 'Cada categoria mostra um mini-gráfico de 6 meses ao lado da percentagem, terminando no mês selecionado.' },
+    { id: 'T29.1', title: 'Mini-gráfico em cada categoria', steps: ['Mais → Orçamento (com ≥2 meses de histórico)'], expect: 'Cada categoria mostra um mini-gráfico de 6 meses ao lado da percentagem, terminando no mês selecionado.' },
     { id: 'T29.2', title: 'Variação destacada', steps: ['Categoria com o mês muito acima/abaixo da média'], expect: 'Mostra +N% a vermelho (subida ≥25%) ou −N% a verde (descida ≥25%); variações pequenas não mostram número.' },
     { id: 'T29.3', title: 'Acompanha a navegação de meses', steps: ['Deslizar para meses anteriores'], expect: 'A sparkline passa a terminar no mês selecionado (mostra os 6 meses até esse).' },
     { id: 'T29.4', title: 'Sem histórico credível → sem número', steps: ['Categoria nova ou com valores residuais (<10 €)'], expect: 'Mostra a linha mas não inventa percentagem de variação.' },
@@ -486,7 +486,7 @@ const GROUPS = [
     { id: 'T34.5', title: 'Padrão limpo do comerciante', steps: ['Ver a regra criada'], expect: 'O padrão é o nome do comerciante sem prefixos nem códigos (ex.: "COMPRA 4174 PINGO DOCE DUQUE D A LI CONTACTLESS" → "pingo doce").' },
   ]},
   { id: 'T35', title: 'Pesquisa com evolução & contexto', tests: [
-    { id: 'T35.1', title: 'Pesquisa cobre todo o histórico', steps: ['Despesas → pesquisar "continente"'], expect: 'Encontra resultados de TODOS os meses (não só do mês selecionado), ordenados do mais recente para o mais antigo.' },
+    { id: 'T35.1', title: 'Pesquisa cobre todo o histórico', steps: ['Mais → Orçamento → pesquisar "continente"'], expect: 'Encontra resultados de TODOS os meses (não só do mês selecionado), ordenados do mais recente para o mais antigo. (A pesquisa da tab "Despesas" — Transações — cobre só o mês selecionado no MonthNav.)' },
     { id: 'T35.2', title: 'Evolução e média mensal', steps: ['Pesquisar um comerciante com gastos em vários meses'], expect: 'Ao lado do total aparece um mini-gráfico dos últimos 6 meses e "~X/mês" (média só dos meses com gastos).' },
     { id: 'T35.3', title: 'Um só mês → sem média', steps: ['Pesquisar algo que só existe num mês'], expect: 'Mostra apenas o total (não inventa média nem gráfico).' },
     { id: 'T35.4', title: 'Faixa de contexto nas vistas novas', steps: ['Abrir Cartões, Fiscal, Transferências, Investimentos'], expect: 'Cada uma mostra no topo a métrica própria: dívida dos cartões, deduções estimadas, nº de transferências, valor da carteira.' },
@@ -494,7 +494,7 @@ const GROUPS = [
     { id: 'T35.6', title: 'Meta reforçada pelo plano', steps: ['Reservar para metas no Resumo → abrir Metas'], expect: 'A meta mostra "REFORÇADA ESTE MÊS".' },
   ]},
   { id: 'T36', title: 'Recorrentes — o que já está pago', tests: [
-    { id: 'T36.1', title: 'Marca as já lançadas', steps: ['Registar a despesa de uma recorrente (Despesas → Registar recorrente)', 'Abrir Mais → Recorrentes'], expect: 'Essa recorrente mostra o selo "PAGA" e "já lançada este mês" em vez da contagem de dias.' },
+    { id: 'T36.1', title: 'Marca as já lançadas', steps: ['Registar a despesa de uma recorrente (Mais → Orçamento → Registar recorrente)', 'Abrir Mais → Recorrentes'], expect: 'Essa recorrente mostra o selo "PAGA" e "já lançada este mês" em vez da contagem de dias.' },
     { id: 'T36.2', title: 'Quanto falta pagar', steps: ['Ver o cartão do topo'], expect: 'Além do custo mensal e anual, indica "falta pagar X este mês" (só as que ainda não foram lançadas).' },
   ]},
   { id: 'T37', title: 'Onde podes poupar (Relatórios)', tests: [
@@ -506,7 +506,7 @@ const GROUPS = [
     { id: 'T37.6', title: 'Sem histórico → não inventa', steps: ['Utilizador novo ou só com o mês atual'], expect: 'O bloco não aparece (o mês corrente é ignorado por estar incompleto).' },
   ]},
   { id: 'T38', title: 'Filtro por conta/cartão', tests: [
-    { id: 'T38.1', title: 'Seletor aparece com 2+ contas', steps: ['Despesas (com despesas alocadas a contas diferentes)'], expect: 'Seletor "Todas as contas" no topo. Com uma só conta (ou nenhuma) não aparece.' },
+    { id: 'T38.1', title: 'Seletor aparece com 2+ contas', steps: ['Mais → Orçamento (com despesas alocadas a contas diferentes)'], expect: 'Seletor "Todas as contas" no topo. Com uma só conta (ou nenhuma) não aparece.' },
     { id: 'T38.2', title: 'Filtrar por cartão', steps: ['Escolher o cartão de crédito no seletor'], expect: 'Mostra só as despesas desse cartão, com total, evolução e média mensal.' },
     { id: 'T38.3', title: 'Tolerante a acentos/maiúsculas', steps: ['Ter despesas com "Conta à Ordem" e "Conta a Ordem"'], expect: 'O filtro apanha ambas (comparação normalizada).' },
     { id: 'T38.4', title: 'Limpar filtro', steps: ['Tocar em "Limpar" ou escolher "Todas as contas"'], expect: 'Volta à vista normal de orçamento por categoria.' },
@@ -543,7 +543,7 @@ const GROUPS = [
     { id: 'T42.5', title: 'Aviso no Resumo', steps: ['Ter uma meta em risco → abrir o Resumo'], expect: 'Insight laranja: "{meta} não chega ao prazo" com o que falta e o valor mensal necessário. Mostra a mais urgente.' },
   ]},
   { id: 'T1', title: 'Arranque & modos', tests: [
-    { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Vista de despesas mostra meses Jan–Abr e botão "Q1".' },
+    { id: 'T1.1', title: 'Modo demo (sem login)', steps: ['Abrir a app sem iniciar sessão'], expect: 'Mostra dados de exemplo e contas demo (Activobank, Revolut, etc.). Mais → Orçamento mostra meses Jan–Abr e botão "Q1".' },
     { id: 'T1.2', title: 'Login só com Google (sem palavra-passe)', steps: ['Abrir a app', 'Tocar "Entrar com Google"'], expect: 'Não há ecrã de palavra-passe inicial; entra direto com a conta Google. Depois mostra os dados do utilizador (sem dados demo).' },
     { id: 'T1.3', title: 'Novo utilizador sem dados', steps: ['Login numa conta sem despesas/contas/metas'], expect: 'Estados vazios com mensagem e CTA (ex.: "Sem despesas neste período" + "toca no +").' },
   ]},
@@ -580,7 +580,7 @@ const GROUPS = [
   { id: 'T4', title: 'Despesas recorrentes', tests: [
     { id: 'T4.1', title: 'Criar recorrente', steps: ['Vista "Recorrentes" → adicionar (nome, valor, dia, categoria)'], expect: 'Aparece na lista de recorrentes.' },
     { id: 'T4.2', title: 'Recorrente no total do mês', steps: ['Ver o total de despesa do mês no Resumo'], expect: 'O total inclui o valor da recorrente.' },
-    { id: 'T4.3', title: 'Pendentes do mês na lista', steps: ['Vista "Despesas" → escolher um mês'], expect: 'Secção "Recorrentes de {mês}" lista as recorrentes ainda não registadas nesse mês, com botão "Registar".' },
+    { id: 'T4.3', title: 'Pendentes do mês na lista', steps: ['Mais → Orçamento → escolher um mês'], expect: 'Secção "Recorrentes de {mês}" lista as recorrentes ainda não registadas nesse mês, com botão "Registar".' },
     { id: 'T4.4', title: 'Registar recorrente do mês', steps: ['"Registar" numa recorrente pendente', 'Ajustar o dia da cobrança', 'Gravar'], expect: 'Abre o sheet pré-preenchido (nome, valor, categoria, data no mês); ao gravar aparece na lista de despesas.' },
     { id: 'T4.5', title: 'Sem duplo-contar', steps: ['Depois de registar a recorrente do mês', 'Verificar o total do mês'], expect: 'O total NÃO aumenta (o item da lista substitui a soma automática da recorrente nesse mês).' },
     { id: 'T4.6', title: 'Reverter materialização', steps: ['Apagar a despesa materializada'], expect: 'A recorrente volta a aparecer como pendente e volta a contar no total.' },
@@ -636,7 +636,7 @@ const GROUPS = [
     { id: 'T10.4', title: 'Carregamento lazy', steps: ['Abrir a vista AI e o importar extrato pela primeira vez'], expect: 'Carregam sem erro (chunks à parte); breve "A carregar…" é aceitável.' },
     { id: 'T10.5', title: 'Título e "Voltar" em cada ecrã de "Mais"', steps: ['Mais → qualquer destino (ex.: Calendário)'], expect: 'O ecrã ganha um cabeçalho com o título (ex.: "Calendário") e um botão "Voltar" (‹) de 44px; tocar "Voltar" regressa ao Resumo. A saudação do cabeçalho ("Olá, …") deixa de ser o título da página nesse ecrã — só há um <h1>.' },
     { id: 'T10.6', title: 'A tab fica na URL', steps: ['Mais → Calendário', 'Ver o endereço', 'Tocar "Voltar"/recuar no navegador'], expect: 'O endereço passa a ter "?tab=cal"; ao voltar ao Resumo a query desaparece. Avançar/recuar no navegador (setas do browser) muda de tab tal como os botões da app.' },
-    { id: 'T10.7', title: 'Sidebar (desktop) com os 15 destinos', steps: ['Ecrã largo (desktop) → ver a barra lateral'], expect: 'Lista os 15 destinos (Resumo, Despesas, Metas, Grupos, Receitas, Recorrentes, Transferências, Cartões, Calendário, Património, Análise, Investimentos, Crédito, Fiscal, Assistente IA) — os mesmos do "Mais" + os 3 principais, sem nenhum em falta.' },
+    { id: 'T10.7', title: 'Sidebar (desktop) com os 16 destinos', steps: ['Ecrã largo (desktop) → ver a barra lateral'], expect: 'Lista os 16 destinos (Resumo, Despesas, Metas, Grupos, Receitas, Recorrentes, Transferências, Cartões, Orçamento, Calendário, Património, Análise, Investimentos, Crédito, Fiscal, Assistente IA) — os mesmos do "Mais" (agora com Orçamento) + os 3 principais, sem nenhum em falta.' },
   ]},
   { id: 'T11', title: 'Acessibilidade', tests: [
     { id: 'T11.1', title: 'Escape fecha sheets', steps: ['Abrir um sheet/modal', 'Carregar Escape'], expect: 'O sheet fecha.' },
@@ -675,7 +675,7 @@ const GROUPS = [
     { id: 'T16.4', title: 'Mês vazio', steps: ['Escolher um mês sem despesas'], expect: 'Estado vazio "Sem despesas neste mês".' },
   ]},
   { id: 'T17', title: 'Orçamento com rollover', tests: [
-    { id: 'T17.1', title: 'Ligar rollover', steps: ['Despesas → botão "Rollover do orçamento" → ON'], expect: 'Fica ON e persiste.' },
+    { id: 'T17.1', title: 'Ligar rollover', steps: ['Mais → Orçamento → botão "Rollover do orçamento" → ON'], expect: 'Fica ON e persiste.' },
     { id: 'T17.2', title: 'Sobra transita', steps: ['Mês com sobra numa categoria', 'Ver o mês seguinte'], expect: 'Limite efetivo do mês seguinte = base + sobra; badge "+X transitado".' },
     { id: 'T17.3', title: 'Falta transita', steps: ['Mês em que ultrapassaste o limite'], expect: 'Mês seguinte com limite reduzido; badge "−X transitado".' },
     { id: 'T17.4', title: 'Alerta ultrapassado', steps: ['Categoria acima do limite efetivo'], expect: 'Barra/percentagem a vermelho e "+X" acima do limite.' },

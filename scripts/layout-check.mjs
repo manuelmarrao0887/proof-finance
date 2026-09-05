@@ -2,7 +2,7 @@
    layout, por isso nenhum teste unitário apanha estes bugs — foi assim que
    passaram despercebidos:
 
-     1. Scroll horizontal. Varre 15 tabs x 23 modais x 4 larguras de ecrã e
+     1. Scroll horizontal. Varre 16 tabs x 23 modais x 4 larguras de ecrã e
         falha se algum elemento sair do viewport ou se algum contentor ganhar
         scroll horizontal. (Casos reais apanhados: o seletor de meses do
         Relatório com 456px num ecrã de 320; a grelha de categorias da Nova
@@ -24,7 +24,7 @@ import puppeteer from 'puppeteer-core';
 const BASE = process.env.BASE || 'http://localhost:5199/dev.html';
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
-const TABS = ['overview', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax'];
+const TABS = ['overview', 'transactions', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax'];
 const MODALS = ['add', 'stmt', 'settings', 'goal', 'rec', 'income', 'cat', 'acct', 'rules', 'action', 'more', 'balanceUpdate', 'patchNotes', 'lock', 'housing', 'position', 'transfer', 'cardpay', 'group', 'person', 'gexp', 'settle', 'assistant'];
 const VPS = [
   { name: '320', width: 320, height: 700, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
