@@ -13,7 +13,7 @@
    instead of the raw bdg order the original used (orig 2150).
    ════════════════════════════════════════════════════════════════════════ */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
@@ -22,6 +22,7 @@ import { fm, todayISO } from '../lib/format.js';
 import { applyRules } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
 import { listAccounts } from '../lib/balances.js';
+import { topCategories, lastUsedAccount } from '../lib/categoryUsage.js';
 import CategoryIcon from '../components/CategoryIcon.jsx';
 import MerchantLogo from '../components/MerchantLogo.jsx';
 import { resolveBrand } from '../lib/brands.jsx';
@@ -30,13 +31,15 @@ import ConfirmButton from '../components/ConfirmButton.jsx';
 import { snapshotSlices } from '../lib/snapshot.js';
 
 // Fresh draft for a brand-new expense (orig addData default 417 / reset 2364).
-function freshDraft() {
+// D5 (Task 9): a conta vem pré-preenchida com a última usada — poupa um toque
+// no caso comum; nunca se aplica a uma edição (ver draftFromExpense).
+function freshDraft(state) {
   return {
     desc: '',
     amount: '',
     cat: 'rest',
     date: todayISO(),
-    acct: '',
+    acct: lastUsedAccount(state),
     shared: false,
     total: '',
     split: '2',
@@ -81,17 +84,28 @@ export default function AddExpenseSheet() {
   const [d, setD] = useState(freshDraft);
   // Inline validation errors keyed by field (desc / amount / total).
   const [errors, setErrors] = useState({});
+  // D5 (Task 9): grelha de categorias reduzida às mais usadas até "Mais
+  // categorias" ser tocado; "Mais opções" esconde partilhada/tags/nota.
+  const [allCats, setAllCats] = useState(false);
+  const [more, setMore] = useState(false);
+  // Foco automático no valor ao abrir (ver useEffect abaixo — a sheet anima).
+  const amountRef = useRef(null);
 
   // (Re)seed the draft whenever the sheet opens (edit -> record; prefill -> seed;
   // otherwise fresh).
   useEffect(() => {
     if (!isOpen) return;
     setErrors({});
+    setAllCats(false);
     if (isEdit) {
-      setD(draftFromExpense(editExp));
+      const nd = draftFromExpense(editExp);
+      setD(nd);
+      // Em edição, "Mais opções" começa aberta se já houver algo lá dentro
+      // (senão o utilizador nem vê que a despesa é partilhada / tem tags/nota).
+      setMore(!!(nd.shared || (nd.tags && nd.tags.length > 0) || nd.notes));
     } else if (prefill) {
       setD({
-        ...freshDraft(),
+        ...freshDraft(state),
         desc: prefill.desc || '',
         amount: prefill.amount != null ? String(prefill.amount).replace('.', ',') : '',
         cat: prefill.cat || 'rest',
@@ -99,14 +113,47 @@ export default function AddExpenseSheet() {
         acct: prefill.acct || '',
         recId: prefill.recId || null,
       });
+      setMore(false);
     } else {
-      setD(freshDraft());
+      setD(freshDraft(state));
+      setMore(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editId, prefill]);
 
+  // Foco no valor ao abrir: a sheet ainda está a animar, por isso o pequeno
+  // atraso (jsdom honra .focus() de qualquer forma, o timeout é só para o
+  // browser real não roubar o foco a meio da transição).
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const t = setTimeout(() => {
+      if (amountRef.current) amountRef.current.focus();
+    }, 50);
+    return () => clearTimeout(t);
+  }, [isOpen]);
+
   const cats = useMemo(() => sortedCats(state.bdg), [state.bdg]); // FIX 3
   const accounts = useMemo(() => listAccounts({ ...state, currentUser }), [state, currentUser]);
+  // D5: as 6 categorias mais usadas nos últimos 90 dias (com fallback aos
+  // defaults) — só recalcula quando os dados de origem mudam.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const top = useMemo(() => topCategories(state), [state.addedExp, state.bdg]);
+  const shownCats = useMemo(() => {
+    if (allCats) return cats;
+    let list = cats.filter((b) => top.includes(b.id));
+    if (!top.includes(d.cat)) {
+      const own = cats.find((b) => b.id === d.cat);
+      if (own) list = [...list, own];
+    }
+    return list.slice().sort((a, b) => {
+      const ai = top.indexOf(a.id);
+      const bi = top.indexOf(b.id);
+      if (ai === -1 && bi === -1) return 0;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+  }, [allCats, cats, top, d.cat]);
 
   if (!isOpen) return null;
 
@@ -232,43 +279,87 @@ export default function AddExpenseSheet() {
     </>
   );
 
+  // Estilo do botão "Mais categorias" / "Mais opções" — link discreto, sem
+  // competir com o valor (o campo que realmente importa nos 5 segundos).
+  const moreBtnStyle = {
+    width: '100%',
+    padding: '10px 12px',
+    border: '1px dashed var(--border)',
+    background: 'transparent',
+    color: 'var(--primary)',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    marginBottom: 14,
+  };
+
   return (
     <Sheet open={isOpen} onClose={onClose} title={isEdit ? 'Editar despesa' : d.recId ? 'Registar recorrente' : 'Nova despesa'} footer={footer}>
-      {/* Categoria — grelha de ícones (estilo Finany), alfabética (FIX 3) */}
-      <div className="lb" style={{ marginBottom: 8 }}>Categoria</div>
-      {/* minmax(0,1fr) e não 1fr: o chão de 1fr é min-content, por isso nomes
-          longos ("Combustível") empurravam a grelha para lá do ecrã a 320px. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8, marginBottom: 16 }}>
-        {cats.map((b) => {
-          const on = d.cat === b.id;
-          return (
-            <button
-              key={b.id}
-              type="button"
-              onClick={() => set('cat', b.id)}
-              aria-pressed={on}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 5,
-                minWidth: 0,
-                padding: '10px 4px',
-                borderRadius: 14,
-                border: '1px solid ' + (on ? 'var(--primary)' : 'var(--border)'),
-                background: on ? 'var(--blue-soft)' : 'var(--surface)',
-                cursor: 'pointer',
-              }}
-            >
-              <CategoryIcon id={b.id} size={34} bdg={cats} />
-              {/* minWidth:0 + hyphens: "Supermercado" (77px) não cabia numa
-                  célula de 65px a 320px e empurrava a grelha para fora. */}
-              <span style={{ fontSize: 11, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15, minWidth: 0, maxWidth: '100%', overflowWrap: 'anywhere', hyphens: 'auto' }}>
-                {b.nm}
-              </span>
-            </button>
-          );
-        })}
+      {/* D5: valor primeiro — o campo que decide 90% dos casos, com foco
+          automático (ver useEffect). Só aparece quando não é partilhada: com
+          d.shared o valor vem do Total/Pessoas dentro de "Mais opções". */}
+      {!d.shared && (
+        <div style={{ marginBottom: 20 }}>
+          <div className="lb" style={{ marginBottom: 6 }}>Valor (€)</div>
+          <input
+            ref={amountRef}
+            autoFocus
+            value={d.amount}
+            onChange={(e) => set('amount', e.target.value)}
+            placeholder="0,00"
+            inputMode="decimal"
+            aria-label="Valor (€)"
+            style={{ ...monoBig, fontSize: 28 }}
+          />
+          {errText(errors.amount)}
+        </div>
+      )}
+
+      {/* Categoria — grelha de ícones (estilo Finany): as mais usadas nos
+          últimos 90 dias primeiro, com "Mais categorias" para a lista alfabética
+          completa (FIX 3). */}
+      <div role="group" aria-label="Categoria">
+        <div className="lb" style={{ marginBottom: 8 }}>Categoria</div>
+        {/* minmax(0,1fr) e não 1fr: o chão de 1fr é min-content, por isso nomes
+            longos ("Combustível") empurravam a grelha para lá do ecrã a 320px. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8, marginBottom: 8 }}>
+          {shownCats.map((b) => {
+            const on = d.cat === b.id;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => set('cat', b.id)}
+                aria-pressed={on}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 5,
+                  minWidth: 0,
+                  padding: '10px 4px',
+                  borderRadius: 14,
+                  border: '1px solid ' + (on ? 'var(--primary)' : 'var(--border)'),
+                  background: on ? 'var(--blue-soft)' : 'var(--surface)',
+                  cursor: 'pointer',
+                }}
+              >
+                <CategoryIcon id={b.id} size={34} bdg={cats} />
+                {/* minWidth:0 + hyphens: "Supermercado" (77px) não cabia numa
+                    célula de 65px a 320px e empurrava a grelha para fora. */}
+                <span style={{ fontSize: 11, fontWeight: 600, color: on ? 'var(--primary)' : 'var(--text2)', textAlign: 'center', lineHeight: 1.15, minWidth: 0, maxWidth: '100%', overflowWrap: 'anywhere', hyphens: 'auto' }}>
+                  {b.nm}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {!allCats && (
+          <button type="button" onClick={() => setAllCats(true)} style={moreBtnStyle}>
+            Mais categorias
+          </button>
+        )}
       </div>
 
       {/* Descrição */}
@@ -290,122 +381,7 @@ export default function AddExpenseSheet() {
       {errText(errors.desc)}
       {errors.desc && <div style={{ height: 14 }} />}
 
-      {/* Shared toggle */}
-      <div className="rw" style={{ padding: '10px 14px', background: 'var(--bg3)', borderRadius: 'var(--r2)', marginBottom: 14 }}>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>Despesa partilhada</div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>Divide o valor por outras pessoas</div>
-        </div>
-        <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 26 }}>
-          <input
-            type="checkbox"
-            checked={d.shared}
-            aria-label="Despesa partilhada"
-            onChange={(e) => {
-              const on = e.target.checked;
-              // Seed total from the single-amount field when turning on (orig 2156).
-              setD((p) => ({ ...p, shared: on, total: on && !p.total ? p.amount || p.total : p.total }));
-            }}
-            style={{ opacity: 0, width: 0, height: 0 }}
-          />
-          <span
-            style={{
-              position: 'absolute',
-              cursor: 'pointer',
-              inset: 0,
-              background: d.shared ? 'var(--blue)' : 'var(--border)',
-              borderRadius: 26,
-              transition: '0.2s',
-            }}
-          >
-            <span
-              style={{
-                position: 'absolute',
-                height: 20,
-                width: 20,
-                left: d.shared ? 21 : 3,
-                bottom: 3,
-                background: '#fff',
-                borderRadius: '50%',
-                transition: '0.2s',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-              }}
-            />
-          </span>
-        </label>
-      </div>
-
-      {d.shared ? (
-        <>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-            <div style={{ flex: 1 }}>
-              <div className="lb" style={{ marginBottom: 6 }}>Total (€)</div>
-              <input
-                value={d.total}
-                onChange={(e) => set('total', e.target.value)}
-                placeholder="100,00"
-                inputMode="decimal"
-                aria-label="Total (€)"
-                style={{ ...monoBig, fontSize: 15, padding: '11px 14px' }}
-              />
-              {errText(errors.total)}
-            </div>
-            <div style={{ width: 80 }}>
-              <div className="lb" style={{ marginBottom: 6 }}>Pessoas</div>
-              <input
-                value={d.split}
-                onChange={(e) => set('split', e.target.value)}
-                type="number"
-                min="2"
-                max="10"
-                aria-label="Pessoas"
-                style={{ ...monoBig, fontSize: 15, padding: '11px 12px', textAlign: 'center' }}
-              />
-            </div>
-          </div>
-          <div className="cd" style={{ padding: '12px 14px', marginBottom: 14, background: 'var(--blue-soft)', borderLeft: '3px solid var(--blue)' }}>
-            <div className="rw">
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)' }}>A tua parte ({splitVal}x split)</div>
-              <div className="m" style={{ fontSize: 16, fontWeight: 800, color: 'var(--blue)' }}>{fm(calc)}</div>
-            </div>
-          </div>
-          <div className="lb" style={{ marginBottom: 6 }}>Data</div>
-          <input
-            type="date"
-            value={d.date}
-            onChange={(e) => set('date', e.target.value)}
-            aria-label="Data"
-            style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 13, marginBottom: 14 }}
-          />
-        </>
-      ) : (
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-          <div style={{ flex: 1 }}>
-            <div className="lb" style={{ marginBottom: 6 }}>Valor (€)</div>
-            <input
-              value={d.amount}
-              onChange={(e) => set('amount', e.target.value)}
-              placeholder="0,00"
-              inputMode="decimal"
-              aria-label="Valor (€)"
-              style={monoBig}
-            />
-            {errText(errors.amount)}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div className="lb" style={{ marginBottom: 6 }}>Data</div>
-            <input
-              type="date"
-              value={d.date}
-              onChange={(e) => set('date', e.target.value)}
-              aria-label="Data"
-              style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 13 }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Conta debitada (opcional) */}
+      {/* Conta debitada (opcional) — pré-selecionada com a última usada */}
       <div className="lb" style={{ marginBottom: 6 }}>Conta debitada (opcional)</div>
       <select
         value={d.acct}
@@ -422,26 +398,126 @@ export default function AddExpenseSheet() {
         })}
       </select>
 
-      {/* Tags */}
-      <div className="lb" style={{ marginBottom: 6 }}>Tags (opcional)</div>
+      {/* Data */}
+      <div className="lb" style={{ marginBottom: 6 }}>Data</div>
       <input
-        value={Array.isArray(d.tags) ? d.tags.join(', ') : d.tags || ''}
-        onChange={(e) => set('tags', e.target.value)}
-        placeholder="Ex: viagem-acores, casa, presente"
-        aria-label="Tags (opcional)"
-        style={{ ...inputStyle, fontSize: 13, marginBottom: 14 }}
+        type="date"
+        value={d.date}
+        onChange={(e) => set('date', e.target.value)}
+        aria-label="Data"
+        style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 13, marginBottom: 14 }}
       />
 
-      {/* Notes */}
-      <div className="lb" style={{ marginBottom: 6 }}>Nota (opcional)</div>
-      <textarea
-        value={d.notes || ''}
-        onChange={(e) => set('notes', e.target.value)}
-        placeholder="Detalhes ou contexto"
-        aria-label="Nota (opcional)"
-        rows={2}
-        style={{ ...inputStyle, fontSize: 13, marginBottom: 4, resize: 'vertical', fontFamily: 'var(--font)' }}
-      />
+      {/* Mais opções — partilhada / tags / nota, fora do caminho dos 5 segundos */}
+      <button type="button" aria-expanded={more} onClick={() => setMore(!more)} style={moreBtnStyle}>
+        Mais opções
+      </button>
+      {more && (
+        <>
+          {/* Shared toggle */}
+          <div className="rw" style={{ padding: '10px 14px', background: 'var(--bg3)', borderRadius: 'var(--r2)', marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Despesa partilhada</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>Divide o valor por outras pessoas</div>
+            </div>
+            <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 26 }}>
+              <input
+                type="checkbox"
+                checked={d.shared}
+                aria-label="Despesa partilhada"
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  // Seed total from the single-amount field when turning on (orig 2156).
+                  setD((p) => ({ ...p, shared: on, total: on && !p.total ? p.amount || p.total : p.total }));
+                }}
+                style={{ opacity: 0, width: 0, height: 0 }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  cursor: 'pointer',
+                  inset: 0,
+                  background: d.shared ? 'var(--blue)' : 'var(--border)',
+                  borderRadius: 26,
+                  transition: '0.2s',
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    height: 20,
+                    width: 20,
+                    left: d.shared ? 21 : 3,
+                    bottom: 3,
+                    background: '#fff',
+                    borderRadius: '50%',
+                    transition: '0.2s',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }}
+                />
+              </span>
+            </label>
+          </div>
+
+          {d.shared && (
+            <>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+                <div style={{ flex: 1 }}>
+                  <div className="lb" style={{ marginBottom: 6 }}>Total (€)</div>
+                  <input
+                    value={d.total}
+                    onChange={(e) => set('total', e.target.value)}
+                    placeholder="100,00"
+                    inputMode="decimal"
+                    aria-label="Total (€)"
+                    style={{ ...monoBig, fontSize: 15, padding: '11px 14px' }}
+                  />
+                  {errText(errors.total)}
+                </div>
+                <div style={{ width: 80 }}>
+                  <div className="lb" style={{ marginBottom: 6 }}>Pessoas</div>
+                  <input
+                    value={d.split}
+                    onChange={(e) => set('split', e.target.value)}
+                    type="number"
+                    min="2"
+                    max="10"
+                    aria-label="Pessoas"
+                    style={{ ...monoBig, fontSize: 15, padding: '11px 12px', textAlign: 'center' }}
+                  />
+                </div>
+              </div>
+              <div className="cd" style={{ padding: '12px 14px', marginBottom: 14, background: 'var(--blue-soft)', borderLeft: '3px solid var(--blue)' }}>
+                <div className="rw">
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)' }}>A tua parte ({splitVal}x split)</div>
+                  <div className="m" style={{ fontSize: 16, fontWeight: 800, color: 'var(--blue)' }}>{fm(calc)}</div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Tags */}
+          <div className="lb" style={{ marginBottom: 6 }}>Tags (opcional)</div>
+          <input
+            value={Array.isArray(d.tags) ? d.tags.join(', ') : d.tags || ''}
+            onChange={(e) => set('tags', e.target.value)}
+            placeholder="Ex: viagem-acores, casa, presente"
+            aria-label="Tags (opcional)"
+            style={{ ...inputStyle, fontSize: 13, marginBottom: 14 }}
+          />
+
+          {/* Notes */}
+          <div className="lb" style={{ marginBottom: 6 }}>Nota (opcional)</div>
+          <textarea
+            value={d.notes || ''}
+            onChange={(e) => set('notes', e.target.value)}
+            placeholder="Detalhes ou contexto"
+            aria-label="Nota (opcional)"
+            rows={2}
+            style={{ ...inputStyle, fontSize: 13, marginBottom: 4, resize: 'vertical', fontFamily: 'var(--font)' }}
+          />
+        </>
+      )}
     </Sheet>
   );
 }

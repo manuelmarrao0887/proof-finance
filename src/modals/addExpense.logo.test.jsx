@@ -37,6 +37,9 @@ describe('Nova despesa: logo ao escrever a descrição', () => {
     // richFixture não traz bdg: parte dos defaults do store e junta a personalizada.
     fx.bdg = initialPersisted().bdg.concat([{ id: 'viagens', nm: 'Viagens', lm: 200, icon: 'plane', color: '#f5a623' }]);
     await renderWithStore(<AddExpenseSheet />, { fixture: fx, openModal: 'add' });
+    // "Viagens" é uma categoria pouco usada: não entra nas 6 mais usadas por
+    // omissão (D5/Task 9) — é preciso abrir a grelha completa primeiro.
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Mais categorias' })); });
     const cell = screen.getByRole('button', { name: /Viagens/ });
     expect(cell.querySelector('div').style.color).toBe('rgb(245, 166, 35)');
   });
