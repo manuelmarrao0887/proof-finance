@@ -13,7 +13,7 @@
        {pending, preview}; só escrevem com args.confirmed === true.
    ════════════════════════════════════════════════════════════════════════ */
 
-import { compute, getGroupsData, accts as ACCT_TEMPLATES } from './finance.js';
+import { compute, getGroupsData, accts as ACCT_TEMPLATES, normAcct } from './finance.js';
 import { monthEffectiveLimits } from './budget.js';
 import { computeBalances, simplifyDebts, resolveShares, GROUP_CATS } from './split.js';
 import { uid, todayISO, normalizeStmtDate } from './format.js';
@@ -361,6 +361,19 @@ function resolveAcctArg(args, ctx) {
   return { acct: r.label };
 }
 
+// update_balance recebe {account_bank, account_type} em vez de um "acct"
+// livre — o par ja vem exato do contexto (accounts no system prompt), por
+// isso comparamos por bank/type normalizados em vez de reutilizar o
+// resolveAccountRef em texto livre (esse serve para frases, este para um
+// par ja identificado). listAccounts() ja deduplica por "banco · tipo"
+// normalizado (balances.js) — um bank+type nunca pode apontar para duas
+// contas ao mesmo tempo, por isso este resolvedor nunca devolve ambiguo.
+function resolveBalanceAccount(args, state) {
+  const nb = normAcct(args.account_bank || '');
+  const nt = normAcct(args.account_type || '');
+  return (listAccounts(state) || []).find((a) => normAcct(a.bank) === nb && normAcct(a.type) === nt) || null;
+}
+
 const writeTools = {
   add_expense: {
     schema: {
@@ -573,22 +586,17 @@ const writeTools = {
         account_type: { type: 'string', description: ACCT_TYPES.join(' | ') },
         value: { type: 'number', description: 'saldo em euros' },
         note: { type: 'string', description: 'nota opcional (ex: total antes de dividir)' },
+        date: { type: 'string', description: 'data YYYY-MM-DD; por omissao hoje' },
         confirmed: { type: 'boolean', description: 'nao preencher: o utilizador e que confirma na app' },
       },
       required: ['account_bank', 'account_type', 'value'],
     },
     description: 'Atualiza o saldo de uma conta. Substitui o saldo atual — o utilizador confirma na app.',
     preview(args, { actions }) {
-      // O par banco/tipo tem de existir em ACCT_TEMPLATES: getAccts só expõe
-      // dynAccts['Banco_Tipo'] para pares que reconhece — uma chave que não
-      // bate certo com nenhum par fica órfã (nunca entra no património,
-      // get_overview ou UI) mesmo que a escrita "tenha sucesso".
-      const valid = ACCT_TEMPLATES.some((a) => a.b === args.account_bank && a.t === args.account_type);
-      if (!valid) return notFound();
-      const key = args.account_bank + '_' + args.account_type;
+      const acc = resolveBalanceAccount(args, actions.getState() || {});
+      if (!acc) return notFound();
+      const key = acc.custom ? acc.id : acc.bank + '_' + acc.type;
       const cur = ((actions.getState() || {}).dynAccts || {})[key] || null;
-      // Nota sem limite era o único campo desta tool que ia em bruto para o
-      // estado — passa pelo mesmo txt() das restantes.
       const note = args.note != null && args.note !== '' ? txt(args.note) : null;
       const before = { key, value: cur ? cur.v : null, note: cur ? cur.n || null : null };
       const after = { key, value: Number(args.value) || 0, note: note || before.note };
@@ -596,25 +604,23 @@ const writeTools = {
         action: 'update',
         kind: 'saldo',
         label:
-          args.account_bank + ' · ' + args.account_type + ' · ' +
+          acc.bank + ' · ' + acc.type + ' · ' +
           (before.value == null ? 'sem leitura' : eur(before.value)) + ' → ' + eur(after.value),
         before,
         after,
+        acc,
       };
     },
     run(args, ctx) {
       const p = this.preview(args, ctx);
       if (p.error) return p;
-      // MESMO caminho do fluxo manual (BalanceUpdateSheet): addBalanceReading
-      // acrescenta ao balanceLog (o histórico que o BalanceHistorySheet mostra),
-      // atualiza o saldo vivo e faz upsert do snapshot patrimonial do dia.
-      // Escrever dynAccts à mão perdia as três coisas e apagava a nota anterior.
-      // `note` indefinida = manter a nota que lá estava (regra da action).
       const note = args.note != null && args.note !== '' ? txt(args.note) : undefined;
       ctx.actions.addBalanceReading({
-        account: { bank: args.account_bank, type: args.account_type, custom: false },
+        account: p.acc.custom
+          ? { bank: p.acc.bank, type: p.acc.type, custom: true, id: p.acc.id }
+          : { bank: p.acc.bank, type: p.acc.type, custom: false },
         value: p.after.value,
-        date: todayISO(),
+        date: args.date ? safeDate(args.date) : todayISO(),
         note,
       });
       return ok({ key: p.after.key, value: p.after.value });

@@ -495,6 +495,45 @@ describe('update_balance (destrutiva) e add_snapshot', () => {
     expect(c.actions.addBalanceReading).not.toHaveBeenCalled();
     expect(c.actions.setDynAccts).not.toHaveBeenCalled();
   });
+
+  it('resolve uma conta PERSONALIZADA por bank+type — hoje devolve not_found mesmo existindo', () => {
+    const c = writeCtx({ currentUser: { uid: 'u1' }, customAccts: [{ id: 'cc1', bank: 'N26', type: 'Cartão de Crédito', value: 0, category: 'Crédito' }] });
+    const r = execTool('update_balance', { account_bank: 'N26', account_type: 'Cartão de Crédito', value: 120.5 }, c);
+    expect(r.pending).toBe(true);
+    expect(r.preview.error).toBeUndefined();
+  });
+
+  it('confirmado, uma conta personalizada grava com custom:true e o id da conta', () => {
+    const c = writeCtx({ currentUser: { uid: 'u1' }, customAccts: [{ id: 'cc1', bank: 'N26', type: 'Cartão de Crédito', value: 0, category: 'Crédito' }] });
+    const r = execTool('update_balance', { account_bank: 'N26', account_type: 'Cartão de Crédito', value: 120.5, confirmed: true }, c);
+    expect(r.ok).toBe(true);
+    const arg = c.actions.addBalanceReading.mock.calls[0][0];
+    expect(arg.account).toEqual({ bank: 'N26', type: 'Cartão de Crédito', custom: true, id: 'cc1' });
+  });
+
+  it('bank/type com capitalizacao ou espacos diferentes ainda encontra a conta (normAcct)', () => {
+    const c = writeCtx({ currentUser: { uid: 'u1' }, customAccts: [{ id: 'cc1', bank: 'N26', type: 'Cartão de Crédito', value: 0, category: 'Crédito' }] });
+    const r = execTool('update_balance', { account_bank: '  n26 ', account_type: 'cartão de crédito', value: 50, confirmed: true }, c);
+    expect(r.ok).toBe(true);
+    expect(c.actions.addBalanceReading).toHaveBeenCalledTimes(1);
+  });
+
+  it('aceita date opcional; sem date usa hoje como antes', () => {
+    const c = writeCtx();
+    const r1 = execTool('update_balance', { account_bank: 'Bankinter', account_type: 'Conta a Ordem', value: 10, date: '2026-08-15', confirmed: true }, c);
+    expect(r1.ok).toBe(true);
+    expect(c.actions.addBalanceReading.mock.calls[0][0].date).toBe('2026-08-15');
+    const c2 = writeCtx();
+    execTool('update_balance', { account_bank: 'Bankinter', account_type: 'Conta a Ordem', value: 10, confirmed: true }, c2);
+    expect(c2.actions.addBalanceReading.mock.calls[0][0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('uma data invalida cai em hoje, nunca entra tal e qual (mesma regra de add_expense)', () => {
+    const c = writeCtx();
+    execTool('update_balance', { account_bank: 'Bankinter', account_type: 'Conta a Ordem', value: 10, date: 'ontem', confirmed: true }, c);
+    expect(c.actions.addBalanceReading.mock.calls[0][0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
   it('add_snapshot acrescenta ao fim da lista', () => {
     const c = writeCtx({ dynSnaps: [{ l: '01.08' }] });
     execTool('add_snapshot', { label: '30.08', liq: 100, poup: 200, inv: 300 }, c);
