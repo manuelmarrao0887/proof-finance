@@ -249,6 +249,60 @@ describe('runAssistant', () => {
     const out = await runAssistant('x', { ...ctx(), chatFn });
     expect(out.text).toBe('desculpa');
   });
+
+  it('aceita cmd como array de blocos multimodais e envia-o tal como está para o chatFn', async () => {
+    const chatFn = vi.fn(() => Promise.resolve(say('Vejo um saldo de 584,64 EUR.')));
+    const cmd = [
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' } },
+      { type: 'text', text: 'Atualiza o saldo com isto' },
+    ];
+    const out = await runAssistant(cmd, { ...ctx(), chatFn, tier: 'economico' });
+    expect(out.text).toBe('Vejo um saldo de 584,64 EUR.');
+    const firstCallMessages = chatFn.mock.calls[0][0];
+    const userMsg = firstCallMessages[firstCallMessages.length - 1];
+    expect(userMsg.role).toBe('user');
+    expect(userMsg.content).toEqual(cmd);
+  });
+
+  it('uma imagem sobe o tier ao piso equilibrado mesmo pedindo economico', async () => {
+    const chatFn = vi.fn(() => Promise.resolve(say('ok')));
+    const cmd = [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' } }];
+    await runAssistant(cmd, { ...ctx(), chatFn, tier: 'economico' });
+    expect(chatFn.mock.calls[0][1].tier).toBe('equilibrado');
+  });
+
+  it('avancado nao desce quando ha imagem — o piso e um MINIMO, nao um valor fixo', async () => {
+    const chatFn = vi.fn(() => Promise.resolve(say('ok')));
+    const cmd = [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' } }];
+    await runAssistant(cmd, { ...ctx(), chatFn, tier: 'avancado' });
+    expect(chatFn.mock.calls[0][1].tier).toBe('avancado');
+  });
+
+  it('sem imagem, o tier pedido passa tal como esta (sem piso)', async () => {
+    const chatFn = vi.fn(() => Promise.resolve(say('ok')));
+    const out = await runAssistant('texto normal', { ...ctx(), chatFn, tier: 'economico' });
+    expect(chatFn.mock.calls[0][1].tier).toBe('economico');
+    expect(out.text).toBe('ok');
+  });
+
+  it('no historico devolvido, uma mensagem com imagem fica reduzida a um marcador de texto', async () => {
+    const chatFn = vi.fn(() => Promise.resolve(say('Registei.')));
+    const cmd = [
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' } },
+      { type: 'text', text: 'regista isto' },
+    ];
+    const out = await runAssistant(cmd, { ...ctx(), chatFn, tier: 'economico' });
+    const userMsgInHistory = out.messages.find((m) => m.role === 'user');
+    expect(userMsgInHistory.content).toBe('[imagem] regista isto');
+  });
+
+  it('marcador sem texto a acompanhar a imagem fica so "[imagem]"', async () => {
+    const chatFn = vi.fn(() => Promise.resolve(say('ok')));
+    const cmd = [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' } }];
+    const out = await runAssistant(cmd, { ...ctx(), chatFn, tier: 'economico' });
+    const userMsgInHistory = out.messages.find((m) => m.role === 'user');
+    expect(userMsgInHistory.content).toBe('[imagem]');
+  });
 });
 
 /* aiChat.js é um módulo puro (sem useStore) — o tier tem de chegar por

@@ -128,7 +128,40 @@ export function toolCtx(actions, currentUser, fallbackState) {
   };
 }
 
-export async function runAssistant(userText, opts) {
+// Piso de tier quando a mensagem do utilizador leva imagem — o MESMO
+// raciocinio do chao de documentos em lib/ai.js (TIER_FOR_MODEL): um modelo
+// barato a ler um print e falsa economia. So 'avancado', escolhido pelo
+// utilizador, sobe acima do piso; qualquer outra coisa cai em 'equilibrado'.
+const IMAGE_TIER_FLOOR = 'equilibrado';
+function tierForContent(tier, hasImage) {
+  if (!hasImage) return tier || 'economico';
+  return tier === 'avancado' ? 'avancado' : IMAGE_TIER_FLOOR;
+}
+
+function hasImageBlock(content) {
+  return Array.isArray(content) && content.some((b) => b && b.type === 'image');
+}
+
+// Reduz uma mensagem com imagem a um marcador de texto para o historico da
+// PROXIMA chamada — sem isto, cada volta seguinte reenviava a imagem
+// (custo cresce sozinho) e o aiHistory persistido no Firestore engordava
+// com base64. So se aplica a mensagens role:'user' com content em array;
+// o resto (assistant, tool) passa tal como esta.
+function markerFor(content) {
+  if (!Array.isArray(content)) return content;
+  const text = content
+    .filter((b) => b && b.type === 'text' && b.text)
+    .map((b) => b.text)
+    .join(' ')
+    .trim();
+  return text ? '[imagem] ' + text : '[imagem]';
+}
+
+function withMarkers(msgs) {
+  return msgs.map((m) => (m.role === 'user' && Array.isArray(m.content) ? { ...m, content: markerFor(m.content) } : m));
+}
+
+export async function runAssistant(cmd, opts) {
   const o = opts || {};
   const chatFn = o.chatFn || defaultChat;
   /* `state` é um GETTER, não um retrato. As tools de leitura desestruturam
@@ -142,8 +175,9 @@ export async function runAssistant(userText, opts) {
   const messages = [
     ...(o.systemPrompt ? [{ role: 'system', content: o.systemPrompt }] : []),
     ...(o.history || []),
-    { role: 'user', content: userText },
+    { role: 'user', content: cmd },
   ];
+  const tier = tierForContent(o.tier, hasImageBlock(cmd));
 
   let usage = {};
   const applied = [];
@@ -156,12 +190,7 @@ export async function runAssistant(userText, opts) {
      aplicado, com error:true para as duas UIs mostrarem como erro. */
   try {
     for (let round = 0; round < MAX_ROUNDS; round++) {
-      // O tier vem de opts.tier (o chamador lê state.aiTier — ver
-      // AssistantSheet/AIView) em vez de este módulo ir buscá-lo ao store: é
-      // um módulo puro, sem useStore. Sem tier explícito (testes antigos,
-      // chamadores que ainda não passam a opção) cai no mais barato — nunca
-      // num tier mais caro por omissão.
-      const res = await chatFn(messages, { tools: TOOL_SCHEMAS, tier: o.tier || 'economico', maxTokens: 2000 });
+      const res = await chatFn(messages, { tools: TOOL_SCHEMAS, tier, maxTokens: 2000 });
       usage = addUsage(usage, res && res.usage);
       const msg = messageOf(res);
       const calls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
@@ -176,7 +205,7 @@ export async function runAssistant(userText, opts) {
           applied,
           pending,
           usage,
-          messages: [...messages, msg.content ? msg : { role: 'assistant', content: text }],
+          messages: withMarkers([...messages, msg.content ? msg : { role: 'assistant', content: text }]),
         };
       }
 
@@ -236,7 +265,7 @@ export async function runAssistant(userText, opts) {
       applied,
       pending,
       usage,
-      messages: [...messages, { role: 'assistant', content: giveUpText }],
+      messages: withMarkers([...messages, { role: 'assistant', content: giveUpText }]),
     };
   } catch (err) {
     const text = (err && err.message) || FALLBACK_ERROR;
@@ -246,7 +275,7 @@ export async function runAssistant(userText, opts) {
       pending,
       usage,
       error: true,
-      messages: [...messages, { role: 'assistant', content: text }],
+      messages: withMarkers([...messages, { role: 'assistant', content: text }]),
     };
   }
 }
