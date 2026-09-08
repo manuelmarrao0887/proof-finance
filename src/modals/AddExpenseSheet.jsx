@@ -18,7 +18,7 @@ import Sheet from '../components/Sheet.jsx';
 import { useModal } from '../store/ui.jsx';
 import { useStore } from '../store/store.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { fm, todayISO } from '../lib/format.js';
+import { fc, fm, todayISO } from '../lib/format.js';
 import { applyRules } from '../lib/finance.js';
 import { sortedCats } from '../lib/categories.js';
 import { listAccounts } from '../lib/balances.js';
@@ -61,6 +61,7 @@ function draftFromExpense(x) {
     split: x.shared && x.split ? String(x.split) : '2',
     tags: x.tags || [],
     notes: x.notes || '',
+    recId: x.recId || null,
   };
 }
 
@@ -101,8 +102,9 @@ export default function AddExpenseSheet() {
       const nd = draftFromExpense(editExp);
       setD(nd);
       // Em edição, "Mais opções" começa aberta se já houver algo lá dentro
-      // (senão o utilizador nem vê que a despesa é partilhada / tem tags/nota).
-      setMore(!!(nd.shared || (nd.tags && nd.tags.length > 0) || nd.notes));
+      // (senão o utilizador nem vê que a despesa é partilhada / tem tags/nota
+      // / está ligada a uma recorrente).
+      setMore(!!(nd.shared || (nd.tags && nd.tags.length > 0) || nd.notes || nd.recId));
     } else if (prefill) {
       setD({
         ...freshDraft(state),
@@ -163,6 +165,31 @@ export default function AddExpenseSheet() {
     setErrors((e) => (e[k] ? { ...e, [k]: undefined } : e));
   };
 
+  // Ligar/desligar a uma despesa recorrente (select "Despesa recorrente").
+  // Ao ligar, pré-preenche descrição/valor/categoria/conta a partir do item —
+  // mas nunca por cima de algo que o utilizador já escreveu. Ao desligar
+  // ("Nenhuma"), só limpa o recId — o resto do rascunho fica como está.
+  const onRecChange = (e) => {
+    const val = e.target.value;
+    if (!val) {
+      setD((p) => ({ ...p, recId: null }));
+      return;
+    }
+    const item = (state.recurring || []).find((r) => r.id === val);
+    if (!item) return;
+    setD((p) => {
+      const next = { ...p, recId: val };
+      if (!next.desc) next.desc = item.name || next.desc;
+      const amtNum = parseFloat((next.amount || '0').toString().replace(',', '.'));
+      if (!next.amount || !amtNum) {
+        next.amount = item.amount != null ? String(item.amount).replace('.', ',') : next.amount;
+      }
+      if (!next.cat || next.cat === 'rest') next.cat = item.cat || next.cat;
+      if (!next.acct && item.acct) next.acct = item.acct;
+      return next;
+    });
+  };
+
   // Shared-split derived "your part" (orig 2160-2169).
   const totVal = parseFloat((d.total || '0').toString().replace(',', '.')) || 0;
   let splitVal = parseInt(d.split || '2', 10) || 2;
@@ -218,7 +245,13 @@ export default function AddExpenseSheet() {
     }
     const notes = (d.notes || '').trim();
     const exp = { desc, amount: amt, cat, date };
+    // Ligação a uma recorrente: em edição, escreve `null` explicitamente
+    // quando removida — updateExpense faz merge (spread), por isso omitir a
+    // chave deixaria o recId antigo intacto (ver rootPayload em
+    // firebase/data.js: undefined também vira null a caminho do Firestore,
+    // por isso este null é consistente com o resto da persistência).
     if (d.recId) exp.recId = d.recId;
+    else if (isEdit) exp.recId = null;
     if (d.acct) exp.acct = d.acct;
     if (d.shared) {
       exp.shared = true;
@@ -416,6 +449,31 @@ export default function AddExpenseSheet() {
       </button>
       {more && (
         <>
+          {/* Despesa recorrente (opcional) — liga esta despesa a uma recorrente
+              existente; monthPendingFixed/RecurringView contam-na como paga no
+              mês a partir do recId, sem mais nenhuma alteração. */}
+          {(state.recurring || []).length > 0 && (
+            <div style={{ marginBottom: 'var(--space-4)' }}>
+              <div className="lb" style={{ marginBottom: 'var(--space-2)' }}>Despesa recorrente (opcional)</div>
+              <select
+                value={d.recId || ''}
+                onChange={onRecChange}
+                aria-label="Despesa recorrente (opcional)"
+                style={{ ...inputStyle, appearance: 'none', fontSize: 'var(--fs-input)' }}
+              >
+                <option value="">Nenhuma</option>
+                {(state.recurring || []).map((r) => (
+                  <option key={r.id} value={r.id}>{r.name + ' · ' + fc(r.amount)}</option>
+                ))}
+              </select>
+              {d.recId && (
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', marginTop: 'var(--space-2)' }}>
+                  Conta como paga em Recorrentes neste mês.
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Shared toggle */}
           <div className="rw" style={{ padding: 'var(--space-3) var(--space-4)', background: 'var(--bg3)', borderRadius: 'var(--r2)', marginBottom: 'var(--space-4)' }}>
             <div>
