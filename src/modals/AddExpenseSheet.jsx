@@ -463,7 +463,7 @@ export default function AddExpenseSheet() {
               >
                 <option value="">Nenhuma</option>
                 {(state.recurring || []).map((r) => (
-                  <option key={r.id} value={r.id}>{r.name + ' · ' + fc(r.amount)}</option>
+                  <option key={r.id} value={r.id}>{r.name + ' · ' + fm(r.amount)}</option>
                 ))}
               </select>
               {d.recId && (

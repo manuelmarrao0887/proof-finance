@@ -11,7 +11,7 @@ import { screen, cleanup, fireEvent, act } from '@testing-library/react';
 import { renderWithStore } from '../test/renderWithStore.jsx';
 import { richFixture } from '../test/fixtures.js';
 import { useStore } from '../store/store.jsx';
-import { fc } from '../lib/format.js';
+import { fm } from '../lib/format.js';
 import AddExpenseSheet from './AddExpenseSheet.jsx';
 import RecurringView from '../views/RecurringView.jsx';
 
@@ -40,10 +40,10 @@ describe('Associar despesa a uma recorrente', () => {
 
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Mais opções' })); });
     const select = screen.getByLabelText('Despesa recorrente (opcional)');
-    // O rótulo da opção usa fc() (não fm()): confirma-se aqui em vez de
-    // cravar a string, para não depender de como fc() arredonda.
+    // O rótulo da opção usa fm() (cêntimos): confirma-se aqui em vez de
+    // cravar a string, para não depender do formato de fm().
     const gymOption = select.querySelector('option[value="rec-gym"]');
-    expect(gymOption.textContent).toBe('Ginásio · ' + fc(35.9));
+    expect(gymOption.textContent).toBe('Ginásio · ' + fm(35.9));
 
     await act(async () => { fireEvent.change(select, { target: { value: 'rec-gym' } }); });
 
@@ -77,7 +77,7 @@ describe('Associar despesa a uma recorrente', () => {
 
     const select = screen.getByLabelText('Despesa recorrente (opcional)');
     const netOption = select.querySelector('option[value="rec-net"]');
-    expect(netOption.textContent).toBe('Internet · ' + fc(39.9));
+    expect(netOption.textContent).toBe('Internet · ' + fm(39.9));
 
     await act(async () => { fireEvent.change(select, { target: { value: 'rec-net' } }); });
 
