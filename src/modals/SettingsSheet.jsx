@@ -316,6 +316,26 @@ export default function SettingsSheet() {
         </span>
         <span className="m" style={{ color: 'var(--fg-subtle)', fontSize: 11 }}>{(state.rules || []).length} &rsaquo;</span>
       </button>
+      <button
+        type="button"
+        onClick={() => {
+          close();
+          ui.open('bankLink');
+        }}
+        style={{ width: '100%', padding: '14px 16px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', borderRadius: 8, fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, fontFamily: 'inherit' }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="8" width="18" height="12" rx="2" />
+            <path d="M3 8l9-5 9 5" />
+            <line x1="7" y1="12" x2="7" y2="16" />
+            <line x1="12" y1="12" x2="12" y2="16" />
+            <line x1="17" y1="12" x2="17" y2="16" />
+          </svg>
+          Contas bancárias ligadas
+        </span>
+        <span className="m" style={{ color: 'var(--fg-subtle)', fontSize: 11 }}>&rsaquo;</span>
+      </button>
 
       {/* ── Dados ── */}
       <div className="lb" style={{ marginBottom: 10, marginTop: 16 }}>Dados</div>

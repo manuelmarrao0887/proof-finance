@@ -13,6 +13,12 @@ rules_version = '2';
 // todas as subcoleções. O bloco `match /{sub}/{docId}` é ESSENCIAL: sem ele o
 // `match /users/{uid}` sozinho NÃO cobre subcoleções e a app dá
 // "Missing or insufficient permissions". Tudo o resto é negado por omissão.
+//
+// Isso inclui de propósito `saltedge_customers/{uid}` e
+// `saltedge_customer_index/{customerId}` (ver api/saltedge.js e
+// api/saltedge-webhook.js): guardam os segredos cifrados da ligação bancária
+// e só a Admin SDK (que ignora estas regras) lhes toca — nenhum cliente, nem
+// sequer o dono dos dados, os lê diretamente.
 
 service cloud.firestore {
   match /databases/{database}/documents {

@@ -33,6 +33,7 @@ export const MODALS = [
   'settle',         // registar acerto de contas num grupo
   'assistant',      // chat do assistente de IA
   'confirm',        // ConfirmSheet — substitui confirm() nativo nas views
+  'bankLink',       // contas bancárias ligadas via Salt Edge
 ]
 
 export const VALID_TABS = ['overview', 'transactions', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax']

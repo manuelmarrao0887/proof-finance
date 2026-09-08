@@ -66,6 +66,7 @@ const MODAL_COMPONENTS = {
   settle: lazy(() => import('../modals/SettleSheet.jsx')),
   assistant: lazy(() => import('../modals/AssistantSheet.jsx')),
   confirm: lazy(() => import('./ConfirmSheet.jsx')),
+  bankLink: lazy(() => import('../modals/BankLinkSheet.jsx')),
 };
 
 /* ── Icons (inline SVG, no emoji) ──────────────────────────────────────── */
