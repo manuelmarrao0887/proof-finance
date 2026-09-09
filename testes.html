@@ -686,6 +686,9 @@ const GROUPS = [
     { id: 'T19.5', title: 'Simulador impostos + à cabeça', steps: ['Preencher o preço'], expect: 'Mostra IMT+IS estimados e "necessário à cabeça" = entrada + impostos.' },
     { id: 'T19.6', title: 'Simulador taxa de esforço', steps: ['Preencher rendimento do agregado no simulador'], expect: 'Mostra a taxa de esforço da nova prestação.' },
     { id: 'T19.7', title: 'Saldos ocultos', steps: ['Ocultar saldos no Resumo', 'Abrir Crédito'], expect: 'Os valores da "minha casa" ficam ••••; o simulador (hipotético) continua visível.' },
+    { id: 'T19.8', title: 'Simulador de amortização extra', steps: ['Com crédito registado, ver "Simulador · amortização extra"', 'Introduzir um valor extra a abater'], expect: 'Mostra o saldo em dívida estimado (a partir da data de aquisição, taxa e prazo) e, ao introduzir um valor, dois cenários lado a lado: "Reduzir prazo" (meses poupados mantendo a prestação) e "Reduzir prestação" (nova prestação mantendo o prazo), cada um com os juros poupados.' },
+    { id: 'T19.9', title: 'Amortização extra quita o crédito', steps: ['No simulador de amortização extra, introduzir um valor ≥ saldo em dívida'], expect: 'Mostra "Quitas o crédito!" com os juros totais poupados e os meses restantes eliminados, em vez dos dois cartões.' },
+    { id: 'T19.10', title: 'Amortização extra + saldos ocultos', steps: ['Ocultar saldos no Resumo', 'Abrir Crédito → simulador de amortização extra'], expect: 'Saldo em dívida, prestação e juros poupados ficam ••••; os meses poupados (não monetários) continuam visíveis.' },
   ]},
   { id: 'T18', title: 'Lembretes de recorrentes', tests: [
     { id: 'T18.1', title: 'Banner no Resumo', steps: ['Ter recorrentes com dia nos próximos 5 dias', 'Abrir Resumo'], expect: 'Cartão "A vencer em breve" lista as recorrentes com valor e "em X dias / amanhã / hoje".' },

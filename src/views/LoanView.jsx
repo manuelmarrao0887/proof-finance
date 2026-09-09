@@ -13,6 +13,7 @@ import { useUI } from '../store/ui.jsx';
 import { isPreviewMode } from '../lib/finance.js';
 import { fm, fc } from '../lib/format.js';
 import { monthlyPayment, totalInterest, effortRate, purchaseTaxes } from '../lib/mortgage.js';
+import ExtraRepaymentSimulator from '../components/ExtraRepaymentSimulator.jsx';
 
 const num = (s) => parseFloat(String(s == null ? '' : s).replace(',', '.')) || 0;
 
@@ -109,6 +110,9 @@ export default function LoanView() {
           {h.prestacao > 0 && <Row label="Prestação mensal" value={mv(h.prestacao)} />}
         </div>
       )}
+
+      {/* ── Simulador de amortização extra ── */}
+      {!preview && h && <ExtraRepaymentSimulator />}
 
       {/* ── Autenticado sem casa → adicionar ── */}
       {!preview && !h && (
