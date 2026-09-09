@@ -8,6 +8,7 @@ rules_version = '2';
 //     movements/{id}             ← despesas/movimentos
 //     incomes/{id} · balances/{id} · categories/{id} · transfers/{id}
 //     goals/{id} · recurring/{id} · positions/{id} · rules/{id}
+//     t212Log/{id} · pushSubs/{id}
 //
 // Regra: um utilizador autenticado só lê/escreve os SEUS dados — o doc raiz E
 // todas as subcoleções. O bloco `match /{sub}/{docId}` é ESSENCIAL: sem ele o

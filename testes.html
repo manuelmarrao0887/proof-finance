@@ -767,6 +767,19 @@ const GROUPS = [
     { id: 'T14.15', title: 'Sem scroll horizontal em ecrãs pequenos (320px)', steps: ['Chrome DevTools a 320px de largura (ou iPhone SE)', 'Percorrer as 15 tabs', 'Abrir os 23 popups'], expect: 'Nenhum ecrã ou popup faz scroll lateral. Pontos que falhavam: seletor de meses do Relatório, grelha de categorias da Nova Despesa, par de datas Início/Fim no Grupo.' },
     { id: 'T14.16', title: 'Seletor de meses do Relatório', steps: ['Mais → Análise num telemóvel'], expect: 'Os 6 meses aparecem numa grelha de 3 colunas (2 linhas), todos visíveis sem arrastar para o lado.' },
   ]},
+  { id: 'T44', title: 'Trading212 + lembretes push', tests: [
+    { id: 'T44.1', title: 'Primeira leitura', steps: ['Mais → Trading212 → "Atualizar"', 'Introduzir base de custo e valor atual', 'Confirmar'], expect: 'Cartão principal mostra o valor atual, o ganho (valor atual − base de custo) em € e % a verde/vermelho, e a data. Entra no histórico por baixo.' },
+    { id: 'T44.2', title: 'Perda mostra a vermelho', steps: ['Atualizar com valor atual < base de custo'], expect: 'Ganho negativo, cor de sinal (vermelho/laranja do tema), sem sinal "+" a mais.' },
+    { id: 'T44.3', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos → abrir Trading212'], expect: 'Valores trocados por "••••"; ganho/histórico escondidos.' },
+    { id: 'T44.4', title: 'Sem leituras (novo utilizador)', steps: ['Abrir Trading212 sem nunca ter atualizado'], expect: 'Estado vazio com CTA a explicar os dois campos a preencher.' },
+    { id: 'T44.5', title: 'Reabrir o sheet pré-preenche', steps: ['Ter uma leitura anterior', 'Tocar "Atualizar" outra vez'], expect: 'Base de custo e valor atual já vêm preenchidos com a última leitura — só é preciso ajustar o que mudou.' },
+    { id: 'T44.6', title: 'Ativar notificações (iOS)', steps: ['Definições → Lembretes → "Ativar notificações"', 'Sem ter adicionado a app ao ecrã principal'], expect: 'Mensagem clara a pedir para instalar a app primeiro (Partilhar → Adicionar ao Ecrã Principal) — sem isso o iOS não tem PushManager. Depois de instalada, o mesmo botão pede a permissão nativa e ativa.' },
+    { id: 'T44.7', title: 'Horários dos 3 lembretes são editáveis', steps: ['Definições → Lembretes'], expect: 'Almoço (13:45), Jantar (21:00) e Carteira Trading212 (18:00) por omissão, cada um com hora própria e um interruptor "Ativo" independente.' },
+    { id: 'T44.8', title: 'Notificação de almoço/jantar abre o assistente', steps: ['Tocar numa notificação de almoço ou jantar (dispositivo real)'], expect: 'Abre a app na tab Assistente com o campo de texto já preenchido ("Almoço: " / "Jantar: ") pronto a completar o valor — não envia nada sozinho.' },
+    { id: 'T44.9', title: 'Notificação da carteira abre o Trading212', steps: ['Tocar na notificação "Trading212" (dispositivo real)'], expect: 'Abre a app diretamente na tab Trading212.' },
+    { id: 'T44.10', title: 'Lembrete não dispara duas vezes no mesmo dia', steps: ['Ver reminderLastSent no doc do utilizador (Firestore) depois de um envio'], expect: 'Fica gravado {tipo: "YYYY-MM-DD"} pela Admin SDK — o cron não reenvia o mesmo tipo no mesmo dia mesmo correndo a cada 5 min.' },
+    { id: 'T44.11', title: 'Isolamento dos dados (Firestore)', steps: ['Consola do Firebase → users/{uid}/t212Log, /pushSubs'], expect: 'Vivem nas mesmas subcoleções user-scoped do resto da app (match /{sub}/{docId}) — sem regra nova.' },
+  ]},
 ];
 
 const STORE_KEY = 'proofFinanceTestPlan.v1';
@@ -1138,6 +1151,7 @@ const SEC_GOOD = [
   'Editar/apagar pela IA nunca aplica sozinho: execTool devolve só uma pré-visualização e não escreve nada sem confirmed === true. O campo confirmed é retirado dos schemas de ferramentas enviados ao modelo (e qualquer confirmed que o modelo invente na mesma é descartado) — só confirmPending, chamado depois de o utilizador tocar em Confirmar, o injeta. Substituir um saldo (update_balance) ou um limite de orçamento (set_budget) conta como editar e passa pelo mesmo cartão de confirmação, com o valor antigo e o novo à vista. Só CRIAR aplica de imediato, com Anular no cartão da resposta.',
   'O Anular repõe arrays inteiros, por isso só está disponível enquanto ninguém mais tiver escrito nessas fatias: a folha guarda a identidade dos arrays logo a seguir à escrita e desativa o botão (com explicação visível) se algo os tiver substituído — nunca apaga em silêncio trabalho feito noutro ecrã.',
   'Uma despesa criada OU alterada pela IA passa pelos mesmos saneadores: valor sempre positivo, categoria desconhecida cai em "out", data que não é reconhecida cai em hoje (nunca entra texto livre no campo de data) e descrição truncada. O caminho de alterar não pode aceitar o que o de criar rejeita.',
+  'Cron de lembretes (api/cron/reminders.js) só aceita pedidos com Authorization: Bearer $CRON_SECRET (header que a própria Vercel injeta nas invocações do Cron Job) — sem a env, ou com o header errado, responde 404 (não revela que o endpoint existe). A chave privada VAPID (VAPID_PRIVATE_KEY) só existe no servidor; a pública vai no bundle (não é segredo, identifica o remetente ao serviço de push, tal como a apiKey do Firebase). Uma subscrição de push morta (404/410 do serviço) é apagada automaticamente; um dispositivo só recebe o lembrete que ELE ativou (pushSubs é subcoleção user-scoped, coberta pelas mesmas regras Firestore).',
 ];
 
 const SEC_ACTIONS = [

@@ -34,9 +34,10 @@ export const MODALS = [
   'assistant',      // chat do assistente de IA
   'confirm',        // ConfirmSheet — substitui confirm() nativo nas views
   'bankLink',       // contas bancárias ligadas via Salt Edge
+  't212Update',     // atualizar base de custo / valor atual da carteira Trading212
 ]
 
-export const VALID_TABS = ['overview', 'transactions', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax']
+export const VALID_TABS = ['overview', 'transactions', 'expenses', 'goals', 'groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax', 't212']
 function initialTab() {
   if (typeof location === 'undefined') return 'overview'
   const t = new URLSearchParams(location.search).get('tab')

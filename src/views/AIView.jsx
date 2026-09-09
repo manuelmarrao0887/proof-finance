@@ -171,7 +171,20 @@ export default function AIView() {
   const [aiImport, setAiImport] = useState(null); // {docType,summary,actions} | {error} | null
   const [aiImportLoading, setAiImportLoading] = useState(false);
   const [aiImportSel, setAiImportSel] = useState({}); // {idx: true}
-  const [chat, setChat] = useState('');
+  // `?draft=` (deep-link do toque numa notificação de lembrete — ver
+  // src/sw.js DEEP_LINKS) pré-preenche o campo sem enviar sozinho: o
+  // utilizador ainda decide o que escrever. Lido uma vez (lazy initializer) e
+  // removido do URL para não voltar a aparecer numa troca de tab.
+  const [chat, setChat] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    const params = new URLSearchParams(window.location.search);
+    const draft = params.get('draft');
+    if (!draft) return '';
+    params.delete('draft');
+    const next = params.toString();
+    window.history.replaceState(window.history.state, '', window.location.pathname + (next ? '?' + next : ''));
+    return draft.endsWith('?') || draft.endsWith(':') ? draft : draft + ': ';
+  });
 
   const aiHistory = state.aiHistory || [];
 

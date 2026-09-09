@@ -13,6 +13,8 @@
        categories/{id}               ← bdg (categorias/orçamento)
        transfers/{id}                ← transfers
        goals/{id} · recurring/{id} · positions/{id} · rules/{id}
+       t212Log/{id}                 ← carteira Trading212 (leituras)
+       pushSubs/{id}                ← subscrições de push (lembretes)
 
    loadUserData(uid)   → objeto com a MESMA forma que o antigo doc (para o
                          hydrateFromDoc não mudar). Faz migração 1× se preciso.
@@ -49,6 +51,8 @@ export const SUBCOLLECTIONS = {
   people: 'people',
   groups: 'groups',
   groupEntries: 'groupEntries',
+  t212Log: 't212Log',
+  pushSubs: 'pushSubs',
 };
 const SLICE_KEYS = Object.keys(SUBCOLLECTIONS);
 
@@ -57,6 +61,7 @@ const ROOT_KEYS = [
   'aiHistory', 'dynAccts', 'dynSnaps', 'theme', 'forecastMonths',
   'fxRates', 'aiInsights', 'lastSeenPatchVersion', 'dismissedSubs', 'pinHash',
   'faceIdCred', 'balancesHidden', 'housing', 'rolloverOn', 'taxCfg', 'dismissedAnomalies',
+  'reminderPrefs',
 ];
 
 const SCHEMA_VERSION = 2;

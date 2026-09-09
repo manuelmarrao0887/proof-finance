@@ -7,7 +7,7 @@
    version footer. Uses the shared <Sheet> shell and useModal('settings').
    ════════════════════════════════════════════════════════════════════════ */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Sheet from '../components/Sheet.jsx';
 import { useStore, useAuth } from '../store/store.jsx';
 import { useUI, useModal } from '../store/ui.jsx';
@@ -16,6 +16,9 @@ import { expensesToCSV, incomesToCSV, downloadCSV } from '../lib/exportcsv.js';
 import { todayISO } from '../lib/format.js';
 import { signOutUser } from '../firebase/client.js';
 import { applyTheme } from '../store/store.jsx';
+import { isPushSupported, isStandalone, subscribePush, unsubscribePush } from '../lib/push.js';
+
+const REMINDER_LABELS = { almoco: 'Almoço', jantar: 'Jantar', t212: 'Carteira Trading212' };
 
 const THEME_OPTIONS = [
   {
@@ -71,6 +74,52 @@ export default function SettingsSheet() {
 
   const curTheme = state.theme || 'system';
   const curTier = state.aiTier || 'economico';
+
+  /* ── Lembretes / push notifications ─────────────────────────────────────
+     pushEnabled reflete a subscrição REAL do browser (não um campo do
+     store): abrir Definições noutro dispositivo/instalação tem de mostrar o
+     estado desse dispositivo, não o do que ativou primeiro. */
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  useEffect(() => {
+    if (!isOpen || !isPushSupported()) return;
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => setPushEnabled(!!sub))
+      .catch(() => {});
+  }, [isOpen]);
+
+  const togglePush = useCallback(() => {
+    setPushBusy(true);
+    if (pushEnabled) {
+      unsubscribePush()
+        .then((endpoint) => {
+          if (endpoint) actions.removePushSubscription(endpoint);
+          setPushEnabled(false);
+          toast('Notificações desativadas', 'success');
+        })
+        .catch((e) => toast(e.message || 'Falha a desativar notificações', 'error'))
+        .finally(() => setPushBusy(false));
+    } else {
+      subscribePush()
+        .then((sub) => {
+          actions.savePushSubscription(sub);
+          setPushEnabled(true);
+          toast('Notificações ativadas', 'success');
+        })
+        .catch((e) => toast(e.message || 'Falha a ativar notificações', 'error'))
+        .finally(() => setPushBusy(false));
+    }
+  }, [pushEnabled, actions, toast]);
+
+  const reminderPrefs = state.reminderPrefs || {};
+  const setReminderField = useCallback(
+    (type, field, value) => {
+      const cur = reminderPrefs[type] || {};
+      actions.setReminderPrefs({ [type]: { ...cur, [field]: value } });
+    },
+    [reminderPrefs, actions]
+  );
 
   /* ── sign-out (orig doLogout): signOutUser() then resetUser(). ──────────── */
   const onSignOut = useCallback(() => {
@@ -296,6 +345,42 @@ export default function SettingsSheet() {
       <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 20, lineHeight: 1.5 }}>
         A importação de documentos (extratos, recibos, prints de saldo) usa sempre, pelo menos, o nível Equilibrado — um valor mal lido entra errado nas tuas contas, por isso a precisão importa mais do que a poupança nesses casos, mesmo com o Económico escolhido acima.
       </div>
+
+      {/* ── Lembretes (push) ── */}
+      <div className="lb" style={{ marginBottom: 10, marginTop: 8 }}>Lembretes</div>
+      {!isStandalone() && (
+        <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10, lineHeight: 1.5 }}>
+          As notificações só funcionam com a app adicionada ao ecrã principal (Partilhar → Adicionar ao Ecrã Principal).
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={togglePush}
+        disabled={pushBusy || !isPushSupported()}
+        style={{ width: '100%', padding: '14px 16px', border: '1px solid var(--border)', background: pushEnabled ? 'var(--blue-soft)' : 'var(--surface)', color: pushEnabled ? 'var(--blue)' : 'var(--fg)', borderRadius: 8, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, fontFamily: 'inherit' }}
+      >
+        <span>{pushEnabled ? 'Notificações ativas' : 'Ativar notificações'}</span>
+        <span className="m" style={{ fontSize: 11 }}>{pushBusy ? '…' : pushEnabled ? 'Desativar' : 'Ativar'}</span>
+      </button>
+      {Object.keys(REMINDER_LABELS).map((type) => {
+        const pref = reminderPrefs[type] || {};
+        return (
+          <div key={type} className="cd" style={{ marginBottom: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <label htmlFor={'rem_' + type + '_time'} style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{REMINDER_LABELS[type]}</label>
+            <input
+              id={'rem_' + type + '_time'}
+              type="time"
+              value={pref.time || ''}
+              onChange={(e) => setReminderField(type, 'time', e.target.value)}
+              style={{ padding: '6px 8px', border: '1px solid var(--border)', background: 'var(--elevated)', color: 'var(--fg)', borderRadius: 6, fontSize: 16 }}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text3)' }}>
+              <input type="checkbox" checked={!!pref.enabled} onChange={(e) => setReminderField(type, 'enabled', e.target.checked)} />
+              Ativo
+            </label>
+          </div>
+        );
+      })}
 
       {/* ── Automacao ── */}
       <div className="lb" style={{ marginBottom: 10, marginTop: 8 }}>Automacao</div>

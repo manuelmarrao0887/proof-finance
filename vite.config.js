@@ -5,7 +5,22 @@ import { VitePWA } from 'vite-plugin-pwa';
 // base: './' so the built app works from any sub-path (GitHub Pages, file preview, etc.)
 export default defineConfig({
   base: './',
-  plugins: [react(), VitePWA({ registerType: 'prompt', injectRegister: false, manifest: false, workbox: { globPatterns: ['**/*.{js,css,html,svg,woff2}'], navigateFallback: '/index.html' }, devOptions: { enabled: false } })],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'prompt',
+      injectRegister: false,
+      manifest: false,
+      // injectManifest (não generateSW): o SW passa a ser código nosso
+      // (src/sw.js) com o precache injetado, para poder ter handlers `push`/
+      // `notificationclick` — generateSW não permite código customizado.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: { globPatterns: ['**/*.{js,css,html,svg,woff2}'] },
+      devOptions: { enabled: false },
+    }),
+  ],
   build: {
     rollupOptions: {
       output: {

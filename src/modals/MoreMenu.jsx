@@ -29,6 +29,7 @@ const ITEMS = [
   { id: 'charts', section: 'Análise', title: 'Património', sub: 'Evolução, alocação e contas', svg: <><polyline points="3 17 9 11 13 15 21 7" /><polyline points="14 7 21 7 21 14" /></> },
   { id: 'report', section: 'Análise', title: 'Análise', sub: 'Fecho, saúde financeira e onde poupar', svg: <><path d="M9 17v-6M13 17v-2M17 17v-4" /><rect x="3" y="3" width="18" height="18" rx="2" /></> },
   { id: 'invest', section: 'Análise', title: 'Investimentos', sub: 'Posições, P&L e alocação', svg: <><line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" /></> },
+  { id: 't212', section: 'Análise', title: 'Trading212', sub: 'Base de custo, valor atual e ganho', svg: <><path d="M3 3v18h18" /><path d="M7 15l4-4 3 3 5-6" /></> },
   { id: 'transfers', section: 'Registos', title: 'Transferências', sub: 'Mover dinheiro entre contas', svg: <><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></> },
   { id: 'tax', section: 'Análise', title: 'Fiscal (IRS/IMI/IUC)', sub: 'Calendário e deduções estimadas', svg: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></> },
   { id: 'cards', section: 'Registos', title: 'Cartões de crédito', sub: 'Plafond, dívida e pagamentos', svg: <><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></> },

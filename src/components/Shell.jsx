@@ -37,6 +37,7 @@ const InvestmentsView = lazy(() => import('../views/InvestmentsView.jsx'));
 const TransfersView = lazy(() => import('../views/TransfersView.jsx'));
 const CardsView = lazy(() => import('../views/CardsView.jsx'));
 const TaxView = lazy(() => import('../views/TaxView.jsx'));
+const T212View = lazy(() => import('../views/T212View.jsx'));
 
 // Modals load on first open (and stay mounted afterwards so the close animation
 // still plays). Keyed by their ui modal name (see MODALS in store/ui.jsx).
@@ -67,6 +68,7 @@ const MODAL_COMPONENTS = {
   assistant: lazy(() => import('../modals/AssistantSheet.jsx')),
   confirm: lazy(() => import('./ConfirmSheet.jsx')),
   bankLink: lazy(() => import('../modals/BankLinkSheet.jsx')),
+  t212Update: lazy(() => import('../modals/T212UpdateSheet.jsx')),
 };
 
 /* ── Icons (inline SVG, no emoji) ──────────────────────────────────────── */
@@ -130,6 +132,7 @@ const VIEWS = {
   transfers: TransfersView,
   cards: CardsView,
   tax: TaxView,
+  t212: T212View,
 };
 
 // Tabs alcançadas a partir do "Mais" (BottomNav) — cada uma ganha um
@@ -137,7 +140,7 @@ const VIEWS = {
 // 'expenses' (o antigo orçamento por categoria) sai da barra inferior nesta
 // tarefa e passa a viver aqui como "Orçamento" (Task 18, D14) — a barra
 // passa a abrir 'transactions' (o feed cronológico) em "Despesas".
-const moreTabs = ['groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 'transfers', 'cards', 'tax', 'expenses'];
+const moreTabs = ['groups', 'cal', 'income', 'rec', 'charts', 'loan', 'ai', 'report', 'invest', 't212', 'transfers', 'cards', 'tax', 'expenses'];
 
 // Título de cada tab de "Mais", usado pelo <ViewHeader>. 'transactions' NÃO
 // é uma tab de "Mais" (é a barra inferior "Despesas", sem <ViewHeader> nem
@@ -153,6 +156,7 @@ const TAB_TITLES = {
   ai: 'Assistente',
   report: 'Análise',
   invest: 'Investimentos',
+  t212: 'Trading212',
   transfers: 'Transferências',
   cards: 'Cartões',
   tax: 'Fiscal',

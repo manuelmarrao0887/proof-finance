@@ -169,6 +169,21 @@ export function initialPersisted() {
     groups: [], // grupos de despesas partilhadas { id, name, emoji, type, currency, memberIds, start, end, reflectMine, archived, createdAt }
     groupEntries: [], // despesas e acertos dos grupos (ver lib/split.js)
     aiTier: DEFAULT_AI_TIER, // tier do assistente escolhido pelo utilizador — ver AI_TIERS
+    t212Log: [], // leituras da carteira Trading212 { id, baseCusto, valorAtual, date, createdAt }
+    pushSubs: [], // subscrições de push notifications { id, endpoint, keys, createdAt }
+    reminderPrefs: defaultReminderPrefs(), // { almoco, jantar, t212 }: { time:'HH:MM', enabled }
+  };
+}
+
+// Horários por omissão dos 3 lembretes — ver api/_lib/reminderSchedule.js
+// (REMINDER_TYPES) para a lista canónica de tipos, que este objeto tem de
+// cobrir sempre (um tipo em falta aqui nunca dispara, mesmo que o cron o
+// conheça).
+export function defaultReminderPrefs() {
+  return {
+    almoco: { time: '13:45', enabled: true },
+    jantar: { time: '21:00', enabled: true },
+    t212: { time: '18:00', enabled: true },
   };
 }
 
@@ -213,6 +228,9 @@ export const PERSISTED_KEYS = [
   'groups',
   'groupEntries',
   'aiTier',
+  't212Log',
+  'pushSubs',
+  'reminderPrefs',
 ];
 
 /* Build the persisted payload from state, applying the original guards
@@ -251,6 +269,9 @@ export function buildPersistPayload(state) {
     // Guardado (não só `|| default`): um estado com um tier inválido nunca
     // deve chegar a escrever lixo no Firestore — só o whitelist AI_TIERS.
     aiTier: AI_TIERS.includes(state.aiTier) ? state.aiTier : DEFAULT_AI_TIER,
+    t212Log: state.t212Log || [],
+    pushSubs: state.pushSubs || [],
+    reminderPrefs: state.reminderPrefs && typeof state.reminderPrefs === 'object' ? state.reminderPrefs : defaultReminderPrefs(),
   };
 }
 
@@ -298,6 +319,9 @@ export function hydrateFromDoc(d) {
     // tier válido do lado do cliente) cai no default em vez de seguir tal e
     // qual até ao corpo do pedido a /api/ai.
     aiTier: AI_TIERS.includes(d.aiTier) ? d.aiTier : DEFAULT_AI_TIER,
+    t212Log: Array.isArray(d.t212Log) ? d.t212Log : [],
+    pushSubs: Array.isArray(d.pushSubs) ? d.pushSubs : [],
+    reminderPrefs: d.reminderPrefs && typeof d.reminderPrefs === 'object' ? { ...defaultReminderPrefs(), ...d.reminderPrefs } : defaultReminderPrefs(),
   };
 }
 
@@ -755,6 +779,38 @@ export function StoreProvider({ children }) {
         else snaps.push(snap);
         setField('dynSnaps', snaps);
       },
+
+      // trading212 (t212Log) — leituras da carteira { baseCusto, valorAtual, date }.
+      addT212Reading: ({ baseCusto, valorAtual, date }) => {
+        const reading = {
+          id: uid(),
+          baseCusto: Number(baseCusto) || 0,
+          valorAtual: Number(valorAtual) || 0,
+          date,
+          createdAt: Date.now(),
+        };
+        setField('t212Log', (prev) => [...(prev || []), reading]);
+      },
+
+      // push subscriptions (pushSubs) — uma por dispositivo/instalação. A
+      // subscrição em si não é secreta (é só um endpoint do navegador para
+      // onde o servidor manda a notificação); quem a envia (VAPID, cron) é
+      // que precisa da chave privada, que nunca sai do servidor.
+      savePushSubscription: (sub) => {
+        const endpoint = sub && sub.endpoint;
+        if (!endpoint) return;
+        setField('pushSubs', (prev) => {
+          const list = prev || [];
+          if (list.some((s) => s.endpoint === endpoint)) return list;
+          return [...list, { id: uid(), endpoint, keys: sub.keys, createdAt: Date.now() }];
+        });
+      },
+      removePushSubscription: (endpoint) =>
+        setField('pushSubs', (prev) => (prev || []).filter((s) => s.endpoint !== endpoint)),
+
+      // reminder preferences — merge parcial (não substitui os outros tipos).
+      setReminderPrefs: (partial) =>
+        setField('reminderPrefs', (prev) => ({ ...defaultReminderPrefs(), ...prev, ...partial })),
 
       // categories (bdg)
       setBdg: (bdg) => setField('bdg', bdg),
