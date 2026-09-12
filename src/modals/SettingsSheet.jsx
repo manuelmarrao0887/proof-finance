@@ -14,7 +14,7 @@ import { useUI, useModal } from '../store/ui.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { expensesToCSV, incomesToCSV, downloadCSV } from '../lib/exportcsv.js';
 import { todayISO } from '../lib/format.js';
-import { signOutUser } from '../firebase/client.js';
+import { signOutUser, getIdToken } from '../firebase/client.js';
 import { applyTheme } from '../store/store.jsx';
 import { isPushSupported, isStandalone, isIOS, subscribePush, unsubscribePush } from '../lib/push.js';
 
@@ -111,6 +111,23 @@ export default function SettingsSheet() {
         .finally(() => setPushBusy(false));
     }
   }, [pushEnabled, actions, toast]);
+
+  const [testBusy, setTestBusy] = useState(false);
+  const sendTestPush = useCallback(() => {
+    setTestBusy(true);
+    getIdToken()
+      .then((token) => {
+        if (!token) throw new Error('Precisas de iniciar sessão.');
+        return fetch('/api/push/test', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }).then(async (r) => {
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(data.error || 'Falha a enviar notificação de teste');
+          return data;
+        });
+      })
+      .then(() => toast('Notificação de teste enviada', 'success'))
+      .catch((e) => toast(e.message || 'Falha a enviar notificação de teste', 'error'))
+      .finally(() => setTestBusy(false));
+  }, [toast]);
 
   const reminderPrefs = state.reminderPrefs || {};
   const setReminderField = useCallback(
@@ -362,6 +379,16 @@ export default function SettingsSheet() {
         <span>{pushEnabled ? 'Notificações ativas' : 'Ativar notificações'}</span>
         <span className="m" style={{ fontSize: 11 }}>{pushBusy ? '…' : pushEnabled ? 'Desativar' : 'Ativar'}</span>
       </button>
+      {pushEnabled && (
+        <button
+          type="button"
+          onClick={sendTestPush}
+          disabled={testBusy}
+          style={{ width: '100%', padding: '10px 16px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text2)', borderRadius: 8, fontSize: 12, fontWeight: 600, marginBottom: 14, fontFamily: 'inherit' }}
+        >
+          {testBusy ? 'A enviar…' : 'Enviar notificação de teste'}
+        </button>
+      )}
       {Object.keys(REMINDER_LABELS).map((type) => {
         const pref = reminderPrefs[type] || {};
         return (
