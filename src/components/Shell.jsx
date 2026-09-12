@@ -216,7 +216,7 @@ function Header({ theme, onToggleTheme, syncStatus, user, plain }) {
               {MONTHS_PT[now.getMonth()] + ' ' + now.getFullYear()}
             </span>
             <span style={{ fontWeight: 700, letterSpacing: '-0.02em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {name ? 'Olá, ' + name : 'Proof. Finance'}
+              {name ? 'Olá, ' + name : 'Finance Voltstudio'}
             </span>
           </span>
         </Greeting>

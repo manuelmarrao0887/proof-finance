@@ -45,8 +45,8 @@ export async function registerFaceId() {
   const cred = await navigator.credentials.create({
     publicKey: {
       challenge: randomBytes(32),
-      rp: { name: 'Proof. Finance' },
-      user: { id: randomBytes(16), name: 'proof-finance', displayName: 'Proof Finance' },
+      rp: { name: 'Finance Voltstudio' },
+      user: { id: randomBytes(16), name: 'finance-voltstudio', displayName: 'Finance Voltstudio' },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
       authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
       timeout: 60000,

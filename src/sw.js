@@ -24,11 +24,26 @@ self.addEventListener('message', (event) => {
 
 /* ── Push notifications ──────────────────────────────────────────────────
    Payload shape sent by api/cron/reminders.js: { type, title, body }. `type`
-   drives notificationclick's deep link — see DEEP_LINKS below. */
+   drives notificationclick's deep link — see DEEP_LINKS below. Both links go
+   straight to the INPUT, not just the screen: t212 opens the update sheet
+   already open (?quick=1, read by T212View), almoço/jantar opens the
+   assistant with the field pre-filled (?draft=…, read by AIView) — a tap on
+   the notification body or on its (long-press-revealed) action button land
+   on the exact same place, since there is only one useful destination. */
 const DEEP_LINKS = {
-  t212: './?tab=t212',
+  t212: './?tab=t212&quick=1',
   almoco: './?tab=ai&draft=Almo%C3%A7o',
   jantar: './?tab=ai&draft=Jantar',
+};
+
+// Título do botão de ação — aparece ao expandir/fazer long-press na
+// notificação (Android, desktop Chrome, e Safari no iOS/iPadOS/macOS, que
+// segue o mesmo campo `actions` do standard). Sem ação own: o clique no
+// corpo da notificação já faz o mesmo (ver notificationclick).
+const ACTION_TITLES = {
+  t212: 'Adicionar valor',
+  almoco: 'Escrever',
+  jantar: 'Escrever',
 };
 
 self.addEventListener('push', (event) => {
@@ -38,9 +53,10 @@ self.addEventListener('push', (event) => {
   } catch (e) {
     data = {};
   }
-  const title = data.title || 'Proof. Finance';
+  const title = data.title || 'Finance Voltstudio';
   const body = data.body || '';
   const type = data.type || '';
+  const actionTitle = ACTION_TITLES[type];
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
@@ -50,6 +66,7 @@ self.addEventListener('push', (event) => {
       // empilhar (ex.: o lembrete de almoço de ontem que nunca se tocou).
       renotify: true,
       data: { type },
+      actions: actionTitle ? [{ action: 'quick', title: actionTitle }] : [],
     })
   );
 });

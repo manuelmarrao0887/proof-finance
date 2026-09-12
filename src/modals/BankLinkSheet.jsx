@@ -110,7 +110,7 @@ export default function BankLinkSheet() {
       ) : (
         <>
           <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6, margin: '0 0 16px' }}>
-            As credenciais do teu banco nunca passam pela Proof — abrem-se num ecrã seguro da Salt Edge. Ligamos o banco, trazemos saldo e movimentos, e mantemos tudo sincronizado.
+            As credenciais do teu banco nunca passam pela Voltstudio — abrem-se num ecrã seguro da Salt Edge. Ligamos o banco, trazemos saldo e movimentos, e mantemos tudo sincronizado.
           </p>
 
           {links === null && <div style={{ fontSize: 13, color: 'var(--text3)' }}>A carregar…</div>}

@@ -155,7 +155,7 @@ async function migrate(uid, root) {
         } catch (recErr) {
           failed += 1;
           // eslint-disable-next-line no-console
-          console.error('[Proof] Migração: registo falhou →', SUBCOLLECTIONS[it.key] + '/' + docId(it.id), '·', (recErr && recErr.code) || '', (recErr && recErr.message) || recErr, it.data);
+          console.error('[Voltstudio] Migração: registo falhou →', SUBCOLLECTIONS[it.key] + '/' + docId(it.id), '·', (recErr && recErr.code) || '', (recErr && recErr.message) || recErr, it.data);
         }
       }
     }
@@ -163,7 +163,7 @@ async function migrate(uid, root) {
 
   if (failed > 0) {
     // eslint-disable-next-line no-console
-    console.warn('[Proof] Migração incompleta: ' + ok + ' OK, ' + failed + ' falharam. Não marco schemaVersion (tenta de novo no próximo login).');
+    console.warn('[Voltstudio] Migração incompleta: ' + ok + ' OK, ' + failed + ' falharam. Não marco schemaVersion (tenta de novo no próximo login).');
     return false; // mantém arrays no doc raiz como segurança
   }
 
@@ -174,7 +174,7 @@ async function migrate(uid, root) {
   clean.set(doc(db, 'users', uid), patch, { merge: true });
   await clean.commit();
   // eslint-disable-next-line no-console
-  console.log('[Proof] Migração para subcoleções OK —', ok, 'registos');
+  console.log('[Voltstudio] Migração para subcoleções OK —', ok, 'registos');
   return true;
 }
 
@@ -208,7 +208,7 @@ export async function loadUserData(uid) {
       done = await migrate(uid, root);
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error('[Proof] Migração para subcoleções falhou', (e && e.code) || '', e);
+      console.error('[Voltstudio] Migração para subcoleções falhou', (e && e.code) || '', e);
       done = false;
     }
     // Enquanto a migração não completar, usa os arrays embebidos (dados

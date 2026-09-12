@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "PROOF. Finance — React (Vite) rewrite of the personal-finance app.",
+  "description": "Finance Voltstudio — React (Vite) rewrite of the personal-finance app.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

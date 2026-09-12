@@ -73,7 +73,7 @@ export default function Sidebar() {
   return (
     <aside className="dsidebar">
       <div className="dbrand">
-        <span style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.02em' }}>Proof.</span>
+        <span style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.02em' }}>Volt.</span>
         <span style={{ fontSize: 19, fontWeight: 400, color: 'var(--fg-muted)', letterSpacing: '-0.02em' }}>Finance</span>
       </div>
 

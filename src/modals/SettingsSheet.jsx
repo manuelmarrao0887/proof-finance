@@ -16,7 +16,7 @@ import { expensesToCSV, incomesToCSV, downloadCSV } from '../lib/exportcsv.js';
 import { todayISO } from '../lib/format.js';
 import { signOutUser } from '../firebase/client.js';
 import { applyTheme } from '../store/store.jsx';
-import { isPushSupported, isStandalone, subscribePush, unsubscribePush } from '../lib/push.js';
+import { isPushSupported, isStandalone, isIOS, subscribePush, unsubscribePush } from '../lib/push.js';
 
 const REMINDER_LABELS = { almoco: 'Almoço', jantar: 'Jantar', t212: 'Carteira Trading212' };
 
@@ -155,7 +155,7 @@ export default function SettingsSheet() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'proof-finance-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = 'finance-voltstudio-backup-' + new Date().toISOString().slice(0, 10) + '.json';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -173,8 +173,8 @@ export default function SettingsSheet() {
       toast('Sem dados para exportar', 'error');
       return;
     }
-    if (exps.length) downloadCSV('proof-despesas-' + stamp + '.csv', expensesToCSV(exps, state.bdg));
-    if (incs.length) downloadCSV('proof-receitas-' + stamp + '.csv', incomesToCSV(incs));
+    if (exps.length) downloadCSV('voltstudio-despesas-' + stamp + '.csv', expensesToCSV(exps, state.bdg));
+    if (incs.length) downloadCSV('voltstudio-receitas-' + stamp + '.csv', incomesToCSV(incs));
     toast('CSV exportado', 'success');
   }, [state.addedExp, state.incomes, state.bdg, toast]);
 
@@ -348,9 +348,9 @@ export default function SettingsSheet() {
 
       {/* ── Lembretes (push) ── */}
       <div className="lb" style={{ marginBottom: 10, marginTop: 8 }}>Lembretes</div>
-      {!isStandalone() && (
+      {isIOS() && !isStandalone() && (
         <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10, lineHeight: 1.5 }}>
-          As notificações só funcionam com a app adicionada ao ecrã principal (Partilhar → Adicionar ao Ecrã Principal).
+          No iPhone/iPad, as notificações só funcionam com a app adicionada ao ecrã principal (Partilhar → Adicionar ao Ecrã Principal).
         </div>
       )}
       <button
@@ -511,7 +511,7 @@ export default function SettingsSheet() {
 
       {/* ── About ── */}
       <div style={{ textAlign: 'center', paddingTop: 16, borderTop: '1px solid var(--border)', fontSize: 11, color: 'var(--text3)', letterSpacing: '0.05em' }}>
-        PROOF &middot; FINANCE &middot; v2.1
+        FINANCE &middot; VOLTSTUDIO &middot; v2.1
       </div>
     </Sheet>
   );

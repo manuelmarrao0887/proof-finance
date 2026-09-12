@@ -54,7 +54,7 @@ export default function Login() {
             </svg>
           </div>
           <h1 style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.05 }}>
-            Proof. Finance
+            Finance Voltstudio
           </h1>
           <div style={{ fontSize: 14, color: 'var(--fg-muted)', marginTop: 10, lineHeight: 1.5 }}>
             As tuas finanças, num só lugar.

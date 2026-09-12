@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   PROOF. Finance — Design tokens + utility classes (Eclipse system)
+   Finance Voltstudio — Design tokens + utility classes (Eclipse system)
    Ported verbatim from the original index.html <style> (lines ~21-213).
    Class names map 1:1 to JSX className so views port directly.
 
@@ -11,7 +11,7 @@
 
 :root{
   color-scheme: light;
-  /* ── Finany palette (Proof Finance redesign) ── */
+  /* ── Finany palette (Finance Voltstudio redesign) ── */
   --bg:#ffffff;
   --surface:#f4f6fa;
   --elevated:#eef1f8;

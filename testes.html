@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Proof. Finance — Plano de Testes Funcionais</title>
+<title>Finance Voltstudio — Plano de Testes Funcionais</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -257,11 +257,11 @@
     <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
   </div>
   <h1>Acesso restrito</h1>
-  <p>Esta página de testes só está disponível com sessão iniciada. Inicia sessão na app Proof. Finance (mesmo navegador) e recarrega.</p>
+  <p>Esta página de testes só está disponível com sessão iniciada. Inicia sessão na app Finance Voltstudio (mesmo navegador) e recarrega.</p>
 </div>
 <header>
   <div class="wrap">
-    <div class="brand"><b>Proof.</b><span>Finance</span><span class="tag">Plano de testes</span></div>
+    <div class="brand"><b>Volt.</b><span>Finance</span><span class="tag">Plano de testes</span></div>
     <p>Lista para validar manualmente que a app está a funcionar. Marca cada caso como <b>Passou</b>, <b>Falhou</b> ou <b>N/A</b>. O estado fica guardado neste navegador.</p>
     <div class="meta-row">
       <span class="pill">Versão app: branch <code>react</code></span>
@@ -308,7 +308,7 @@
 
   <div id="groups"></div>
 
-  <footer>Proof. Finance · plano de testes funcionais · gerado para validação manual</footer>
+  <footer>Finance Voltstudio · plano de testes funcionais · gerado para validação manual</footer>
 </div>
 
 <div class="wrap" id="dataWrap" style="display:none">
@@ -325,7 +325,7 @@
   <h2 class="section-title">Entidades guardadas</h2>
   <div class="ent-grid" id="entities"></div>
 
-  <footer>Proof. Finance · mapa de ligação de dados · <code>users/{uid}</code> (Firestore) + estado derivado em runtime</footer>
+  <footer>Finance Voltstudio · mapa de ligação de dados · <code>users/{uid}</code> (Firestore) + estado derivado em runtime</footer>
 </div>
 
 <div class="wrap" id="secWrap" style="display:none">
@@ -344,7 +344,7 @@
   <h2 class="section-title">Ações prioritárias</h2>
   <div class="card"><ol id="secActions" style="margin:0;padding-left:20px;font-size:13px;line-height:1.7"></ol></div>
 
-  <footer>Proof. Finance · relatório de segurança · auditoria estática ao código-fonte</footer>
+  <footer>Finance Voltstudio · relatório de segurança · auditoria estática ao código-fonte</footer>
 </div>
 
 <script>
@@ -418,7 +418,7 @@ const GROUPS = [
     { id: 'T47.18', title: 'Associar despesa a uma recorrente ao criar e ao editar', steps: ['Nova despesa → "Mais opções" → escolher uma recorrente em "Despesa recorrente (opcional)" (ex: "Ginásio · 36 €")', 'Confirmar que descrição/valor/categoria ficam pré-preenchidos a partir da recorrente (sem apagar o que já tinhas escrito) e que aparece a nota "Conta como paga em Recorrentes neste mês."', 'Guardar; abrir Recorrentes e confirmar que essa recorrente já não aparece como por pagar este mês', 'Editar uma despesa qualquer → "Mais opções" → ligar a outra recorrente → Guardar', 'Editar uma despesa já ligada a uma recorrente (abre com "Mais opções" já expandida) → mudar o seletor para "Nenhuma" → Guardar'], expect: 'O seletor só aparece se existirem despesas recorrentes; escolher uma preenche recId (e desc/valor/cat/conta só quando esses campos estavam vazios) e marca-a como paga em Recorrentes nesse mês, sem duplicar nada. "Nenhuma" remove a ligação (recId fica vazio) e a recorrente volta a aparecer como por pagar.' },
   ]},
   { id: 'T48', title: 'Ligação bancária (Salt Edge)', tests: [
-    { id: 'T48.1', title: 'Ligar um banco abre o widget da Salt Edge numa nova aba', steps: ['Definições → Automação → "Contas bancárias ligadas"', 'Tocar "+ Ligar um banco"'], expect: 'Abre uma nova aba/janela em saltedge.com com o ecrã de escolha de banco. Em ambiente de testes (SALTEDGE_ENV não definida ou "test"), aparecem bancos fictícios (Fakebank) para testar sem dados reais. As credenciais do banco nunca são pedidas dentro da app Proof.' },
+    { id: 'T48.1', title: 'Ligar um banco abre o widget da Salt Edge numa nova aba', steps: ['Definições → Automação → "Contas bancárias ligadas"', 'Tocar "+ Ligar um banco"'], expect: 'Abre uma nova aba/janela em saltedge.com com o ecrã de escolha de banco. Em ambiente de testes (SALTEDGE_ENV não definida ou "test"), aparecem bancos fictícios (Fakebank) para testar sem dados reais. As credenciais do banco nunca são pedidas dentro da app Voltstudio.' },
     { id: 'T48.2', title: 'Depois de ligar, a conta e as transações aparecem sozinhas', steps: ['Concluir a ligação no widget da Salt Edge (Fakebank em testes)', 'Voltar à app', 'Definições → Contas bancárias ligadas'], expect: 'A ligação aparece com o nome do banco, estado "Ativa" e hora da última sincronização. A conta aparece em Disponível/Património; as transações novas aparecem em Despesas/Receitas com a categoria já sugerida (regras do utilizador ou palpite automático).' },
     { id: 'T48.3', title: '"Sincronizar agora" traz movimentos novos sem duplicar', steps: ['Com um banco já ligado, tocar "Sincronizar agora"', 'Repetir "Sincronizar agora" logo a seguir, sem nada ter mudado no banco'], expect: 'A primeira sincronização mostra um resumo (ex.: "3 despesas, 1 receitas novas"); a segunda mostra 0 de cada — nada se duplica (mesma despesa registada à mão E importada do banco também não duplica, graças à deduplicação partilhada com o import de extrato).' },
     { id: 'T48.4', title: 'Desligar um banco mantém o histórico já importado', steps: ['Contas bancárias ligadas → tocar "Desligar" numa ligação', 'Confirmar (segundo toque)'], expect: 'A ligação desaparece da lista; as despesas e a conta que já tinham sido importadas continuam na app tal como estavam. Nada é apagado.' },
@@ -489,7 +489,7 @@ const GROUPS = [
     { id: 'T30.6', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos'], expect: 'Os valores do plano aparecem ••••.' },
   ]},
   { id: 'T31', title: 'Exportar CSV (Excel)', tests: [
-    { id: 'T31.1', title: 'Exportar despesas e receitas', steps: ['Definições → "Exportar CSV (Excel)"'], expect: 'Descarrega proof-despesas-AAAA-MM-DD.csv e proof-receitas-AAAA-MM-DD.csv (só os que tiverem dados).' },
+    { id: 'T31.1', title: 'Exportar despesas e receitas', steps: ['Definições → "Exportar CSV (Excel)"'], expect: 'Descarrega voltstudio-despesas-AAAA-MM-DD.csv e voltstudio-receitas-AAAA-MM-DD.csv (só os que tiverem dados).' },
     { id: 'T31.2', title: 'Abre no Excel português sem assistente', steps: ['Abrir o ficheiro no Excel/Numbers'], expect: 'Colunas separadas corretamente (separador ;), valores com vírgula decimal e acentos corretos (BOM UTF-8).' },
     { id: 'T31.3', title: 'Conteúdo completo', steps: ['Ver as colunas'], expect: 'Despesas: Data, Descrição, Categoria (nome), Valor, Conta, Origem (manual/importada), Tags, Notas — ordenadas por data. Receitas: Data, Nome, Fonte, Valor, Recorrente, Conta.' },
     { id: 'T31.4', title: 'Sem dados', steps: ['Utilizador novo → Exportar CSV'], expect: 'Mostra "Sem dados para exportar" e não descarrega nada.' },
@@ -751,7 +751,7 @@ const GROUPS = [
   ]},
   { id: 'T14', title: 'Responsivo & iPhone (PWA)', tests: [
     { id: 'T14.1', title: 'Sem scroll horizontal', steps: ['iPhone Safari → percorrer Resumo, Despesas, Receitas, Gráficos'], expect: 'Nenhum ecrã faz scroll lateral; conteúdo cabe na largura.' },
-    { id: 'T14.2', title: 'Notch não tapa o topo', steps: ['Em iPhone com notch/Dynamic Island, abrir a app'], expect: 'O cabeçalho "Proof. Finance" fica abaixo do notch (não cortado).' },
+    { id: 'T14.2', title: 'Notch não tapa o topo', steps: ['Em iPhone com notch/Dynamic Island, abrir a app'], expect: 'O cabeçalho "Finance Voltstudio" fica abaixo do notch (não cortado).' },
     { id: 'T14.3', title: 'Barra inferior acima do home indicator', steps: ['Ver a navegação inferior'], expect: 'A nav e o botão + ficam acima da barra de gesto (home indicator), sem sobreposição.' },
     { id: 'T14.4', title: 'Adicionar ao ecrã principal', steps: ['Safari → Partilhar → "Adicionar ao ecrã principal"', 'Abrir pelo ícone'], expect: 'Abre em ecrã inteiro (sem barra do Safari), modo standalone; o nome é "Finanças".' },
     { id: 'T14.5', title: 'Ícone no ecrã principal', steps: ['Ver o ícone criado no ecrã principal'], expect: 'Mostra o logótipo (P em gradiente azul→roxo), não um ícone genérico/branco.' },
@@ -767,18 +767,21 @@ const GROUPS = [
     { id: 'T14.15', title: 'Sem scroll horizontal em ecrãs pequenos (320px)', steps: ['Chrome DevTools a 320px de largura (ou iPhone SE)', 'Percorrer as 15 tabs', 'Abrir os 23 popups'], expect: 'Nenhum ecrã ou popup faz scroll lateral. Pontos que falhavam: seletor de meses do Relatório, grelha de categorias da Nova Despesa, par de datas Início/Fim no Grupo.' },
     { id: 'T14.16', title: 'Seletor de meses do Relatório', steps: ['Mais → Análise num telemóvel'], expect: 'Os 6 meses aparecem numa grelha de 3 colunas (2 linhas), todos visíveis sem arrastar para o lado.' },
   ]},
-  { id: 'T44', title: 'Trading212 + lembretes push', tests: [
-    { id: 'T44.1', title: 'Primeira leitura', steps: ['Mais → Trading212 → "Atualizar"', 'Introduzir base de custo e valor atual', 'Confirmar'], expect: 'Cartão principal mostra o valor atual, o ganho (valor atual − base de custo) em € e % a verde/vermelho, e a data. Entra no histórico por baixo.' },
-    { id: 'T44.2', title: 'Perda mostra a vermelho', steps: ['Atualizar com valor atual < base de custo'], expect: 'Ganho negativo, cor de sinal (vermelho/laranja do tema), sem sinal "+" a mais.' },
-    { id: 'T44.3', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos → abrir Trading212'], expect: 'Valores trocados por "••••"; ganho/histórico escondidos.' },
-    { id: 'T44.4', title: 'Sem leituras (novo utilizador)', steps: ['Abrir Trading212 sem nunca ter atualizado'], expect: 'Estado vazio com CTA a explicar os dois campos a preencher.' },
-    { id: 'T44.5', title: 'Reabrir o sheet pré-preenche', steps: ['Ter uma leitura anterior', 'Tocar "Atualizar" outra vez'], expect: 'Base de custo e valor atual já vêm preenchidos com a última leitura — só é preciso ajustar o que mudou.' },
-    { id: 'T44.6', title: 'Ativar notificações (iOS)', steps: ['Definições → Lembretes → "Ativar notificações"', 'Sem ter adicionado a app ao ecrã principal'], expect: 'Mensagem clara a pedir para instalar a app primeiro (Partilhar → Adicionar ao Ecrã Principal) — sem isso o iOS não tem PushManager. Depois de instalada, o mesmo botão pede a permissão nativa e ativa.' },
-    { id: 'T44.7', title: 'Horários dos 3 lembretes são editáveis', steps: ['Definições → Lembretes'], expect: 'Almoço (13:45), Jantar (21:00) e Carteira Trading212 (18:00) por omissão, cada um com hora própria e um interruptor "Ativo" independente.' },
-    { id: 'T44.8', title: 'Notificação de almoço/jantar abre o assistente', steps: ['Tocar numa notificação de almoço ou jantar (dispositivo real)'], expect: 'Abre a app na tab Assistente com o campo de texto já preenchido ("Almoço: " / "Jantar: ") pronto a completar o valor — não envia nada sozinho.' },
-    { id: 'T44.9', title: 'Notificação da carteira abre o Trading212', steps: ['Tocar na notificação "Trading212" (dispositivo real)'], expect: 'Abre a app diretamente na tab Trading212.' },
-    { id: 'T44.10', title: 'Lembrete não dispara duas vezes no mesmo dia', steps: ['Ver reminderLastSent no doc do utilizador (Firestore) depois de um envio'], expect: 'Fica gravado {tipo: "YYYY-MM-DD"} pela Admin SDK — o cron não reenvia o mesmo tipo no mesmo dia mesmo correndo a cada 5 min.' },
-    { id: 'T44.11', title: 'Isolamento dos dados (Firestore)', steps: ['Consola do Firebase → users/{uid}/t212Log, /pushSubs'], expect: 'Vivem nas mesmas subcoleções user-scoped do resto da app (match /{sub}/{docId}) — sem regra nova.' },
+  { id: 'T49', title: 'Trading212 + lembretes push', tests: [
+    { id: 'T49.1', title: 'Primeira leitura', steps: ['Mais → Trading212 → "Atualizar"', 'Introduzir base de custo e valor atual', 'Confirmar'], expect: 'Cartão principal mostra o valor atual, o ganho (valor atual − base de custo) em € e % a verde/vermelho, e a data. Entra no histórico por baixo.' },
+    { id: 'T49.2', title: 'Perda mostra a vermelho', steps: ['Atualizar com valor atual < base de custo'], expect: 'Ganho negativo, cor de sinal (vermelho/laranja do tema), sem sinal "+" a mais.' },
+    { id: 'T49.3', title: 'Respeita ocultar saldos', steps: ['Ocultar saldos → abrir Trading212'], expect: 'Valores trocados por "••••"; ganho/histórico escondidos.' },
+    { id: 'T49.4', title: 'Sem leituras (novo utilizador)', steps: ['Abrir Trading212 sem nunca ter atualizado'], expect: 'Estado vazio com CTA a explicar os dois campos a preencher.' },
+    { id: 'T49.5', title: 'Reabrir o sheet pré-preenche', steps: ['Ter uma leitura anterior', 'Tocar "Atualizar" outra vez'], expect: 'Base de custo e valor atual já vêm preenchidos com a última leitura — só é preciso ajustar o que mudou.' },
+    { id: 'T49.6', title: 'Ativar notificações no desktop (Chrome instalado)', steps: ['No computador, instalar a app (Chrome → instalar app)', 'Abrir a partir da janela instalada (não de um separador normal)', 'Definições → Lembretes → "Ativar notificações"'], expect: 'Pede logo a permissão nativa do browser e ativa — SEM pedir para "adicionar ao ecrã principal" (esse aviso é só para iPhone/iPad; corrigido a 2026-09-12, antes bloqueava sempre que a janela não estava em display-mode standalone, incluindo em separador normal de desktop onde o Push funciona sem instalar).' },
+    { id: 'T49.7', title: 'Ativar notificações num separador normal de desktop/Android (sem instalar)', steps: ['Abrir a app num separador Chrome normal (desktop ou Android), sem instalar', 'Definições → Lembretes → "Ativar notificações"'], expect: 'Funciona na mesma — Chrome suporta Web Push num separador comum, só o iOS exige a app instalada. Sem o aviso de "adicionar ao ecrã principal".' },
+    { id: 'T49.8', title: 'Ativar notificações no iPhone/iPad sem instalar', steps: ['Abrir no Safari do iPhone/iPad num separador normal', 'Definições → Lembretes → "Ativar notificações"'], expect: 'Mensagem clara a pedir para instalar a app primeiro (Partilhar → Adicionar ao Ecrã Principal) — sem isso o iOS não expõe PushManager. Depois de instalada (aberta a partir do ícone no ecrã principal), o mesmo botão pede a permissão nativa e ativa.' },
+    { id: 'T49.9', title: 'Horários dos 3 lembretes são editáveis', steps: ['Definições → Lembretes'], expect: 'Almoço (13:45), Jantar (21:00) e Carteira Trading212 (18:00) por omissão, cada um com hora própria e um interruptor "Ativo" independente.' },
+    { id: 'T49.10', title: 'Toque na notificação de almoço/jantar abre o assistente', steps: ['Tocar no CORPO de uma notificação de almoço ou jantar (dispositivo real)'], expect: 'Abre a app na tab Assistente com o campo de texto já preenchido ("Almoço: " / "Jantar: ") pronto a completar o valor — não envia nada sozinho.' },
+    { id: 'T49.11', title: 'Toque na notificação da carteira abre logo o formulário', steps: ['Tocar no CORPO da notificação "Trading212" (dispositivo real)'], expect: 'Abre a app já com o sheet "Atualizar carteira Trading212" aberto (não só a tab) — pronto a escrever o valor, sem precisar de tocar "Atualizar" outra vez.' },
+    { id: 'T49.12', title: 'Long-press/expandir a notificação mostra uma ação direta', steps: ['Fazer long-press (Android/desktop) ou 3D-touch/expandir (iOS/macOS) numa notificação de lembrete, SEM a abrir'], expect: 'Aparece um botão de ação — "Adicionar valor" na notificação da carteira, "Escrever" nas de almoço/jantar. Tocar no botão leva exatamente ao mesmo sítio que tocar no corpo da notificação (sheet aberto / assistente pré-preenchido).' },
+    { id: 'T49.13', title: 'Lembrete não dispara duas vezes no mesmo dia', steps: ['Ver reminderLastSent no doc do utilizador (Firestore) depois de um envio'], expect: 'Fica gravado {tipo: "YYYY-MM-DD"} pela Admin SDK — o cron não reenvia o mesmo tipo no mesmo dia mesmo correndo a cada 5 min.' },
+    { id: 'T49.14', title: 'Isolamento dos dados (Firestore)', steps: ['Consola do Firebase → users/{uid}/t212Log, /pushSubs'], expect: 'Vivem nas mesmas subcoleções user-scoped do resto da app (match /{sub}/{docId}) — sem regra nova.' },
   ]},
 ];
 

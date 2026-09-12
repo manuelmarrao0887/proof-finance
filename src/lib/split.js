@@ -197,6 +197,6 @@ export function shareText({ group, entries, nameOf }) {
   const plano = simplifyDebts(computeBalances(list, ids));
   lines.push('', plano.length ? 'Para acertar:' : '✓ Contas acertadas');
   plano.forEach((t) => lines.push(`• ${nameOf(t.from)} → ${nameOf(t.to)}: ${fm(t.amount)}`));
-  lines.push('', '— Proof. Finance');
+  lines.push('', '— Finance Voltstudio');
   return lines.join('\n');
 }

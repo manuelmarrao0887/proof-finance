@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   PROOF. Finance — pure finance logic, ported VERBATIM from the original
+   Finance Voltstudio — pure finance logic, ported VERBATIM from the original
    (lines 256-810, plus chrt at 615) and adapted to read from an explicit
    `state` object instead of module globals. The MATH IS IDENTICAL.
 

@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   PROOF. Finance — global store (React Context + useReducer).
+   Finance Voltstudio — global store (React Context + useReducer).
 
    Holds the PERSISTED slice EXACTLY matching the Firestore doc users/{uid}
    (map §3): apiKey, aiHistory, dynAccts, dynSnaps, addedExp, theme, goals,
