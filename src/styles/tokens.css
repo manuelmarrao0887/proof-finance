@@ -11,30 +11,39 @@
 
 :root{
   color-scheme: light;
-  /* ── Finany palette (Finance Voltstudio redesign) ── */
-  --bg:#ffffff;
-  --surface:#f4f6fa;
-  --elevated:#eef1f8;
-  --border:#e6e9f0;
-  --border-strong:#d5dae6;
-  --fg:#0a1633;
-  --fg-muted:#535c6d;   /* ≥5:1 sobre surface/elevated (AA) */
-  --fg-subtle:#5f6a81;  /* era #9aa3b5 = 2,3:1 — ilegível ao sol; agora ≥4,6:1 */
-  /* Brand accents — tons AA (≥4,5:1 sobre surface/elevated) porque também se
-     usam como TEXTO (percentagens, badges, títulos de avisos). Os valores
-     antigos (#3b6fee/#7b5fe0) ficavam a 4,1:1. */
-  --primary:#2a5be0;
-  --primary-cta:#2a5be0;  /* fundo dos botões "on"/primários — branco ≥4,5:1 (Task 22) */
-  --primary-dark:#2149c4;
-  --secondary:#6b4fd6;
-  --accent:#2a5be0;
-  --bg-glass:rgba(255,255,255,0.82);
-  /* System feedback colors — idem: eram #3fc97a (2,0:1), #f5a623 (1,9:1) e
-     #f25555 (3,1:1) usados como texto; agora todos ≥4,6:1 e legíveis ao sol. */
+  /* ── Voltstudio palette (brandbook v1: tinta #16181C, laranja #FF5A1F,
+     papel #F8F7F5, linha #E4E1DC) aplicada aos tokens Eclipse. Neutros
+     luminance-matched aos antigos tons azulados para não perder o trabalho
+     de contraste AA já feito (Task 22); accent laranja recalculado de raiz
+     (ver --primary abaixo) porque o laranja de marca puro (#FF5A1F) só dá
+     3,1:1 com texto branco — insuficiente para botão/texto (precisa ≥4,5:1). ── */
+  --bg:#F8F7F5;
+  --surface:#F0EFEA;
+  --elevated:#E8E6E0;
+  --border:#E4E1DC;
+  --border-strong:#D3CFC7;
+  --fg:#16181C;
+  --fg-muted:#4A4E52;   /* luminância ~igual ao antigo #535c6d → mantém ≥5:1 */
+  --fg-subtle:#5A5D60;  /* luminância ~igual ao antigo #5f6a81 → mantém ≥4,6:1 */
+  /* Brand accent — laranja da Voltstudio ESCURECIDO (#B23A12, o tom mais
+     escuro do próprio brandbook) porque também se usa como TEXTO e fundo de
+     botão com texto branco: branco sobre #FF5A1F = 3,1:1 (falha AA); branco
+     sobre #B23A12 = 6,0:1. O laranja vivo (#FF5A1F) fica só em --accent,
+     usado sem texto por cima (FAB, traços decorativos ≥3:1 basta). */
+  --primary:#B23A12;
+  --primary-cta:#B23A12;
+  --primary-dark:#8A2C0D;
+  --secondary:#16181C;  /* tinta — Voltstudio só tem 2 cores de marca, não 3;
+                            o FAB do assistente distingue-se do FAB "+" (laranja)
+                            por ser tinta em vez de inventar uma 2ª cor */
+  --accent:#FF5A1F;
+  --bg-glass:rgba(248,247,245,0.82);
+  /* System feedback colors — inalterados (semântica separada do accent de marca). */
   --success:#137845;
   --warning:#9c5e00;
   --danger:#c42a2a;
-  --info:#2a5be0;
+  --info:#2a5be0;  /* desligado de --primary de propósito: "info" e "aviso"
+                       não podem ficar os dois laranja */
   /* Aliases for legacy code (map onto the new palette) */
   --bg2:var(--surface);
   --bg3:var(--elevated);
@@ -45,20 +54,20 @@
   --signal:var(--danger);
   --signal-soft:rgba(242,85,85,0.10);
   --success-soft:rgba(63,201,122,0.12);
-  --blue:var(--primary);            /* "blue" accents now the brand blue */
-  --blue-soft:rgba(59,111,238,0.10);
+  --blue:var(--primary);            /* mantém o nome legado; a cor é o accent laranja */
+  --blue-soft:rgba(178,58,18,0.10);
   --purple:var(--secondary);
-  --purple-soft:rgba(123,95,224,0.12);
+  --purple-soft:rgba(22,24,28,0.08);
   --orange:var(--warning);
   --orange-soft:rgba(245,166,35,0.12);
   --teal:#12b3a6;
   --pink:#f25592;
-  --grad-hero:linear-gradient(135deg,#3b6fee 0%,#7b5fe0 100%);
+  --grad-hero:var(--accent);        /* Voltstudio não usa gradientes — laranja plano */
   --grad-success:var(--success);
   --grad-warn:var(--warning);
-  /* Typography — Plus Jakarta Sans (neo-grotesque) */
-  --font:'Plus Jakarta Sans','Inter',-apple-system,'Helvetica Neue',sans-serif;
-  --mono:'Plus Jakarta Sans','Inter',-apple-system,sans-serif;
+  /* Typography — Archivo (brandbook Voltstudio) */
+  --font:'Archivo','Plus Jakarta Sans',-apple-system,'Helvetica Neue',sans-serif;
+  --mono:'Archivo','Plus Jakarta Sans',-apple-system,sans-serif;
   /* Radii — rounded Finany look */
   --r:20px;--r2:16px;--r3:12px;--r4:8px;
   --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--space-8:64px;
@@ -78,35 +87,37 @@
 }
 html[data-theme="dark"]{
   color-scheme: dark;
-  --bg:#0a1024;
-  --surface:#121a33;
-  --elevated:#1a2440;
-  --border:#26314f;
-  --border-strong:#344063;
-  --fg:#eef2fb;
-  --fg-muted:#9aa6c0;
-  --fg-subtle:#8792b0;  /* era #5f6b89 = 3,2:1 no escuro; agora ≥4,9:1 */
-  --primary:#5b85f2;
-  --primary-cta:#3d66d9;  /* mais escuro que --primary p/ branco ≥4,5:1 no escuro (5,1:1) */
-  --primary-dark:#3b6fee;
-  --secondary:#7860e0;  /* era #9a82f0 = 3,08:1 com o glifo branco do .assistant-fab; agora 4,62:1 (Task 22) */
-  --accent:#5b85f2;
-  --bg-glass:rgba(10,16,36,0.82);
+  /* Fundo/superfícies = tons reais da própria Voltstudio (tinta #16181C +
+     a rampa de cinzas do brandbook); texto claro = papel #F8F7F5. */
+  --bg:#16181C;
+  --surface:#1B1E23;
+  --elevated:#242830;
+  --border:#2A2E35;
+  --border-strong:#363C46;
+  --fg:#F8F7F5;
+  --fg-muted:#9AA0A8;   /* grafite do brandbook — 6,3:1 sobre a superfície escura */
+  --fg-subtle:#868C94;  /* interpolado (Voltstudio não define este degrau); ≥4,9:1 */
+  --primary:#FF5A1F;    /* laranja vivo como TEXTO sobre fundo escuro = 5,4:1 (ok) */
+  --primary-cta:#B23A12;  /* fundo de botão com texto branco precisa do laranja escuro, mesmo no escuro (branco = 6,0:1) */
+  --primary-dark:#FF7A4A;
+  --secondary:#16181C;  /* mesma lógica do claro — tinta, não uma 2ª cor inventada */
+  --accent:#FF5A1F;
+  --bg-glass:rgba(22,24,28,0.82);
   --success:#4cd98a;
   --warning:#f7b955;
   --danger:#f47878;
-  --info:#5b85f2;
+  --info:#5b85f2;  /* desligado de --primary, mesma razão do tema claro */
   --signal-soft:rgba(244,120,120,0.16);
   --success-soft:rgba(76,217,138,0.16);
   --orange-soft:rgba(247,185,85,0.16);
   --blue:var(--primary);
-  --blue-soft:rgba(91,133,242,0.16);
+  --blue-soft:rgba(255,90,31,0.16);
   --purple:var(--secondary);
-  --purple-soft:rgba(154,130,240,0.18);
-  --grad-hero:linear-gradient(135deg,#3b6fee 0%,#7b5fe0 100%);
+  --purple-soft:rgba(248,247,245,0.12);
+  --grad-hero:var(--accent);
   --shadow:0 1px 3px rgba(0,0,0,0.4);
   --shadow-lg:0 8px 24px rgba(0,0,0,0.5);
-  --shadow-hero:0 12px 30px rgba(59,111,238,0.35);
+  --shadow-hero:0 12px 30px rgba(255,90,31,0.35);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 /* NOTE (scroll fix): original line 99 put `overscroll-behavior-y:none;touch-action:manipulation`
@@ -306,12 +317,12 @@ html[data-theme="dark"] .sheet-overlay{background:rgba(0,0,0,0.55)}
 .cat{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0}
 .mlogo{position:relative;display:inline-flex;flex-shrink:0}
 .mlogo-badge{position:absolute;right:-4px;bottom:-4px;box-shadow:0 0 0 2px var(--surface)}
-.avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;font-weight:700;color:#fff;overflow:hidden;background:var(--primary)}
+.avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;font-weight:700;color:#fff;overflow:hidden;background:var(--primary-cta)}
 .avatar img{width:100%;height:100%;object-fit:cover;display:block}
 .avatar-stack{display:inline-flex;align-items:center}
 .avatar-stack .avatar{box-shadow:0 0 0 2px var(--surface)}
 .avatar-stack .avatar+.avatar{margin-left:-8px}
-.ccard{border-radius:18px;padding:16px;background:linear-gradient(135deg,#1B1F2E 0%,#2D3453 100%);color:#fff;position:relative;min-height:150px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 16px 30px -18px rgba(0,0,0,.7);margin-bottom:12px}
+.ccard{border-radius:18px;padding:16px;background:#16181C;color:#fff;position:relative;min-height:150px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 16px 30px -18px rgba(0,0,0,.7);margin-bottom:12px}
 .ccard-num{font-size:14px;letter-spacing:.2em;opacity:.8;font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .tile{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 10px 10px;display:flex;flex-direction:column;gap:5px;align-items:flex-start;min-width:0;position:relative;overflow:hidden}

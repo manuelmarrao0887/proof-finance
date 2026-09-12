@@ -36,21 +36,12 @@ export default function Login() {
     >
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              background: 'var(--primary)',
-              color: 'var(--bg)',
-              borderRadius: 16,
-              margin: '0 auto 22px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+          <div style={{ width: 64, height: 64, margin: '0 auto 22px', borderRadius: 16, overflow: 'hidden', boxShadow: 'inset 0 0 0 1px var(--border)' }}>
+            <svg width="64" height="64" viewBox="0 0 192 192" aria-hidden="true">
+              <rect width="192" height="192" fill="#F8F7F5" />
+              <rect x="16" y="44" width="160" height="104" rx="13" fill="#16181C" />
+              <rect x="32" y="62" width="30" height="22" rx="4" fill="#F8F7F5" />
+              <path d="M385.57,-16.00L0.00,520.64L247.01,520.64L204.84,1016.00L602.46,479.36L343.40,479.36Z" fill="#FF5A1F" transform="translate(131,101) scale(0.04316,0.04360)" />
             </svg>
           </div>
           <h1 style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.05 }}>

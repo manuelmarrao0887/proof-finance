@@ -17,7 +17,7 @@ import { luminance } from '../lib/color.js';
 // cores hex explícitas (as escolhidas pela pessoa) entram no cálculo.
 function textColorFor(color) {
   if (!/^#/.test(String(color || ''))) return '#fff';
-  return luminance(color) > 0.2 ? '#0a1633' : '#fff';
+  return luminance(color) > 0.2 ? '#16181C' : '#fff';
 }
 
 export function initialsFrom(name) {

@@ -25,7 +25,7 @@ describe('Avatar escolhe a cor do texto', () => {
         <Avatar name="Bruno" color="#2149c4" />
       </>
     );
-    expect(screen.getByRole('img', { name: 'Ana' }).style.color).toBe('rgb(10, 22, 51)');
+    expect(screen.getByRole('img', { name: 'Ana' }).style.color).toBe('rgb(22, 24, 28)');
     expect(screen.getByRole('img', { name: 'Bruno' }).style.color).toBe('rgb(255, 255, 255)');
   });
 
@@ -36,7 +36,7 @@ describe('Avatar escolhe a cor do texto', () => {
         <Avatar name="João" color="#f5a623" />
       </>
     );
-    expect(screen.getByRole('img', { name: 'Ana' }).style.color).toBe('rgb(10, 22, 51)');
-    expect(screen.getByRole('img', { name: 'João' }).style.color).toBe('rgb(10, 22, 51)');
+    expect(screen.getByRole('img', { name: 'Ana' }).style.color).toBe('rgb(22, 24, 28)');
+    expect(screen.getByRole('img', { name: 'João' }).style.color).toBe('rgb(22, 24, 28)');
   });
 });
