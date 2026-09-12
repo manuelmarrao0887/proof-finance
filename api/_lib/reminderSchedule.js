@@ -15,6 +15,17 @@ export const REMINDER_COPY = {
   t212: { title: 'Trading212', body: 'Valida o valor atual da tua carteira.' },
 };
 
+// Corpo do lembrete da carteira. Quando a sync automática já correu HOJE
+// (api/cron/t212.js grava t212Sync.lastReport no doc raiz), o push informa o
+// valor em vez de pedir para o ires buscar à mão. Só lê o que já vem no doc
+// do utilizador — sem pedidos extra ao Firestore a cada 5 minutos.
+export function t212ReminderBody(lastReport, today) {
+  if (!lastReport || lastReport.date !== today) return REMINDER_COPY.t212.body;
+  const valor = Number(lastReport.valorAtual || 0).toLocaleString('pt-PT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const pos = Number(lastReport.positions || 0);
+  return 'Carteira sincronizada hoje: ' + valor + ' € · ' + pos + ' posições.';
+}
+
 // 'HH:MM' (Europe/Lisbon, from Intl — always local wall-clock time, immune to
 // DST: the cron schedule itself is UTC-fixed, so the offset shifts twice a
 // year and a fixed UTC cron would drift by an hour for half of it).

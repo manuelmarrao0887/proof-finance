@@ -6,6 +6,7 @@
 import React from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
+import { useToast } from '../components/Toast.jsx';
 import { fc } from '../lib/format.js';
 import { totalPL, totalPLPct, withAllocation, portfolioWarnings } from '../lib/investments.js';
 import { investmentAccountsValue, positionsValue } from '../lib/metrics.js';
@@ -15,6 +16,18 @@ import Amount from '../components/Amount.jsx';
 export default function InvestmentsView() {
   const { state, currentUser } = useStore();
   const { open } = useUI();
+  const toast = useToast();
+  // Posições vindas da sync da Trading212 são espelho: a sync seguinte
+  // reescreve-as, por isso editá-las aqui não serve de nada. Mesma regra que
+  // api/_lib/t212Sync.js usa para decidir o que é dela.
+  const isSynced = (p) => !!p && (p.source === 't212' || String(p.id || '').startsWith('t212-'));
+  const openPosition = (p) => {
+    if (isSynced(p)) {
+      toast('Posição sincronizada da Trading212 — muda na app deles e sincroniza.', 'info');
+      return;
+    }
+    open('position', { id: p.id });
+  };
   const positions = state.positions || [];
   const hidden = !!state.balancesHidden;
   const mv = (v) => (hidden ? '••••' : fc(v));
@@ -73,7 +86,7 @@ export default function InvestmentsView() {
         </div>
       ) : (
         rows.map((p) => (
-          <button key={p.id} type="button" onClick={() => open('position', { id: p.id })} className="cd" style={{ width: '100%', textAlign: 'left', marginBottom: 8, padding: '14px 16px', display: 'block', border: '1px solid var(--border)', cursor: 'pointer' }}>
+          <button key={p.id} type="button" onClick={() => openPosition(p)} className="cd" style={{ width: '100%', textAlign: 'left', marginBottom: 8, padding: '14px 16px', display: 'block', border: '1px solid var(--border)', cursor: 'pointer' }}>
             <div className="rw" style={{ gap: 10 }}>
               <AssetLogo ticker={p.asset} size={40} />
               <span style={{ flex: 1, minWidth: 0 }}>
@@ -81,6 +94,7 @@ export default function InvestmentsView() {
                 <span style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
                   {p.qty} un.
                   {p.broker ? <span className="chip" style={{ padding: '0 7px', fontSize: 10, background: 'var(--elevated)', color: 'var(--text2)', border: 'none' }}>{p.broker}</span> : null}
+                  {isSynced(p) ? <span className="chip" style={{ padding: '0 7px', fontSize: 10, background: 'var(--primary-soft, var(--elevated))', color: 'var(--primary)', border: 'none' }}>auto</span> : null}
                 </span>
               </span>
               <span style={{ textAlign: 'right', flexShrink: 0 }}>

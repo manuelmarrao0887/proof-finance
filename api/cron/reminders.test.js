@@ -100,4 +100,19 @@ describe('sendToUser', () => {
     await sendToUser(webpush, db, 'u1', userDoc);
     expect(db._subDocs[0].ref.delete).not.toHaveBeenCalled();
   });
+
+  it('o push da carteira leva o valor já sincronizado hoje', async () => {
+    const webpush = { sendNotification: vi.fn().mockResolvedValue() };
+    const setMock = vi.fn().mockResolvedValue();
+    const subs = [{ endpoint: 'https://push.example/a', keys: { p256dh: 'x', auth: 'y' } }];
+    const db = fakeDb({ subs, setMock });
+    const { lisbonNow, lisbonToday } = await import('../_lib/reminderSchedule.js');
+    const userDoc = {
+      reminderPrefs: { t212: { time: lisbonNow(), enabled: true } },
+      t212Sync: { enabled: true, lastReport: { date: lisbonToday(), valorAtual: 1200, positions: 3 } },
+    };
+    await sendToUser(webpush, db, 'u1', userDoc);
+    const payload = JSON.parse(webpush.sendNotification.mock.calls[0][1]);
+    expect(payload.body).toMatch(/1[\s.]?200/);
+  });
 });

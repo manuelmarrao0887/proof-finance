@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { shouldSendReminder, lisbonNow, lisbonToday, REMINDER_TYPES, REMINDER_COPY } from './reminderSchedule.js';
+import { shouldSendReminder, lisbonNow, lisbonToday, REMINDER_TYPES, REMINDER_COPY, t212ReminderBody } from './reminderSchedule.js';
 
 describe('shouldSendReminder', () => {
   const pref = { time: '13:45', enabled: true };
@@ -63,5 +63,23 @@ describe('REMINDER_TYPES / REMINDER_COPY', () => {
       expect(REMINDER_COPY[t].title).toBeTruthy();
       expect(REMINDER_COPY[t].body).toBeTruthy();
     });
+  });
+});
+
+describe('t212ReminderBody — o lembrete informa em vez de pedir', () => {
+  it('com a sync de hoje, diz o valor e quantas posições', () => {
+    const body = t212ReminderBody({ date: '2026-09-12', valorAtual: 1200, positions: 3 }, '2026-09-12');
+    expect(body).toMatch(/1[\s.]?200/);
+    expect(body).toMatch(/3 posiç/);
+  });
+
+  it('com a sync de outro dia, volta a pedir para validar', () => {
+    const body = t212ReminderBody({ date: '2026-09-11', valorAtual: 1200, positions: 3 }, '2026-09-12');
+    expect(body).toBe(REMINDER_COPY.t212.body);
+  });
+
+  it('sem relatório nenhum, usa o texto por omissão', () => {
+    expect(t212ReminderBody(null, '2026-09-12')).toBe(REMINDER_COPY.t212.body);
+    expect(t212ReminderBody(undefined, '2026-09-12')).toBe(REMINDER_COPY.t212.body);
   });
 });

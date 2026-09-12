@@ -14,7 +14,7 @@
 // cliente a sincronizar e o cron a marcar "já enviado hoje".
 
 import { getFirestoreDb } from '../_lib/firebaseAdmin.js';
-import { REMINDER_TYPES, REMINDER_COPY, lisbonNow, lisbonToday, shouldSendReminder } from '../_lib/reminderSchedule.js';
+import { REMINDER_TYPES, REMINDER_COPY, lisbonNow, lisbonToday, shouldSendReminder, t212ReminderBody } from '../_lib/reminderSchedule.js';
 
 // Extraído para ser testável sem montar um req/res falso: só a Vercel deve
 // conseguir chamar o cron. 404 (não 401) nos dois casos de falha — não
@@ -39,7 +39,10 @@ export async function sendToUser(webpush, db, uid, userDoc) {
 
   for (const type of due) {
     const copy = REMINDER_COPY[type];
-    const payload = JSON.stringify({ type, title: copy.title, body: copy.body });
+    // A carteira já pode ter sido lida pelo cron da T212 hoje — nesse caso o
+    // lembrete informa o valor em vez de pedir para o inserires.
+    const body = type === 't212' ? t212ReminderBody(userDoc.t212Sync && userDoc.t212Sync.lastReport, today) : copy.body;
+    const payload = JSON.stringify({ type, title: copy.title, body });
     await Promise.all(
       subs.map(async ({ ref, data }) => {
         const subscription = { endpoint: data.endpoint, keys: data.keys };
