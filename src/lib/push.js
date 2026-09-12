@@ -8,8 +8,13 @@
 
    iOS Safari only supports Web Push for a PWA added to the Home Screen
    (`display-mode: standalone`) — a normal Safari tab silently has no
-   PushManager. isPushSupported()/isStandalone() let the UI explain that
-   instead of a confusing permission failure.
+   PushManager AT ALL ('PushManager' in window is false pre-install), which
+   is exactly what isPushSupported() checks. Desktop/Android Chrome and
+   desktop Safari support Web Push from a plain browser tab, no install
+   required — isStandalone() must NEVER gate subscribePush() generally (it
+   did once; that blocked desktop Chrome with an iOS-only error message).
+   It's kept only so the UI can show the iOS-specific "install first" hint
+   ahead of time, on iOS specifically.
    ════════════════════════════════════════════════════════════════════════ */
 
 // Gerada uma única vez para este projeto (ver docs/superpowers — não é
@@ -32,6 +37,13 @@ export function isStandalone() {
   );
 }
 
+// iPhone/iPad (inclui iPadOS 13+, que se disfarça de "MacIntel" mas tem
+// ecrã tátil — um Mac a sério não tem maxTouchPoints > 0).
+export function isIOS() {
+  if (typeof navigator === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -43,8 +55,10 @@ function urlBase64ToUint8Array(base64String) {
 // Rejeita com uma mensagem PT já pronta para toast — nunca deixa o erro
 // nativo do browser (inglês, técnico) chegar à UI.
 export async function subscribePush() {
-  if (!isPushSupported()) throw new Error('Este navegador não suporta notificações push.');
-  if (!isStandalone()) throw new Error('Adiciona a app ao ecrã principal primeiro (Partilhar → Adicionar ao Ecrã Principal) — as notificações só funcionam na app instalada.');
+  if (!isPushSupported()) {
+    if (isIOS()) throw new Error('Adiciona a app ao ecrã principal primeiro (Partilhar → Adicionar ao Ecrã Principal) — no iPhone/iPad as notificações só funcionam na app instalada.');
+    throw new Error('Este navegador não suporta notificações push.');
+  }
 
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('Permissão de notificações recusada.');

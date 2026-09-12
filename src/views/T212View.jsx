@@ -5,7 +5,7 @@
    carteira só, sem sub-contas a desambiguar. Respeita o ocultar-saldos.
    ════════════════════════════════════════════════════════════════════════ */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useStore } from '../store/store.jsx';
 import { useUI } from '../store/ui.jsx';
 import { fc, fmDateShort } from '../lib/format.js';
@@ -14,6 +14,22 @@ import { latestT212, t212History, t212Gain, t212GainPct } from '../lib/trading21
 export default function T212View() {
   const { state } = useStore();
   const { open } = useUI();
+
+  // `?quick=1` (deep-link do toque/ação numa notificação de lembrete — ver
+  // src/sw.js DEEP_LINKS) abre logo o sheet de atualizar, sem precisar de
+  // tocar em "Atualizar" outra vez. Removido do URL para não reabrir numa
+  // troca de tab.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('quick') !== '1') return;
+    params.delete('quick');
+    const next = params.toString();
+    window.history.replaceState(window.history.state, '', window.location.pathname + (next ? '?' + next : ''));
+    open('t212Update');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const log = state.t212Log || [];
   const hidden = !!state.balancesHidden;
   const mv = (v) => (hidden ? '••••' : fc(v));
